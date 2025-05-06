@@ -4,6 +4,7 @@ import Astronomy.updater.MetaVersion;
 import Astronomy.updater.SpecificVersion;
 import ij.IJ;
 import ij.ImageJ;
+import ij.astro.util.ProgressTrackingInputStream;
 import ij.gui.MultiLineLabel;
 
 import javax.net.ssl.*;
@@ -20,13 +21,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Vector;
 
@@ -105,7 +106,7 @@ public class AstroImageJUpdaterV6 {
         var version = SpecificVersion.readJson(new URI(entry.url()));
 
         var baseDir = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
-        System.out.println(baseDir);
+        var downloads = new HashMap<Path, byte[]>();
         for (SpecificVersion.FileEntry fe : version.files()) {
             fe.os();//todo os check
 
@@ -113,7 +114,7 @@ public class AstroImageJUpdaterV6 {
                     .resolve(fe.destination().isBlank() ? "" : fe.destination())
                     .normalize();
 
-            // **Security check**: must stay under baseDir
+            // Ensure the paths don't try to escape AIJ
             if (!destDir.startsWith(baseDir.normalize())) {
                 throw new IOException("Invalid destination escapes baseDir: " + fe.destination());
             }
@@ -126,26 +127,45 @@ public class AstroImageJUpdaterV6 {
 
             System.out.printf("Downloading %s -> %s%n", fe.url(), targetFile);
 
-            downloadAndComputeHash(fe.url(), targetFile, 4, fe.md5());
+            var buffer = downloadAndComputeHash(fe.url(),4, fe.md5());
+            if (buffer == null || buffer.length == 0) {
+                System.out.printf("Failed to download %s for %s%n", fe.url(), targetFile);
+            }
+
+            downloads.put(targetFile, buffer);
         }
+
+        downloads.forEach((p, b) -> {
+            var f = p.toFile();
+            //todo try this instead?
+            // https://stackoverflow.com/questions/65062547/what-is-the-java-nio-file-files-equivalent-of-java-io-file-setwritable
+            if (f.exists() && !f.canWrite()) {
+                if (!f.setWritable(true, true)) {
+                    System.out.println("Failed to set file permissions for " + p);
+                    return;
+                }
+            }
+
+            try {
+                FileOutputStream out = new FileOutputStream(f);
+                out.write(b, 0, b.length);
+                out.close();
+            } catch (IOException e) {
+                System.out.println("Failed to write file");
+                e.printStackTrace();
+            }
+        });
     }
 
-    public boolean downloadAndComputeHash(String urlStr, Path finalFile, int maxRetries, String expectedMd5) throws Exception {
-        var tempFile = Files.createTempFile(finalFile.getParent(), finalFile.getFileName().toString(), null);
-
+    public byte[] downloadAndComputeHash(String urlStr, int maxRetries, String expectedMd5) throws Exception {
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             System.out.printf("Attempt %d of %d...%n", attempt, maxRetries);
 
             MessageDigest md = MessageDigest.getInstance("MD5");//todo sha256 - 64chars of hex
 
-            try (InputStream in = new DigestInputStream(streamForUri(new URI(urlStr)), md);
-                 FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
-
-                byte[] buffer = new byte[8 * 1024];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
-                }
+            byte[] buffer;
+            try (InputStream in = new DigestInputStream(new ProgressTrackingInputStream(streamForUri(new URI(urlStr))), md)) {
+                buffer = in.readAllBytes();
             } catch (Exception e) {
                 System.err.printf("Download error on attempt %d: %s%n", attempt, e.getMessage());
                 if (attempt == maxRetries) throw e;
@@ -158,23 +178,11 @@ public class AstroImageJUpdaterV6 {
             System.out.println("Expected MD5: " + expectedMd5);
 
             if (actualMd5.equalsIgnoreCase(expectedMd5)) {
-                //todo try this instead?
-                // https://stackoverflow.com/questions/65062547/what-is-the-java-nio-file-files-equivalent-of-java-io-file-setwritable
-                if (!Files.isWritable(finalFile)) {
-                    if (!finalFile.toFile().setWritable(true, true)) {
-                        System.out.println("Failed to set file permissions");
-                        return false;
-                    }
-                }
-                //todo instead of writing to temp file, keep in memory and write directly like current updater does
-                Files.move(tempFile, finalFile, StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("MD5 matches expected. File moved to " + finalFile);
-                return true;
+                System.out.println("MD5 matches expected.");
+                return buffer;
             } else {
                 System.err.printf("MD5 mismatch on attempt %d (%s vs %s).%n",
                         attempt, actualMd5, expectedMd5);
-
-                Files.deleteIfExists(tempFile);
 
                 if (attempt == maxRetries) {
                     throw new RuntimeException("MD5 did not match after " + maxRetries + " attempts");
@@ -184,7 +192,7 @@ public class AstroImageJUpdaterV6 {
             }
         }
 
-        return false;
+        return null;
     }
 
     private static void wait(int attempt) {

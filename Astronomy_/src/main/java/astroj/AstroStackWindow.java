@@ -4903,7 +4903,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             try {
                 var s = Files.readString(Path.of(apsPath));
                 var d = AperturesFileCodec.readContents(s);
-                if (d != null) {
+                if (d != null && !d.legacy()) {
                     var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
 
                     Prefs.ijPrefs.putAll(d.prefs());

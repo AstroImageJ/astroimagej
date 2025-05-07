@@ -22,16 +22,16 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Karen</o:Author>
   <o:LastAuthor>Karen Collins</o:LastAuthor>
-  <o:Revision>379</o:Revision>
-  <o:TotalTime>7108</o:TotalTime>
+  <o:Revision>380</o:Revision>
+  <o:TotalTime>7132</o:TotalTime>
   <o:Created>2013-01-20T06:33:00Z</o:Created>
-  <o:LastSaved>2025-04-29T08:01:00Z</o:LastSaved>
-  <o:Pages>46</o:Pages>
-  <o:Words>14908</o:Words>
-  <o:Characters>84982</o:Characters>
-  <o:Lines>708</o:Lines>
-  <o:Paragraphs>199</o:Paragraphs>
-  <o:CharactersWithSpaces>99691</o:CharactersWithSpaces>
+  <o:LastSaved>2025-05-07T09:32:00Z</o:LastSaved>
+  <o:Pages>47</o:Pages>
+  <o:Words>15102</o:Words>
+  <o:Characters>86084</o:Characters>
+  <o:Lines>717</o:Lines>
+  <o:Paragraphs>201</o:Paragraphs>
+  <o:CharactersWithSpaces>100985</o:CharactersWithSpaces>
   <o:Version>16.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -1862,8 +1862,8 @@ ul
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
   <o:rules v:ext="edit">
-   <o:r id="V:Rule1" type="connector" idref="#Straight_x0020_Arrow_x0020_Connector_x0020_68407828"/>
-   <o:r id="V:Rule2" type="connector" idref="#Straight_x0020_Arrow_x0020_Connector_x0020_383121726"/>
+   <o:r id="V:Rule1" type="connector" idref="#Straight_x0020_Arrow_x0020_Connector_x0020_224673108"/>
+   <o:r id="V:Rule2" type="connector" idref="#Straight_x0020_Arrow_x0020_Connector_x0020_559413177"/>
   </o:rules>
  </o:shapelayout></xml><![endif]-->
 </head>
@@ -1883,6 +1883,50 @@ mso-border-bottom-themecolor:accent1;padding:0in 0in 4.0pt 0in'>
 <p class=MsoNormal align=center style='text-align:center'><b style='mso-bidi-font-weight:
 normal'>AstroImageJ is open-source software and is distributed under the terms
 of the GNU General Public License.<o:p></o:p></b></p>
+
+<p class=MsoSubtitle>Version 5.5.1.00 (with ImageJ 1.54m1 and Java 24) (05/07/2025)<o:p></o:p></p>
+
+<h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Bug Fixes</h3>
+
+<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Fixed a problem with drag and drop of saved
+apertures files</h3>
+
+<h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>New Features<o:p></o:p></h3>
+
+<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Multi-Aperture &gt; File &gt; ‘Save data subset to
+file’ now supports outputting full JD-related data in all data columns. Previously,
+outputting any time-related column (containing JD in the label), other than in the
+first (leftmost) column would subtract the integer value for purposes of
+detrending and avoiding fitting the large JD numbers. To now output the
+fractional version of the JD number, select the version of the time column label
+in the dropdown mention that is prefixed with ‘F’ (for fractional). For example,
+to output the decimal part of BJD_UTC, select FBJD_UTC in the dropdown menu.</h3>
+
+<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Multi-Aperture &gt; File &gt; ‘Save data subset to
+file’ now allows the user to define custom constant column values and column label
+names for output in the data subset file. For example, to output a column labelled
+‘Target’ with the value ‘Sirius’, open ‘Save data subset to file’, select the ‘Constant
+Col’ button at the bottom and define the label, value pairs that you desire to output.
+Click Okay to return to the Save Data Subset main panel. Then select the desired
+label names in the dropdown menus in the order that you want them in the output
+file.<o:p></o:p></h3>
+
+<p class=MsoSubtitle><o:p>&nbsp;</o:p></p>
 
 <p class=MsoSubtitle>Version 5.5.0.00 (with ImageJ 1.54m1 and Java 24)
 (04/29/2025)</p>
@@ -2493,11 +2537,11 @@ reducing sampling when not needed for display purposes.<o:p></o:p></span></h3>
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol;mso-bidi-font-weight:normal'><span style='mso-list:Ignore'>·<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]><span style='mso-bidi-font-weight:normal'>AIJ now
-allows images of different sizes to be loaded into a stack by cropping or
-filling all subsequent images to be the size of the first image. A log message
-will be displayed to warn that cropping has been implemented. This feature is
-useful for processing survey images that may not all be of the same dimensions.<o:p></o:p></span></h3>
+</span></span></span><![endif]><span style='mso-bidi-font-weight:normal'>AIJ
+now allows images of different sizes to be loaded into a stack by cropping or filling
+all subsequent images to be the size of the first image. A log message will be
+displayed to warn that cropping has been implemented. This feature is useful
+for processing survey images that may not all be of the same dimensions.<o:p></o:p></span></h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -2695,9 +2739,10 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol;mso-bidi-font-weight:normal'><span style='mso-list:Ignore'>·<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]><span style='mso-bidi-font-weight:normal'>Added Windows,
-Mac, and Linux fresh install packages. AIJ may now be installed in the Program
-Files folder, and file type associations can be selected at installation.<o:p></o:p></span></h3>
+</span></span></span><![endif]><span style='mso-bidi-font-weight:normal'>Added
+Windows, Mac, and Linux fresh install packages. AIJ may now be installed in the
+Program Files folder, and file type associations can be selected at
+installation.<o:p></o:p></span></h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -3261,8 +3306,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>5.2.0.16: Added flags for data processor, multi-aperture,
-and stack aligner completion</h3>
+</span></span></span><![endif]>5.2.0.16: Added flags for data processor,
+multi-aperture, and stack aligner completion</h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -3758,8 +3803,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>5.2.0.01: Removed request for OK from user to start
-merging multiple table results. Added a merge progress progress bar. </h3>
+</span></span></span><![endif]>5.2.0.01: Removed request for OK from user to
+start merging multiple table results. Added a merge progress progress bar. </h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4085,8 +4130,8 @@ and gz compression when writing single images and 3D fits files.</h3>
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed a bug where improperly formatted LCOGT images
-would cause an extra image in the stack.</h3>
+</span></span></span><![endif]>Fixed a bug where improperly formatted LCOGT
+images would cause an extra image in the stack.</h3>
 
 <p class=Section><o:p>&nbsp;</o:p></p>
 
@@ -4220,8 +4265,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed a problem where invalid path names in DP
-on a Mac could cause an exception and resulting in the file opener icons to be
+</span></span></span><![endif]>Fixed a problem where invalid path names in DP on
+a Mac could cause an exception and resulting in the file opener icons to be
 inoperable. </h3>
 
 <p class=MsoSubtitle><o:p>&nbsp;</o:p></p>
@@ -5348,9 +5393,9 @@ item Table-&gt;”Add new astronomical data columns to table”.</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>The “Add astronomical data to table” and “MP Coordinate
-Converter” panels will remain open across sessions if left open when multi-plot
-is closed.</h3>
+</span></span></span><![endif]>The “Add astronomical data to table” and “MP
+Coordinate Converter” panels will remain open across sessions if left open when
+multi-plot is closed.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -5681,15 +5726,15 @@ contrast.</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Added an option that automatically updates manual
-image scale and directional arrows when a new image with WCS headers (i.e. has
-been plate-solved) has been opened (or solved). The default is enable. With the
-option enabled, if the first one or more images in a stack are plate-solved,
-the other non-plate-solved images will automatically show the same pixel scale
-and sky orientation. Not that if you change the image rotation (e.g. as a
-result of a meridian flip), the first image after the change will also need to
-be plate solved to enable the correct display of scale and orientation for the
-remainder of the image sequence.</h3>
+</span></span></span><![endif]>Added an option that automatically updates
+manual image scale and directional arrows when a new image with WCS headers
+(i.e. has been plate-solved) has been opened (or solved). The default is
+enable. With the option enabled, if the first one or more images in a stack are
+plate-solved, the other non-plate-solved images will automatically show the
+same pixel scale and sky orientation. Not that if you change the image rotation
+(e.g. as a result of a meridian flip), the first image after the change will
+also need to be plate solved to enable the correct display of scale and
+orientation for the remainder of the image sequence.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -5969,9 +6014,9 @@ PNG to be displayed in the wrong location on the underlying image</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Added a new menu item that creates Minor Planet Center
-(MPC) data submission format to Multi-plot_Main-&gt;File menu (thanks to Ferran
-Casarramona for the example macro from which the feature was created).</h3>
+</span></span></span><![endif]>Added a new menu item that creates Minor Planet
+Center (MPC) data submission format to Multi-plot_Main-&gt;File menu (thanks to
+Ferran Casarramona for the example macro from which the feature was created).</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -6126,8 +6171,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed image “stretching” display problem characteristic
-of OSX 10.10 (Yosemite)</h3>
+</span></span></span><![endif]>Fixed image “stretching” display problem
+characteristic of OSX 10.10 (Yosemite)</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -6444,8 +6489,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Work with Dustin Lang to implement multiple
-plate solve jobs per session</h3>
+</span></span></span><![endif]>Work with Dustin Lang to implement multiple plate
+solve jobs per session</h3>
 
 <h3 style='margin-left:0in;text-indent:0in;mso-list:none'><o:p>&nbsp;</o:p></h3>
 
@@ -7008,8 +7053,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Add ability to filter bias, darks, and flats based
-on FITS keywords (e.g. CCD-TEMP, EXPTIME) and/or filename and number</h3>
+</span></span></span><![endif]>Add ability to filter bias, darks, and flats
+based on FITS keywords (e.g. CCD-TEMP, EXPTIME) and/or filename and number</h3>
 
 <h1>Image Display </h1>
 
@@ -7554,9 +7599,9 @@ settings</h3>
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Moved image scale (brightness and contrast) settings
-from ‘Preferences’ to ‘Scale’ menu and added ‘fixed brightness and contrast
-(per image slice)’ option</h3>
+</span></span></span><![endif]>Moved image scale (brightness and contrast)
+settings from ‘Preferences’ to ‘Scale’ menu and added ‘fixed brightness and
+contrast (per image slice)’ option</h3>
 
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -7696,8 +7741,8 @@ when plotting Multi-Aperture created data</h3>
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>When opening data generated by other programs, the
-Y-data values in magnitude can be converted to relative flux for additional
+</span></span></span><![endif]>When opening data generated by other programs,
+the Y-data values in magnitude can be converted to relative flux for additional
 processing</h3>
 
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
@@ -7970,7 +8015,7 @@ slice number &gt; 1</h3>
  o:spt="32" o:oned="t" path="m,l21600,21600e" filled="f">
  <v:path arrowok="t" fillok="f" o:connecttype="none"/>
  <o:lock v:ext="edit" shapetype="t"/>
-</v:shapetype><v:shape id="Straight_x0020_Arrow_x0020_Connector_x0020_383121726"
+</v:shapetype><v:shape id="Straight_x0020_Arrow_x0020_Connector_x0020_559413177"
  o:spid="_x0000_s1027" type="#_x0000_t32" style='position:absolute;left:0;
  text-align:left;margin-left:-10.7pt;margin-top:16.1pt;width:504.75pt;height:0;
  z-index:251658240;visibility:visible;mso-wrap-style:square;
@@ -8465,7 +8510,7 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 
 <p class=MsoSubtitle><o:p>&nbsp;</o:p></p>
 
-<p class=MsoSubtitle><v:shape id="Straight_x0020_Arrow_x0020_Connector_x0020_68407828"
+<p class=MsoSubtitle><v:shape id="Straight_x0020_Arrow_x0020_Connector_x0020_224673108"
  o:spid="_x0000_s1026" type="#_x0000_t32" style='position:absolute;left:0;
  text-align:left;margin-left:-10.7pt;margin-top:16.1pt;width:504.75pt;height:0;
  z-index:251657216;visibility:visible;mso-wrap-style:square;
@@ -8753,8 +8798,8 @@ a “*”. </h3>
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>A “File Number Filter” “Exclude” string is now
-allowed, so that numbers that are common in a set of filenames can be ignored, which
-simplifies the setting of “Min” and “Max” numbers for filename number
+allowed, so that numbers that are common in a set of filenames can be ignored,
+which simplifies the setting of “Min” and “Max” numbers for filename number
 filtering. This field can optionally be automatically updated when a new
 filename pattern is entered directly or opened using the browser.</h3>
 

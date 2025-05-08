@@ -5,6 +5,7 @@ import astroj.json.simple.JSONArray;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import astroj.json.simple.parser.ParseException;
+import ij.IJ;
 
 import java.io.IOException;
 import java.net.URI;
@@ -63,6 +64,28 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
 
             return new FileEntry((String) object.get("name"), (String) object.get("destination"),
                     (String) object.get("url"), (String) object.get("md5"), os);
+        }
+
+        public boolean matchOs() {
+            if (os == null || os.length == 0) {
+                return true;
+            }
+
+            for (Os o : os) {
+                if (IJ.isMacOSX() && o == Os.MAC) {
+                    return true;
+                }
+
+                if (IJ.isLinux() && o == Os.LINUX) {
+                    return true;
+                }
+
+                if (IJ.isWindows() && o == Os.WINDOWS) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 

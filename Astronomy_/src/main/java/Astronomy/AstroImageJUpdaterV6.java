@@ -108,7 +108,9 @@ public class AstroImageJUpdaterV6 {
         var baseDir = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
         var downloads = new HashMap<Path, byte[]>();
         for (SpecificVersion.FileEntry fe : version.files()) {
-            fe.os();//todo os check
+            if (!fe.matchOs()) {
+                continue;
+            }
 
             Path destDir = baseDir
                     .resolve(fe.destination().isBlank() ? "" : fe.destination())

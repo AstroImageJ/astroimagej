@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -80,6 +81,7 @@ public class AstroImageJUpdaterV6 {
 
         try {
             //todo actually setup certificate on the domain
+            //todo github seems to handle this?
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[]{MOCK_MANAGER}, new SecureRandom());
 
@@ -149,9 +151,24 @@ public class AstroImageJUpdaterV6 {
             }
 
             try {
-                FileOutputStream out = new FileOutputStream(f);
-                out.write(b, 0, b.length);
-                out.close();
+                if (f.getName().contains(".exe")) {
+                    //todo not this
+                    //todo exe update is broken with this and old updater
+                    var temp = Files.createTempFile("aij"+p.hashCode(), ".tmp");
+                    Files.write(temp, b);
+                    Files.move(temp, p, StandardCopyOption.REPLACE_EXISTING);
+                    //todo use elevator and also update jvm, also use it to copy the jars instead of overwriting directing
+                    //  include jvm update now, use use adoptium, also update build script, also update toolchains
+                    //todo add in signing verification
+                    //todo sha256
+                    //todo hash for version jsons as well
+                    //todo jpackage, for mac
+                    //todo jpackage first, then elevator, then updater
+                } else {
+                    FileOutputStream out = new FileOutputStream(f);
+                    out.write(b, 0, b.length);
+                    out.close();
+                }
             } catch (IOException e) {
                 System.out.println("Failed to write file");
                 e.printStackTrace();

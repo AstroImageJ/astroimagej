@@ -5,6 +5,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.jvm.toolchain.JavaLauncher
@@ -85,6 +86,20 @@ abstract class JPackageTask
         }
 
         exitCode.rethrowFailure()
+    }
+
+    /**
+     * Allows setting extra args lazily via a Provider
+     */
+    fun extraArgs(provider: Provider<List<String>>) {
+        extraArgs.addAll(provider)
+    }
+
+    /**
+     * Convenience to append immediate args
+     */
+    fun extraArgs(vararg args: String) {
+        extraArgs.addAll(args.asList())
     }
 
     @get:Inject

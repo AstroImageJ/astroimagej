@@ -39,9 +39,13 @@ abstract class JPackageTask
     abstract val outputDir: DirectoryProperty
 
     init {
+        // Configure default toolchain
         val toolchain = project.extensions.getByType<JavaPluginExtension>().toolchain
         val defaultLauncher = javaToolchainService.launcherFor(toolchain)
         launcher.convention(defaultLauncher)
+
+        // Default extraArgs to empty list
+        extraArgs.convention(emptyList())
     }
 
     @TaskAction

@@ -3,6 +3,7 @@ package com.astroimagej.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import java.util.spi.ToolProvider
@@ -14,6 +15,10 @@ abstract class JPackageTask : DefaultTask() {
     // The name of the main JAR inside the input directory
     @get:Input
     abstract val mainJarName: Property<String>
+
+    // Additional args to pass to jpackage
+    @get:Input
+    abstract val extraArgs: ListProperty<String>
 
     // Directory (or task output) containing jars/resources to include
     @get:InputDirectory
@@ -36,14 +41,15 @@ abstract class JPackageTask : DefaultTask() {
             .orElseThrow { GradleException("Could not find 'jpackage' on the tool path") }
 
         // Build the arguments list
-        val args = listOf(
-            "--type", "app-image",//todo take this in as property
+        val args = mutableListOf(
             "--name", appName.get(),
             "--input", inputDir.get().asFile.absolutePath,
             "--main-jar", mainJarName.get(),
             "--dest", destDir.absolutePath,
-            "--java-options", "-Duser.dir=\$APPDIR" //todo property to take more params
         )
+
+        // Append any additional args
+        args.addAll(extraArgs.get())
 
         // Run jpackage
         val exitCode = provider.run(System.out, System.err, *args.toTypedArray())

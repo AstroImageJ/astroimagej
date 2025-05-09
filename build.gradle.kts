@@ -445,6 +445,11 @@ tasks.register<JPackageTask>("jpackageApp") {
     // Specify the name of your main jar within that inputDir
     mainJarName.set("ij.jar")
 
+    extraArgs = listOf(
+        "--type", "app-image",
+        "--java-options", "-Duser.dir=\$APPDIR",
+    )
+
     // Destination for the generated installer/image
     outputDir.set(layout.buildDirectory.dir("jpackage"))
 }

@@ -1,17 +1,11 @@
+import com.astroimagej.tasks.JPackageTask
 import de.undercouch.gradle.tasks.download.Download
 import de.undercouch.gradle.tasks.download.Verify
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import io.github.fvarrui.javapackager.gradle.PackagePluginExtension
-import io.github.fvarrui.javapackager.gradle.PackageTask
-import io.github.fvarrui.javapackager.model.FileAssociation
-import io.github.fvarrui.javapackager.model.MacStartup
-import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
 import org.apache.tools.ant.taskdefs.condition.Os
-import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -29,14 +23,6 @@ buildscript {
         }
         mavenCentral()
     }
-    dependencies {
-        classpath("io.github.fvarrui:javapackager:1.7.6")
-    }
-
-    // Needed for GrGit 5+
-    if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
-        throw GradleException("Gradle daemon must be running on Java 11 or greater.")
-    }
 }
 
 plugins {
@@ -50,7 +36,9 @@ plugins {
     id("aij.test-conventions")
 }
 
-apply(plugin = "io.github.fvarrui.javapackager.plugin")
+repositories {
+    mavenCentral()
+}
 
 // See https://guides.gradle.org/creating-multi-project-builds/
 
@@ -239,22 +227,6 @@ val commonDist = project.copySpec {
 
     from(layout.projectDirectory.dir("packageFiles/common")) {
         into("")
-        filesMatching("AstroImageJ.cfg") {
-            permissions {
-                user {
-                    read = true
-                    write = true
-                }
-                group {
-                    read = true
-                    write = true
-                }
-                other {
-                    read = true
-                    write = true
-                }
-            }
-        }
     }
 
     into("plugins") {
@@ -358,87 +330,26 @@ fun readConfigFile(): List<String> {
     return args
 }
 
-configure<PackagePluginExtension> {
-    // common configuration
-    mainClass("ij.ImageJ")
-    bundleJre(true)
-    customizedJre(false)
-    outputDirectory(file("${project.layout.buildDirectory.get()}/distributions"))
-    additionalResources(file("${project.layout.buildDirectory.get()}/commonFiles/").listFiles()?.toList() ?: emptyList())
-    runnableJar(file("${project.layout.buildDirectory.get()}/commonFiles/ij.jar"))
-    assetsDir(file("${projectDir}/packageFiles/assets"))
-    name("AstroImageJ")
-
-    winConfig.apply {
-        isWrapJar = false // Don't merge the ij.jar into the exe file
-        productVersion = "1.1.1"
-        productName = "Why Java Launcher"
-        isGenerateMsi = false
-        isDisableDirPage = false
-        isDisableFinishedPage = false
-        isDisableRunAfterInstall = false
-        exeCreationTool = WindowsExeCreationTool.why
-    }
-
-    macConfig.apply {
-        isRelocateJar = false // Don't place ij.jar in Java/ folder
-        isGeneratePkg = false
-        appId = "AstroImageJ"
-        macStartup = MacStartup.UNIVERSAL
-        isCodesignApp =
-            project.hasProperty("codeSignAndNotarize") && project.property("codeSignAndNotarize").toString().toBoolean()
-        // To set a DeveloperID in the environment, see comments in the gradle.properties file.
-        isNotarizeApp = System.getenv("DeveloperId") != null && project.property("codeSignAndNotarize").toString().toBoolean()
-        keyChainProfile = "AC_PASSWORD"
-        developerId = System.getenv("DeveloperId")
-        customLauncher = file("${projectDir}/packageFiles/assets/mac/nativeJavaApplicationStub")
-    }
-
-    linuxConfig.apply {
-        isWrapJar = false
-        isGenerateRpm = false
-    }
-
-    // Don't copy deps into a "libs" folder - we bundle them into ij.jar or Astronomy_.jar and the plugins folder
-    copyDependencies(false)
-
-    organizationName("AstroImageJ")
-    vmArgs(emptyList())
-    version("dev-x86") // Dummy version to keep it from saying "unspecified"
-    generateInstaller(true)
-
-    fileAssociations(listOf(
-        association("application/fits", "fits", "FITS File"),
-        association("application/fits", "fit", "FITS File"),
-        association("application/fits", "fts", "FITS File"),
-        association("application/fits", "fits.fz", "FITS File"),
-        association("application/fits", "fit.fz", "FITS File"),
-        association("application/fits", "fts.fz", "FITS File"),
-        association("application/fits", "fits.gz", "FITS File"),
-        association("application/fits", "fit.gz", "FITS File"),
-        association("application/fits", "fts.gz", "FITS File"),
-        association("text/tbl", "tbl", "Table"),
-        association("text/radec", "radec", "AIJ radec file"),
-        association("text/apertures", "apertures", "AIJ apertures file"),
-        association("text/plotcfg", "plotcfg", "AIJ plot config file"),
-    ))
-}
-
-fun association(mt: String, ext: String, desc: String): FileAssociation {
-    val a = FileAssociation()
-    a.mimeType = mt
-    a.extension = ext
-    a.description = desc
-
-    return a
-}
+/*listOf(//todo use
+    association("application/fits", "fits", "FITS File"),
+    association("application/fits", "fit", "FITS File"),
+    association("application/fits", "fts", "FITS File"),
+    association("application/fits", "fits.fz", "FITS File"),
+    association("application/fits", "fit.fz", "FITS File"),
+    association("application/fits", "fts.fz", "FITS File"),
+    association("application/fits", "fits.gz", "FITS File"),
+    association("application/fits", "fit.gz", "FITS File"),
+    association("application/fits", "fts.gz", "FITS File"),
+    association("text/tbl", "tbl", "Table"),
+    association("text/radec", "radec", "AIJ radec file"),
+    association("text/apertures", "apertures", "AIJ apertures file"),
+    association("text/plotcfg", "plotcfg", "AIJ plot config file"),
+)*/
 
 // Use toolchain for packaging
 val packagingJdkToolchain = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(shippingJava))
 }
-
-tasks.register("packageAij")
 
 javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     val sysId = "${
@@ -518,108 +429,24 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         into("jres/$sysId/unpacked")
     }
-
-    tasks.register<PackageTask>(packageTaskName) {
-        group = "AstroImageJ Development"
-
-        //todo fix incompatibility
-        // This prevents unzip tasks from running in parallel
-        notCompatibleWithConfigurationCache("Package task issue")
-
-        // Set the platform
-        io.github.fvarrui.javapackager.model.Platform.values().forEach pLoop@{
-            if (it == io.github.fvarrui.javapackager.model.Platform.auto) return@pLoop
-            val osName = if (sys.lowercase().contains("mac")) "mac" else sys.lowercase()
-            if (it.name == osName) {
-                platform = it
-            }
-        }
-
-        packagingJdk = packagingJdkToolchain.map { it.metadata.installationPath }.get().asFile
-
-        version = project.version.toString()
-
-        // Get Java bin fold location
-        val java = file("${projectDir}/jres/$sysId/unpacked/${(sysInfo["name"] as String).replace("." + sysInfo["ext"], "")}")
-        val runtimePath: File? = if (java.exists()) {
-            java.walkTopDown().filter { it.name == "release" }.firstOrNull {
-                val binFolder = it.resolveSibling("bin")
-                it.isFile && binFolder.isDirectory && binFolder.exists()
-            }?.parentFile
-        } else {
-            logger.error("A JRE was missing, run unZipJresTask first! $sys will fallback to the default runtime path")
-            File(java, if (sysInfo["os"] == "macos") "zulu-${shippingJava}.${sysInfo["type"]}/Contents/Home" else "")
-        }
-
-        // Sanity check
-        runtimePath?.let {
-            if (sysInfo["type"] == "jre") {
-                jrePath = it
-            } else if (sysInfo["type"] == "jdk") {
-                jdkPath = it
-            }
-        }
-
-        if (sysInfo["os"] == "linux") {
-            isCreateTarball = project.property("createTarBalls").toString().toBoolean()
-        } else {
-            isCreateZipball = project.property("createZip").toString().toBoolean()
-        }
-
-        if (sysInfo["os"] == "macos") {
-            isGenerateInstaller = project.property("createDMG").toString().toBoolean()
-        }
-    }
-
-    logger.quiet("Added a distribution task: $packageTaskName")
-
-    tasks.named(packageTaskName) {
-        dependsOn(unzipTaskName, "commonFiles")
-        mustRunAfter("commonFiles", deleteTaskName)
-    }
-
-    tasks.named("packageAij") {
-        group = "AstroImageJ Development"
-        dependsOn(packageTaskName)
-    }
 }
 
-tasks.withType<PackageTask>().configureEach {
-    if (name == "package") return@configureEach
+tasks.register<JPackageTask>("jpackageApp") {
+    group = "distribution"
+    description = "Bundles the application into a native installer/image via jpackage"
 
-    val platformInfoRegex = Regex("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit")
-    if (!name.matches(platformInfoRegex)) {
-        throw GradleException("Package task '${name}' failed to match, could not determine platform information")
-    }
-    val platformInfo = name.replace(platformInfoRegex, "$2_$3Bit")
+    appName.set("AstroImageJ")
 
-    doLast {
-        logger.lifecycle("Renaming outputs for platform information...")
+    // Wire inputDir to any task's output, e.g., a fatJar task
+    // inputDir.set(tasks.named<Jar>("fatJar").flatMap { it.destinationDirectory })
+    // Or use default libs directory:
+    inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
 
-        outputFiles.forEach { outputFile ->
-            if (!outputFile.exists()) {
-                logger.lifecycle("\tSkipping file that does not exist: {}", outputFile.name)
-                return@forEach
-            }
+    // Specify the name of your main jar within that inputDir
+    mainJarName.set("ij.jar")
 
-            val fileNameRegex = Regex("AstroImageJ[-_]${version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$")
-            if (!outputFile.name.matches(fileNameRegex)) {
-                logger.warn("\tGiven a file '${outputFile.name}' that cannot be handled")
-            } else {
-                val newName = outputFile.name.replace(fileNameRegex, "AstroImageJ_v${version}-${platform}-${platformInfo}\$1")
-                val newPath = outputFile.toPath().resolveSibling(newName)
-
-                logger.lifecycle("\tRenaming '{}' to '{}'...", outputFile, newName)
-                logger.lifecycle("\t\t" + newPath.toUri())
-
-                try {
-                    Files.move(outputFile.toPath(), newPath, StandardCopyOption.REPLACE_EXISTING)
-                } catch (e: IOException) {
-                    logger.error("\tFailed to rename '{}' to '{}'", outputFile.name, newName)
-                }
-            }
-        }
-    }
+    // Destination for the generated installer/image
+    outputDir.set(layout.buildDirectory.dir("jpackage"))
 }
 
 tasks.register<Copy>("copyBuiltJars") {

@@ -1,14 +1,21 @@
 package com.astroimagej.tasks
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
-import java.util.spi.ToolProvider
+import org.gradle.internal.os.OperatingSystem
+import org.gradle.jvm.toolchain.JavaLauncher
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
 
-abstract class JPackageTask : DefaultTask() {
+abstract class JPackageTask
+@Inject constructor(private var execOperations: ExecOperations) : DefaultTask() {
+
     @get:Input
     abstract val appName: Property<String>
 
@@ -20,13 +27,22 @@ abstract class JPackageTask : DefaultTask() {
     @get:Input
     abstract val extraArgs: ListProperty<String>
 
-    // Directory (or task output) containing jars/resources to include
+    // Directory containing jars/resources to include
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val inputDir: DirectoryProperty
 
+    @get:Nested
+    abstract val launcher: Property<JavaLauncher>
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
+
+    init {
+        val toolchain = project.extensions.getByType<JavaPluginExtension>().toolchain
+        val defaultLauncher = javaToolchainService.launcherFor(toolchain)
+        launcher.convention(defaultLauncher)
+    }
 
     @TaskAction
     fun jPackage() {
@@ -37,11 +53,18 @@ abstract class JPackageTask : DefaultTask() {
         }
 
         // Find the jpackage tool
-        val provider = ToolProvider.findFirst("jpackage")
-            .orElseThrow { GradleException("Could not find 'jpackage' on the tool path") }
+        val jpackageName = if (OperatingSystem.current().isWindows) {
+            "jpackage.exe"
+        } else {
+            "jpackage"
+        }
+
+        val jpackage = launcher.map {
+            it.executablePath.asFile.resolveSibling(jpackageName)
+        }
 
         // Build the arguments list
-        val args = mutableListOf(
+        val fullArgs = mutableListOf(
             "--name", appName.get(),
             "--input", inputDir.get().asFile.absolutePath,
             "--main-jar", mainJarName.get(),
@@ -49,12 +72,17 @@ abstract class JPackageTask : DefaultTask() {
         )
 
         // Append any additional args
-        args.addAll(extraArgs.get())
+        fullArgs.addAll(extraArgs.get())
 
         // Run jpackage
-        val exitCode = provider.run(System.out, System.err, *args.toTypedArray())
-        if (exitCode != 0) {
-            throw GradleException("jpackage failed with exit code $exitCode")
+        val exitCode = execOperations.exec {
+            executable = jpackage.get().absolutePath
+            args = fullArgs
         }
+
+        exitCode.rethrowFailure()
     }
+
+    @get:Inject
+    protected abstract val javaToolchainService: JavaToolchainService
 }

@@ -450,6 +450,8 @@ tasks.register<JPackageTask>("jpackageApp") {
         "--java-options", "-Duser.dir=\$APPDIR",
     )
 
+    launcher = packagingJdkToolchain
+
     // Destination for the generated installer/image
     outputDir.set(layout.buildDirectory.dir("jpackage"))
 }

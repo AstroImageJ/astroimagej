@@ -5,7 +5,6 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.apache.tools.ant.taskdefs.condition.Os
 import java.net.URI
-import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -311,22 +310,6 @@ fun readConfigFile(): List<String> {
     return args
 }
 
-/*listOf(//todo use
-    association("application/fits", "fits", "FITS File"),
-    association("application/fits", "fit", "FITS File"),
-    association("application/fits", "fts", "FITS File"),
-    association("application/fits", "fits.fz", "FITS File"),
-    association("application/fits", "fit.fz", "FITS File"),
-    association("application/fits", "fts.fz", "FITS File"),
-    association("application/fits", "fits.gz", "FITS File"),
-    association("application/fits", "fit.gz", "FITS File"),
-    association("application/fits", "fts.gz", "FITS File"),
-    association("text/tbl", "tbl", "Table"),
-    association("text/radec", "radec", "AIJ radec file"),
-    association("text/apertures", "apertures", "AIJ apertures file"),
-    association("text/plotcfg", "plotcfg", "AIJ plot config file"),
-)*/
-
 // Use toolchain for packaging
 val packagingJdkToolchain = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(shippingJava))
@@ -409,6 +392,90 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         }
 
         into("jres/$sysId/unpacked")
+    }
+
+    tasks.register<JPackageTask>(packageTaskName) {
+        group = "distribution"
+        description = "Bundles the application into a native installer/image via jpackage"
+
+        enabled = when (sysInfo["os"]) {
+            "macos" -> Os.isFamily(Os.FAMILY_MAC)
+            "windows" -> Os.isFamily(Os.FAMILY_WINDOWS)
+            "linux" -> Os.isFamily(Os.FAMILY_UNIX)
+            else -> throw GradleException("Unknown OS type: ${sysInfo["os"]}")
+        }
+
+        inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
+            .optional()
+            .withPropertyName("File associations")
+        inputs.dir(layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}"))
+            .optional()
+            .withPropertyName("Resource overrides")
+
+        appName.set("AstroImageJ")
+
+        // Wire inputDir to any task's output
+        inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
+
+        // Specify the name of your main jar within that inputDir
+        mainJarName.set("ij.jar")
+
+        extraArgs = listOf(
+            "--java-options", "-Duser.dir=\$APPDIR",
+            "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}").asFile.absolutePath,
+            //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
+            //"--verbose",
+            "--app-version", version.toString(),
+            "--about-url", "https://astroimagej.com",
+            "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+        )
+
+        launcher = packagingJdkToolchain
+
+        extraArgs(when (sysInfo["os"]) {
+            "macos" -> {
+                listOf(
+                    "--type", "dmg",
+                    "--mac-package-identifier", "com.astroimagej.AstroImageJ",
+                    "--mac-sign",
+                    "--mac-signing-keychain", "AC_PASSWORD",
+                    "--mac-signing-key-user-name", System.getenv("DeveloperId"),
+                )
+            }
+            "linux" -> {
+                listOf(
+                    "--type", "app-image",//todo tar.gz
+                    "--linux-shortcut",
+                )
+            }
+            "windows" -> {
+                listOf(
+                    "--type", "msi",
+                    "--win-dir-chooser",
+                    "--win-help-url", "https://github.com/AstroImageJ/astroimagej/discussions",
+                    "--win-shortcut-prompt",
+                    "--win-update-url", "https://astroimagej.com",
+                )
+            }
+            else -> listOf()
+        })
+
+        // Add file associations
+        layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
+            extraArgs(listOf("--file-associations", it.absolutePath))
+        }
+
+        // Lazy args to configure unzip and download automatically
+        // Toolchains doesn't seem to guarantee that a toolchain can be packaged with jlink
+        val unzipTask = tasks.named(unzipTaskName)
+        extraArgs(
+            unzipTask.map {
+                listOf("--runtime-image", it.outputs.files.singleFile.listFiles().single().absolutePath)
+            }
+        )
+
+        // Destination for the generated installer/image
+        outputDir.set(layout.buildDirectory.dir("jpackage"))
     }
 }
 

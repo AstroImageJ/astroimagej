@@ -81,6 +81,8 @@ abstract class JPackageTask
         // Append any additional args
         fullArgs.addAll(extraArgs.get())
 
+        logger.lifecycle("Ran jpackage with args: {}", fullArgs)
+
         // Run jpackage
         val exitCode = execOperations.exec {
             executable = jpackage.get().absolutePath
@@ -102,6 +104,13 @@ abstract class JPackageTask
      */
     fun extraArgs(vararg args: String) {
         extraArgs.addAll(args.asList())
+    }
+
+    /**
+     * Convenience to append immediate args
+     */
+    fun extraArgs(args: Collection<String>) {
+        extraArgs.addAll(args)
     }
 
     @get:Inject

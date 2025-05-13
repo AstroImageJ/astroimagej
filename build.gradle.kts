@@ -453,6 +453,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                     "--type", "msi",
                     "--win-dir-chooser",
                     "--win-help-url", "https://github.com/AstroImageJ/astroimagej/discussions",
+                    "--win-shortcut",
                     "--win-shortcut-prompt",
                     "--win-update-url", "https://astroimagej.com",
                 )

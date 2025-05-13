@@ -26,6 +26,7 @@ abstract class JPackageTask
 
     // Additional args to pass to jpackage
     @get:Input
+    @get:Optional
     abstract val extraArgs: ListProperty<String>
 
     // Directory containing jars/resources to include
@@ -34,6 +35,7 @@ abstract class JPackageTask
     abstract val inputDir: DirectoryProperty
 
     @get:Nested
+    @get:Optional
     abstract val launcher: Property<JavaLauncher>
 
     @get:OutputDirectory

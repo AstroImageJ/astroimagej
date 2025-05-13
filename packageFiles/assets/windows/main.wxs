@@ -73,9 +73,10 @@
     <Directory Id="TARGETDIR" Name="SourceDir"/>
 
     <Feature Id="DefaultFeature" Title="!(loc.MainFeatureTitle)" Level="1">
-      <ComponentGroupRef Id="Shortcuts"/>
-      <ComponentGroupRef Id="Files"/>
-      <ComponentGroupRef Id="FileAssociations"/>
+        <ComponentRef Id="GrantUsersModify"/>
+        <ComponentGroupRef Id="Shortcuts"/>
+        <ComponentGroupRef Id="Files"/>
+        <ComponentGroupRef Id="FileAssociations"/>
     </Feature>
 
     <CustomAction Id="JpSetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" />
@@ -132,4 +133,14 @@
     </InstallUISequence>
 
   </Product>
+
+  <Fragment>
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="GrantUsersModify" Guid="{797173F4-4C72-449C-AF98-D39493A6DDCD}">
+        <CreateFolder>
+          <util:PermissionEx User="Users" GenericAll="yes"/>
+        </CreateFolder>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
 </Wix>

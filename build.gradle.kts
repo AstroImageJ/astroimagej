@@ -437,17 +437,19 @@ tasks.register<JPackageTask>("jpackageApp") {
 
     appName.set("AstroImageJ")
 
-    // Wire inputDir to any task's output, e.g., a fatJar task
-    // inputDir.set(tasks.named<Jar>("fatJar").flatMap { it.destinationDirectory })
-    // Or use default libs directory:
+    // Wire inputDir to any task's output
     inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
 
     // Specify the name of your main jar within that inputDir
     mainJarName.set("ij.jar")
 
     extraArgs = listOf(
-        "--type", "app-image",
+        //"--type", "app-image",
+        "--type", "msi",
         "--java-options", "-Duser.dir=\$APPDIR",
+        "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/windows").asFile.absolutePath,
+        //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get()
+        //"--verbose"
     )
 
     launcher = packagingJdkToolchain

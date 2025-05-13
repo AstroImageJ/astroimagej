@@ -239,13 +239,6 @@ val commonDist = project.copySpec {
     }
 }
 
-// Create commonFiles directory for use in runAij and distribution generation
-// This is needed as we create the file paths for the package tasks at config time
-project.sync {
-    with(commonDist)
-    into(layout.buildDirectory.dir("commonFiles"))
-}
-
 /**
  * Copy the common files into the build directory to simplify their use.
  *
@@ -274,12 +267,6 @@ tasks.register<Sync>("sync") {
     // Doing so allows the UP-TO-DATE check to pass
     exclude("aij.log")
 
-    // Copy launch options to cfg file so editing can be tested
-    from(file("${projectDir}/devLaunchOptions.txt")) {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-        rename { "AstroImageJ.cfg" }
-    }
-
     destinationDir = file("${projectDir}/AIJ-Run")
 }
 
@@ -304,7 +291,6 @@ tasks.register<JavaExec>("aijRun") {
 }
 
 fun readConfigFile(): List<String> {
-    val productionCfg = providers.fileContents(project.layout.projectDirectory.file("packageFiles/common/AstroImageJ.cfg"))
     val devCfg = providers.fileContents(project.layout.projectDirectory.file("devLaunchOptions.txt"))
     val args = mutableListOf<String>()
 
@@ -320,11 +306,6 @@ fun readConfigFile(): List<String> {
         line.split(" ").forEach { arg -> args.add(arg) }
     }
     args.add("-Daij.dev") // Always show full version metadata when running via dev
-
-    productionCfg.asText.get().lineSequence().forEach { line ->
-        if (line.startsWith("#")) return@forEach
-        line.split(" ").forEach { arg -> args.add(arg) }
-    }
 
     logger.lifecycle("Launching with the following arguments: $args")
     return args
@@ -510,67 +491,6 @@ tasks.register<Copy>("copyBuiltJars") {
     doLast {
         logger.quiet("[copyBuiltJars] Copying jars to destination...")
     }
-}
-
-tasks.register<Sync>("makeReleaseFiles") {
-    group = "AstroImageJ Development"
-    dependsOn("packageAijForWindows_x86_64Bit")
-
-    val buildDir = layout.buildDirectory.get()
-    val output = buildDir.dir("updatesjava$targetJava")
-
-    val fullVersion = project.version as String
-    val semverVersion = fullVersion.substring(0, fullVersion.lastIndexOf('.'))
-
-    // Copy files, no renames
-    from("$buildDir/distributions/AstroImageJ") {
-        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-        }
-        includeEmptyDirs = false
-    }
-
-    // Copy files, with renames
-    from("$buildDir/distributions/AstroImageJ") {
-        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-        }
-        includeEmptyDirs = false
-
-        rename("(.+)\\.(.+)", "$1$semverVersion.$2")
-    }
-
-    into(output)
-    doLast {
-        // Update versions.txt
-        val versionsTxt = output.file("versions.txt").asFile
-
-        Files.createFile(versionsTxt.toPath())
-
-        versionsTxt.appendText("$semverVersion\n")
-
-        URI("https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/versions.txt")
-            .toURL().openStream().use { inputStream ->
-                versionsTxt.appendText(inputStream.bufferedReader().use { it.readText() })
-            }
-    }
-}
-
-tasks.register<Sync>("makeDailyBuildFiles") {
-    group = "AstroImageJ Development"
-    dependsOn("packageAijForWindows_x86_64Bit")
-
-    from(layout.buildDirectory.dir("distributions/AstroImageJ")) {
-        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-        }
-        includeEmptyDirs = false
-    }
-
-    into(layout.buildDirectory.dir("updatesjava$targetJava"))
 }
 
 fun outputDestination(): File {

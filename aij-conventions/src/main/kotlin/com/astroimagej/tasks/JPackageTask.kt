@@ -81,7 +81,7 @@ abstract class JPackageTask
         // Append any additional args
         fullArgs.addAll(extraArgs.get())
 
-        logger.lifecycle("Ran jpackage with args: {}", fullArgs)
+        //logger.lifecycle("Ran jpackage with args: {}", fullArgs)
 
         // Run jpackage
         val exitCode = execOperations.exec {

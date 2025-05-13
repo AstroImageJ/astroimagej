@@ -480,33 +480,6 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     }
 }
 
-tasks.register<JPackageTask>("jpackageApp") {
-    group = "distribution"
-    description = "Bundles the application into a native installer/image via jpackage"
-
-    appName.set("AstroImageJ")
-
-    // Wire inputDir to any task's output
-    inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
-
-    // Specify the name of your main jar within that inputDir
-    mainJarName.set("ij.jar")
-
-    extraArgs = listOf(
-        //"--type", "app-image",
-        "--type", "msi",
-        "--java-options", "-Duser.dir=\$APPDIR",
-        "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/windows").asFile.absolutePath,
-        //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get()
-        //"--verbose"
-    )
-
-    launcher = packagingJdkToolchain
-
-    // Destination for the generated installer/image
-    outputDir.set(layout.buildDirectory.dir("jpackage"))
-}
-
 tasks.register<Copy>("copyBuiltJars") {
     group = "AstroImageJ Development"
 

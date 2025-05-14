@@ -434,13 +434,25 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         extraArgs(when (sysInfo["os"]) {
             "macos" -> {
-                listOf(
-                    "--type", "dmg",
-                    "--mac-package-identifier", "com.astroimagej.AstroImageJ",
-                    "--mac-sign",
-                    "--mac-signing-keychain", "AC_PASSWORD",
-                    "--mac-signing-key-user-name", System.getenv("DeveloperId"),
-                )
+                buildList {
+                    addAll(
+                        listOf(
+                            "--type", "dmg",
+                            "--mac-package-identifier", "com.astroimagej.AstroImageJ",
+                        )
+                    )
+
+                    if (System.getenv("DeveloperId") != null &&
+                        project.property("codeSignAndNotarize").toString().toBoolean()) {
+                        addAll(
+                            listOf(
+                                "--mac-sign",
+                                "--mac-signing-keychain", "AC_PASSWORD",
+                                "--mac-signing-key-user-name", System.getenv("DeveloperId"),
+                            )
+                        )
+                    }
+                }
             }
             "linux" -> {
                 listOf(

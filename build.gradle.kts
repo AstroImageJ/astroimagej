@@ -424,8 +424,6 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
-            "--about-url", "https://astroimagej.com",
-            "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
         )
 
         launcher = packagingJdkToolchain
@@ -437,6 +435,8 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                         listOf(
                             "--type", "dmg",
                             "--mac-package-identifier", "com.astroimagej.AstroImageJ",
+                            "--about-url", "https://astroimagej.com",
+                            "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                         )
                     )
 
@@ -453,8 +453,8 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             }
             "linux" -> {
                 listOf(
-                    "--type", "app-image",//todo tar.gz
-                    "--linux-shortcut",
+                    "--type", "app-image",
+                    //"--linux-shortcut",
                 )
             }
             "windows" -> {
@@ -465,14 +465,18 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                     "--win-shortcut",
                     "--win-shortcut-prompt",
                     "--win-update-url", "https://astroimagej.com",
+                    "--about-url", "https://astroimagej.com",
+                    "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                 )
             }
             else -> listOf()
         })
 
         // Add file associations
-        layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
-            extraArgs(listOf("--file-associations", it.absolutePath))
+        if (sysInfo["os"] != "linux") { // app-image type cannot have file associations
+            layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
+                extraArgs(listOf("--file-associations", it.absolutePath))
+            }
         }
 
         runtime.set(layout.dir(unzipTask.map { it.destinationDir }))
@@ -491,6 +495,23 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         packageTask {
             finalizedBy(notaryTask)
+        }
+    }
+
+    if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo["os"] == "linux") {
+        val bundleTask = tasks.register<Tar>("bundleFor${sysId}") {
+            destinationDirectory = layout.buildDirectory.dir("distributions/$sysId")
+            archiveBaseName = "AstroImageJ"
+            archiveVersion = version.toString().replace(".00", "")
+            compression = Compression.GZIP
+
+            from(packageTask) {
+                exclude("*.tgz")
+            }
+        }
+
+        packageTask {
+            finalizedBy(bundleTask)
         }
     }
 }

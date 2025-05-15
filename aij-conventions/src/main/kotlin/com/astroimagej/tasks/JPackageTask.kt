@@ -1,6 +1,7 @@
 package com.astroimagej.tasks
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
@@ -37,6 +38,11 @@ abstract class JPackageTask
     @get:Nested
     @get:Optional
     abstract val launcher: Property<JavaLauncher>
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:Optional
+    abstract val runtime: DirectoryProperty
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -81,6 +87,12 @@ abstract class JPackageTask
         // Append any additional args
         fullArgs.addAll(extraArgs.get())
 
+        fullArgs.addAll(
+            runtime.map {
+                listOf("--runtime-image", getRuntime(it))
+            }.getOrElse(listOf())
+        )
+
         //logger.lifecycle("Ran jpackage with args: {}", fullArgs)
 
         // Run jpackage
@@ -111,6 +123,19 @@ abstract class JPackageTask
      */
     fun extraArgs(args: Collection<String>) {
         extraArgs.addAll(args)
+    }
+
+    /**
+     * The unzip tasks contain a subfolder, but we need the actual jre folder
+     */
+    private fun getRuntime(dir: Directory): String {
+        val fs = dir.asFile.listFiles()
+
+        if (fs.size == 1) {
+            return dir.asFile.absolutePath
+        }
+
+        return fs.single().absolutePath
     }
 
     @get:Inject

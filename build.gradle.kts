@@ -407,9 +407,6 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         inputs.dir(layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}"))
             .optional()
             .withPropertyName("Resource overrides")
-        inputs.dir(unzipTask.map { it.destinationDir })
-            .withPathSensitivity(PathSensitivity.NONE)
-            .withPropertyName("Runtime Folder")
 
         appName.set("AstroImageJ")
 
@@ -476,13 +473,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             extraArgs(listOf("--file-associations", it.absolutePath))
         }
 
-        // Lazy args to configure unzip and download automatically
-        // Toolchains doesn't seem to guarantee that a toolchain can be packaged with jlink
-        extraArgs(
-            unzipTask.map {
-                listOf("--runtime-image", it.destinationDir.absolutePath)
-            }
-        )
+        runtime.set(layout.dir(unzipTask.map { it.destinationDir }))
 
         // Destination for the generated installer/image
         outputDir.set(layout.buildDirectory.dir("distrbutions/$sysId"))

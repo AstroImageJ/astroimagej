@@ -332,6 +332,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     val unzipTaskName = "unzipJavaRuntimeFor${sysId}"
     val deleteTaskName = "deleteJavaRuntimeFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
+    val notaryTaskName = "notarizeFor${sysId}"
 
     tasks.register<Download>(downloadTaskName) {
         finalizedBy(cleanTaskName, verifyTaskName)
@@ -492,7 +493,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     }
 
     if (Os.isFamily(Os.FAMILY_MAC) && sysInfo["os"] == "macos") {
-        val notaryTask = tasks.register<MacNotaryTask>("signMacIntel") {
+        val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
             enabled = System.getenv("DeveloperId") != null &&
                     project.property("codeSignAndNotarize").toString().toBoolean()
             inputDir.set(packagetask.map { it.outputDir.get() })

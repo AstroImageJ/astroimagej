@@ -447,7 +447,6 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                         addAll(
                             listOf(
                                 "--mac-sign",
-                                "--mac-signing-keychain", "AC_PASSWORD",
                                 "--mac-signing-key-user-name", System.getenv("DeveloperId"),
                             )
                         )

@@ -1,4 +1,5 @@
 import com.astroimagej.tasks.JPackageTask
+import com.astroimagej.tasks.MacNotaryTask
 import de.undercouch.gradle.tasks.download.Download
 import de.undercouch.gradle.tasks.download.Verify
 import groovy.json.JsonOutput
@@ -489,6 +490,11 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         // Destination for the generated installer/image
         outputDir.set(layout.buildDirectory.dir("jpackage"))
     }
+}
+
+tasks.register<MacNotaryTask>("signMacIntel") {
+    inputDir.set(tasks.named<JPackageTask>("packageAijForMacos_x86_64Bit").map { it.outputDir.get() })
+    keychainProfile = System.getenv("DeveloperId")
 }
 
 tasks.register<Copy>("copyBuiltJars") {

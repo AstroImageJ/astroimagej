@@ -18,7 +18,7 @@ abstract class MacNotaryTask
 
     @TaskAction
     fun notarize() {
-        val dmgPath = inputDir.files().singleFile.absolutePath
+        val dmgPath = inputDir.asFileTree.singleFile.absolutePath
 
         logger.lifecycle("Submitting for notarization...")
         val submitResult = execOperations.exec {

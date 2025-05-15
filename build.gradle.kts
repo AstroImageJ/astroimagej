@@ -494,7 +494,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
 tasks.register<MacNotaryTask>("signMacIntel") {
     inputDir.set(tasks.named<JPackageTask>("packageAijForMacos_x86_64Bit").map { it.outputDir.get() })
-    keychainProfile = System.getenv("DeveloperId")
+    keychainProfile = "AC_PASSWORD"
 }
 
 tasks.register<Copy>("copyBuiltJars") {

@@ -396,7 +396,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         into("jres/$sysId/unpacked")
     }
 
-    val packagetask = tasks.register<JPackageTask>(packageTaskName) {
+    val packageTask = tasks.register<JPackageTask>(packageTaskName) {
         group = "distribution"
         description = "Bundles the application into a native installer/image via jpackage"
 
@@ -496,11 +496,11 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
             enabled = System.getenv("DeveloperId") != null &&
                     project.property("codeSignAndNotarize").toString().toBoolean()
-            inputDir.set(packagetask.map { it.outputDir.get() })
+            inputDir.set(packageTask.map { it.outputDir.get() })
             keychainProfile = "AC_PASSWORD"
         }
 
-        packagetask {
+        packageTask {
             finalizedBy(notaryTask)
         }
     }

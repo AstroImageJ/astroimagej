@@ -131,7 +131,7 @@ abstract class JPackageTask
     private fun getRuntime(dir: Directory): String {
         val fs = dir.asFile.listFiles()
 
-        if (fs.size == 1) {
+        if (fs.size > 1) {
             return dir.asFile.absolutePath
         }
 

@@ -198,7 +198,7 @@ public class AstroImageJ_Updater implements PlugIn {
 		}
 
 		// Handle Window's specific files
-		if (IJ.isWindows()) {
+		if (IJ.isWindows() && false) {
 			// Update from older launcher that used old config file
 			if (!Files.exists(Path.of("launcher.ini"))) {
 				var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");

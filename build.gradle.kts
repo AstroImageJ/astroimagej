@@ -107,23 +107,23 @@ tasks.test {
  * The set of Java runtimes to download and package AIJ for.
  * Terms in the map are based on the query parameters.
  * To add a distribution, simply give it a unique name and fill out its map with the proper values.
- * See https://app.swaggerhub.com/apis-docs/azul/zulu-download-community/1.0#/bundles/get_bundles_latest_
+ * See https://api.adoptium.net/q/swagger-ui/#/Assets/getLatestAssets
  *
  * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
  * are excluded from the definition for brevity.
  */
 val javaRuntimeSystems = mapOf(
-        "mac" to mutableMapOf("ext" to "zip", "arch" to "x86", "os" to "macos", "hw_bitness" to "64"),
-        "armMac" to mutableMapOf("ext" to "zip", "arch" to "arm", "os" to "macos", "hw_bitness" to "64"),
-        "linux" to mutableMapOf("ext" to "tar.gz", "arch" to "x86", "os" to "linux", "hw_bitness" to "64"),
-        "windows" to mutableMapOf("ext" to "zip", "arch" to "x86", "os" to "windows", "hw_bitness" to "64")
+        "mac" to mutableMapOf("ext" to "tar.gz", "arch" to "x64", "os" to "mac"),
+        "armMac" to mutableMapOf("ext" to "tar.gz", "arch" to "aarch64", "os" to "mac"),
+        "linux" to mutableMapOf("ext" to "tar.gz", "arch" to "x64", "os" to "linux"),
+        "windows" to mutableMapOf("ext" to "zip", "arch" to "x64", "os" to "windows")
 )
 
 val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, Map::class.java)
 
 val javaRuntimeHashProvider: Provider<String> = providers.provider {
     val inputMapAsString = javaRuntimeSystems.map { (k, v) ->
-            "$k:${v["ext"]}-${v["arch"]}-${v["os"]}-${v["hw_bitness"]}"
+            "$k:${v["ext"]}-${v["arch"]}-${v["os"]}}"
     }.joinToString(",")
     val md = MessageDigest.getInstance("MD5")
     md.digest(inputMapAsString.toByteArray()).joinToString("") { "%02x".format(it) }
@@ -165,10 +165,11 @@ javaRuntimeSystemsProperty.convention(providers.provider {
     logger.lifecycle("Fetching Java Runtime Systems data from network")
     @Suppress("UNUSED_DESTRUCTURED_PARAMETER_ENTRY")
     javaRuntimeSystems.forEach { (sys, sysInfo) ->
-        val url = "https://api.azul.com/metadata/v1/zulu/packages?availability_types=ca&latest=true&" +
-                "crac_supported=false&crs_supported=false&" +
-                "os=${sysInfo["os"]}&arch=${sysInfo["arch"]}&hw_bitness=${sysInfo["hw_bitness"]}" +
-                "&archive_type=${sysInfo["ext"]}&java_version=$shippingJava"
+        val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
+                "architecture=${sysInfo["arch"]}&" +
+                "image_type=jre&" +
+                "os=${sysInfo["os"]}&" +
+                "vendor=eclipse"
 
         // Find latest JDK
         @Suppress("UNCHECKED_CAST")
@@ -181,24 +182,17 @@ javaRuntimeSystemsProperty.convention(providers.provider {
             return@forEach
         } as List<Map<String, Any>>
 
-        // Find info of latest JDK
-        @Suppress("UNCHECKED_CAST")
-        val jdkMeta = try {
-            JsonSlurper().parse(URI("https://api.azul.com/metadata/v1/zulu/packages/${meta[0]["package_uuid"]}").toURL())
-        } catch (ignored: Exception) {
-            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
-                sysInfo["os"], sysInfo["arch"], sysInfo["ext"], sysInfo["type"])
-            return@forEach
-        } as Map<String, Any>
+        val jdkMeta = meta[0]
+        val binaryMeta = (jdkMeta["binary"] as Map<String, Any>)
+        val packageMeta = (binaryMeta["package"] as Map<String, Any>)
 
         // Update the maps with the metadata
         @Suppress("UNCHECKED_CAST")
-        sysInfo["version"] = (jdkMeta["java_version"] as List<String>)[0]
-        sysInfo["ext"] = jdkMeta["archive_type"] as String
-        sysInfo["name"] = jdkMeta["name"] as String
-        sysInfo["md5"] = jdkMeta["md5_hash"] as String
-        sysInfo["type"] = jdkMeta["java_package_type"] as String
-        sysInfo["url"] = jdkMeta["download_url"] as String
+        sysInfo["version"] = ((jdkMeta["version"] as Map<String, Any>)["major"] as Integer).toString()
+        sysInfo["name"] = packageMeta["name"] as String
+        sysInfo["sha256"] = packageMeta["checksum"] as String
+        sysInfo["type"] = binaryMeta["image_type"] as String
+        sysInfo["url"] = packageMeta["link"] as String
     }
 
     // Save the fetched data to the JSON file
@@ -325,7 +319,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                 it.toString()
             }
         }
-    }_${sysInfo["arch"]}_${sysInfo["hw_bitness"]}Bit"
+    }_${sysInfo["arch"]}"
     val packageTaskName = "packageAijFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
@@ -370,11 +364,11 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         outputs.upToDateWhen { false }
 
         src(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
-        algorithm("MD5")
-        checksum(sysInfo["md5"] as String)
+        algorithm("SHA256")
+        checksum(sysInfo["sha256"] as String)
     }
 
-    tasks.register<Sync>(unzipTaskName) {
+    val unzipTask = tasks.register<Sync>(unzipTaskName) {
         dependsOn(verifyTaskName, deleteTaskName)
         group = "AstroImageJ Development"
 
@@ -401,7 +395,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         description = "Bundles the application into a native installer/image via jpackage"
 
         enabled = when (sysInfo["os"]) {
-            "macos" -> Os.isFamily(Os.FAMILY_MAC)
+            "mac" -> Os.isFamily(Os.FAMILY_MAC)
             "windows" -> Os.isFamily(Os.FAMILY_WINDOWS)
             "linux" -> Os.isFamily(Os.FAMILY_UNIX)
             else -> throw GradleException("Unknown OS type: ${sysInfo["os"]}")
@@ -413,6 +407,9 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         inputs.dir(layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}"))
             .optional()
             .withPropertyName("Resource overrides")
+        inputs.dir(unzipTask.map { it.destinationDir })
+            .withPathSensitivity(PathSensitivity.NONE)
+            .withPropertyName("Runtime Folder")
 
         appName.set("AstroImageJ")
 
@@ -435,7 +432,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         launcher = packagingJdkToolchain
 
         extraArgs(when (sysInfo["os"]) {
-            "macos" -> {
+            "mac" -> {
                 buildList {
                     addAll(
                         listOf(
@@ -481,10 +478,9 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         // Lazy args to configure unzip and download automatically
         // Toolchains doesn't seem to guarantee that a toolchain can be packaged with jlink
-        val unzipTask = tasks.named(unzipTaskName)
         extraArgs(
             unzipTask.map {
-                listOf("--runtime-image", it.outputs.files.singleFile.listFiles().single().absolutePath)
+                listOf("--runtime-image", it.destinationDir.absolutePath)
             }
         )
 
@@ -492,7 +488,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         outputDir.set(layout.buildDirectory.dir("distrbutions/$sysId"))
     }
 
-    if (Os.isFamily(Os.FAMILY_MAC) && sysInfo["os"] == "macos") {
+    if (Os.isFamily(Os.FAMILY_MAC) && sysInfo["os"] == "mac") {
         val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
             enabled = System.getenv("DeveloperId") != null &&
                     project.property("codeSignAndNotarize").toString().toBoolean()

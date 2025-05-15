@@ -10,7 +10,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="packageAijForMacos_arm_64Bit" />
+          <option value="packageAijForMacos_aarch64" />
         </list>
       </option>
       <option name="vmOptions" value="" />

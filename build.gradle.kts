@@ -183,12 +183,14 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         } as List<Map<String, Any>>
 
         val jdkMeta = meta[0]
+        @Suppress("UNCHECKED_CAST")
         val binaryMeta = (jdkMeta["binary"] as Map<String, Any>)
+        @Suppress("UNCHECKED_CAST")
         val packageMeta = (binaryMeta["package"] as Map<String, Any>)
 
         // Update the maps with the metadata
         @Suppress("UNCHECKED_CAST")
-        sysInfo["version"] = ((jdkMeta["version"] as Map<String, Any>)["major"] as Integer).toString()
+        sysInfo["version"] = ((jdkMeta["version"] as Map<String, Any>)["major"] as Int).toString()
         sysInfo["name"] = packageMeta["name"] as String
         sysInfo["sha256"] = packageMeta["checksum"] as String
         sysInfo["type"] = binaryMeta["image_type"] as String

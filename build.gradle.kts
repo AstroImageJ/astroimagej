@@ -476,7 +476,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         runtime.set(layout.dir(unzipTask.map { it.destinationDir }))
 
         // Destination for the generated installer/image
-        outputDir.set(layout.buildDirectory.dir("distrbutions/$sysId"))
+        outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
     }
 
     if (Os.isFamily(Os.FAMILY_MAC) && sysInfo["os"] == "mac") {

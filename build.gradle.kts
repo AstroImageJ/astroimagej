@@ -403,7 +403,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             "windows" -> Os.isFamily(Os.FAMILY_WINDOWS)
             "linux" -> Os.isFamily(Os.FAMILY_UNIX)
             else -> throw GradleException("Unknown OS type: ${sysInfo["os"]}")
-        }
+        } && version.toString().matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
 
         inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
             .optional()
@@ -425,7 +425,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}").asFile.absolutePath,
             //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
-            "--app-version", version.toString(),
+            "--app-version", version.toString().replace(".00", ""),
             "--about-url", "https://astroimagej.com",
             "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
         )

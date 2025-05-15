@@ -488,7 +488,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         )
 
         // Destination for the generated installer/image
-        outputDir.set(layout.buildDirectory.dir("jpackage"))
+        outputDir.set(layout.buildDirectory.dir("distrbutions/$sysId"))
     }
 }
 

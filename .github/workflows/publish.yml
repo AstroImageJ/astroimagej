@@ -51,7 +51,12 @@ jobs:
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        if: ${{ matrix.runner == 'macos-latest' && env.BUILD_CERTIFICATE_BASE64 != '' && env.P12_PASSWORD != '' && env.BUILD_PROVISION_PROFILE_BASE64 != '' && env.KEYCHAIN_PASSWORD != '' }}
+        if: |
+          (matrix.runner == 'macos-latest') &&
+          (env.BUILD_CERTIFICATE_BASE64 != '') &&
+          (env.P12_PASSWORD != '') &&
+          (env.BUILD_PROVISION_PROFILE_BASE64 != '') &&
+          (env.KEYCHAIN_PASSWORD != '')
         run: |
           # create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12

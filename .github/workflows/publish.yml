@@ -45,6 +45,10 @@ jobs:
           distribution: 'temurin'
           java-version: '24'
 
+      - name: Make Gradle wrapper executable
+        if: ${{ matrix.runner != 'windows-latest' }}
+        run: chmod +x ./gradlew
+
       - name: Install the Apple certificate and provisioning profile
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
@@ -82,7 +86,12 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: ./gradlew ${{ matrix.gradleTask }}
+        run: |
+          if [ "${{ matrix.runner }}" = "windows-latest" ]; then
+            ./gradlew.bat ${{ matrix.gradleTask }}
+          else
+            ./gradlew ${{ matrix.gradleTask }}
+          fi
 
       - name: Upload installer ( ${{ matrix.osName }} )
         id: upload

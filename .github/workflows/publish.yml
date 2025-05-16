@@ -158,6 +158,10 @@ jobs:
       - name: Display structure of moved files
         run: ls -R
 
+      - name: Checkout
+        # Checkout repo so gh cli can work
+        uses: actions/checkout@v4
+
       - name: Create release
         # https://cli.github.com/manual/gh_release_create
         shell: bash

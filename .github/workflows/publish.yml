@@ -100,6 +100,24 @@ jobs:
           path: |
             build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
 
+      - name: Upload ij.jar
+        if: matrix.runner == 'windows-latest'
+        id: upload_ij
+        uses: actions/upload-artifact@v4
+        with:
+          name: ij
+          path: |
+            ij/build/libs/ij.jar
+
+      - name: Upload Astronomy.jar
+        if: matrix.runner == 'windows-latest'
+        id: upload_ij
+        uses: actions/upload-artifact@v4
+        with:
+          name: astronomy
+          path: |
+            Astronomy_/build/libs/Astronomy_.jar
+
   create-release:
     name: Create GitHub Release
     needs: package
@@ -145,6 +163,16 @@ jobs:
           name: installer-windows-x64
         continue-on-error: true
 
+      - name: Download ij
+        uses: actions/download-artifact@v4
+        with:
+          name: ij
+
+      - name: Download Astronomy
+        uses: actions/download-artifact@v4
+        with:
+          name: astronomy
+
       - name: Prepare flat release assets
         # move & rename each installer into release_assets/
         run: |
@@ -155,6 +183,9 @@ jobs:
           mv Mac_aarch64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-aarch64.dmg
           mv Mac_x64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-x64.dmg
           mv Windows_x64/*.msi release_assets/AstroImageJ-${VERSION}-windows-x64.msi
+          mv ij.jar release_assets/ij.jar
+          mv Astronomy_.jar release_assets/Astronomy_.jar
+          mv packageFiles/common/macros/StartupMacros.txt release_assets/StartupMacros.txt
 
       - name: Create release
         # https://cli.github.com/manual/gh_release_create

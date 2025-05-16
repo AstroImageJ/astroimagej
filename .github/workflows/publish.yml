@@ -1,0 +1,160 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.2.3)'
+        required: true
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*.00'
+
+jobs:
+  package:
+    name: Package ${{ matrix.osName }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            osName: linux-x64
+            gradleTask: packageAijForLinux_x64
+            artifactExt: tgz
+          - runner: macos-latest
+            osName: mac-aarch64
+            gradleTask: packageAijForMac_aarch64
+            artifactExt: dmg
+          - runner: macos-latest
+            osName: mac-x64
+            gradleTask: packageAijForMac_x64
+            artifactExt: dmg
+          - runner: windows-latest
+            osName: windows-x64
+            gradleTask: packageAijForWindows_x64
+            artifactExt: msi
+    outputs:
+      artifact: ${{ steps.upload.outputs.artifact }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+
+      - name: Install the Apple certificate and provisioning profile
+        if: matrix.runner == 'macos-latest'
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.provisionprofile
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          
+          # import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+          
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          
+          # apply provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Run jpackage (${{ matrix.gradleTask }})
+        run: ./gradlew ${{ matrix.gradleTask }}
+
+      - name: Upload installer ( ${{ matrix.osName }} )
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.osName }}
+          path: |
+            build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
+
+  create-release:
+    name: Create GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine version
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            echo "VERSION=$TAG_NAME" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        id: release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.vars.outputs.VERSION }}
+          release_name: Release ${{ steps.vars.outputs.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download installer (linux-x64)
+        uses: actions/download-artifact@v3
+        with:
+          name: installer-linux-x64
+        continue-on-error: true
+
+      - name: Download installer (mac-aarch64)
+        uses: actions/download-artifact@v3
+        with:
+          name: installer-mac-aarch64
+        continue-on-error: true
+
+      - name: Download installer (mac-x64)
+        uses: actions/download-artifact@v3
+        with:
+          name: installer-mac-x64
+        continue-on-error: true
+
+      - name: Download installer (windows-x64)
+        uses: actions/download-artifact@v3
+        with:
+          name: installer-windows-x64
+        continue-on-error: true
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: |
+            installer-linux-x64/**/*.tgz
+            installer-mac-aarch64/**/*.dmg
+            installer-mac-x64/**/*.dmg
+            installer-windows-x64/**/*.msi
+          asset_name: |
+            aij-linux-x64-${{ steps.vars.outputs.VERSION }}.tgz
+            aij-mac-aarch64-${{ steps.vars.outputs.VERSION }}.dmg
+            aij-mac-x64-${{ steps.vars.outputs.VERSION }}.dmg
+            aij-windows-x64-${{ steps.vars.outputs.VERSION }}.msi
+          asset_content_type: |
+            application/gzip
+            application/x-apple-diskimage
+            application/x-apple-diskimage
+            application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

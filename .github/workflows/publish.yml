@@ -104,6 +104,8 @@ jobs:
     name: Create GitHub Release
     needs: package
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Determine version
         id: vars
@@ -159,50 +161,17 @@ jobs:
           VERSION=${{ steps.vars.outputs.VERSION }}
           mkdir -p release_assets
 
-          mv installer-linux-x64/**/*.tgz release_assets/AstroImageJ-linux-x64-${VERSION}.tgz
-          mv installer-mac-aarch64/**/*.dmg release_assets/AstroImageJ-mac-aarch64-${VERSION}.dmg
-          mv installer-mac-x64/**/*.dmg release_assets/AstroImageJ-mac-x64-${VERSION}.dmg
-          mv installer-windows-x64/**/*.msi release_assets/AstroImageJ-windows-x64-${VERSION}.msi
+          mv Linux-x64/**/*.tgz release_assets/AstroImageJ-linux-x64-${VERSION}.tgz
+          mv Mac-aarch64/**/*.dmg release_assets/AstroImageJ-mac-aarch64-${VERSION}.dmg
+          mv Mac-x64/**/*.dmg release_assets/AstroImageJ-mac-x64-${VERSION}.dmg
+          mv Windows-x64/**/*.msi release_assets/AstroImageJ-windows-x64-${VERSION}.msi
 
       - name: Display structure of moved files
         run: ls -R
 
-      - name: Upload Linux asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: release_assets/AstroImageJ-linux-x64-${{ steps.vars.outputs.VERSION }}.tgz
-          asset_name: AstroImageJ-linux-x64-${{ steps.vars.outputs.VERSION }}.tgz
-          asset_content_type: application/gzip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS ARM asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: release_assets/AstroImageJ-mac-aarch64-${{ steps.vars.outputs.VERSION }}.dmg
-          asset_name: AstroImageJ-mac-aarch64-${{ steps.vars.outputs.VERSION }}.dmg
-          asset_content_type: application/x-apple-diskimage
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS Intel asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: release_assets/AstroImageJ-mac-x64-${{ steps.vars.outputs.VERSION }}.dmg
-          asset_name: AstroImageJ-mac-x64-${{ steps.vars.outputs.VERSION }}.dmg
-          asset_content_type: application/x-apple-diskimage
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: release_assets/AstroImageJ-windows-x64-${{ steps.vars.outputs.VERSION }}.msi
-          asset_name: AstroImageJ-windows-x64-${{ steps.vars.outputs.VERSION }}.msi
-          asset_content_type: application/octet-stream
+          files: release_assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

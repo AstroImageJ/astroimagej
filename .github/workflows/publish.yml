@@ -117,17 +117,6 @@ jobs:
             echo "VERSION=$TAG_NAME" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Release
-        id: release
-        uses: actions/create-release@v1
-        with:
-          tag_name: v${{ steps.vars.outputs.VERSION }}
-          release_name: Release ${{ steps.vars.outputs.VERSION }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Download installer (linux-x64)
         uses: actions/download-artifact@v4
         with:

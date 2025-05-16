@@ -158,9 +158,11 @@ jobs:
       - name: Display structure of moved files
         run: ls -R
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release_assets/*
+      - name: Create release
+        # https://cli.github.com/manual/gh_release_create
+        shell: bash
+        run: |
+            for f in release_assets/*; do FILES+=" $f"; done
+            gh release create ${{ steps.vars.outputs.VERSION }} $FILES --fail-on-no-commits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

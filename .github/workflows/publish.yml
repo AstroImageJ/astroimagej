@@ -150,10 +150,10 @@ jobs:
           VERSION=${{ steps.vars.outputs.VERSION }}
           mkdir -p release_assets
 
-          mv Linux-x64/**/*.tgz release_assets/AstroImageJ-linux-x64-${VERSION}.tgz
-          mv Mac-aarch64/**/*.dmg release_assets/AstroImageJ-mac-aarch64-${VERSION}.dmg
-          mv Mac-x64/**/*.dmg release_assets/AstroImageJ-mac-x64-${VERSION}.dmg
-          mv Windows-x64/**/*.msi release_assets/AstroImageJ-windows-x64-${VERSION}.msi
+          mv Linux-x64/*.tgz release_assets/AstroImageJ-${VERSION}-linux-x64.tgz
+          mv Mac-aarch64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-aarch64.dmg
+          mv Mac-x64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-x64.dmg
+          mv Windows-x64/*.msi release_assets/AstroImageJ-${VERSION}-windows-x64.msi
 
       - name: Display structure of moved files
         run: ls -R

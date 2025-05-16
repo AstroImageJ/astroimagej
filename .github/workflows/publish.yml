@@ -21,18 +21,22 @@ jobs:
             osName: linux-x64
             gradleTask: packageAijForLinux_x64
             artifactExt: tgz
+            wrapper: ./gradlew
           - runner: macos-latest
             osName: mac-aarch64
             gradleTask: packageAijForMac_aarch64
             artifactExt: dmg
+            wrapper: ./gradlew
           - runner: macos-latest
             osName: mac-x64
             gradleTask: packageAijForMac_x64
             artifactExt: dmg
+            wrapper: ./gradlew
           - runner: windows-latest
             osName: windows-x64
             gradleTask: packageAijForWindows_x64
             artifactExt: msi
+            wrapper: ./gradlew.bat
     outputs:
       artifact: ${{ steps.upload.outputs.artifact }}
     steps:
@@ -86,12 +90,7 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: |
-          if [ "${{ matrix.runner }}" = "windows-latest" ]; then
-            ./gradlew.bat ${{ matrix.gradleTask }}
-          else
-            ./gradlew ${{ matrix.gradleTask }}
-          fi
+        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }}
 
       - name: Upload installer ( ${{ matrix.osName }} )
         id: upload

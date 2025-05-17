@@ -3,10 +3,11 @@ package ij.plugin;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.astro.io.ConfigHandler;
 import ij.gui.GenericDialog;
-import ij.util.Tools;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -27,7 +28,7 @@ public class Memory implements PlugIn {
 		//IJ.log("maxMemory="+maxMemory()/(1024*1024)+"MB");
 	}
 
-	@AstroImageJ(reason = "Allow setting of memory when the option isn't present", modified = true)
+	@AstroImageJ(reason = "Allow setting of memory when the option isn't present; Support jpackage cfg", modified = true)
 	void changeMemoryAllocation() {
 		IJ.maxMemory(); // forces IJ to cache old limit
 		int max = (int)(getMemorySetting()/1048576L);
@@ -94,31 +95,17 @@ public class Memory implements PlugIn {
 			}
 		}
 
-		try {
-			String s2 = s.substring(index2);
-			if (s2.startsWith("g"))
-				s2 = "m"+s2.substring(1);
-			String s3 = unableToSet ? "-Xmx" + max2 + "m" : s.substring(0, index1) + max2 + s2;
-			FileOutputStream fos = new FileOutputStream(f);
-			PrintWriter pw = new PrintWriter(fos);
-			pw.print(s3);
-			pw.close();
-		} catch (IOException e) {
-			String error = e.getMessage();
-			if (error==null || error.equals("")) error = ""+e;
-			String name = getFileName();
-			String msg = 
-				   "Unable to update the file \"" + name + "\".\n"
-				+ " \n"
-				+ "\"" + error + "\"";
-			IJ.showMessage("Memory", msg);
-			return;
-		}
+		int newMax = max2;
+		ConfigHandler.modifyOptions(lines -> {
+			ConfigHandler.setOption(lines, "JavaOptions", "java-options=-Xmx", "java-options=-Xmx" + newMax + "m");
+		});
+
 		String hint = "";
 		String[] versionPieces = IJ.getAstroVersion().split("\\.");
 		int majorVersion = Integer.parseInt(versionPieces[0]);
 		if (IJ.isWindows() && max2>640 && max2>max)
-			hint = String.format("\nIf AstroImageJ fails to start, delete the \"%s\" file located in the AstroImageJ folder.",
+			hint = String.format("\nIf AstroImageJ fails to start, delete the values under the [JavaOptions] section in " +
+							"the \"%s\" file located in the AstroImageJ folder.",
 					majorVersion > 4 ? getFileName() : "AstroImageJ.cfg");
 		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after AstroImageJ is restarted."+hint);
 	}
@@ -151,6 +138,7 @@ public class Memory implements PlugIn {
 		IJ.showMessage("Memory", msg);
 	}
 
+	@AstroImageJ(reason = "Read JPackage config file", modified = true)
 	long getMemorySetting(String file) {
 		String path = Prefs.getHomeDir()+File.separator+file;
 		f = new File(path);
@@ -161,22 +149,27 @@ public class Memory implements PlugIn {
 
 		long max = 0L;
 		try {
-			int size = (int)f.length();
-			byte[] buffer = new byte[size];
-			FileInputStream in = new FileInputStream(f);
-			in.read(buffer, 0, size);
-			s = new String(buffer, 0, size, "ISO8859_1");
-			in.close();
-			index1 = s.indexOf("-mx");
-			if (index1==-1) index1 = s.indexOf("-Xmx");
-			if (index1==-1) return 0L;
-			if (s.charAt(index1+1)=='X') index1+=4; else index1+=3;
-			index2 = index1;
-			while (index2<s.length()-1 && Character.isDigit(s.charAt(++index2))) {}
-			String s2 = s.substring(index1, index2);
-			max = (long)Tools.parseDouble(s2, 0.0)*1024*1024;
-			if (index2<s.length() && s.charAt(index2)=='g')
-				max = max*1024L;
+			var maxMem = ConfigHandler.findValue(ConfigHandler.readOptions(), "JavaOptions", "java-options=-Xmx");
+            if (maxMem != null) {
+                maxMem = maxMem.trim();
+
+				var unit = maxMem.charAt(maxMem.length()-1);
+				var factor = 1L;
+
+				if (!Character.isDigit(unit)) {
+					factor = switch (unit) {
+						case 'g', 'G' -> 1024L * 1024L * 1024L;
+						case 'm', 'M' -> 1024L * 1024L;
+						case 'k', 'K' -> 1024L;
+						default -> {
+							IJ.error("Memory", "Attempted to read invalid java option for memory! " + maxMem);
+							throw new IllegalStateException("Invalid format");
+						}
+					};
+				}
+
+                max = factor * Integer.parseInt(maxMem.substring(0, maxMem.length() - (factor == 1 ? 0 : 1)));
+            }
 		}
 		catch (Exception e) {
 			IJ.log(""+e);

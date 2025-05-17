@@ -424,6 +424,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
+            "--java-options", "-XX:MaxRAMPercentage=75"
         )
 
         launcher = packagingJdkToolchain

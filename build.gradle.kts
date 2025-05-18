@@ -14,6 +14,7 @@ import java.net.URI
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 buildscript {
     repositories {
@@ -119,37 +120,37 @@ tasks.test {
 val javaRuntimeSystems = mapOf(
     "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC),
     "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC),
-    "linux"  to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
+    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
     "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
 )
 
 val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, JavaRuntimeSystem::class.java)
 
-val javaRuntimeHashProvider: Provider<String> = providers.provider {
-    val inputMapAsString = javaRuntimeSystems.map { (k, v) ->
-            "$k:${v.ext}-${v.arch}-${v.os}}"
-    }.joinToString(",")
-    val md = MessageDigest.getInstance("MD5")
-    md.digest(inputMapAsString.toByteArray()).joinToString("") { "%02x".format(it) }
-}
-
-val javaRuntimeFileNameProvider: Provider<String> = providers.provider {
-    "javaRuntimeSystems-${shippingJava}-${javaRuntimeHashProvider.get()}.json"
-}
-
-val javaRuntimeCacheFileProvider: Provider<RegularFile> = providers.provider {
-    layout.projectDirectory.file("jres/${javaRuntimeFileNameProvider.get()}")
-}
-
 // Wrap the logic in a lazy property that caches the result
 javaRuntimeSystemsProperty.convention(providers.provider {
-    val jsonFile = javaRuntimeCacheFileProvider.get().asFile
+    val hasher = MessageDigest.getInstance("MD5")
+
+    javaRuntimeSystems.forEach { (k, v) ->
+        hasher.update(k.toByteArray())
+        hasher.update(v.ext.toByteArray())
+        hasher.update(v.arch.toString().toByteArray())
+        hasher.update(v.os.toString().toByteArray())
+    }
+
+    val hash = HexFormat.of().formatHex(hasher.digest())
+
+    val fileName = "javaRuntimeSystems-${shippingJava}-$hash.json"
+    val jsonFile = layout.projectDirectory.file("jres/$fileName").asFile
 
     // If the JSON file exists and is recent, load the cached data
     if (jsonFile.exists()) {
         val lastModified = jsonFile.lastModified()
         val now = Instant.now().toEpochMilli()
-        val daysSinceLastModified = ChronoUnit.DAYS.between(Instant.ofEpochMilli(lastModified), Instant.ofEpochMilli(now))
+        val daysSinceLastModified =
+            ChronoUnit.DAYS.between(
+                Instant.ofEpochMilli(lastModified),
+                Instant.ofEpochMilli(now)
+            )
 
         if (daysSinceLastModified <= 30) {
             logger.lifecycle("Loading cached Java Runtime Systems data from JSON for Java version $shippingJava (last modified $daysSinceLastModified days ago)")
@@ -166,7 +167,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
 
     // Otherwise, simulate a network query to populate the data
     logger.lifecycle("Fetching Java Runtime Systems data from network")
-    javaRuntimeSystems.mapValues { (sys, sysInfo) ->
+    javaRuntimeSystems.mapValues { (_, sysInfo) ->
         val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
                 "architecture=${sysInfo.arch}&" +
                 "image_type=jre&" +
@@ -178,8 +179,10 @@ javaRuntimeSystemsProperty.convention(providers.provider {
             JavaInfo.parseJdkInfoFromUrl(URI(url).toURL())
         } catch (e: Exception) {
             logger.error(e.toString())
-            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
-                sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+            logger.warn(
+                "A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
+                sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type
+            )
             return@mapValues
         }
 
@@ -390,7 +393,8 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             MAC -> Os.isFamily(Os.FAMILY_MAC)
             WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
             LINUX -> Os.isFamily(Os.FAMILY_UNIX)
-        } && version.toString().matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
+        } && version.toString()
+            .matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
 
         inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
             .optional()

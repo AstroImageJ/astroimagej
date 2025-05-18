@@ -1,15 +1,19 @@
+import com.astroimagej.meta.jdk.Architecture.ARM_64
+import com.astroimagej.meta.jdk.Architecture.X86_64
+import com.astroimagej.meta.jdk.OperatingSystem.*
+import com.astroimagej.meta.jdk.adoptium.JavaInfo
+import com.astroimagej.meta.jdk.cache.JavaRuntimeSystem
 import com.astroimagej.tasks.JPackageTask
 import com.astroimagej.tasks.MacNotaryTask
 import de.undercouch.gradle.tasks.download.Download
 import de.undercouch.gradle.tasks.download.Verify
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
+import kotlinx.serialization.json.Json
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import java.net.URI
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
 
 buildscript {
     repositories {
@@ -113,17 +117,17 @@ tasks.test {
  * are excluded from the definition for brevity.
  */
 val javaRuntimeSystems = mapOf(
-        "mac" to mutableMapOf("ext" to "tar.gz", "arch" to "x64", "os" to "mac"),
-        "armMac" to mutableMapOf("ext" to "tar.gz", "arch" to "aarch64", "os" to "mac"),
-        "linux" to mutableMapOf("ext" to "tar.gz", "arch" to "x64", "os" to "linux"),
-        "windows" to mutableMapOf("ext" to "zip", "arch" to "x64", "os" to "windows")
+    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC),
+    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC),
+    "linux"  to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
+    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
 )
 
-val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, Map::class.java)
+val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, JavaRuntimeSystem::class.java)
 
 val javaRuntimeHashProvider: Provider<String> = providers.provider {
     val inputMapAsString = javaRuntimeSystems.map { (k, v) ->
-            "$k:${v["ext"]}-${v["arch"]}-${v["os"]}}"
+            "$k:${v.ext}-${v.arch}-${v.os}}"
     }.joinToString(",")
     val md = MessageDigest.getInstance("MD5")
     md.digest(inputMapAsString.toByteArray()).joinToString("") { "%02x".format(it) }
@@ -149,9 +153,8 @@ javaRuntimeSystemsProperty.convention(providers.provider {
 
         if (daysSinceLastModified <= 30) {
             logger.lifecycle("Loading cached Java Runtime Systems data from JSON for Java version $shippingJava (last modified $daysSinceLastModified days ago)")
-            @Suppress("UNCHECKED_CAST")
-            val cacheData = JsonSlurper().parse(jsonFile) as Map<String, Map<String, Any>>
-            if (cacheData.values.all { it["version"] != null }) {
+            val cacheData = Json.decodeFromString<Map<String, JavaRuntimeSystem>>(jsonFile.readText())
+            if (cacheData.values.all { it.version != null }) {
                 return@provider cacheData
             } else {
                 logger.lifecycle("Cached data for Java version $shippingJava seems to be missing some data, fetching...")
@@ -163,43 +166,38 @@ javaRuntimeSystemsProperty.convention(providers.provider {
 
     // Otherwise, simulate a network query to populate the data
     logger.lifecycle("Fetching Java Runtime Systems data from network")
-    @Suppress("UNUSED_DESTRUCTURED_PARAMETER_ENTRY")
-    javaRuntimeSystems.forEach { (sys, sysInfo) ->
+    javaRuntimeSystems.mapValues { (sys, sysInfo) ->
         val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
-                "architecture=${sysInfo["arch"]}&" +
+                "architecture=${sysInfo.arch}&" +
                 "image_type=jre&" +
-                "os=${sysInfo["os"]}&" +
+                "os=${sysInfo.os}&" +
                 "vendor=eclipse"
 
         // Find latest JDK
-        @Suppress("UNCHECKED_CAST")
         val meta = try {
-            JsonSlurper().parse(URI(url).toURL())
+            JavaInfo.parseJdkInfoFromUrl(URI(url).toURL())
         } catch (e: Exception) {
             logger.error(e.toString())
-            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
-                    sysInfo["os"], sysInfo["arch"], sysInfo["ext"], sysInfo["type"])
-            return@forEach
-        } as List<Map<String, Any>>
+            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
+                sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+            return@mapValues
+        }
 
-        val jdkMeta = meta[0]
-        @Suppress("UNCHECKED_CAST")
-        val binaryMeta = (jdkMeta["binary"] as Map<String, Any>)
-        @Suppress("UNCHECKED_CAST")
-        val packageMeta = (binaryMeta["package"] as Map<String, Any>)
+        val jdkMeta = meta.first()
 
         // Update the maps with the metadata
-        @Suppress("UNCHECKED_CAST")
-        sysInfo["version"] = ((jdkMeta["version"] as Map<String, Any>)["major"] as Int).toString()
-        sysInfo["name"] = packageMeta["name"] as String
-        sysInfo["sha256"] = packageMeta["checksum"] as String
-        sysInfo["type"] = binaryMeta["image_type"] as String
-        sysInfo["url"] = packageMeta["link"] as String
+        sysInfo.apply {
+            version = jdkMeta.version
+            name = jdkMeta.name
+            sha256 = jdkMeta.sha256
+            type = jdkMeta.type
+            this.url = jdkMeta.url
+        }
     }
 
     // Save the fetched data to the JSON file
     jsonFile.parentFile.mkdirs() // Ensure the directory exists
-    jsonFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(javaRuntimeSystems)))
+    jsonFile.writeText(Json { prettyPrint = true }.encodeToString(javaRuntimeSystems))
     javaRuntimeSystems
 })
 
@@ -313,15 +311,7 @@ val packagingJdkToolchain = javaToolchains.launcherFor {
 }
 
 javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
-    val sysId = "${
-        (sysInfo["os"] as String).replaceFirstChar { 
-            if (it.isLowerCase()) {
-                it.titlecase(Locale.US)
-            } else {
-                it.toString()
-            }
-        }
-    }_${sysInfo["arch"]}"
+    val sysId = "${sysInfo.os.toString().uppercaseFirstChar()}_${sysInfo.arch}"
     val packageTaskName = "packageAijFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
@@ -334,10 +324,10 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         finalizedBy(cleanTaskName, verifyTaskName)
         mkdir(file("${projectDir}/jres"))
 
-        src(sysInfo["url"])
+        src(sysInfo.url)
         overwrite(false)
         onlyIfModified(true)
-        dest(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
+        dest(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}"))
     }
 
     tasks.register<Delete>(cleanTaskName) {
@@ -345,7 +335,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         delete(directory.asFileTree.matching {
             include("$sysId*")
-            exclude("$sysId-${sysInfo["name"]}")
+            exclude("$sysId-${sysInfo.name}")
         })
     }
 
@@ -354,7 +344,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             Os.isFamily(Os.FAMILY_MAC)
         }
 
-        val folderName = (sysInfo["name"] as String).replace(".${sysInfo["ext"]}", "")
+        val folderName = (sysInfo.name)?.replace(".${sysInfo.ext}", "")
         val folder = file("${projectDir}/jres/$sysId/unpacked/$folderName")
 
         delete(folder)
@@ -362,31 +352,31 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
     tasks.register<Verify>(verifyTaskName) {
         dependsOn(downloadTaskName)
-        inputs.file(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
+        inputs.file(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}"))
         outputs.upToDateWhen { false }
 
-        src(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
+        src(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}"))
         algorithm("SHA256")
-        checksum(sysInfo["sha256"] as String)
+        checksum(sysInfo.sha256)
     }
 
     val unzipTask = tasks.register<Sync>(unzipTaskName) {
         dependsOn(verifyTaskName, deleteTaskName)
         group = "AstroImageJ Development"
 
-        val archive = layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}")
+        val archive = layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}")
 
         inputs.file(archive)
         outputs.dir(layout.projectDirectory.dir("jres/$sysId/unpacked"))
 
-        when (sysInfo["ext"]) {
+        when (sysInfo.ext) {
             "tar.gz" -> from(tarTree(resources.gzip(archive))) {
                 into("")
             }
             "zip" -> from(zipTree(archive)) {
                 into("")
             }
-            else -> logger.error("Did not know how to handle ${sysInfo["ext"]} for $sys")
+            else -> logger.error("Did not know how to handle ${sysInfo.ext} for $sys")
         }
 
         into("jres/$sysId/unpacked")
@@ -396,17 +386,16 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         group = "distribution"
         description = "Bundles the application into a native installer/image via jpackage"
 
-        enabled = when (sysInfo["os"]) {
-            "mac" -> Os.isFamily(Os.FAMILY_MAC)
-            "windows" -> Os.isFamily(Os.FAMILY_WINDOWS)
-            "linux" -> Os.isFamily(Os.FAMILY_UNIX)
-            else -> throw GradleException("Unknown OS type: ${sysInfo["os"]}")
+        enabled = when (sysInfo.os) {
+            MAC -> Os.isFamily(Os.FAMILY_MAC)
+            WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
+            LINUX -> Os.isFamily(Os.FAMILY_UNIX)
         } && version.toString().matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
 
         inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
             .optional()
             .withPropertyName("File associations")
-        inputs.dir(layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}"))
+        inputs.dir(layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}"))
             .optional()
             .withPropertyName("Resource overrides")
 
@@ -420,7 +409,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         extraArgs = listOf(
             "--java-options", "-Duser.dir=\$APPDIR",
-            "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo["os"]}").asFile.absolutePath,
+            "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
             //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
@@ -429,8 +418,8 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         launcher = packagingJdkToolchain
 
-        extraArgs(when (sysInfo["os"]) {
-            "mac" -> {
+        extraArgs(when (sysInfo.os) {
+            MAC -> {
                 buildList {
                     addAll(
                         listOf(
@@ -452,13 +441,13 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                     }
                 }
             }
-            "linux" -> {
+            LINUX -> {
                 listOf(
                     "--type", "app-image",
                     //"--linux-shortcut",
                 )
             }
-            "windows" -> {
+            WINDOWS -> {
                 listOf(
                     "--type", "msi",
                     "--win-dir-chooser",
@@ -470,11 +459,10 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                     "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                 )
             }
-            else -> listOf()
         })
 
         // Add file associations
-        if (sysInfo["os"] != "linux") { // app-image type cannot have file associations
+        if (sysInfo.os != LINUX) { // app-image type cannot have file associations
             layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
                 extraArgs(listOf("--file-associations", it.absolutePath))
             }
@@ -486,7 +474,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
     }
 
-    if (Os.isFamily(Os.FAMILY_MAC) && sysInfo["os"] == "mac") {
+    if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
         val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
             enabled = System.getenv("DeveloperId") != null &&
                     project.property("codeSignAndNotarize").toString().toBoolean()
@@ -499,7 +487,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         }
     }
 
-    if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo["os"] == "linux") {
+    if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo.os == LINUX) {
         val bundleTask = tasks.register<Tar>("bundleFor${sysId}") {
             destinationDirectory = layout.buildDirectory.dir("distributions/$sysId")
             archiveBaseName = "AstroImageJ"

@@ -114,7 +114,7 @@ tasks.test {
  * To add a distribution, simply give it a unique name and fill out its map with the proper values.
  * See https://api.adoptium.net/q/swagger-ui/#/Assets/getLatestAssets
  *
- * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
+ * The file's name (name), major Java version (version), and SHA256 hash (sha256) are also added to this map. Those entries
  * are excluded from the definition for brevity.
  */
 val javaRuntimeSystems = mapOf(
@@ -399,7 +399,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
             .optional()
             .withPropertyName("File associations")
-        inputs.dir(layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}"))
+        inputs.files(layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFileTree)
             .optional()
             .withPropertyName("Resource overrides")
 

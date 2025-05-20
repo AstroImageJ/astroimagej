@@ -193,11 +193,24 @@ jobs:
           mv Astronomy_.jar release_assets/Astronomy_.jar
           mv packageFiles/common/macros/StartupMacros.txt release_assets/StartupMacros.txt
 
+      - name: Render release notes
+        id: render-notes
+        env:
+          VERSION=${{ steps.vars.outputs.VERSION }}
+          REPO=${{ github.repository }}
+        run: |
+          # substitute placeholders
+          sed \
+            -e "s/{{VERSION}}/${VERSION}/g" \
+            -e "s@{{REPO}}@${REPO}@g" \
+            packageFiles/assets/github/tmpl_release_notes.md \
+            > release_notes.md
+
       - name: Create release
         # https://cli.github.com/manual/gh_release_create
         shell: bash
         run: |
             for f in release_assets/*; do FILES+=" $f"; done
-            gh release create ${{ steps.vars.outputs.VERSION }} $FILES --fail-on-no-commits
+            gh release create ${{ steps.vars.outputs.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

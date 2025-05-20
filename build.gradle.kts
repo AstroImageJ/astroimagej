@@ -256,8 +256,6 @@ tasks.named("clean").configure {
 
 // Generate AIJ-Run directory and set it up for usage
 tasks.register<Sync>("sync") {
-    // dependsOn("commonFiles")
-
     with(commonDist)
 
     // Don't consider aij.log when copying common files, AIJ already resets it on launch
@@ -269,10 +267,12 @@ tasks.register<Sync>("sync") {
 
 // Generates a working install directory of AIJ and launches it - make sure to not add it to git!
 tasks.register<JavaExec>("aijRun") {
-    dependsOn("sync")
     group = "AstroImageJ Development"
 
-    workingDir = file("${projectDir}/AIJ-Run/")
+    val runFolder = tasks.named<Sync>("sync").map { it.destinationDir }
+
+    inputs.dir(runFolder)
+    workingDir(runFolder)
 
     allJvmArgs = readConfigFile()
 
@@ -319,11 +319,10 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
     val unzipTaskName = "unzipJavaRuntimeFor${sysId}"
-    val deleteTaskName = "deleteJavaRuntimeFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
     val notaryTaskName = "notarizeFor${sysId}"
 
-    tasks.register<Download>(downloadTaskName) {
+    val downloadTask = tasks.register<Download>(downloadTaskName) {
         finalizedBy(cleanTaskName, verifyTaskName)
         mkdir(file("${projectDir}/jres"))
 
@@ -342,41 +341,29 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         })
     }
 
-    tasks.register<Delete>(deleteTaskName) {
-        onlyIf {
-            Os.isFamily(Os.FAMILY_MAC)
-        }
-
-        val folderName = (sysInfo.name)?.replace(".${sysInfo.ext}", "")
-        val folder = file("${projectDir}/jres/$sysId/unpacked/$folderName")
-
-        delete(folder)
-    }
-
     tasks.register<Verify>(verifyTaskName) {
-        dependsOn(downloadTaskName)
-        inputs.file(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}"))
-        outputs.upToDateWhen { false }
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single() })
 
-        src(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}"))
+        inputs.file(bundledRuntime)
+        src(bundledRuntime)
         algorithm("SHA256")
         checksum(sysInfo.sha256)
     }
 
     val unzipTask = tasks.register<Sync>(unzipTaskName) {
-        dependsOn(verifyTaskName, deleteTaskName)
+        mustRunAfter(verifyTaskName)
         group = "AstroImageJ Development"
 
-        val archive = layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}")
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single() })
 
-        inputs.file(archive)
+        inputs.file(bundledRuntime)
         outputs.dir(layout.projectDirectory.dir("jres/$sysId/unpacked"))
 
         when (sysInfo.ext) {
-            "tar.gz" -> from(tarTree(resources.gzip(archive))) {
+            "tar.gz", "tgz" -> from(tarTree(resources.gzip(bundledRuntime))) {
                 into("")
             }
-            "zip" -> from(zipTree(archive)) {
+            "zip" -> from(zipTree(bundledRuntime)) {
                 into("")
             }
             else -> logger.error("Did not know how to handle ${sysInfo.ext} for $sys")

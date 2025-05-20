@@ -1,5 +1,6 @@
 package com.astroimagej.meta.jdk.adoptium
 
+import com.astroimagej.meta.jdk.RuntimeType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -14,7 +15,7 @@ class JavaInfo {
 
     @Serializable
     private data class RawBinary(
-        @SerialName("image_type") val imageType: String,
+        @SerialName("image_type") val imageType: RuntimeType,
         @SerialName("package") val pkg: RawPackage
     )
 
@@ -34,7 +35,7 @@ class JavaInfo {
         val version: Int,
         val name: String,
         val sha256: String,
-        val type: String,
+        val type: RuntimeType,
         val url: String
     )
 

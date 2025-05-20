@@ -197,8 +197,8 @@ jobs:
       - name: Render release notes
         id: render-notes
         env:
-          VERSION=${{ steps.vars.outputs.VERSION }}
-          REPO=${{ github.repository }}
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+          REPO: ${{ github.repository }}
         run: |
           # substitute placeholders
           sed \

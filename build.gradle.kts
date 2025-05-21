@@ -410,6 +410,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
                             "--mac-package-identifier", "com.astroimagej.AstroImageJ",
                             "--about-url", "https://astroimagej.com",
                             "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+                            "--mac-app-store"
                         )
                     )
 

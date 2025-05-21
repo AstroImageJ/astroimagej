@@ -1,8 +1,10 @@
 import com.astroimagej.meta.jdk.Architecture.ARM_64
 import com.astroimagej.meta.jdk.Architecture.X86_64
 import com.astroimagej.meta.jdk.OperatingSystem.*
+import com.astroimagej.meta.jdk.RuntimeType
 import com.astroimagej.meta.jdk.adoptium.JavaInfo
 import com.astroimagej.meta.jdk.cache.JavaRuntimeSystem
+import com.astroimagej.tasks.CreateJavaRuntimeTask
 import com.astroimagej.tasks.JPackageTask
 import com.astroimagej.tasks.MacNotaryTask
 import de.undercouch.gradle.tasks.download.Download
@@ -118,8 +120,8 @@ tasks.test {
  * are excluded from the definition for brevity.
  */
 val javaRuntimeSystems = mapOf(
-    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC),
-    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC),
+    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
+    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
     "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
     "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
 )
@@ -135,6 +137,9 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         hasher.update(v.ext.toByteArray())
         hasher.update(v.arch.toString().toByteArray())
         hasher.update(v.os.toString().toByteArray())
+        if (v.type != null) {
+            hasher.update(v.type.toString().toByteArray())
+        }
     }
 
     val hash = HexFormat.of().formatHex(hasher.digest())
@@ -170,7 +175,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
     javaRuntimeSystems.mapValues { (_, sysInfo) ->
         val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
                 "architecture=${sysInfo.arch}&" +
-                "image_type=jre&" +
+                "image_type=${sysInfo.type ?: "jre"}&" +
                 "os=${sysInfo.os}&" +
                 "vendor=eclipse"
 
@@ -311,6 +316,7 @@ fun readConfigFile(): List<String> {
 // Use toolchain for packaging
 val packagingJdkToolchain = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(shippingJava))
+    vendor.set(JvmVendorSpec.ADOPTIUM)
 }
 
 javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
@@ -318,9 +324,9 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     val packageTaskName = "packageAijFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
-    val unzipTaskName = "unzipJavaRuntimeFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
     val notaryTaskName = "notarizeFor${sysId}"
+    val getRuntimeTaskName = "getRuntimeFor${sysId}"
 
     val downloadTask = tasks.register<Download>(downloadTaskName) {
         finalizedBy(cleanTaskName, verifyTaskName)
@@ -350,26 +356,13 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         checksum(sysInfo.sha256)
     }
 
-    val unzipTask = tasks.register<Sync>(unzipTaskName) {
-        mustRunAfter(verifyTaskName)
-        group = "AstroImageJ Development"
+    val getRuntimeTask = tasks.register<CreateJavaRuntimeTask>(getRuntimeTaskName) {
+        launcher = packagingJdkToolchain
+        fromRuntimeInfo(sysInfo)
 
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single() })
+        bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single() })
 
-        inputs.file(bundledRuntime)
-        outputs.dir(layout.projectDirectory.dir("jres/$sysId/unpacked"))
-
-        when (sysInfo.ext) {
-            "tar.gz", "tgz" -> from(tarTree(resources.gzip(bundledRuntime))) {
-                into("")
-            }
-            "zip" -> from(zipTree(bundledRuntime)) {
-                into("")
-            }
-            else -> logger.error("Did not know how to handle ${sysInfo.ext} for $sys")
-        }
-
-        into("jres/$sysId/unpacked")
+        outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }
 
     val packageTask = tasks.register<JPackageTask>(packageTaskName) {
@@ -392,7 +385,6 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         appName.set("AstroImageJ")
 
-        // Wire inputDir to any task's output
         inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
 
         // Specify the name of your main jar within that inputDir
@@ -459,7 +451,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             }
         }
 
-        runtime.set(layout.dir(unzipTask.map { it.destinationDir }))
+        runtime = getRuntimeTask.flatMap { it.outputDir }
 
         // Destination for the generated installer/image
         outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))

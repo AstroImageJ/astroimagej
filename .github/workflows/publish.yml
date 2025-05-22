@@ -10,6 +10,9 @@ on:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*.00'
 
+env:
+  GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
 jobs:
   package:
     name: Package ${{ matrix.osName }}

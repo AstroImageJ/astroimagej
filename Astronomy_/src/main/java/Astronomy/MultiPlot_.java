@@ -2341,7 +2341,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     private static PlotDataLock processData(boolean[] updateFit) {
         savePreferences();
-        updateSaturatedStars();
+        SwingUtilities.invokeLater(MultiPlot_::updateSaturatedStars);
         for (int curve = 0; curve < maxCurves; curve++) {
             if (inputAverageOverSize[curve] < 1) {
                 inputAverageOverSize[curve] = 1;
@@ -13507,7 +13507,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         extractPriorsButton[c].setEnabled(useTransitFit[c]);
         extractPriorsButton[c].addActionListener(e -> {
             if (plotY[c]) {
-                updatePriorCenters(c);
+                SwingUtilities.invokeLater(() -> {
+                    updatePriorCenters(c);
+                });
                 if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
             } else {
                 IJ.beep();
@@ -14493,31 +14495,33 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void updatePriorCenters(int c) {
-        if (!lockToCenter[c][0] && autoUpdatePrior[c][0]) {
-            priorCenterSpinner[c][0].setValue(yBaselineAverage[c]);   //f0 = baseline flux
-            priorWidthSpinner[c][0].setValue(Math.abs(yBaselineAverage[c] / 5.0));
-        }
-
-        double rpOrstarEst = Math.abs((yBaselineAverage[c] - yDepthEstimate[c]) / yBaselineAverage[c]);
-        if (!lockToCenter[c][1] && autoUpdatePrior[c][1]) {
-            priorCenterSpinner[c][1].setValue(rpOrstarEst);          // depth = (r_p/r_*)^2
-            priorWidthSpinner[c][1].setValue(Math.abs(rpOrstarEst / 2.0));
-        }
-
-        //Adapted from Winn 2010 equation 14
-        if (!lockToCenter[c][2] && autoUpdatePrior[c][2]) {
-            priorCenterSpinner[c][2].setValue((1 + Math.sqrt(priorCenter[c][1])) / (Math.sin(Math.PI * (dMarker3Value - dMarker2Value) / orbitalPeriod[c]))); // ar = a/r_*
-        }
-        if (!lockToCenter[c][3] && autoUpdatePrior[c][3]) {
-            if (showXAxisNormal) {
-                priorCenterSpinner[c][3].setValue((int) xPlotMinRaw + (dMarker2Value + dMarker3Value) / 2.0);   // tc = transit center time
-            } else {
-                priorCenterSpinner[c][3].setValue((dMarker2Value + dMarker3Value) / 2.0);   // tc = transit center time
+        SwingUtilities.invokeLater(() -> {
+            if (!lockToCenter[c][0] && autoUpdatePrior[c][0]) {
+                priorCenterSpinner[c][0].setValue(yBaselineAverage[c]);   //f0 = baseline flux
+                priorWidthSpinner[c][0].setValue(Math.abs(yBaselineAverage[c] / 5.0));
             }
-        }
-        if (!lockToCenter[c][4] && !bpLock[c] && autoUpdatePrior[c][4]) {
-            priorCenterSpinner[c][4].setValue(Math.round(10.0 * Math.acos((0.5 + Math.sqrt(rpOrstarEst)) / (priorCenter[c][2])) * 180.0 / Math.PI) / 10.0); // inclination
-        }
+
+            double rpOrstarEst = Math.abs((yBaselineAverage[c] - yDepthEstimate[c]) / yBaselineAverage[c]);
+            if (!lockToCenter[c][1] && autoUpdatePrior[c][1]) {
+                priorCenterSpinner[c][1].setValue(rpOrstarEst);          // depth = (r_p/r_*)^2
+                priorWidthSpinner[c][1].setValue(Math.abs(rpOrstarEst / 2.0));
+            }
+
+            //Adapted from Winn 2010 equation 14
+            if (!lockToCenter[c][2] && autoUpdatePrior[c][2]) {
+                priorCenterSpinner[c][2].setValue((1 + Math.sqrt(priorCenter[c][1])) / (Math.sin(Math.PI * (dMarker3Value - dMarker2Value) / orbitalPeriod[c]))); // ar = a/r_*
+            }
+            if (!lockToCenter[c][3] && autoUpdatePrior[c][3]) {
+                if (showXAxisNormal) {
+                    priorCenterSpinner[c][3].setValue((int) xPlotMinRaw + (dMarker2Value + dMarker3Value) / 2.0);   // tc = transit center time
+                } else {
+                    priorCenterSpinner[c][3].setValue((dMarker2Value + dMarker3Value) / 2.0);   // tc = transit center time
+                }
+            }
+            if (!lockToCenter[c][4] && !bpLock[c] && autoUpdatePrior[c][4]) {
+                priorCenterSpinner[c][4].setValue(Math.round(10.0 * Math.acos((0.5 + Math.sqrt(rpOrstarEst)) / (priorCenter[c][2])) * 180.0 / Math.PI) / 10.0); // inclination
+            }
+        });
     }
 
     static void createFittedParametersRow(JPanel parentPanel, final int c, final int row, final String rowName, final String rowNameToolTipText, final double min, final double max) {

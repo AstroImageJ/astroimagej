@@ -4375,20 +4375,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 ac = (AstroCanvas) imp.getCanvas();
 
                 if (updateImageDisplay.get()) {
-                    // This fixes the counter subtitle of the stack window not updating as the images progress
-                    asw.update(asw.getGraphics());
+                    SwingUtilities.invokeLater(() -> {
+                        // This fixes the counter subtitle of the stack window not updating as the images progress
+                        asw.update(asw.getGraphics());
 
-                    // This fixes histogram not updating
-                    asw.updatePanelValues(false);
+                        // This fixes histogram not updating
+                        asw.updatePanelValues(false);
 
-                    asw.updateWCS();
+                        asw.updateWCS();
 
-                    asw.updateCalibration();
-                    asw.setAstroProcessor(false);
+                        asw.updateCalibration();
+                        asw.setAstroProcessor(false);
 
-                    // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
-                    //KC: but I don't understand why
-                    asw.repaintAstroCanvas();
+                        // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
+                        //KC: but I don't understand why
+                        asw.repaintAstroCanvas();
+                    });
 
                     waitForEventQueue();
                 } else {
@@ -5474,13 +5476,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //                        IJ.log("setTable complete");
                     }
                 } else {
-                    IJ.runPlugIn("Astronomy.MultiPlot_", tableName);
-                    if (MultiPlot_.isRunning() && MultiPlot_.getTable() != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        IJ.runPlugIn("Astronomy.MultiPlot_", tableName);
+                        if (MultiPlot_.isRunning() && MultiPlot_.getTable() != null) {
 //                        IJ.log("setTable first time");
-                        MultiPlot_.setTable(table, false);
+                            MultiPlot_.setTable(table, false);
 //                        IJ.log("setTable first time complete");
-                    }
-                    MultiPlot_.addTableData.accept(0);
+                        }
+                        MultiPlot_.addTableData.accept(0);
+                    });
                 }
             }
         } else {

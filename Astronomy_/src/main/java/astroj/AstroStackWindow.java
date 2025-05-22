@@ -5710,15 +5710,17 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //            setValueTextField();
         photom.setMarkRemovedPixels(false);
         photom.measure(imp, exact, lastImageX, lastImageY, radius, rBack1, rBack2);
-        if (showMeanNotPeak) {
-            peakLabel.setText("Mean:");
-            writeNumericPanelField(photom.meanBrightness(), peakTextField);
-        } else {
-            peakLabel.setText("Peak:");
-            writeNumericPanelField(photom.peakBrightness(), peakTextField);
-        }
-        lengthLabel.setText("Int Cnts:");
-        writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+        SwingUtilities.invokeLater(() -> {
+            if (showMeanNotPeak) {
+                peakLabel.setText("Mean:");
+                writeNumericPanelField(photom.meanBrightness(), peakTextField);
+            } else {
+                peakLabel.setText("Peak:");
+                writeNumericPanelField(photom.peakBrightness(), peakTextField);
+            }
+            lengthLabel.setText("Int Cnts:");
+            writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+        });
     }
 
 

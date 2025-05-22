@@ -330,9 +330,14 @@ public class ImageJ extends Frame implements ActionListener,
 		if (ijX<10) ijX = 10;
 		return new Point(ijX, maxBounds.y);
 	}
-	
+
+	@AstroImageJ(reason = "Update JLabel on EDT", modified = true)
 	void showStatus(String s) {
-        statusLine.setText(s);
+        if (SwingUtilities.isEventDispatchThread()) {
+			statusLine.setText(s);
+        } else {
+			SwingUtilities.invokeLater(() -> statusLine.setText(s));
+		}
 	}
 
 	public ProgressBar getProgressBar() {

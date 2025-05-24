@@ -64,6 +64,10 @@ abstract class GenerateMetadata
 
         val versions = Json.decodeFromString<Versions>(providerFactory.fileContents(generalJson).asText.get())
 
+        if (versions.versions.find { it.version == version } != null) {
+            return
+        }
+
         val newVersions = buildList {
             add(buildVersion(version, updateData, minJava.get(), baseMetaUrl.get()))
             addAll(versions.versions)

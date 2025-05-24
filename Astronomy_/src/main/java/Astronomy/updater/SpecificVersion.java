@@ -27,7 +27,7 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
 
             if (o instanceof JSONObject object) {
                 return new SpecificVersion(new SemanticVersion((String) object.get("version")), (String) object.get("message"),
-                        FileEntry.fromJson((JSONArray) object.get("files")), LaunchArg.fromJson((JSONArray) object.get("launchArg")));
+                        FileEntry.fromJson((JSONArray) object.get("artifacts")), LaunchArg.fromJson((JSONArray) object.get("launchArg")));
             }
         } catch (IOException | ParseException | InterruptedException e) {
             e.printStackTrace();

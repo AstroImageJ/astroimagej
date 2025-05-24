@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "artifact": "ij.jar",
+      "destination": ""
+    },
+    {
+      "artifact": "StartupMacros.txt",
+      "destination": "macros"
+    },
+    {
+      "artifact": "Astronomy_.jar",
+      "destination": "plugins"
+    }
+  ]
+}

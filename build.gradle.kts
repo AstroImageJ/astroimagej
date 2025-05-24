@@ -5,6 +5,7 @@ import com.astroimagej.meta.jdk.RuntimeType
 import com.astroimagej.meta.jdk.adoptium.JavaInfo
 import com.astroimagej.meta.jdk.cache.JavaRuntimeSystem
 import com.astroimagej.tasks.CreateJavaRuntimeTask
+import com.astroimagej.tasks.GenerateMetadata
 import com.astroimagej.tasks.JPackageTask
 import com.astroimagej.tasks.MacNotaryTask
 import de.undercouch.gradle.tasks.download.Download
@@ -557,6 +558,25 @@ fun outputDestination(): File {
     }
 
     return file(destination)
+}
+
+tasks.register<GenerateMetadata>("updateMetadata") {
+    enabled = providers.gradleProperty("version").get()
+        .matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
+
+    version = providers.gradleProperty("version").map { it.replace(".00", "") }
+    specificJson = layout.projectDirectory.file("website/meta/versions/${version.get()}.json")
+    generalJson = layout.projectDirectory.file("website/meta/versions.json")
+    baseMetaUrl = "https://astroimagej.github.io/astroimagej/meta"
+    minJava = providers.gradleProperty("minJava").map { it.toInt() }
+    updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
+    //baseArtifactUrl = todo github
+
+    files = files(
+        layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
+        configurations.getByName("shippingIJ"),
+        configurations.getByName("shippingAstro"),
+    )
 }
 
 // Make Idea's hammer icon run copyBuiltJars

@@ -8,7 +8,7 @@ kotlin {
     // but JVM auto-provisioning does not seem to work here,
     // so set a lower Java version.
     // Set to 11 to match the JGit requirement set in the root build.gradle.kts
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 repositories {

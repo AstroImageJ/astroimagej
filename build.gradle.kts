@@ -42,6 +42,8 @@ plugins {
 
     // Used to download test data
     id("aij.test-conventions")
+
+    id("aij.java-reproducible-builds")
 }
 
 repositories {

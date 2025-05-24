@@ -1,5 +1,6 @@
 plugins {
     java
+    id("aij.java-reproducible-builds")
 }
 
 repositories {
@@ -25,9 +26,11 @@ val gitVersionProvider = providers.of(com.astroimagej.git.GitVersionInfo::class.
 //
 // gitVersionProvider.map { gitInfo -> "${version}+${gitInfo}" } also seems to work,
 // but mildly concerned with it getting the right version, so this mess is used
-val fullVersionProvider = gitVersionProvider.zip(providers.gradleProperty("version")) { gitInfo, ver ->
+/*val fullVersionProvider = gitVersionProvider.zip(providers.gradleProperty("version")) { gitInfo, ver ->
     "${ver}+${gitInfo}"
-}
+}*/
+// Remove adding git info so that builds can be reproducible and have the hash from the generated metadata match more easily
+val fullVersionProvider = providers.gradleProperty("version")
 
 version = fullVersionProvider.get()
 

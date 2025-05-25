@@ -195,7 +195,7 @@ jobs:
           mv Windows_x64/*.msi release_assets/AstroImageJ-${VERSION}-windows-x64.msi
           mv ij.jar release_assets/ij.jar
           mv Astronomy_.jar release_assets/Astronomy_.jar
-          mv packageFiles/common/macros/StartupMacros.txt release_assets/StartupMacros.txt
+          cp packageFiles/common/macros/StartupMacros.txt release_assets/StartupMacros.txt
 
       - name: Render release notes
         id: render-notes

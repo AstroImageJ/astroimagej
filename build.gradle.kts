@@ -563,10 +563,7 @@ fun outputDestination(): File {
 }
 
 tasks.register<GenerateMetadata>("updateMetadata") {
-    enabled = providers.gradleProperty("version").get()
-        .matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
-
-    version = providers.gradleProperty("version").map { it.replace(".00", "") }
+    version = providers.gradleProperty("version")
     specificJson = layout.projectDirectory.file("website/meta/versions/${version.get()}.json")
     generalJson = layout.projectDirectory.file("website/meta/versions.json")
     baseMetaUrl = "https://astroimagej.github.io/astroimagej/meta"

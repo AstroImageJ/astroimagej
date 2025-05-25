@@ -79,8 +79,8 @@ abstract class GenerateMetadata
     fun buildVersion(version: String, updateData: UpdateData, minJava: Int, baseUrl: String): Version {
         return Version(
             version = version,
-            url = "$baseUrl/versions/$version",
-            type = if (version.contains(Regex("[a-zA-Z]"))) Type.PRERELEASE else Type.RELEASE,
+            url = "$baseUrl/versions/$version.json",
+            type = type(version),
             updateData.maxJava,
             minJava,
         )
@@ -91,7 +91,7 @@ abstract class GenerateMetadata
             return "$version/$name";
         }
 
-        return "${name.substringBeforeLast(".")}$version.${name.substringAfterLast(".")}"
+        return "${name.substringBeforeLast(".")}${version.replace(".00", "")}.${name.substringAfterLast(".")}"
     }
 
     fun buildArtifacts(version: String, updateData: UpdateData): Array<com.astroimagej.updates.Artifact> {
@@ -124,6 +124,20 @@ abstract class GenerateMetadata
         md.update(file.readBytes())
 
         return HexFormat.of().formatHex(md.digest())
+    }
+
+    fun type(version: String): Type {
+        if (version.contains(Regex("[a-zA-Z]"))) {
+            return Type.PRERELEASE
+        }
+
+        val r = Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(?<daily>[0-9]\\d*)")
+        val m = r.find(version)
+        if (m != null && m.groups["daily"]?.value != "00") {
+            return Type.PRERELEASE
+        }
+
+        return Type.RELEASE
     }
 
     @Serializable

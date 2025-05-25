@@ -5,8 +5,8 @@
     },
     "versions": [
         {
-            "version": "5.5.0",
-            "url": "https://astroimagej.github.io/astroimagej/meta/versions/5.5.0",
+            "version": "5.5.0.00",
+            "url": "https://astroimagej.github.io/astroimagej/meta/versions/5.5.0.00.json",
             "type": "RELEASE",
             "minJava": 17
         }

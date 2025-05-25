@@ -5,19 +5,19 @@
             "name": "ij.jar",
             "destination": "",
             "url": "https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/ij5.5.0.jar",
-            "sha256": "408d79abed79f75a7c3175a815d3db0adb511214940110a6a0f36c1793cd3ccd"
+            "sha256": "d99456ffd6327dd0dd8ffe2abd30c573a67c484f03ea2f18e962e5773dc0b1d0"
         },
         {
             "name": "StartupMacros.txt",
             "destination": "macros",
             "url": "https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/StartupMacros5.5.0.txt",
-            "sha256": "80affb2f40463ab4af45e894069b3ea13c5b401d6d1314503547ce9fc4845545"
+            "sha256": "539cf05002d68dbc7824379069e38d5bc250187cf0f6777c8a2aa389e035d4fd"
         },
         {
             "name": "Astronomy_.jar",
             "destination": "plugins",
             "url": "https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/Astronomy_5.5.0.jar",
-            "sha256": "f278b3689c3ad54d7a7dd09091a10fc892d63d620def5e7d827e52fd58e6ab6c"
+            "sha256": "81a046f4c013a0154dac132d3b0635117b8dbeb324f93826f7209bf3fd768d8c"
         }
     ]
 }

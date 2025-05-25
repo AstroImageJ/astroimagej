@@ -569,7 +569,7 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     baseMetaUrl = "https://astroimagej.github.io/astroimagej/meta"
     minJava = providers.gradleProperty("minJava").map { it.toInt() }
     updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
-    //baseArtifactUrl = todo github
+    baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"
 
     files = files(
         layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),

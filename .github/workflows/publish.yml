@@ -218,3 +218,15 @@ jobs:
             gh release create ${{ steps.vars.outputs.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate metadata
+        shell: bash
+        run: |
+          chmod +x ./gradlew
+          ./gradlew updateMetadata
+
+      - name: Update metadata
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update version metadata
+          file_pattern: '*.json'

@@ -223,7 +223,7 @@ jobs:
         shell: bash
         run: |
           chmod +x ./gradlew
-          ./gradlew updateMetadata
+          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets 
 
       - name: Update metadata
         uses: stefanzweifel/git-auto-commit-action@v5

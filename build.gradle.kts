@@ -571,11 +571,21 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
     baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"
 
-    files = files(
-        layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
-        configurations.getByName("shippingIJ"),
-        configurations.getByName("shippingAstro"),
-    )
+    // We don't have reproducible build fully working,
+    // so override the files used to match what are uploaded
+    // Override on command line via -PupdateMetadataFiles="pathToFolder1,pathToFolder2"
+    val overrideFilesProp = project.findProperty("updateMetadataFiles") as String?
+
+    files = if (overrideFilesProp != null) {
+        val paths = overrideFilesProp.split(",").map { layout.projectDirectory.dir(it.trim()).asFileTree }
+        project.files(paths)
+    } else {
+        files(
+            layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
+            configurations.getByName("shippingIJ"),
+            configurations.getByName("shippingAstro"),
+        )
+    }
 }
 
 // Make Idea's hammer icon run copyBuiltJars

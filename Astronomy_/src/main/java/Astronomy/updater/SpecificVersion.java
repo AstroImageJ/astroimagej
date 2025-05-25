@@ -36,12 +36,12 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
         return null;
     }
 
-    public record FileEntry(String name, String destination, String url, String md5, Os[] os) {
+    public record FileEntry(String name, String destination, String url, String sha256, Os[] os, boolean requiresElevator) {
         public FileEntry {
             Objects.requireNonNull(name);
             Objects.requireNonNull(destination);
             Objects.requireNonNull(url);
-            Objects.requireNonNull(md5);
+            Objects.requireNonNull(sha256);
             if (os == null) {
                 os = new Os[0];
             }
@@ -62,8 +62,13 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
                 os = Os.fromJson(array);
             }
 
+            var elevator = false;
+            if (object.get("requiresElevator") instanceof String value) {
+                elevator = Boolean.parseBoolean(value);
+            }
+
             return new FileEntry((String) object.get("name"), (String) object.get("destination"),
-                    (String) object.get("url"), (String) object.get("md5"), os);
+                    (String) object.get("url"), (String) object.get("sha256"), os, elevator);
         }
 
         public boolean matchOs() {

@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -108,7 +107,7 @@ public class AstroImageJUpdaterV6 {
         var version = SpecificVersion.readJson(new URI(entry.url()));
 
         var baseDir = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
-        var downloads = new HashMap<Path, byte[]>();
+        var downloads = new HashMap<Path, Download>();
         for (SpecificVersion.FileEntry fe : version.files()) {
             if (!fe.matchOs()) {
                 continue;
@@ -131,15 +130,15 @@ public class AstroImageJUpdaterV6 {
 
             System.out.printf("Downloading %s -> %s%n", fe.url(), targetFile);
 
-            var buffer = downloadAndComputeHash(fe.url(),4, fe.md5());
+            var buffer = downloadAndComputeHash(fe.url(),4, fe.sha256());
             if (buffer == null || buffer.length == 0) {
                 System.out.printf("Failed to download %s for %s%n", fe.url(), targetFile);
             }
 
-            downloads.put(targetFile, buffer);
+            downloads.put(targetFile, new Download(fe.requiresElevator(), buffer));
         }
 
-        downloads.forEach((p, b) -> {
+        downloads.forEach((p, d) -> {
             var f = p.toFile();
             //todo try this instead?
             // https://stackoverflow.com/questions/65062547/what-is-the-java-nio-file-files-equivalent-of-java-io-file-setwritable
@@ -151,20 +150,11 @@ public class AstroImageJUpdaterV6 {
             }
 
             try {
-                if (f.getName().contains(".exe")) {
-                    //todo not this
-                    //todo exe update is broken with this and old updater
-                    var temp = Files.createTempFile("aij"+p.hashCode(), ".tmp");
-                    Files.write(temp, b);
-                    Files.move(temp, p, StandardCopyOption.REPLACE_EXISTING);
+                if (d.elevator()) {
                     //todo use elevator and also update jvm, also use it to copy the jars instead of overwriting directing
                     //  include jvm update now, use use adoptium, also update build script, also update toolchains
-                    //todo add in signing verification
-                    //todo sha256
-                    //todo hash for version jsons as well
-                    //todo jpackage, for mac
-                    //todo jpackage first, then elevator, then updater
                 } else {
+                    var b = d.bytes();
                     FileOutputStream out = new FileOutputStream(f);
                     out.write(b, 0, b.length);
                     out.close();
@@ -176,11 +166,11 @@ public class AstroImageJUpdaterV6 {
         });
     }
 
-    public byte[] downloadAndComputeHash(String urlStr, int maxRetries, String expectedMd5) throws Exception {
+    public byte[] downloadAndComputeHash(String urlStr, int maxRetries, String expectedSha256) throws Exception {
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             System.out.printf("Attempt %d of %d...%n", attempt, maxRetries);
 
-            MessageDigest md = MessageDigest.getInstance("MD5");//todo sha256 - 64chars of hex
+            MessageDigest md = MessageDigest.getInstance("SHA256");
 
             byte[] buffer;
             try (InputStream in = new DigestInputStream(new ProgressTrackingInputStream(streamForUri(new URI(urlStr))), md)) {
@@ -192,19 +182,19 @@ public class AstroImageJUpdaterV6 {
                 continue;
             }
 
-            String actualMd5 = toHex(md.digest());
-            System.out.println("Computed MD5: " + actualMd5);
-            System.out.println("Expected MD5: " + expectedMd5);
+            String actualSha256 = toHex(md.digest());
+            System.out.println("Computed SHA256: " + actualSha256);
+            System.out.println("Expected SHA256: " + expectedSha256);
 
-            if (actualMd5.equalsIgnoreCase(expectedMd5)) {
-                System.out.println("MD5 matches expected.");
+            if (actualSha256.equalsIgnoreCase(expectedSha256)) {
+                System.out.println("SHA256 matches expected.");
                 return buffer;
             } else {
-                System.err.printf("MD5 mismatch on attempt %d (%s vs %s).%n",
-                        attempt, actualMd5, expectedMd5);
+                System.err.printf("SHA256 mismatch on attempt %d (%s vs %s).%n",
+                        attempt, actualSha256, expectedSha256);
 
                 if (attempt == maxRetries) {
-                    throw new RuntimeException("MD5 did not match after " + maxRetries + " attempts");
+                    throw new RuntimeException("SHA256 did not match after " + maxRetries + " attempts");
                 }
 
                 wait(attempt);
@@ -363,4 +353,6 @@ public class AstroImageJUpdaterV6 {
             u.dialog();
         });
     }
+
+    private record Download(boolean elevator, byte[] bytes) {}
 }

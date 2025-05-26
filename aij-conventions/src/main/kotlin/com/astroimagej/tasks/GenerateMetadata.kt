@@ -113,7 +113,7 @@ abstract class GenerateMetadata
         val ffc = files.filter { it.name == name }
 
         if (ffc.isEmpty) {
-            GradleException("Input collection is missing $name")
+            throw GradleException("Input collection is missing $name")
         }
 
         return ffc.singleFile

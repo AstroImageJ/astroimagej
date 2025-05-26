@@ -168,7 +168,7 @@ abstract class CreateJavaRuntimeTask
                 "zip" -> from(archiveOperations.zipTree(bundledRuntime)) {
                     into("")
                 }
-                else -> GradleException("Did not know how to handle ${extension.get()}")
+                else -> throw GradleException("Did not know how to handle ${extension.get()}")
             }
 
             into(unpackLoc)

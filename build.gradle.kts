@@ -10,6 +10,7 @@ import com.astroimagej.tasks.JPackageTask
 import com.astroimagej.tasks.MacNotaryTask
 import de.undercouch.gradle.tasks.download.Download
 import de.undercouch.gradle.tasks.download.Verify
+import dev.sigstore.sign.tasks.SigstoreSignFilesTask
 import kotlinx.serialization.json.Json
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
@@ -44,6 +45,8 @@ plugins {
     id("aij.test-conventions")
 
     id("aij.java-reproducible-builds")
+
+    id("dev.sigstore.sign-base") version "1.3.0"
 }
 
 repositories {
@@ -562,6 +565,29 @@ fun outputDestination(): File {
     return file(destination)
 }
 
+// We don't have reproducible build fully working,
+// so override the files used to match what are uploaded
+// Override on command line via -PupdateMetadataFiles="pathToFolder1,pathToFolder2"
+val updaterFiles = providers.gradleProperty("updateMetadataFiles")
+    .map {
+        layout.files(it.split(",").map { p -> layout.projectDirectory.dir(p.trim()).asFileTree } )
+    }.orElse(layout.files(
+        layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
+        configurations.getByName("shippingIJ"),
+        configurations.getByName("shippingAstro"),
+        )
+    )
+
+val signTask = tasks.register<SigstoreSignFilesTask>("signAssets") {
+    signatureDirectory = providers.gradleProperty("version").map {
+        layout.projectDirectory.dir("website/meta/signatures/${it}")
+    }
+
+    updaterFiles.get().forEach { file ->
+        sign(file)
+    }
+}
+
 tasks.register<GenerateMetadata>("updateMetadata") {
     version = providers.gradleProperty("version")
     specificJson = layout.projectDirectory.file("website/meta/versions/${version.get()}.json")
@@ -571,21 +597,11 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
     baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"
 
-    // We don't have reproducible build fully working,
-    // so override the files used to match what are uploaded
-    // Override on command line via -PupdateMetadataFiles="pathToFolder1,pathToFolder2"
-    val overrideFilesProp = project.findProperty("updateMetadataFiles") as String?
+    // Make sure Gradle knows to run signTask first
+    inputs.files(signTask.map { task -> task.signatures.map { it.outputSignature } })
+        .withPropertyName("signatures")
 
-    files = if (overrideFilesProp != null) {
-        val paths = overrideFilesProp.split(",").map { layout.projectDirectory.dir(it.trim()).asFileTree }
-        project.files(paths)
-    } else {
-        files(
-            layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
-            configurations.getByName("shippingIJ"),
-            configurations.getByName("shippingAstro"),
-        )
-    }
+    files = files(updaterFiles, signTask.map { task -> task.signatures.map { it.outputSignature } })
 }
 
 // Make Idea's hammer icon run copyBuiltJars

@@ -103,6 +103,8 @@ abstract class GenerateMetadata
                 getSha256(lookupFile(it.artifact)),
                 it.os?.toTypedArray(),
                 requiresElevator = it.requiresElevator,
+                "${baseMetaUrl.get()}/signatures/${filename(it.artifact, version)}.sigstore.json",
+                getSha256(lookupFile("${it.artifact}.sigstore.json"))
             )
         }
 

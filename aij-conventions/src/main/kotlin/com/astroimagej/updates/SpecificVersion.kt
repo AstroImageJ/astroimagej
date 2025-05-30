@@ -60,7 +60,8 @@ data class Artifact(
     val sha256: String,
     val os: Array<Os>? = null,
     val requiresElevator: Boolean? = false,
-    //todo signature url, and hash for signature file?
+    val signatureUrl: String,
+    val signatureSha256: String,
     ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

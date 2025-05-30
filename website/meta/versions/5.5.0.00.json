@@ -4,20 +4,26 @@
         {
             "name": "ij.jar",
             "destination": "",
-            "url": "https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/ij5.5.0.jar",
-            "sha256": "d99456ffd6327dd0dd8ffe2abd30c573a67c484f03ea2f18e962e5773dc0b1d0"
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/5.5.0.00/ij.jar",
+            "sha256": "408d79abed79f75a7c3175a815d3db0adb511214940110a6a0f36c1793cd3ccd",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/5.5.0.00/ij.jar.sigstore.json",
+            "signatureSha256": "0c5822681778c8b35c14f5278d4abf13cd8d633317e6f1b754deddd796de9cc5"
         },
         {
             "name": "StartupMacros.txt",
             "destination": "macros",
-            "url": "https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/StartupMacros5.5.0.txt",
-            "sha256": "539cf05002d68dbc7824379069e38d5bc250187cf0f6777c8a2aa389e035d4fd"
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/5.5.0.00/StartupMacros.txt",
+            "sha256": "80affb2f40463ab4af45e894069b3ea13c5b401d6d1314503547ce9fc4845545",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/5.5.0.00/StartupMacros.txt.sigstore.json",
+            "signatureSha256": "cf4bc02bb4bec050c4ad9af4abe3922afac10776e0c91d3c43636531ca55119f"
         },
         {
             "name": "Astronomy_.jar",
             "destination": "plugins",
-            "url": "https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/Astronomy_5.5.0.jar",
-            "sha256": "81a046f4c013a0154dac132d3b0635117b8dbeb324f93826f7209bf3fd768d8c"
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/5.5.0.00/Astronomy_.jar",
+            "sha256": "89f6baaaf0cbe0ab95f0993e2fbf28d20078e4ea0111b2c1aa538bf202b45049",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/5.5.0.00/Astronomy_.jar.sigstore.json",
+            "signatureSha256": "c2890d9aead2d568c4914cce82f61a1a0f4c1f0878af91ff650e33060673aee9"
         }
     ]
 }

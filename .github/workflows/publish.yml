@@ -6,6 +6,11 @@ on:
       version:
         description: 'Release version (e.g. 1.2.3.00)'
         required: true
+      skip_release:
+        description: 'Skip creating a GitHub release?'
+        required: false
+        type: 'boolean'
+        default: false
   push:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*.00'
@@ -219,6 +224,7 @@ jobs:
 
       - name: Create release
         # https://cli.github.com/manual/gh_release_create
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == true) }}
         shell: bash
         run: |
             for f in release_assets/*; do FILES+=" $f"; done
@@ -233,7 +239,18 @@ jobs:
           ./gradlew updateMetadata -PupdateMetadataFiles=release_assets 
 
       - name: Update metadata
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == true) }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Update version metadata
           file_pattern: '*.json'
+
+      - name: Upload assets & metadata (no release)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            release_assets/**
+            release_notes.md
+            website/meta/**/*.json

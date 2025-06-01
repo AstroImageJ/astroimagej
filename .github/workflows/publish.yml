@@ -231,7 +231,7 @@ jobs:
 
       - name: Create release
         # https://cli.github.com/manual/gh_release_create
-        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == true) }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
         shell: bash
         run: |
             for f in release_assets/*; do FILES+=" $f"; done
@@ -246,7 +246,7 @@ jobs:
           ./gradlew updateMetadata -PupdateMetadataFiles=release_assets 
 
       - name: Update metadata
-        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == true) }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Update version metadata

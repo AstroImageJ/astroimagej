@@ -243,7 +243,7 @@ jobs:
         shell: bash
         run: |
           chmod +x ./gradlew
-          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets 
+          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets --stacktrace
 
       - name: Update metadata
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}

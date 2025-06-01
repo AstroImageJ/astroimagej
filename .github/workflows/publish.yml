@@ -7,10 +7,15 @@ on:
         description: 'Release version (e.g. 1.2.3.00)'
         required: true
       skip_release:
-        description: 'Skip creating a GitHub release?'
+        description: 'Skip creating a GitHub release'
         required: false
         type: 'boolean'
         default: false
+      notarize:
+        description: 'Notarize mac'
+        required: false
+        type: 'boolean'
+        default: true
   push:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*.00'
@@ -73,7 +78,8 @@ jobs:
           (env.BUILD_CERTIFICATE_BASE64 != '') &&
           (env.P12_PASSWORD != '') &&
           (env.BUILD_PROVISION_PROFILE_BASE64 != '') &&
-          (env.KEYCHAIN_PASSWORD != '')
+          (env.KEYCHAIN_PASSWORD != '') &&
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.notarize == 'true')
         run: |
           # create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12

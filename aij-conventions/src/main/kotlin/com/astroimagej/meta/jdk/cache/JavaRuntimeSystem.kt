@@ -14,5 +14,6 @@ data class JavaRuntimeSystem(
     var name: String? = null,
     var sha256: String? = null,
     var type: RuntimeType? = null,
-    var url: String? = null
+    var url: String? = null,
+    var sigUrl: String? = null,
 )

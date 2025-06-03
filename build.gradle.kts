@@ -4,10 +4,7 @@ import com.astroimagej.meta.jdk.OperatingSystem.*
 import com.astroimagej.meta.jdk.RuntimeType
 import com.astroimagej.meta.jdk.adoptium.JavaInfo
 import com.astroimagej.meta.jdk.cache.JavaRuntimeSystem
-import com.astroimagej.tasks.CreateJavaRuntimeTask
-import com.astroimagej.tasks.GenerateMetadata
-import com.astroimagej.tasks.JPackageTask
-import com.astroimagej.tasks.MacNotaryTask
+import com.astroimagej.tasks.*
 import de.undercouch.gradle.tasks.download.Download
 import de.undercouch.gradle.tasks.download.Verify
 import dev.sigstore.sign.tasks.SigstoreSignFilesTask
@@ -19,6 +16,7 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
+import kotlin.reflect.full.declaredMemberProperties
 
 buildscript {
     repositories {
@@ -143,6 +141,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         hasher.update(v.ext.toByteArray())
         hasher.update(v.arch.toString().toByteArray())
         hasher.update(v.os.toString().toByteArray())
+        hasher.update(JavaRuntimeSystem::class.declaredMemberProperties.toString().toByteArray())
         if (v.type != null) {
             hasher.update(v.type.toString().toByteArray())
         }
@@ -206,6 +205,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
             sha256 = jdkMeta.sha256
             type = jdkMeta.type
             this.url = jdkMeta.url
+            sigUrl = jdkMeta.sigUrl
         }
     }
 
@@ -325,23 +325,31 @@ val packagingJdkToolchain = javaToolchains.launcherFor {
     vendor.set(JvmVendorSpec.ADOPTIUM)
 }
 
-javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
+javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val sysId = "${sysInfo.os.toString().uppercaseFirstChar()}_${sysInfo.arch}"
     val packageTaskName = "packageAijFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
+    val verifySigTaskName = "verifySigFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
     val notaryTaskName = "notarizeFor${sysId}"
     val getRuntimeTaskName = "getRuntimeFor${sysId}"
 
     val downloadTask = tasks.register<Download>(downloadTaskName) {
-        finalizedBy(cleanTaskName, verifyTaskName)
+        finalizedBy(cleanTaskName, verifyTaskName, verifySigTaskName)
         mkdir(file("${projectDir}/jres"))
 
-        src(sysInfo.url)
+        src(listOf(sysInfo.url, sysInfo.sigUrl))
         overwrite(false)
         onlyIfModified(true)
-        dest(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}"))
+        dest(layout.projectDirectory.dir("jres").dir(sysId))
+        eachFile {
+            name = if (!sourceURL.toString().endsWith(".sig")) {
+                "$sysId-${sysInfo.name}"
+            } else {
+                "$sysId-${sysInfo.name}.sig"
+            }
+        }
     }
 
     tasks.register<Delete>(cleanTaskName) {
@@ -350,16 +358,26 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         delete(directory.asFileTree.matching {
             include("$sysId*")
             exclude("$sysId-${sysInfo.name}")
+            exclude("$sysId-${sysInfo.name}.sig")
         })
     }
 
     tasks.register<Verify>(verifyTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single() })
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> !f.name.endsWith(".sig") } })
 
         inputs.file(bundledRuntime)
         src(bundledRuntime)
         algorithm("SHA256")
         checksum(sysInfo.sha256)
+    }
+
+    tasks.register<PGPVerify>(verifySigTaskName) {
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> !f.name.endsWith(".sig") } })
+        val signatureFile = layout.file(downloadTask.map { it.outputFiles.single { f -> f.name.endsWith(".sig") } })
+
+        file = bundledRuntime
+        signature = signatureFile
+        keyId = "3B04D753C9050D9A5D343F39843C48A565F8F04B"
     }
 
     val getRuntimeTask = tasks.register<CreateJavaRuntimeTask>(getRuntimeTaskName) {

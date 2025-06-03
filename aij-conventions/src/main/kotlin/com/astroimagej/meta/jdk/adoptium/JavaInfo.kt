@@ -23,7 +23,8 @@ class JavaInfo {
     private data class RawPackage(
         val name: String,
         val checksum: String,
-        val link: String
+        val link: String,
+        @SerialName("signature_link") val sigLink: String,
     )
 
     @Serializable
@@ -36,7 +37,8 @@ class JavaInfo {
         val name: String,
         val sha256: String,
         val type: RuntimeType,
-        val url: String
+        val url: String,
+        val sigUrl: String,
     )
 
     companion object {
@@ -51,7 +53,8 @@ class JavaInfo {
                     name = raw.binary.pkg.name,
                     sha256 = raw.binary.pkg.checksum,
                     type = raw.binary.imageType,
-                    url = raw.binary.pkg.link
+                    url = raw.binary.pkg.link,
+                    sigUrl = raw.binary.pkg.sigLink,
                 )
             }
         }

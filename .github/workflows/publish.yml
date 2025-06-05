@@ -88,7 +88,7 @@ jobs:
           echo "Importing to keychain..."
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           echo "  Imported Certificate"
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH  > /dev/null 2>&1
           echo "  Imported Partition"
           security list-keychain -d user -s $KEYCHAIN_PATH
           echo "  Imported Keychain"

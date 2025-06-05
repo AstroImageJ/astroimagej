@@ -1,3 +1,4 @@
+import com.astroimagej.SigstoreSignFiles
 import com.astroimagej.meta.jdk.Architecture.ARM_64
 import com.astroimagej.meta.jdk.Architecture.X86_64
 import com.astroimagej.meta.jdk.OperatingSystem.*
@@ -7,7 +8,6 @@ import com.astroimagej.meta.jdk.cache.JavaRuntimeSystem
 import com.astroimagej.tasks.*
 import de.undercouch.gradle.tasks.download.Download
 import de.undercouch.gradle.tasks.download.Verify
-import dev.sigstore.sign.tasks.SigstoreSignFilesTask
 import kotlinx.serialization.json.Json
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
@@ -585,25 +585,28 @@ fun outputDestination(): File {
 
 // We don't have reproducible build fully working,
 // so override the files used to match what are uploaded
-// Override on command line via -PupdateMetadataFiles="pathToFolder1,pathToFolder2"
+// Override on command line via -PupdateMetadataFiles="pathToFolder"
 val updaterFiles = providers.gradleProperty("updateMetadataFiles")
-    .map {
-        layout.files(it.split(",").map { p -> layout.projectDirectory.dir(p.trim()).asFileTree } )
-    }.orElse(layout.files(
-        layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
-        configurations.getByName("shippingIJ"),
-        configurations.getByName("shippingAstro"),
+    .flatMap {
+        providers.provider { layout.files(layout.projectDirectory.dir(it).asFileTree) }
+    }.orElse(
+        providers.zip(configurations.named("shippingIJ"),
+            configurations.named("shippingAstro"),
+            { ijConf, astroConf ->
+                layout.files(
+                    ijConf,
+                    astroConf,
+                    layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
+                )
+            }
         )
     )
 
-val signTask = tasks.register<SigstoreSignFilesTask>("signAssets") {
-    signatureDirectory = providers.gradleProperty("version").map {
-        layout.projectDirectory.dir("website/meta/signatures/${it}")
-    }
+val signTask = tasks.register<SigstoreSignFiles>("signAssets") {
+    signatureDirectory = layout.projectDirectory.dir("website/meta/signatures")
+        .dir(providers.gradleProperty("version"))
 
-    updaterFiles.get().forEach { file ->
-        sign(file)
-    }
+    filesToSign = files(updaterFiles)
 }
 
 tasks.register<GenerateMetadata>("updateMetadata") {
@@ -616,10 +619,10 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"
 
     // Make sure Gradle knows to run signTask first
-    inputs.files(signTask.map { task -> task.signatures.map { it.outputSignature } })
+    inputs.files(signTask.map { task -> task.signatureDirectory.asFileTree })
         .withPropertyName("signatures")
 
-    files = files(updaterFiles, signTask.map { task -> task.signatures.map { it.outputSignature } })
+    files = layout.files(updaterFiles, signTask.map { it.signatureDirectory.asFileTree })
 }
 
 // Make Idea's hammer icon run copyBuiltJars

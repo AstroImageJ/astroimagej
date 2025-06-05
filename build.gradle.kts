@@ -384,7 +384,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         launcher = packagingJdkToolchain
         fromRuntimeInfo(sysInfo)
 
-        bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single() })
+        bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> !f.name.endsWith(".sig") } })
 
         outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }

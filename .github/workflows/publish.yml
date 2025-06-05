@@ -113,6 +113,8 @@ jobs:
 
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }}
+        env:
+          DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 
       - name: Upload installer ( ${{ matrix.osName }} )
         id: upload

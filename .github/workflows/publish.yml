@@ -60,6 +60,9 @@ jobs:
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
           DeveloperId: ${{ secrets.APPLE_DEV_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         if: |
           (matrix.runner == 'macos-latest') &&
           (env.BUILD_CERTIFICATE_BASE64 != '') &&
@@ -97,6 +100,12 @@ jobs:
           echo "Applying profiles..."
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          echo "Storing notarytool credentials into keychain..."
+          xcrun notarytool store-credentials AC_PASSWORD \
+          --apple-id "${{ secrets.APPLE_ID }}" \
+          --password "${{ secrets.APP_SPECIFIC_PASSWORD }}" \
+          --team-id "${{ secrets.TEAM_ID }}"
 
       - name: Checkout code
         uses: actions/checkout@v4

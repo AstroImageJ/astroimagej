@@ -104,8 +104,8 @@ jobs:
           echo "Storing notarytool credentials into keychain..."
           xcrun notarytool store-credentials AC_PASSWORD \
           --apple-id "${{ secrets.APPLE_ID }}" \
-          --password "${{ secrets.APP_SPECIFIC_PASSWORD }}" \
-          --team-id "${{ secrets.TEAM_ID }}"
+          --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+          --team-id "${{ secrets.APPLE_TEAM_ID }}"
 
       - name: Checkout code
         uses: actions/checkout@v4

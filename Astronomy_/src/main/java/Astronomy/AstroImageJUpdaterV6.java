@@ -227,6 +227,10 @@ public class AstroImageJUpdaterV6 {
                 HttpResponse.BodyHandlers.ofInputStream()
         );
 
+        if (response.statusCode() != 200) {
+            throw new IllegalStateException("Failed to access file");
+        }
+
         return new BufferedReader(new InputStreamReader(response.body(), charset));
     }
 

@@ -1,0 +1,29 @@
+{
+    "version": "5.5.0.00",
+    "artifacts": [
+        {
+            "name": "ij.jar",
+            "destination": "",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/5.5.0.00/ij.jar",
+            "sha256": "304094933664b23f2d21e64ea96924c8de8cc9c0f1909f5f30a60a26b7efe0f1",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/5.5.0.00/ij.jar.sigstore.json",
+            "signatureSha256": "1edf492bdcf0aaaa76f70decda1a5ec0a7ef1eca932d61a4ba690c171be5aefb"
+        },
+        {
+            "name": "StartupMacros.txt",
+            "destination": "macros",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/5.5.0.00/StartupMacros.txt",
+            "sha256": "539cf05002d68dbc7824379069e38d5bc250187cf0f6777c8a2aa389e035d4fd",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/5.5.0.00/StartupMacros.txt.sigstore.json",
+            "signatureSha256": "69c56fea8518ce80c21c5a8a1ab0df896f77cf6f3dca4fb4cf628b35d636980e"
+        },
+        {
+            "name": "Astronomy_.jar",
+            "destination": "plugins",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/5.5.0.00/Astronomy_.jar",
+            "sha256": "89f6baaaf0cbe0ab95f0993e2fbf28d20078e4ea0111b2c1aa538bf202b45049",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/5.5.0.00/Astronomy_.jar.sigstore.json",
+            "signatureSha256": "e7bd2d0702a9afe9428df9f77e7c71db7ddac4f6603da74c6ee4a1f8c13179ed"
+        }
+    ]
+}

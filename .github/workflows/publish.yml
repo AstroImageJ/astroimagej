@@ -252,9 +252,11 @@ jobs:
 
       - name: Generate metadata
         shell: bash
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
         run: |
           chmod +x ./gradlew
-          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets --stacktrace
+          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets -Pversion=$VERSION --stacktrace
 
       - name: Update metadata
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}

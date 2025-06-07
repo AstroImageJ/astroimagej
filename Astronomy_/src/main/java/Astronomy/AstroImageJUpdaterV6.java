@@ -26,10 +26,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HexFormat;
-import java.util.Vector;
+import java.util.*;
 
 public class AstroImageJUpdaterV6 {
     private static final URI META;
@@ -248,6 +245,10 @@ public class AstroImageJUpdaterV6 {
                 request,
                 HttpResponse.BodyHandlers.ofInputStream()
         );
+
+        if (response.statusCode() != 200) {
+            throw new IllegalStateException("Failed to access file");
+        }
 
         return response.body();
     }

@@ -40,7 +40,7 @@ jobs:
             gradleTask: packageAijForMac_aarch64
             artifactExt: dmg
             wrapper: ./gradlew
-          - runner: macos-latest
+          - runner: macos-13
             osName: mac-x64
             gradleTask: packageAijForMac_x64
             artifactExt: dmg

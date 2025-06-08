@@ -64,7 +64,7 @@ jobs:
           APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         if: |
-          (matrix.runner == 'macos-latest') &&
+          (matrix.runner == 'macos-latest' || matrix.runner == 'macos-13') &&
           (env.BUILD_CERTIFICATE_BASE64 != '') &&
           (env.P12_PASSWORD != '') &&
           (env.BUILD_PROVISION_PROFILE_BASE64 != '') &&

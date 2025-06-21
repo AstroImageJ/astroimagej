@@ -16,9 +16,3 @@
 
 
 - **Windows (x64)**: [AstroImageJ-{{VERSION}}-windows-x64.msi](https://github.com/{{REPO}}/releases/download/{{VERSION}}/AstroImageJ-{{VERSION}}-windows-x64.msi)
-
-<details>
-  <summary>Advanced users (ignore for normal install)</summary>
-
-  This release also includes extra files needed for updating an earlier version of AIJ and are not installers.
-</details>

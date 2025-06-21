@@ -589,18 +589,7 @@ fun outputDestination(): File {
 val updaterFiles = providers.gradleProperty("updateMetadataFiles")
     .flatMap {
         providers.provider { layout.files(layout.projectDirectory.dir(it).asFileTree) }
-    }.orElse(
-        providers.zip(configurations.named("shippingIJ"),
-            configurations.named("shippingAstro"),
-            { ijConf, astroConf ->
-                layout.files(
-                    ijConf,
-                    astroConf,
-                    layout.projectDirectory.file("packageFiles/common/macros/StartupMacros.txt"),
-                )
-            }
-        )
-    )
+    }
 
 val signTask = tasks.register<SigstoreSignFiles>("signAssets") {
     signatureDirectory = layout.projectDirectory.dir("website/meta/signatures")
@@ -614,7 +603,6 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     specificJson = layout.projectDirectory.file("website/meta/versions/${version.get()}.json")
     generalJson = layout.projectDirectory.file("website/meta/versions.json")
     baseMetaUrl = "https://astroimagej.github.io/astroimagej/meta"
-    minJava = providers.gradleProperty("minJava").map { it.toInt() }
     updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
     baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"
 

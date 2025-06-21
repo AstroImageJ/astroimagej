@@ -26,9 +26,6 @@ abstract class GenerateMetadata
     @get:Input
     abstract val version: Property<String>
 
-    @get:Input
-    abstract val minJava: Property<Int>
-
     @get:InputFile
     abstract val updateDataJson: RegularFileProperty
 
@@ -49,7 +46,10 @@ abstract class GenerateMetadata
     fun generateSpecificJson() {
         val version = version.get()
 
-        val updateData = Json.decodeFromString<UpdateData>(providerFactory.fileContents(updateDataJson).asText.get())
+        val updateData = Json.decodeFromString<UpdateData>(
+            providerFactory.fileContents(updateDataJson).asText.get()
+                .replace("\$VERSION", version)
+        )
 
         val specificVersion = SpecificVersion(
             version,
@@ -69,20 +69,18 @@ abstract class GenerateMetadata
         }
 
         val newVersions = buildList {
-            add(buildVersion(version, updateData, minJava.get(), baseMetaUrl.get()))
+            add(buildVersion(version, updateData, baseMetaUrl.get()))
             addAll(versions.versions)
         }
 
         generalJson.get().asFile.writeText(json.encodeToString(Versions(versions.metaVersion, newVersions)))
     }
 
-    fun buildVersion(version: String, updateData: UpdateData, minJava: Int, baseUrl: String): Version {
+    fun buildVersion(version: String, updateData: UpdateData, baseUrl: String): Version {
         return Version(
             version = version,
             url = "$baseUrl/versions/$version.json",
             type = type(version),
-            updateData.maxJava,
-            minJava,
         )
     }
 
@@ -98,11 +96,10 @@ abstract class GenerateMetadata
         val artifacts = updateData.files.map {
             Artifact(
                 it.artifact,
-                it.destination,
                 "${baseArtifactUrl.get()}/${filename(it.artifact, version)}",
                 getSha256(lookupFile(it.artifact)),
-                it.os?.toTypedArray(),
-                requiresElevator = it.requiresElevator,
+                it.os.toTypedArray(),
+                it.arch.toTypedArray(),
                 "${baseMetaUrl.get()}/signatures/${filename(it.artifact, version)}.sigstore.json",
                 getSha256(lookupFile("${it.artifact}.sigstore.json"))
             )
@@ -144,15 +141,13 @@ abstract class GenerateMetadata
 
     @Serializable
     data class UpdateData(
-        val maxJava: Int? = null,
         val files: List<Artifact>,
     )
 
     @Serializable
     data class Artifact(
-        val requiresElevator: Boolean? = false,
         val artifact: String,
-        val destination: String,
-        val os: List<Os>? = null,
+        val os: List<Os>,
+        val arch: List<Arch>,
     )
 }

@@ -59,8 +59,7 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
         }
     }
 
-    public record VersionEntry(SemanticVersion version, String url, ReleaseType releaseType,
-                               int maxJava, int minJava) {
+    public record VersionEntry(SemanticVersion version, String url, ReleaseType releaseType) {
         public VersionEntry {
             Objects.requireNonNull(version);
             Objects.requireNonNull(releaseType);
@@ -69,20 +68,10 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
 
         public static VersionEntry fromJson(JSONObject object) {
             var type = ReleaseType.valueOf((String) object.get("type"));
-            var minJava = Integer.MIN_VALUE;
-            var maxJava = Integer.MAX_VALUE;
-
-            if (object.get("minJava") instanceof Number i) {
-                minJava = i.intValue();
-            }
-
-            if (object.get("maxJava") instanceof Number i) {
-                maxJava = i.intValue();
-            }
 
             var url = object.get("url");
 
-            return new VersionEntry(new SemanticVersion((String) object.get("version")), (String) url, type, maxJava, minJava);
+            return new VersionEntry(new SemanticVersion((String) object.get("version")), (String) url, type);
         }
 
         @Override

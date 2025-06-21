@@ -9,7 +9,10 @@ import ij.gui.MultiLineLabel;
 
 import javax.net.ssl.*;
 import javax.swing.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,12 +24,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HexFormat;
+import java.util.Objects;
+import java.util.Vector;
 
 public class AstroImageJUpdaterV6 {
     private static final URI META;
@@ -99,78 +106,69 @@ public class AstroImageJUpdaterV6 {
         return MetaVersion.readJson(META);
     }
 
-    //todo only move files to final destination if all succeed
     public void downloadSpecificVersion(MetaVersion.VersionEntry entry) throws Exception {
         var version = SpecificVersion.readJson(new URI(entry.url()));
 
         var baseDir = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
-        var downloads = new HashMap<Path, Download>();
-        for (SpecificVersion.FileEntry fe : version.files()) {
-            if (!fe.matchOs()) {
-                continue;
+
+        SpecificVersion.FileEntry fileEntry = null;
+        for (SpecificVersion.FileEntry file : version.files()) {
+            if (file.matchesSystem()) {
+                fileEntry = file;
             }
-
-            Path destDir = baseDir
-                    .resolve(fe.destination().isBlank() ? "" : fe.destination())
-                    .normalize();
-
-            // Ensure the paths don't try to escape AIJ
-            if (!destDir.startsWith(baseDir.normalize())) {
-                throw new IOException("Invalid destination escapes baseDir: " + fe.destination());
-            }
-
-            // Ensure directory exists
-            Files.createDirectories(destDir);
-
-            // Final target path
-            Path targetFile = destDir.resolve(fe.name());
-
-            System.out.printf("Downloading %s -> %s%n", fe.url(), targetFile);
-
-            var buffer = downloadAndComputeHash(fe.url(),4, fe.sha256());
-            if (buffer == null || buffer.length == 0) {
-                System.out.printf("Failed to download %s for %s%n", fe.url(), targetFile);
-            }
-
-            downloads.put(targetFile, new Download(fe.requiresElevator(), buffer));
         }
 
-        downloads.forEach((p, d) -> {
-            var f = p.toFile();
-            //todo try this instead?
-            // https://stackoverflow.com/questions/65062547/what-is-the-java-nio-file-files-equivalent-of-java-io-file-setwritable
-            if (f.exists() && !f.canWrite()) {
-                if (!f.setWritable(true, true)) {
-                    System.out.println("Failed to set file permissions for " + p);
-                    return;
-                }
-            }
+        if (fileEntry == null) {
+            //todo
+        }
 
-            try {
-                if (d.elevator()) {
-                    //todo use elevator and also update jvm, also use it to copy the jars instead of overwriting directing
-                    //  include jvm update now, use use adoptium, also update build script, also update toolchains
-                } else {
-                    var b = d.bytes();
-                    FileOutputStream out = new FileOutputStream(f);
-                    out.write(b, 0, b.length);
-                    out.close();
-                }
-            } catch (IOException e) {
-                System.out.println("Failed to write file");
-                e.printStackTrace();
-            }
-        });
+        var pid = ProcessHandle.current().pid();
+
+        //todo cleanup on windows
+        var tmpFolder = Files.createTempDirectory("aij-updater");
+
+        var tmp = tmpFolder.resolve("updateScript" + (IJ.isWindows() ? ".bat" : ".sh"));
+
+        // Copy script to location for execution
+        Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), tmp, StandardCopyOption.REPLACE_EXISTING);
+
+        var inst = tmpFolder.resolve("installer");
+
+        Files.write(inst, downloadAndComputeHash(fileEntry, 5));
+
+        if (IJ.isWindows()) {
+            ProcessBuilder pb = new ProcessBuilder(
+                    "cmd", "/c",
+                    "start", "\"\"", "/b",
+                    tmp.toAbsolutePath().toString(),
+                    Long.toString(pid),
+                    inst.toAbsolutePath().toString()
+            );
+            Process p = pb.start();
+
+            System.exit(0);
+        } else if (IJ.isMacOSX() || IJ.isLinux()) {
+            ProcessBuilder pb = new ProcessBuilder(
+                    tmp.toAbsolutePath().toString(),
+                    Long.toString(pid),
+                    inst.toAbsolutePath().toString()
+            );
+            Process p = pb.start();
+
+            System.exit(0);
+        }
+
+        //todo error
     }
 
-    public byte[] downloadAndComputeHash(String urlStr, int maxRetries, String expectedSha256) throws Exception {
+    public byte[] downloadAndComputeHash(SpecificVersion.FileEntry fileEntry, int maxRetries) throws Exception {
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             System.out.printf("Attempt %d of %d...%n", attempt, maxRetries);
 
             MessageDigest md = MessageDigest.getInstance("SHA256");
 
             byte[] buffer;
-            try (InputStream in = new DigestInputStream(new ProgressTrackingInputStream(streamForUri(new URI(urlStr))), md)) {
+            try (InputStream in = new DigestInputStream(new ProgressTrackingInputStream(streamForUri(new URI(fileEntry.url()))), md)) {
                 buffer = in.readAllBytes();
             } catch (Exception e) {
                 System.err.printf("Download error on attempt %d: %s%n", attempt, e.getMessage());
@@ -181,14 +179,14 @@ public class AstroImageJUpdaterV6 {
 
             String actualSha256 = toHex(md.digest());
             System.out.println("Computed SHA256: " + actualSha256);
-            System.out.println("Expected SHA256: " + expectedSha256);
+            System.out.println("Expected SHA256: " + fileEntry.sha256());
 
-            if (actualSha256.equalsIgnoreCase(expectedSha256)) {
+            if (actualSha256.equalsIgnoreCase(fileEntry.sha256())) {
                 System.out.println("SHA256 matches expected.");
                 return buffer;
             } else {
                 System.err.printf("SHA256 mismatch on attempt %d (%s vs %s).%n",
-                        attempt, actualSha256, expectedSha256);
+                        attempt, actualSha256, fileEntry.sha256());
 
                 if (attempt == maxRetries) {
                     throw new RuntimeException("SHA256 did not match after " + maxRetries + " attempts");
@@ -314,9 +312,11 @@ public class AstroImageJUpdaterV6 {
 
         enablePrereleases.addActionListener($ -> {
             if (enablePrereleases.isSelected()) {
-                //todo impl
+                selector.removeAllItems();
+                selector.setModel(new DefaultComboBoxModel<>(new Vector<>(versions)));
             } else {
-
+                selector.removeAllItems();
+                selector.setModel(new DefaultComboBoxModel<>(new Vector<>(releaseOnlyVersions)));
             }
         });
 
@@ -359,5 +359,21 @@ public class AstroImageJUpdaterV6 {
         });
     }
 
-    private record Download(boolean elevator, byte[] bytes) {}
+    private record Download(byte[] bytes) {}
+
+    private static String getScriptPath() {
+        if (IJ.isWindows()) {
+            return "Astronomy/updater/windows.bat";
+        }
+
+        if (IJ.isLinux()) {
+            return "Astronomy/updater/linux.sh";
+        }
+
+        if (IJ.isMacOSX()) {
+            return "Astronomy/updater/mac.sh";
+        }
+
+        throw new IllegalStateException();
+    }
 }

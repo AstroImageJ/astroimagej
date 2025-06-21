@@ -12,13 +12,10 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 
-public record SpecificVersion(SemanticVersion version, String message, FileEntry[] files, LaunchArg[] launchArgs) {
+public record SpecificVersion(SemanticVersion version, String message, FileEntry[] files) {
     public SpecificVersion {
         Objects.requireNonNull(version);
         Objects.requireNonNull(files);
-        if (launchArgs == null) {
-            launchArgs = new LaunchArg[0];
-        }
     }
 
     public static SpecificVersion readJson(URI uri) {
@@ -27,7 +24,7 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
 
             if (o instanceof JSONObject object) {
                 return new SpecificVersion(new SemanticVersion((String) object.get("version")), (String) object.get("message"),
-                        FileEntry.fromJson((JSONArray) object.get("artifacts")), LaunchArg.fromJson((JSONArray) object.get("launchArg")));
+                        FileEntry.fromJson((JSONArray) object.get("artifacts")));
             }
         } catch (IOException | ParseException | InterruptedException e) {
             e.printStackTrace();
@@ -36,15 +33,13 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
         return null;
     }
 
-    public record FileEntry(String name, String destination, String url, String sha256, Os[] os, boolean requiresElevator) {
+    public record FileEntry(String name, String url, String sha256, Os[] os, Arch[] arch) {
         public FileEntry {
             Objects.requireNonNull(name);
-            Objects.requireNonNull(destination);
             Objects.requireNonNull(url);
             Objects.requireNonNull(sha256);
-            if (os == null) {
-                os = new Os[0];
-            }
+            Objects.requireNonNull(os);
+            Objects.requireNonNull(arch);
         }
 
         public static FileEntry[] fromJson(JSONArray array) {
@@ -58,24 +53,20 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
 
         public static FileEntry fromJson(JSONObject object) {
             Os[] os = null;
+            Arch[] arch = null;
             if (object.get("os") instanceof JSONArray array) {
                 os = Os.fromJson(array);
             }
 
-            var elevator = false;
-            if (object.get("requiresElevator") instanceof String value) {
-                elevator = Boolean.parseBoolean(value);
+            if (object.get("arch") instanceof JSONArray array) {
+                arch = Arch.fromJson(array);
             }
 
-            return new FileEntry((String) object.get("name"), (String) object.get("destination"),
-                    (String) object.get("url"), (String) object.get("sha256"), os, elevator);
+            return new FileEntry((String) object.get("name"),
+                    (String) object.get("url"), (String) object.get("sha256"), os, arch);
         }
 
         public boolean matchOs() {
-            if (os == null || os.length == 0) {
-                return true;
-            }
-
             for (Os o : os) {
                 if (IJ.isMacOSX() && o == Os.MAC) {
                     return true;
@@ -92,38 +83,20 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
 
             return false;
         }
-    }
 
-    public record LaunchArg(String arg, Os[] os) {
-        public LaunchArg {
-            Objects.requireNonNull(arg);
-            if (os == null) {
-                os = new Os[0];
+        public boolean matchArch() {
+            for (Arch a : arch) {
+                if (a == Arch.getArch()) {
+                    return true;
+                }
             }
+
+            return false;
         }
 
-        public static LaunchArg[] fromJson(JSONArray array) {
-            if (array == null) {
-                return new LaunchArg[0];
-            }
-
-            var args = new LaunchArg[array.size()];
-            for (int i = 0; i < array.size(); i++) {
-                args[i] = fromJson((JSONObject) array.get(i));
-            }
-
-            return args;
+        public boolean matchesSystem() {
+            return matchArch() && matchOs();
         }
-
-        public static LaunchArg fromJson(JSONObject object) {
-            Os[] os = null;
-            if (object.get("os") instanceof JSONArray array) {
-                os = Os.fromJson(array);
-            }
-
-            return new LaunchArg((String) object.get("arg"), os);
-        }
-
     }
 
     public enum Os {
@@ -147,6 +120,38 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
 
         public static Os fromJson(String s) {
             return Os.valueOf(s.toUpperCase(Locale.ENGLISH));
+        }
+    }
+
+    public enum Arch {
+        X86,
+        AMD64,
+        ARM64;
+
+        public static Arch getArch() {
+            return switch (System.getProperty("os.arch")) {
+                case "amd64" -> AMD64;
+                case "aarch64" -> ARM64;
+                case "x86" -> X86;
+                default -> throw new UnsupportedOperationException("Unknown architecture: " + System.getProperty("os.arch"));
+            };
+        }
+
+        public static Arch[] fromJson(JSONArray array) {
+            if (array == null || array.isEmpty()) {
+                throw new IllegalArgumentException("Architecture must have value");
+            }
+
+            var os = new Arch[array.size()];
+            for (int i = 0; i < array.size(); i++) {
+                os[i] = fromJson((String) array.get(i));
+            }
+
+            return os;
+        }
+
+        public static Arch fromJson(String s) {
+            return Arch.valueOf(s.toUpperCase(Locale.ENGLISH));
         }
     }
 }

@@ -30,4 +30,5 @@ By default it is defined, use <?undef JpAllowUpgrades?> to disable.
 -->
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi"/>
 
-<?define JpAllowUpgrades = "foo" ?>
+<?define JpAllowUpgrades = "yes" ?>
+<?define JpAllowDowngrades = "yes" ?>

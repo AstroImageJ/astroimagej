@@ -418,7 +418,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             "--java-options", "-Duser.dir=\$APPDIR",
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
             //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
-            //"--verbose",
+            "--verbose",
             "--app-version", version.toString().replace(".00", ""),
             "--java-options", "-XX:MaxRAMPercentage=75"
         )
@@ -465,6 +465,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                     "--win-update-url", "https://astroimagej.com",
                     "--about-url", "https://astroimagej.com",
                     "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+                    "--win-upgrade-uuid", "83f529ac-39a3-4fe7-9f97-e9f259321c26",
                 )
             }
         })

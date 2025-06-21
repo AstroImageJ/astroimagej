@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -109,7 +110,17 @@ public class AstroImageJUpdaterV6 {
     public void downloadSpecificVersion(MetaVersion.VersionEntry entry) throws Exception {
         var version = SpecificVersion.readJson(new URI(entry.url()));
 
-        var baseDir = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
+        var appFolder = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
+        Path baseDir;
+        if (IJ.isWindows()) {
+            baseDir = appFolder.getParent();
+        } else if (IJ.isMacOSX()) {
+            baseDir = appFolder.getParent().getParent();
+        } else if (IJ.isLinux()) {
+            baseDir = appFolder.getParent().getParent();
+        } else {
+            throw new IllegalStateException("Unknown OS - could not find installation directory");
+        }
 
         SpecificVersion.FileEntry fileEntry = null;
         for (SpecificVersion.FileEntry file : version.files()) {
@@ -148,10 +159,14 @@ public class AstroImageJUpdaterV6 {
 
             System.exit(0);
         } else if (IJ.isMacOSX() || IJ.isLinux()) {
+            var perms = Files.getPosixFilePermissions(tmp);
+            perms.add(PosixFilePermission.OWNER_EXECUTE);
+            Files.setPosixFilePermissions(tmp, perms);
             ProcessBuilder pb = new ProcessBuilder(
                     tmp.toAbsolutePath().toString(),
                     Long.toString(pid),
-                    inst.toAbsolutePath().toString()
+                    inst.toAbsolutePath().toString(),
+                    baseDir.toAbsolutePath().toString()
             );
             Process p = pb.start();
 

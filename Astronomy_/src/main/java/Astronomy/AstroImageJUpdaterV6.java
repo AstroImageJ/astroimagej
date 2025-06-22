@@ -21,20 +21,18 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Comparator;
-import java.util.HexFormat;
-import java.util.Objects;
-import java.util.Vector;
+import java.util.*;
+
+import static java.nio.file.attribute.PosixFilePermission.*;
 
 public class AstroImageJUpdaterV6 {
     private static final URI META;
@@ -135,8 +133,33 @@ public class AstroImageJUpdaterV6 {
 
         var pid = ProcessHandle.current().pid();
 
-        //todo cleanup on windows
-        var tmpFolder = Files.createTempDirectory("aij-updater");
+        // Manually manage temp folder and deletion as Windows doesn't automatically clean them
+        var tmpFolder = Path.of(System.getProperty("java.io.tmpdir")).resolve("aij-updater");
+
+        Files.walkFileTree(tmpFolder,
+                new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult postVisitDirectory(
+                            Path dir, IOException exc) throws IOException {
+                        Files.delete(dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(
+                            Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        Files.delete(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+
+        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            Files.createDirectory(tmpFolder, PosixFilePermissions.asFileAttribute(EnumSet
+                    .of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE)));
+        } else {
+            Files.createDirectory(tmpFolder);
+        }
 
         var tmp = tmpFolder.resolve("updateScript" + (IJ.isWindows() ? ".bat" : ".sh"));
 
@@ -153,7 +176,8 @@ public class AstroImageJUpdaterV6 {
                     "start", "\"\"", "/b",
                     tmp.toAbsolutePath().toString(),
                     Long.toString(pid),
-                    inst.toAbsolutePath().toString()
+                    inst.toAbsolutePath().toString(),
+                    baseDir.toAbsolutePath().toString()
             );
             Process p = pb.start();
 

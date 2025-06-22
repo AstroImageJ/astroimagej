@@ -295,7 +295,7 @@ tasks.register<JavaExec>("aijRun") {
     enableAssertions = true
 
     classpath = files(file("${projectDir}/AIJ-Run/ij.jar"))
-    mainClass.set("ij.ImageJ")
+    // Don't specify main class so gradle reads from the manifest which also reads the native access enabler
 }
 
 fun readConfigFile(): List<String> {

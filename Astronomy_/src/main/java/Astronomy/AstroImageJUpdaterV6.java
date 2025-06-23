@@ -136,23 +136,25 @@ public class AstroImageJUpdaterV6 {
         // Manually manage temp folder and deletion as Windows doesn't automatically clean them
         var tmpFolder = Path.of(System.getProperty("java.io.tmpdir")).resolve("aij-updater");
 
-        Files.walkFileTree(tmpFolder,
-                new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult postVisitDirectory(
-                            Path dir, IOException exc) throws IOException {
-                        Files.delete(dir);
-                        return FileVisitResult.CONTINUE;
-                    }
+        if (Files.exists(tmpFolder)) {
+            Files.walkFileTree(tmpFolder,
+                    new SimpleFileVisitor<>() {
+                        @Override
+                        public FileVisitResult postVisitDirectory(
+                                Path dir, IOException exc) throws IOException {
+                            Files.deleteIfExists(dir);
+                            return FileVisitResult.CONTINUE;
+                        }
 
-                    @Override
-                    public FileVisitResult visitFile(
-                            Path file, BasicFileAttributes attrs)
-                            throws IOException {
-                        Files.delete(file);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
+                        @Override
+                        public FileVisitResult visitFile(
+                                Path file, BasicFileAttributes attrs)
+                                throws IOException {
+                            Files.deleteIfExists(file);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+        }
 
         if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
             Files.createDirectory(tmpFolder, PosixFilePermissions.asFileAttribute(EnumSet
@@ -166,7 +168,13 @@ public class AstroImageJUpdaterV6 {
         // Copy script to location for execution
         Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), tmp, StandardCopyOption.REPLACE_EXISTING);
 
-        var inst = tmpFolder.resolve("installer");
+        var ext = ".msi";
+        if (IJ.isLinux()) {
+            ext = ".tgz";
+        } else if (IJ.isMacOSX()) {
+            ext = ".dmg";
+        }
+        var inst = tmpFolder.resolve("installer" + ext);
 
         Files.write(inst, downloadAndComputeHash(fileEntry, 5));
 

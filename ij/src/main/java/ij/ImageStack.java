@@ -4,6 +4,10 @@ import ij.process.*;
 
 import java.awt.*;
 import java.awt.image.ColorModel;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.ref.Cleaner;
 
 /**
 This class represents an expandable array of images.
@@ -14,7 +18,7 @@ public class ImageStack {
 	static final String outOfRange = "Stack argument out of range: ";
 	private int bitDepth = 0; //0=unknown
 	private int nSlices = 0;
-	private Object[] stack;
+	private NativeArray[] stack;
 	private String[] label;
 	private int width, height;
 	private Rectangle roi;
@@ -24,6 +28,8 @@ public class ImageStack {
 	protected float[] cTable;
 	private int viewers;
 	private boolean signedInt;
+	private final Arena arena = Arena.ofShared();
+	private static final Cleaner cleaner = Cleaner.create();
 	
 	/** Default constructor. */
 	public ImageStack() { }
@@ -38,7 +44,7 @@ public class ImageStack {
 	public ImageStack(int width, int height, int size) {
 		this.width = width;
 		this.height = height;
-		stack = new Object[size];
+		stack = new NativeArray[size];
 		label = new String[size];
 		nSlices = size;
 	}
@@ -48,7 +54,7 @@ public class ImageStack {
 		this.width = width;
 		this.height = height;
 		this.cm = cm;
-		stack = new Object[INITIAL_SIZE];
+		stack = new NativeArray[INITIAL_SIZE];
 		label = new String[INITIAL_SIZE];
 		nSlices = 0;
 	}
@@ -62,14 +68,14 @@ public class ImageStack {
 		int size = stack.length;
 		nSlices++;
 		if (nSlices>=size) {
-			Object[] tmp1 = new Object[size*2];
+			NativeArray[] tmp1 = new NativeArray[size*2];
 			System.arraycopy(stack, 0, tmp1, 0, size);
 			stack = tmp1;
 			String[] tmp2 = new String[size*2];
 			System.arraycopy(label, 0, tmp2, 0, size);
 			label = tmp2;
 		}
-		stack[nSlices-1] = pixels;
+		stack[nSlices-1] = NativeArray.create(arena, pixels);
 		this.label[nSlices-1] = sliceLabel;
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
@@ -125,7 +131,7 @@ public class ImageStack {
 	private void init(int width, int height) {	
 		this.width = width;
 		this.height = height;
-		stack = new Object[INITIAL_SIZE];
+		stack = new NativeArray[INITIAL_SIZE];
 		label = new String[INITIAL_SIZE];
 	}
 	
@@ -150,7 +156,7 @@ public class ImageStack {
 		if (n<0 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
 		addSlice(sliceLabel, ip);
-		Object tempSlice = stack[nSlices-1];
+		var tempSlice = stack[nSlices-1];
 		String tempLabel = label[nSlices-1];
 		int first = n>0?n:1;
 		for (int i=nSlices-1; i>=first; i--) {
@@ -216,14 +222,22 @@ public class ImageStack {
 	public Object getPixels(int n) {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
-		return stack[n-1];
+		return stack[n-1].toArray();
 	}
 	
 	/** Assigns a pixel array to the specified slice, where {@literal 1<=n<=nslices}. */
 	public void setPixels(Object pixels, int n) {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
-		stack[n-1] = pixels;
+        if (stack[n-1] != null) {
+			var na = stack[n-1];
+			if (!na.setAll(pixels)) {
+				stack[n-1] = NativeArray.create(arena, pixels);
+				//todo manually clean na here
+			}
+        } else {
+			stack[n-1] = NativeArray.create(arena, pixels);
+		}
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
 	}
@@ -314,20 +328,21 @@ public class ImageStack {
 			return null;
 		if (stack[n-1]==null)
 			throw new IllegalArgumentException("Pixel array is null");
-		if (stack[n-1] instanceof byte[])
+		var pixels = stack[n - 1].toArray();
+		if (pixels instanceof byte[])
 			ip = new ByteProcessor(width, height, null, cm);
-		else if (stack[n-1] instanceof short[])
+		else if (pixels instanceof short[])
 			ip = new ShortProcessor(width, height, null, cm);
-		else if (stack[n-1] instanceof int[]) {
+		else if (pixels instanceof int[]) {
 			if (signedInt)
 				ip = new IntProcessor(width, height);
 			else
 				ip = new ColorProcessor(width, height, null);
-		} else if (stack[n-1] instanceof float[])
+		} else if (pixels instanceof float[])
 			ip = new FloatProcessor(width, height, null, cm);		
 		else
 			throw new IllegalArgumentException("Unknown stack type");
-		ip.setPixels(stack[n-1]);
+		ip.setPixels(pixels);
 		if (min!=Double.MAX_VALUE && ip!=null && !(ip instanceof ColorProcessor))
 			ip.setMinAndMax(min, max);
 		if (cTable!=null)
@@ -345,7 +360,15 @@ public class ImageStack {
 		ip = convertType(ip);
 		if (ip.getWidth()!=width || ip.getHeight()!=height)
 			throw new IllegalArgumentException("Wrong dimensions for this stack");
-		stack[n-1] = ip.getPixels();
+		if (stack[n-1] != null) {
+			var na = stack[n-1];
+			if (!na.setAll(ip.getPixels())) {
+				stack[n-1] = NativeArray.create(arena, ip.getPixels());
+				//todo manually clean na
+			}
+		} else {
+			stack[n-1] = NativeArray.create(arena, ip.getPixels());
+		}
 	}
 
 	/** Assigns a new color model to this stack. */
@@ -360,7 +383,7 @@ public class ImageStack {
 	
 	/** Returns true if this is a 3-slice, 8-bit RGB stack. */
 	public boolean isRGB() {
-    	return nSlices==3 && (stack[0] instanceof byte[]) && getSliceLabel(1)!=null && getSliceLabel(1).equals("Red");
+    	return nSlices==3 && (stack[0] != null && stack[0].layout == ValueLayout.JAVA_BYTE) && getSliceLabel(1)!=null && getSliceLabel(1).equals("Red");
 	}
 	
 	/** Returns true if this is a 3-slice HSB stack. */
@@ -403,23 +426,19 @@ public class ImageStack {
 	 * beyond the stack limits. Use the ImagePlus.getStackIndex()
 	 * method to convert a C,Z,T hyperstack position (one-based)
 	 * into a z index (zero-based).
-	 * @see ij.ImagePlus#getStackIndex
+	 * @see ImagePlus#getStackIndex
 	*/
 	public final double getVoxel(int x, int y, int z) {
 		if (x>=0 && x<width && y>=0 && y<height && z>=0 && z<nSlices) {
 			switch (bitDepth) {
 				case 8:
-					byte[] bytes = (byte[])stack[z];
-					return bytes[y*width+x]&0xff;
+					return stack[z].getByte((long) y*width+x)&0xff;
 				case 16:
-					short[] shorts = (short[])stack[z];
-					return shorts[y*width+x]&0xffff;
+					return stack[z].getShort((long) y*width+x)&0xffff;
 				case 32:
-					float[] floats = (float[])stack[z];
-					return floats[y*width+x];
+					return stack[z].getFloat((long) y*width+x);
 				case 24:
-					int[] ints = (int[])stack[z];
-					return ints[y*width+x]&0xffffffff;
+					return stack[z].getInt((long) y*width+x)&0xffffffff;
 				default: return Double.NaN;
 			}
 		} else
@@ -431,28 +450,24 @@ public class ImageStack {
 		if (x>=0 && x<width && y>=0 && y<height && z>=0 && z<nSlices) {
 			switch (bitDepth) {
 				case 8:
-					byte[] bytes = (byte[])stack[z];
 					if (value>255.0)
 						value = 255.0;
 					else if (value<0.0)
 						value = 0.0;
-					bytes[y*width+x] = (byte)(value+0.5);
+					stack[z].setByte((long) y*width+x, (byte)(value+0.5));
 					break;
 				case 16:
-					short[] shorts = (short[])stack[z];
 					if (value>65535.0)
 						value = 65535.0;
 					else if (value<0.0)
 						value = 0.0;
-					shorts[y*width+x] = (short)(value+0.5);
+					stack[z].setShort((long) y*width+x, (short)(value+0.5));
 					break;
 				case 32:
-					float[] floats = (float[])stack[z];
-					floats[y*width+x] = (float)value;
+					stack[z].setFloat((long) y*width+x, (float)(value));
 					break;
 				case 24:
-					int[] ints = (int[])stack[z];
-					ints[y*width+x] = (int)value;
+					stack[z].setInt((long) y*width+x, (int)(value));
 					break;
 			}
 		}
@@ -469,24 +484,20 @@ public class ImageStack {
 				if (inBounds) {
 					switch (bitDepth) {
 						case 8:
-							byte[] bytes = (byte[])stack[z];
 							for (int x=x0; x<x0+w; x++)
-								voxels[i++] = bytes[y*width+x]&0xff;
+								voxels[i++] = stack[z].getByte((long) y*width+x)&0xff;
 							break;
 						case 16:
-							short[] shorts = (short[])stack[z];
 							for (int x=x0; x<x0+w; x++)
-								voxels[i++] = shorts[y*width+x]&0xffff;
+								voxels[i++] = stack[z].getShort((long) y*width+x)&0xffff;
 							break;
 						case 32:
-							float[] floats = (float[])stack[z];
 							for (int x=x0; x<x0+w; x++)
-								voxels[i++] = floats[y*width+x];
+								voxels[i++] = stack[z].getFloat((long) y*width+x);
 							break;
 						case 24:
-							int[] ints = (int[])stack[z];
 							for (int x=x0; x<x0+w; x++)
-								voxels[i++] = ints[y*width+x]&0xffffffff;
+								voxels[i++] = stack[z].getInt((long) y*width+x)&0xffffffff;
 							break;
 						default:
 							for (int x=x0; x<x0+w; x++)
@@ -509,10 +520,9 @@ public class ImageStack {
 			voxels = new float[w*h*d];
 		int i = 0;
 		for (int z=z0; z<z0+d; z++) {
-			int[] ints = (int[])stack[z];
 			for (int y=y0; y<y0+h; y++) {
 				for (int x=x0; x<x0+w; x++) {
-					int value = inBounds?ints[y*width+x]&0xffffffff:(int)getVoxel(x, y, z);
+					int value = inBounds?stack[z].getInt((long) y*width+x)&0xffffffff:(int)getVoxel(x, y, z);
 					switch (channel) {
 						case 0: value=(value&0xff0000)>>16; break;
 						case 1: value=(value&0xff00)>>8; break;
@@ -537,39 +547,35 @@ public class ImageStack {
 				if (inBounds) {
 					switch (bitDepth) {
 						case 8:
-							byte[] bytes = (byte[])stack[z];
 							for (int x=x0; x<x0+w; x++) {
 								value = voxels[i++];
 								if (value>255f)
 									value = 255f;
 								else if (value<0f)
 									value = 0f;
-								bytes[y*width+x] = (byte)(value+0.5f);
+								stack[z].setByte((long) y*width+x, (byte)(value+0.5f));
 							}
 							break;
 						case 16:
-							short[] shorts = (short[])stack[z];
 							for (int x=x0; x<x0+w; x++) {
 								value = voxels[i++];
 								if (value>65535f)
 									value = 65535f;
 								else if (value<0f)
 									value = 0f;
-								shorts[y*width+x] = (short)(value+0.5f);
+								stack[z].setShort((long) y*width+x, (short)(value+0.5f));
 							}
 							break;
 						case 32:
-							float[] floats = (float[])stack[z];
 							for (int x=x0; x<x0+w; x++) {
 								value = voxels[i++];
-								floats[y*width+x] = value;
+								stack[z].setFloat((long) y*width+x, value);
 							}
 							break;
 						case 24:
-							int[] ints = (int[])stack[z];
 							for (int x=x0; x<x0+w; x++) {
 								value = voxels[i++];
-								ints[y*width+x] = (int)value;
+								stack[z].setInt((long) y*width+x, (int)(value));
 							}
 							break;
 					}
@@ -592,10 +598,9 @@ public class ImageStack {
 			;
 		int i = 0;
 		for (int z=z0; z<z0+d; z++) {
-			int[] ints = (int[])stack[z];
 			for (int y=y0; y<y0+h; y++) {
 				for (int x=x0; x<x0+w; x++) {
-					int value = inBounds?ints[y*width+x]&0xffffffff:(int)getVoxel(x, y, z);
+					int value = inBounds?stack[z].getInt((long) y*width+x)&0xffffffff:(int)getVoxel(x, y, z);
 					int color = (int)voxels[i++];
 					switch (channel) {
 						case 0: value=(value&0xff00ffff) | ((color&0xff)<<16); break;
@@ -603,7 +608,7 @@ public class ImageStack {
 						case 2: value=(value&0xffffff00) | (color&0xff); break;
 					}
 					if (inBounds)
-						ints[y*width+x] = value;
+						stack[z].setInt((long) y*width+x, value);
 					else
 						setVoxel(x, y, z, value);
 				}
@@ -720,6 +725,247 @@ public class ImageStack {
 	 public void setOptions(String options) {
 	 	if (options==null) return;
 	 	signedInt = options.contains("32-bit int");
+	 }
+
+	/**
+	 * A thin wrapper over a MemorySegment, providing an off-heap array
+	 * @param segment the off-heap memory segment
+	 * @param layout  the element layout (e.g. ValueLayout.JAVA_FLOAT)
+	 * @param size    number of elements
+	 */
+	 private record NativeArray(MemorySegment segment, ValueLayout layout, long size) {
+		 private static NativeArray create(Arena arena, ValueLayout layout, long size) {
+			 arena = Arena.ofShared();
+			 var na = new NativeArray(arena.allocate(layout, size), layout, size);
+			 Arena finalArena = arena;
+			 cleaner.register(na, finalArena::close);
+			 //todo store Cleaner and call #clean when removing a slice and in ImagePlus#flush?
+			 return na;
+		 }
+
+		public static NativeArray create(Arena arena, Object arr) {
+			return switch (arr) {
+				case byte[] a -> {
+					var na = create(arena, ValueLayout.JAVA_BYTE, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case char[] a -> {
+					var na = create(arena, ValueLayout.JAVA_CHAR, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case short[] a -> {
+					var na = create(arena, ValueLayout.JAVA_SHORT, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case int[] a -> {
+					var na = create(arena, ValueLayout.JAVA_INT, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case long[] a -> {
+					var na = create(arena, ValueLayout.JAVA_LONG, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case float[] a -> {
+					var na = create(arena, ValueLayout.JAVA_FLOAT, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case double[] a -> {
+					var na = create(arena, ValueLayout.JAVA_DOUBLE, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				case boolean[] a -> {
+					var na = create(arena, ValueLayout.JAVA_BOOLEAN, a.length);
+					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
+					yield na;
+				}
+				default -> throw new IllegalArgumentException(String.valueOf(arr.getClass()));
+			};
+		}
+
+		public boolean getBoolean(long index) {
+		 return segment.getAtIndex((ValueLayout.OfBoolean) layout, index);
+		}
+
+		public void setBoolean(long index, boolean value) {
+		 segment.setAtIndex((ValueLayout.OfBoolean) layout, index, value);
+		}
+
+		public byte getByte(long index) {
+		 return segment.getAtIndex((ValueLayout.OfByte) layout, index);
+		}
+
+		public void setByte(long index, byte value) {
+		 segment.setAtIndex((ValueLayout.OfByte) layout, index, value);
+		}
+
+		public char getChar(long index) {
+		 return segment.getAtIndex((ValueLayout.OfChar) layout, index);
+		}
+
+		public void setChar(long index, char value) {
+		 segment.setAtIndex((ValueLayout.OfChar) layout, index, value);
+		}
+
+		public short getShort(long index) {
+		 return segment.getAtIndex((ValueLayout.OfShort) layout, index);
+		}
+
+		public void setShort(long index, short value) {
+		 segment.setAtIndex((ValueLayout.OfShort) layout, index, value);
+		}
+
+		public int getInt(long index) {
+		 return segment.getAtIndex((ValueLayout.OfInt) layout, index);
+		}
+
+		public void setInt(long index, int value) {
+		 segment.setAtIndex((ValueLayout.OfInt) layout, index, value);
+		}
+
+		public long getLong(long index) {
+		 return segment.getAtIndex((ValueLayout.OfLong) layout, index);
+		}
+
+		public void setLong(long index, long value) {
+		 segment.setAtIndex((ValueLayout.OfLong) layout, index, value);
+		}
+
+		public float getFloat(long index) {
+		 return segment.getAtIndex((ValueLayout.OfFloat) layout, index);
+		}
+
+		public void setFloat(long index, float value) {
+		 segment.setAtIndex((ValueLayout.OfFloat) layout, index, value);
+		}
+
+		public double getDouble(long index) {
+		 return segment.getAtIndex((ValueLayout.OfDouble) layout, index);
+		}
+
+		public void setDouble(long index, double value) {
+		 segment.setAtIndex((ValueLayout.OfDouble) layout, index, value);
+		}
+
+		public void setAll(int dstOffset, Object src, int srcOffset, int length) {
+			MemorySegment.copy(src, srcOffset, segment, layout, dstOffset, length);
+		}
+
+		public boolean setAll(Object src) {
+            int s;
+            switch (src) {
+                case byte[] a:
+                    if (layout != ValueLayout.JAVA_BYTE) {
+                        return false;
+                    }
+                    s = a.length;
+                    break;
+                case char[] a:
+					if (layout != ValueLayout.JAVA_SHORT) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                case short[] a:
+					if (layout != ValueLayout.JAVA_SHORT) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                case int[] a:
+					if (layout != ValueLayout.JAVA_INT) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                case long[] a:
+					if (layout != ValueLayout.JAVA_LONG) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                case float[] a:
+					if (layout != ValueLayout.JAVA_FLOAT) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                case double[] a:
+					if (layout != ValueLayout.JAVA_DOUBLE) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                case boolean[] a:
+					if (layout != ValueLayout.JAVA_BOOLEAN) {
+						return false;
+					}
+                    s = a.length;
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.valueOf(src.getClass()));
+            }
+
+            if (s != size) {
+                return false;
+            }
+
+            setAll(0, src, 0, s);
+
+			return true;
+		}
+
+		public Object toArray() {
+		 return switch (layout) {
+			 case ValueLayout.OfBoolean ofBoolean -> {
+				 var a = new boolean[(int) size];
+				 MemorySegment.copy(segment, ofBoolean, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfByte ofByte -> {
+				 var a = new byte[(int) size];
+				 MemorySegment.copy(segment, ofByte, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfChar ofChar -> {
+				 var a = new char[(int) size];
+				 MemorySegment.copy(segment, ofChar, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfDouble ofDouble -> {
+				 var a = new double[(int) size];
+				 MemorySegment.copy(segment, ofDouble, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfFloat ofFloat -> {
+				 var a = new float[(int) size];
+				 MemorySegment.copy(segment, ofFloat, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfInt ofInt -> {
+				 var a = new int[(int) size];
+				 MemorySegment.copy(segment, ofInt, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfLong ofLong -> {
+				 var a = new long[(int) size];
+				 MemorySegment.copy(segment, ofLong, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 case ValueLayout.OfShort ofShort -> {
+				 var a = new short[(int) size];
+				 MemorySegment.copy(segment, ofShort, 0L, a, 0, (int) size);
+				 yield a;
+			 }
+			 default -> throw new UnsupportedOperationException(layout.toString());
+		 };
+		}
 	 }
 
 }

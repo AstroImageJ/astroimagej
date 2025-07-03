@@ -75,7 +75,7 @@ public class ImageStack {
 			System.arraycopy(label, 0, tmp2, 0, size);
 			label = tmp2;
 		}
-		stack[nSlices-1] = NativeArray.create(arena, pixels);
+		stack[nSlices-1] = NativeArray.create(pixels);
 		this.label[nSlices-1] = sliceLabel;
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
@@ -231,12 +231,18 @@ public class ImageStack {
 			throw new IllegalArgumentException(outOfRange+n);
         if (stack[n-1] != null) {
 			var na = stack[n-1];
-			if (!na.setAll(pixels)) {
-				stack[n-1] = NativeArray.create(arena, pixels);
+			if (pixels instanceof NativeArray nativeArray) {
+				stack[n-1] = nativeArray;
+			} else if (!na.setAll(pixels)) {
+				stack[n-1] = NativeArray.create(pixels);
 				//todo manually clean na here
 			}
         } else {
-			stack[n-1] = NativeArray.create(arena, pixels);
+			if (pixels instanceof NativeArray nativeArray) {
+				stack[n-1] = nativeArray;
+			} else {
+				stack[n-1] = NativeArray.create(pixels);
+			}
 		}
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
@@ -247,6 +253,8 @@ public class ImageStack {
 		the number of slices currently in the stack, with
 		unused elements set to null. */
 	public Object[] getImageArray() {
+		//todo how to handle - getFileInfo seems like only serious usages in getFileInfo
+		//todo virtualstack returns null here
 		return stack;
 	}
 	
@@ -328,18 +336,18 @@ public class ImageStack {
 			return null;
 		if (stack[n-1]==null)
 			throw new IllegalArgumentException("Pixel array is null");
-		var pixels = stack[n - 1].toArray();
-		if (pixels instanceof byte[])
+		var pixels = stack[n - 1];//.toArray();//todo IP works with NativeArray directly, rather than subclassing IP make it work directly with the offheap data
+		if (pixels.layout == ValueLayout.JAVA_BYTE)
 			ip = new ByteProcessor(width, height, null, cm);
-		else if (pixels instanceof short[])
+		else if (pixels.layout == ValueLayout.JAVA_SHORT)
 			ip = new ShortProcessor(width, height, null, cm);
-		else if (pixels instanceof int[]) {
+		else if (pixels.layout == ValueLayout.JAVA_INT) {
 			if (signedInt)
 				ip = new IntProcessor(width, height);
 			else
 				ip = new ColorProcessor(width, height, null);
-		} else if (pixels instanceof float[])
-			ip = new FloatProcessor(width, height, null, cm);		
+		} else if (pixels.layout == ValueLayout.JAVA_FLOAT)
+			ip = new FloatProcessor(width, height, cm);
 		else
 			throw new IllegalArgumentException("Unknown stack type");
 		ip.setPixels(pixels);
@@ -363,11 +371,11 @@ public class ImageStack {
 		if (stack[n-1] != null) {
 			var na = stack[n-1];
 			if (!na.setAll(ip.getPixels())) {
-				stack[n-1] = NativeArray.create(arena, ip.getPixels());
+				stack[n-1] = NativeArray.create(ip.getPixels());
 				//todo manually clean na
 			}
 		} else {
-			stack[n-1] = NativeArray.create(arena, ip.getPixels());
+			stack[n-1] = NativeArray.create(ip.getPixels());
 		}
 	}
 
@@ -733,124 +741,126 @@ public class ImageStack {
 	 * @param layout  the element layout (e.g. ValueLayout.JAVA_FLOAT)
 	 * @param size    number of elements
 	 */
-	 private record NativeArray(MemorySegment segment, ValueLayout layout, long size) {
-		 private static NativeArray create(Arena arena, ValueLayout layout, long size) {
-			 arena = Arena.ofShared();
-			 var na = new NativeArray(arena.allocate(layout, size), layout, size);
-			 Arena finalArena = arena;
-			 cleaner.register(na, finalArena::close);
-			 //todo store Cleaner and call #clean when removing a slice and in ImagePlus#flush?
-			 return na;
-		 }
+	public record NativeArray(MemorySegment segment, ValueLayout layout, long size) {
+		public static NativeArray create(ValueLayout layout, long size) {
+			var arena = Arena.ofShared();
+			var na = new NativeArray(arena.allocate(layout, size), layout, size);
+			Arena finalArena = arena;
+			cleaner.register(na, finalArena::close);
+			//todo store Cleaner and call #clean when removing a slice and in ImagePlus#flush?
+			return na;
+		}
 
-		public static NativeArray create(Arena arena, Object arr) {
+		public static NativeArray create(Object arr) {
 			return switch (arr) {
 				case byte[] a -> {
-					var na = create(arena, ValueLayout.JAVA_BYTE, a.length);
+					var na = create(ValueLayout.JAVA_BYTE, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case char[] a -> {
-					var na = create(arena, ValueLayout.JAVA_CHAR, a.length);
+					var na = create(ValueLayout.JAVA_CHAR, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case short[] a -> {
-					var na = create(arena, ValueLayout.JAVA_SHORT, a.length);
+					var na = create(ValueLayout.JAVA_SHORT, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case int[] a -> {
-					var na = create(arena, ValueLayout.JAVA_INT, a.length);
+					var na = create(ValueLayout.JAVA_INT, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case long[] a -> {
-					var na = create(arena, ValueLayout.JAVA_LONG, a.length);
+					var na = create(ValueLayout.JAVA_LONG, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case float[] a -> {
-					var na = create(arena, ValueLayout.JAVA_FLOAT, a.length);
+					var na = create(ValueLayout.JAVA_FLOAT, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case double[] a -> {
-					var na = create(arena, ValueLayout.JAVA_DOUBLE, a.length);
+					var na = create(ValueLayout.JAVA_DOUBLE, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
 				case boolean[] a -> {
-					var na = create(arena, ValueLayout.JAVA_BOOLEAN, a.length);
+					var na = create(ValueLayout.JAVA_BOOLEAN, a.length);
 					MemorySegment.copy(a, 0, na.segment, na.layout, 0, a.length);
 					yield na;
 				}
+				case NativeArray nativeArray -> nativeArray;
+				case null -> null;
 				default -> throw new IllegalArgumentException(String.valueOf(arr.getClass()));
 			};
 		}
 
 		public boolean getBoolean(long index) {
-		 return segment.getAtIndex((ValueLayout.OfBoolean) layout, index);
+			return segment.getAtIndex((ValueLayout.OfBoolean) layout, index);
 		}
 
 		public void setBoolean(long index, boolean value) {
-		 segment.setAtIndex((ValueLayout.OfBoolean) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfBoolean) layout, index, value);
 		}
 
 		public byte getByte(long index) {
-		 return segment.getAtIndex((ValueLayout.OfByte) layout, index);
+			return segment.getAtIndex((ValueLayout.OfByte) layout, index);
 		}
 
 		public void setByte(long index, byte value) {
-		 segment.setAtIndex((ValueLayout.OfByte) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfByte) layout, index, value);
 		}
 
 		public char getChar(long index) {
-		 return segment.getAtIndex((ValueLayout.OfChar) layout, index);
+			return segment.getAtIndex((ValueLayout.OfChar) layout, index);
 		}
 
 		public void setChar(long index, char value) {
-		 segment.setAtIndex((ValueLayout.OfChar) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfChar) layout, index, value);
 		}
 
 		public short getShort(long index) {
-		 return segment.getAtIndex((ValueLayout.OfShort) layout, index);
+			return segment.getAtIndex((ValueLayout.OfShort) layout, index);
 		}
 
 		public void setShort(long index, short value) {
-		 segment.setAtIndex((ValueLayout.OfShort) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfShort) layout, index, value);
 		}
 
 		public int getInt(long index) {
-		 return segment.getAtIndex((ValueLayout.OfInt) layout, index);
+			return segment.getAtIndex((ValueLayout.OfInt) layout, index);
 		}
 
 		public void setInt(long index, int value) {
-		 segment.setAtIndex((ValueLayout.OfInt) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfInt) layout, index, value);
 		}
 
 		public long getLong(long index) {
-		 return segment.getAtIndex((ValueLayout.OfLong) layout, index);
+			return segment.getAtIndex((ValueLayout.OfLong) layout, index);
 		}
 
 		public void setLong(long index, long value) {
-		 segment.setAtIndex((ValueLayout.OfLong) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfLong) layout, index, value);
 		}
 
 		public float getFloat(long index) {
-		 return segment.getAtIndex((ValueLayout.OfFloat) layout, index);
+			return segment.getAtIndex((ValueLayout.OfFloat) layout, index);
 		}
 
 		public void setFloat(long index, float value) {
-		 segment.setAtIndex((ValueLayout.OfFloat) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfFloat) layout, index, value);
 		}
 
 		public double getDouble(long index) {
-		 return segment.getAtIndex((ValueLayout.OfDouble) layout, index);
+			return segment.getAtIndex((ValueLayout.OfDouble) layout, index);
 		}
 
 		public void setDouble(long index, double value) {
-		 segment.setAtIndex((ValueLayout.OfDouble) layout, index, value);
+			segment.setAtIndex((ValueLayout.OfDouble) layout, index, value);
 		}
 
 		public void setAll(int dstOffset, Object src, int srcOffset, int length) {
@@ -858,114 +868,123 @@ public class ImageStack {
 		}
 
 		public boolean setAll(Object src) {
-            int s;
-            switch (src) {
-                case byte[] a:
-                    if (layout != ValueLayout.JAVA_BYTE) {
-                        return false;
-                    }
-                    s = a.length;
-                    break;
-                case char[] a:
+			int s;
+			switch (src) {
+				case byte[] a:
+					if (layout != ValueLayout.JAVA_BYTE) {
+						return false;
+					}
+					s = a.length;
+					break;
+				case char[] a:
 					if (layout != ValueLayout.JAVA_SHORT) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                case short[] a:
+					s = a.length;
+					break;
+				case short[] a:
 					if (layout != ValueLayout.JAVA_SHORT) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                case int[] a:
+					s = a.length;
+					break;
+				case int[] a:
 					if (layout != ValueLayout.JAVA_INT) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                case long[] a:
+					s = a.length;
+					break;
+				case long[] a:
 					if (layout != ValueLayout.JAVA_LONG) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                case float[] a:
+					s = a.length;
+					break;
+				case float[] a:
 					if (layout != ValueLayout.JAVA_FLOAT) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                case double[] a:
+					s = a.length;
+					break;
+				case double[] a:
 					if (layout != ValueLayout.JAVA_DOUBLE) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                case boolean[] a:
+					s = a.length;
+					break;
+				case boolean[] a:
 					if (layout != ValueLayout.JAVA_BOOLEAN) {
 						return false;
 					}
-                    s = a.length;
-                    break;
-                default:
-                    throw new IllegalArgumentException(String.valueOf(src.getClass()));
-            }
+					s = a.length;
+					break;
+				case NativeArray nativeArray: {
+					if (nativeArray.layout != layout) {
+						return false;
+					}
+					if (nativeArray == this) {
+						return true;
+					}
+					MemorySegment.copy(nativeArray.segment, 0, segment, 0, segment.byteSize());
+					return true;
+				}
+				default:
+					throw new IllegalArgumentException(String.valueOf(src.getClass()));
+			}
 
-            if (s != size) {
-                return false;
-            }
+			if (s != size) {
+				return false;
+			}
 
-            setAll(0, src, 0, s);
+			setAll(0, src, 0, s);
 
 			return true;
 		}
 
 		public Object toArray() {
-		 return switch (layout) {
-			 case ValueLayout.OfBoolean ofBoolean -> {
-				 var a = new boolean[(int) size];
-				 MemorySegment.copy(segment, ofBoolean, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfByte ofByte -> {
-				 var a = new byte[(int) size];
-				 MemorySegment.copy(segment, ofByte, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfChar ofChar -> {
-				 var a = new char[(int) size];
-				 MemorySegment.copy(segment, ofChar, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfDouble ofDouble -> {
-				 var a = new double[(int) size];
-				 MemorySegment.copy(segment, ofDouble, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfFloat ofFloat -> {
-				 var a = new float[(int) size];
-				 MemorySegment.copy(segment, ofFloat, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfInt ofInt -> {
-				 var a = new int[(int) size];
-				 MemorySegment.copy(segment, ofInt, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfLong ofLong -> {
-				 var a = new long[(int) size];
-				 MemorySegment.copy(segment, ofLong, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 case ValueLayout.OfShort ofShort -> {
-				 var a = new short[(int) size];
-				 MemorySegment.copy(segment, ofShort, 0L, a, 0, (int) size);
-				 yield a;
-			 }
-			 default -> throw new UnsupportedOperationException(layout.toString());
-		 };
+			return switch (layout) {
+				case ValueLayout.OfBoolean ofBoolean -> {
+					var a = new boolean[(int) size];
+					MemorySegment.copy(segment, ofBoolean, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfByte ofByte -> {
+					var a = new byte[(int) size];
+					MemorySegment.copy(segment, ofByte, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfChar ofChar -> {
+					var a = new char[(int) size];
+					MemorySegment.copy(segment, ofChar, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfDouble ofDouble -> {
+					var a = new double[(int) size];
+					MemorySegment.copy(segment, ofDouble, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfFloat ofFloat -> {
+					var a = new float[(int) size];
+					MemorySegment.copy(segment, ofFloat, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfInt ofInt -> {
+					var a = new int[(int) size];
+					MemorySegment.copy(segment, ofInt, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfLong ofLong -> {
+					var a = new long[(int) size];
+					MemorySegment.copy(segment, ofLong, 0L, a, 0, (int) size);
+					yield a;
+				}
+				case ValueLayout.OfShort ofShort -> {
+					var a = new short[(int) size];
+					MemorySegment.copy(segment, ofShort, 0L, a, 0, (int) size);
+					yield a;
+				}
+				default -> throw new UnsupportedOperationException(layout.toString());
+			};
 		}
-	 }
-
+	}
 }

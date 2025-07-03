@@ -1,14 +1,18 @@
 package ij.process;
 
+import ij.ImageStack;
+
 import java.awt.*;
 import java.awt.image.*;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.Random;
 
 /** This is an 32-bit floating-point image and methods that operate on that image. */
 public class FloatProcessor extends ImageProcessor {
 
 	private float min, max, snapshotMin, snapshotMax;
-	private float[] pixels;
+	private ImageStack.NativeArray pixels;
 	protected byte[] pixels8;
 	private float[] snapshotPixels = null;
 	private float fillColor =  Float.MAX_VALUE;
@@ -26,7 +30,15 @@ public class FloatProcessor extends ImageProcessor {
 			throw new IllegalArgumentException(WRONG_LENGTH);
 		this.width = width;
 		this.height = height;
-		this.pixels = pixels;
+		this.pixels = ImageStack.NativeArray.create(pixels);
+		this.cm = cm;
+		resetRoi();
+	}
+
+	public FloatProcessor(int width, int height, ColorModel cm) {
+		this.width = width;
+		this.height = height;
+		this.pixels = null;
 		this.cm = cm;
 		resetRoi();
 	}
@@ -41,25 +53,25 @@ public class FloatProcessor extends ImageProcessor {
 	public FloatProcessor(int width, int height, int[] pixels) {
 		this(width, height);
 		for (int i=0; i<pixels.length; i++)
-			this.pixels[i] = (float)(pixels[i]);
+			this.pixels.setFloat(i, (float)(pixels[i]));
 	}
 	
 	/** Creates a FloatProcessor from a double array using the default grayscale LUT. */
 	public FloatProcessor(int width, int height, double[] pixels) {
 		this(width, height);
 		for (int i=0; i<pixels.length; i++)
-			this.pixels[i] = (float)pixels[i];
+			this.pixels.setFloat(i, (float)(pixels[i]));
 	}
 	
 	/** Creates a FloatProcessor from a 2D float array using the default LUT. */
 	public FloatProcessor(float[][] array) {
 		width = array.length;
 		height = array[0].length;
-		pixels = new float[width*height];
+		pixels = ImageStack.NativeArray.create(ValueLayout.JAVA_FLOAT, (long) width*height);
 		int i=0;
 		for (int y=0; y<height; y++) {
 			for (int x=0; x<width; x++) {
-				pixels[i++] = array[x][y];
+				pixels.setFloat(i++, array[x][y]);
 			}
 		}
 		resetRoi();
@@ -69,11 +81,11 @@ public class FloatProcessor extends ImageProcessor {
 	public FloatProcessor(int[][] array) {
 		width = array.length;
 		height = array[0].length;
-		pixels = new float[width*height];
+		pixels = ImageStack.NativeArray.create(ValueLayout.JAVA_FLOAT, (long) width*height);
 		int i=0;
 		for (int y=0; y<height; y++) {
 			for (int x=0; x<width; x++) {
-				pixels[i++] = (float)array[x][y];
+				pixels.setFloat(i++, (float) array[x][y]);
 			}
 		}
 		resetRoi();
@@ -96,14 +108,14 @@ public class FloatProcessor extends ImageProcessor {
 		int len = width*height;
 		int i=0;
 		for (; i<len; i++)
-			if (!Float.isNaN(pixels[i]))
+			if (!Float.isNaN(pixels.getFloat(i)))
 				break;
 		if (i<len) {
-			min = pixels[i];
-			max = pixels[i];
+			min = pixels.getFloat(i);
+			max = pixels.getFloat(i);
 		}
 		for (; i<len; i++) {
-			float value = pixels[i];
+			float value = pixels.getFloat(i);
 			if (value<min)
 				min = value;
 			else if (value>max)
@@ -168,7 +180,7 @@ public class FloatProcessor extends ImageProcessor {
 			double value;
 			if (lutUpdateMode==BLACK_AND_WHITE_LUT) {
 				for (int i=0; i<size; i++) {
-					value = pixels[i];
+					value = pixels.getFloat(i);
 					if (value>=minThreshold && value<=maxThreshold)
 						pixels8[i] = (byte)255;
 					else
@@ -176,7 +188,7 @@ public class FloatProcessor extends ImageProcessor {
 				}
 			} else { // threshold red
 				for (int i=0; i<size; i++) {
-					value = pixels[i];
+					value = pixels.getFloat(i);
 					if (value>=minThreshold && value<=maxThreshold)
 						pixels8[i] = (byte)255;
 				}
@@ -197,7 +209,7 @@ public class FloatProcessor extends ImageProcessor {
 		double scale = 255.0/(max2-min2);
 		int maxValue = thresholding?254:255;
 		for (int i=0; i<size; i++) {
-			value = pixels[i]-min2;
+			value = pixels.getFloat(i)-min2;
 			if (value<0.0) value=0.0;
 			ivalue = (int)(value*scale+0.5);
 			if (ivalue>maxValue) ivalue = maxValue;
@@ -244,9 +256,9 @@ public class FloatProcessor extends ImageProcessor {
 		snapshotHeight=height;
 		snapshotMin=(float)getMin();
 		snapshotMax=(float)getMax();
-		if (snapshotPixels==null || (snapshotPixels!=null && snapshotPixels.length!=pixels.length))
+		if (snapshotPixels==null || (snapshotPixels!=null && snapshotPixels.length!=pixels.size()))
 			snapshotPixels = new float[width * height];
-		System.arraycopy(pixels, 0, snapshotPixels, 0, width*height);
+		MemorySegment.copy(pixels.segment(), pixels.layout(), 0, snapshotPixels, 0, width*height);
 	}
 	
 	public void reset() {
@@ -255,7 +267,7 @@ public class FloatProcessor extends ImageProcessor {
 		min=snapshotMin;
 		max=snapshotMax;
 		minMaxSet = true;
-		System.arraycopy(snapshotPixels,0,pixels,0,width*height);
+		MemorySegment.copy(snapshotPixels, 0, pixels.segment(), pixels.layout(), 0, width*height);
 	}
 	
 	public void reset(ImageProcessor mask) {
@@ -269,7 +281,7 @@ public class FloatProcessor extends ImageProcessor {
 			int mi = my * roiWidth;
 			for (int x=roiX; x<(roiX+roiWidth); x++) {
 				if (mpixels[mi++]==0)
-					pixels[i] = snapshotPixels[i];
+					pixels.setFloat(i, snapshotPixels[i]);
 				i++;
 			}
 		}
@@ -279,9 +291,9 @@ public class FloatProcessor extends ImageProcessor {
 	public void swapPixelArrays() {
 		if (snapshotPixels==null) return;	
 		float pixel;
-		for (int i=0; i<pixels.length; i++) {
-			pixel = pixels[i];
-			pixels[i] = snapshotPixels[i];
+		for (int i=0; i<pixels.size(); i++) {
+			pixel = pixels.getFloat(i);
+			pixels.setFloat(i, snapshotPixels[i]);
 			snapshotPixels[i] = pixel;
 		}
 	}
@@ -300,41 +312,41 @@ public class FloatProcessor extends ImageProcessor {
 		Float.intBitsToFloat(). */
 	public int getPixel(int x, int y) {
 		if (x>=0 && x<width && y>=0 && y<height)
-			return Float.floatToIntBits(pixels[y*width+x]);
+			return Float.floatToIntBits(pixels.getFloat(y*width+x));
 		else
 			return 0;
 	}
 
 	public final int get(int x, int y) {
-		return Float.floatToIntBits(pixels[y*width+x]);
+		return Float.floatToIntBits(pixels.getFloat(y*width+x));
 	}
 
 	public final void set(int x, int y, int value) {
-		pixels[y*width + x] = Float.intBitsToFloat(value);
+		pixels.setFloat(y*width + x, Float.intBitsToFloat(value));
 	}
 
 	public final int get(int index) {
-		return Float.floatToIntBits(pixels[index]);
+		return Float.floatToIntBits(pixels.getFloat(index));
 	}
 
 	public final void set(int index, int value) {
-		pixels[index] = Float.intBitsToFloat(value);
+		pixels.setFloat(index, Float.intBitsToFloat(value));
 	}
 
 	public final float getf(int x, int y) {
-		return pixels[y*width+x];
+		return pixels.getFloat(y*width+x);
 	}
 
 	public final void setf(int x, int y, float value) {
-		pixels[y*width + x] = value;
+		pixels.setFloat(y*width + x, value);
 	}
 
 	public final float getf(int index) {
-		return pixels[index];
+		return pixels.getFloat(index);
 	}
 	
 	public final void setf(int index, float value) {
-		pixels[index] = value;
+		pixels.setFloat(index, value);
 	}
 
 	/** Returns the value of the pixel at (x,y) in a
@@ -381,19 +393,19 @@ public class FloatProcessor extends ImageProcessor {
 		float that has been converted to an int using Float.floatToIntBits(). */
 	public final void putPixel(int x, int y, int value) {
 		if (x>=0 && x<width && y>=0 && y<height)
-			pixels[y*width + x] = Float.intBitsToFloat(value);
+			pixels.setFloat(y*width + x, Float.intBitsToFloat(value));
 	}
 
 	/** Stores the specified real value at (x,y). */
 	public void putPixelValue(int x, int y, double value) {
 		if (x>=0 && x<width && y>=0 && y<height)
-			pixels[y*width + x] = (float)value;
+			pixels.setFloat(y*width + x, (float)value);
 	}
 
 	/** Returns the value of the pixel at (x,y) as a float. */
 	public float getPixelValue(int x, int y) {
 		if (x>=0 && x<width && y>=0 && y<height)
-			return pixels[y*width + x];
+			return pixels.getFloat(y*width + x);
 		else
 			return Float.NaN;
 	}
@@ -407,7 +419,11 @@ public class FloatProcessor extends ImageProcessor {
 	/** Returns a reference to the float array containing
 		this image's pixel data. */
 	public Object getPixels() {
-		return (Object)pixels;
+		return (Object)pixels.toArray();
+	}
+
+	public ImageStack.NativeArray getNativePixels() {
+		return pixels;
 	}
 
 	/** Returns a copy of the pixel data. Or returns a reference to the
@@ -421,13 +437,17 @@ public class FloatProcessor extends ImageProcessor {
 			return snapshotPixels;
 		} else {
 			float[] pixels2 = new float[width*height];
-			System.arraycopy(pixels, 0, pixels2, 0, width*height);
+			MemorySegment.copy(pixels.segment(), pixels.layout(), 0, pixels2, 0, width*height);
 			return pixels2;
 		}
 	}
 
 	public void setPixels(Object pixels) {
-		this.pixels = (float[])pixels;
+        if (pixels instanceof ImageStack.NativeArray nativeArray && nativeArray.layout() == ValueLayout.JAVA_FLOAT) {
+            this.pixels = nativeArray;
+        } else {
+			this.pixels = ImageStack.NativeArray.create(pixels);
+		}
 		resetPixels(pixels);
 		if (pixels==null) snapshotPixels = null;
 		if (pixels==null) pixels8 = null;
@@ -451,7 +471,7 @@ public class FloatProcessor extends ImageProcessor {
 		for (int y=roiY; y<(roiY+roiHeight); y++) {
 			int i = y * width + roiX;
 			for (int x=roiX; x<(roiX+roiWidth); x++) {
-				v1 = pixels[i];
+				v1 = pixels.getFloat(i);
 				switch(op) {
 					case INVERT:
 						v2 = max2 - (v1 - min2);
@@ -507,7 +527,7 @@ public class FloatProcessor extends ImageProcessor {
 					 default:
 						v2 = v1;
 				}
-				pixels[i++] = v2;
+				pixels.setFloat(i++, v2);
 			}
 		}
 	}
@@ -559,7 +579,7 @@ public class FloatProcessor extends ImageProcessor {
 			int mi = my * roiWidth;
 			for (int x=roiX; x<(roiX+roiWidth); x++) {
 				if (mpixels[mi++]!=0)
-					pixels[i] = fillColor;
+					pixels.setFloat(i, fillColor);
 				i++;
 			}
 		}
@@ -622,7 +642,7 @@ public class FloatProcessor extends ImageProcessor {
 					v6 = pixels2[p6];
 					v7 = v8; v8 = v9;
 					v9 = pixels2[p9];
-					pixels[p] = (v1+v2+v3+v4+v5+v6+v7+v8+v9)*0.11111111f; //0.111... = 1/9
+					pixels.setFloat(p, (v1+v2+v3+v4+v5+v6+v7+v8+v9)*0.11111111f); //0.111... = 1/9
 				}
 				break;
 				case FIND_EDGES:
@@ -636,7 +656,7 @@ public class FloatProcessor extends ImageProcessor {
 					v9 = pixels2[p9];
 					float sum1 = v1 + 2*v2 + v3 - v7 - 2*v8 - v9;
 					float sum2 = v1	 + 2*v4 + v7 - v3 - 2*v6 - v9;
-					pixels[p] = (float)Math.sqrt(sum1*sum1 + sum2*sum2);
+					pixels.setFloat(p, (float)Math.sqrt(sum1*sum1 + sum2*sum2));
 				}
 				break;
 				case CONVOLVE:
@@ -652,7 +672,7 @@ public class FloatProcessor extends ImageProcessor {
 							  + k4*v4 + k5*v5 + k6*v6
 							  + k7*v7 + k8*v8 + k9*v9;
 					sum *= scale;
-					pixels[p] = sum;
+					pixels.setFloat(p, sum);
 				}
 				break;
 			}
@@ -688,7 +708,7 @@ public class FloatProcessor extends ImageProcessor {
 				for (int x=roiX; x<=xMax; x++) {
 					xs = x*ca + tmp3;
 					ys = x*sa + tmp4;
-					pixels[index++] = (float)getBicubicInterpolatedPixel(xs, ys, ip2);
+					pixels.setFloat(index++, (float)getBicubicInterpolatedPixel(xs, ys, ip2));
 				}
 			}
 		} else {
@@ -708,16 +728,16 @@ public class FloatProcessor extends ImageProcessor {
 							if (xs>=xlimit) xs = xlimit2;
 							if (ys<0.0) ys = 0.0;			
 							if (ys>=ylimit) ys = ylimit2;
-							pixels[index++] = (float)getInterpolatedPixel(xs, ys, pixels2);
+							pixels.setFloat(index++, (float)getInterpolatedPixel(xs, ys, pixels2));
 						} else {
 							ixs = (int)(xs+0.5);
 							iys = (int)(ys+0.5);
 							if (ixs>=width) ixs = width - 1;
 							if (iys>=height) iys = height -1;
-							pixels[index++] = pixels2[width*iys+ixs];
+							pixels.setFloat(index++, pixels2[width*iys+ixs]);
 						}
 					} else
-						pixels[index++] = bgValue;
+						pixels.setFloat(index++, bgValue);
 				}
 			}
 		}
@@ -730,9 +750,9 @@ public class FloatProcessor extends ImageProcessor {
 			index1 = (roiY+y)*width+roiX;
 			index2 = (roiY+roiHeight-1-y)*width+roiX;
 			for (int i=0; i<roiWidth; i++) {
-				tmp = pixels[index1];
-				pixels[index1++] = pixels[index2];
-				pixels[index2++] = tmp;
+				tmp = pixels.getFloat(index1);
+				pixels.setFloat(index1++, pixels.getFloat(index2));
+				pixels.setFloat(index2++, tmp);
 			}
 		}
 	}
@@ -747,7 +767,7 @@ public class FloatProcessor extends ImageProcessor {
 			int i = y * width + roiX;
 			for (int x=roiX; x<(roiX+roiWidth); x++) {
 				float RandomBrightness = (float)(rnd.nextGaussian()*standardDeviation);
-				pixels[i] = pixels[i] + RandomBrightness;
+				pixels.setFloat(i, pixels.getFloat(i) + RandomBrightness);
 				i++;
 			}
 		}
@@ -761,7 +781,7 @@ public class FloatProcessor extends ImageProcessor {
 			int offset1 = (ys-roiY)*roiWidth;
 			int offset2 = ys*width+roiX;
 			for (int xs=0; xs<roiWidth; xs++)
-				pixels2[offset1++] = pixels[offset2++];
+				pixels2[offset1++] = pixels.getFloat(offset2++);
 		}
 		return ip2;
 	}
@@ -769,8 +789,8 @@ public class FloatProcessor extends ImageProcessor {
 	/** Returns a duplicate of this image. */ 
 	public ImageProcessor duplicate() {
 		ImageProcessor ip2 = createProcessor(width, height); 
-		float[] pixels2 = (float[])ip2.getPixels(); 
-		System.arraycopy(pixels, 0, pixels2, 0, width*height); 
+		float[] pixels2 = (float[])ip2.getPixels();
+		MemorySegment.copy(pixels.segment(), pixels.layout(), 0, pixels2, 0, width*height);
 		return ip2; 
 	} 
 
@@ -811,7 +831,7 @@ public class FloatProcessor extends ImageProcessor {
 				index1 = y*width + xmin;
 				for (int x=xmin; x<=xmax; x++) {
 					xs = (x-xCenter)/xScale + xCenter;
-					pixels[index1++] = (float)getBicubicInterpolatedPixel(xs, ys, ip2);
+					pixels.setFloat(index1++, (float)getBicubicInterpolatedPixel(xs, ys, ip2));
 				}
 			}
 		} else {
@@ -828,14 +848,14 @@ public class FloatProcessor extends ImageProcessor {
 					xs = (x-xCenter)/xScale + xCenter;
 					xsi = (int)xs;
 					if (checkCoordinates && ((xsi<xmin) || (xsi>xmax) || (ysi<ymin) || (ysi>ymax)))
-						pixels[index1++] = (float)getMin();
+						pixels.setFloat(index1++, (float)getMin());
 					else {
 						if (interpolationMethod==BILINEAR) {
 							if (xs<0.0) xs = 0.0;
 							if (xs>=xlimit) xs = xlimit2;
-							pixels[index1++] = (float)getInterpolatedPixel(xs, ys, pixels2);
+							pixels.setFloat(index1++, (float)getInterpolatedPixel(xs, ys, pixels2));
 						} else
-							pixels[index1++] = pixels2[index2+xsi];
+							pixels.setFloat(index1++, pixels2[index2+xsi]);
 					}
 				}
 			}
@@ -853,6 +873,38 @@ public class FloatProcessor extends ImageProcessor {
 		double lowerRight = pixels[offset + 1];
 		double upperRight = pixels[offset + width + 1];
 		double upperLeft = pixels[offset + width];
+		double upperAverage;
+		if (Double.isNaN(upperLeft ) && xFraction>=0.5)
+			upperAverage = upperRight;
+		else if (Double.isNaN(upperRight) && xFraction<0.5 )
+			upperAverage = upperLeft;
+		else
+			upperAverage = upperLeft + xFraction * (upperRight-upperLeft);
+		double lowerAverage;
+		if (Double.isNaN(lowerLeft) && xFraction>=0.5)
+			lowerAverage = lowerRight;
+		else if (Double.isNaN(lowerRight) && xFraction<0.5 )
+			lowerAverage = lowerLeft;
+		else
+			lowerAverage = lowerLeft + xFraction * (lowerRight-lowerLeft);
+		if (Double.isNaN(lowerAverage) && yFraction>=0.5)
+			return upperAverage;
+		else if (Double.isNaN(upperAverage) && yFraction<0.5 )
+			return lowerAverage;
+		else
+			return lowerAverage + yFraction * (upperAverage-lowerAverage);
+	}
+
+	private final double getInterpolatedPixel(double x, double y, ImageStack.NativeArray pixels) {
+		int xbase = (int)x;
+		int ybase = (int)y;
+		double xFraction = x - xbase;
+		double yFraction = y - ybase;
+		int offset = ybase * width + xbase;
+		double lowerLeft = pixels.getFloat(offset);
+		double lowerRight = pixels.getFloat(offset + 1);
+		double upperRight = pixels.getFloat(offset + width + 1);
+		double upperLeft = pixels.getFloat(offset + width);
 		double upperAverage;
 		if (Double.isNaN(upperLeft ) && xFraction>=0.5)
 			upperAverage = upperRight;
@@ -942,7 +994,7 @@ public class FloatProcessor extends ImageProcessor {
 						if (xs>=xlimit) xs = xlimit2;
 						pixels2[index2++] = (float)getInterpolatedPixel(xs, ys, pixels);
 					} else
-						pixels2[index2++] = pixels[index1+(int)xs];
+						pixels2[index2++] = pixels.getFloat(index1+(int)xs);
 				}
 			}
 		}
@@ -1153,8 +1205,8 @@ public class FloatProcessor extends ImageProcessor {
 		float maxThreshold = (float)getMaxThreshold();
 		ByteProcessor mask = new ByteProcessor(width, height);
 		byte[] mpixels = (byte[])mask.getPixels();
-		for (int i=0; i<pixels.length; i++) {
-			if (pixels[i]>=minThreshold && pixels[i]<=maxThreshold)
+		for (int i=0; i<pixels.size(); i++) {
+			if (pixels.getFloat(i)>=minThreshold && pixels.getFloat(i)<=maxThreshold)
 				mpixels[i] = (byte)255;
 		}
 		return mask;

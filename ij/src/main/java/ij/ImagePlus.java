@@ -1997,7 +1997,11 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 				roi.endPaste();
 			if (isProcessor()) {
 				if (currentSlice==0) currentSlice=1;
-				stack.setPixels(ip.getPixels(),currentSlice);
+                if (ip instanceof FloatProcessor fp) {
+					stack.setPixels(fp.getNativePixels(),currentSlice);
+                } else {
+					stack.setPixels(ip.getPixels(),currentSlice);//todo keep Map of NativeArray to array and if match, skip this?
+				}
 			}
 			setCurrentSlice(n);
 			Object pixels = null;
@@ -2013,8 +2017,13 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 						setProperty("FHT", props.get("FHT"));
 				}
 				if (ip2!=null) pixels=ip2.getPixels();
-			} else
-				pixels = stack.getPixels(currentSlice);
+			} else {
+				if (ip instanceof FloatProcessor fp) {
+					pixels = fp.getNativePixels();
+				} else {
+					pixels = ip.getPixels();
+				}
+			}
 			if (ip!=null && pixels!=null) {
 				try {
 					ip.setPixels(pixels);

@@ -121,7 +121,7 @@ public class Image_Stabilizer_AIJ implements PlugInFilter {
             outputDir = dc.getDirectory();
             if (outputDir == null || outputDir.length() == 0)
                 return;
-            File file = new File(outputDir);
+            File file = new File(outputDir);//todo needs handling for offheap data
             VirtualStack virtualStack = (VirtualStack)stack;
             String stackDir = virtualStack.path;//getDirectory();
             if (null != stackDir) {

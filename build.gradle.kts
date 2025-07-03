@@ -318,7 +318,7 @@ tasks.register<JavaExec>("aijRun") {
 
     workingDir = file("${projectDir}/AIJ-Run/")
 
-    allJvmArgs = readConfigFile()
+    allJvmArgs = readConfigFile() + "-XX:+UseNUMA"
 
     // Force it to use the toolchain java version
     javaLauncher.set(javaToolchains.launcherFor {

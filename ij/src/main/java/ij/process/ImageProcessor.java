@@ -1862,6 +1862,8 @@ public abstract class ImageProcessor implements Cloneable {
 		depending on the image type. */
 	public abstract Object getPixels();
 
+	//public abstract ImageStack.NativeArray getNativePixels();
+
 	/** Returns a copy of the pixel data. Or returns a reference to the
 		snapshot buffer if it is not null and 'snapshotCopyMode' is true.
 		@see ImageProcessor#snapshot

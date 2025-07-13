@@ -418,7 +418,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             "--java-options", "-Duser.dir=\$APPDIR",
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
             //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
-            "--verbose",
+            //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
             "--java-options", "-XX:MaxRAMPercentage=75"
         )

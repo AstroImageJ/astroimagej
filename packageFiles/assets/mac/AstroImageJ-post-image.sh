@@ -17,7 +17,7 @@ else
 fi
 
 # Read vars
-APP_DIR="${JpAppImageDir:-}"/*/AstroImageJ.app
+#APP_DIR="${JpAppImageDir:-}"/*/AstroImageJ.app
 REPLACER="${CustomLauncherPath:-}"
 
 echo "=== Post-image hook (MacOS) started ==="

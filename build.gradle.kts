@@ -333,6 +333,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val verifySigTaskName = "verifySigFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
     val notaryTaskName = "notarizeFor${sysId}"
+    val installerTaskName = "installerFor${sysId}"
     val getRuntimeTaskName = "getRuntimeFor${sysId}"
 
     val downloadTask = tasks.register<Download>(downloadTaskName) {
@@ -417,7 +418,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         extraArgs = listOf(
             "--java-options", "-Duser.dir=\$APPDIR",
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
-            "--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
+            //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
             "--java-options", "-XX:MaxRAMPercentage=75"
@@ -428,7 +429,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         //linux:modify files before zipping, or if making installers application-name-post-image.sh
         when (sysInfo.os) {
             MAC -> {
-                when (sysInfo.arch) {
+                // Not used in favour of two-step process to work around jpackage running post-image scripts after signing,
+                // which prevents notarization
+                /*when (sysInfo.arch) {
                     //todo make universal launchers with lipo?
                     ARM_64 -> {
                         //launcherOverride = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ")
@@ -437,7 +440,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                         appFileOverride = layout.buildDirectory.dir("temp/images").map { it.asFile.absolutePath }
                         launcherOverride = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ-Intel")
                     }
-                }
+                }*/
             }
             //LINUX -> TODO()
             //WINDOWS -> TODO()
@@ -451,10 +454,10 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 buildList {
                     addAll(
                         listOf(
-                            "--type", "dmg",
+                            "--type", "app-image",
                             "--mac-package-identifier", "com.astroimagej.AstroImageJ",
-                            "--about-url", "https://astroimagej.com",
-                            "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+                            //"--about-url", "https://astroimagej.com",
+                            //"--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                             "--mac-app-store"
                         )
                     )
@@ -501,18 +504,81 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         runtime = getRuntimeTask.flatMap { it.outputDir }
 
         // Destination for the generated installer/image
-        outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
+        if (sysInfo.os == MAC) {
+            outputDir.set(layout.buildDirectory.dir("distributions/images/$sysId"))
+        } else {
+            outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
+        }
     }
 
     if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
-        val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
-            enabled = System.getenv("DeveloperId") != null &&
-                    project.property("codeSignAndNotarize").toString().toBoolean()
-            inputDir.set(packageTask.map { it.outputDir.get() })
-            keychainProfile = "AC_PASSWORD"
+        val replaceExecTask = tasks.register<Copy>("replaceLauncherFor$sysId") {
+            enabled = sysInfo.arch == X86_64
+
+            from(layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ-Intel")) {
+                rename {
+                    "AstroImageJ"
+                }
+            }
+            into(packageTask.map { it.outputDir.get().dir("AstroImageJ.app/Contents/MacOS") })
+        }
+
+        val createDmgTask = tasks.register<JPackageTask>(installerTaskName) {
+            inputs.dir(packageTask.map { it.outputDir.get() })
+
+            appName.set("AstroImageJ")
+
+            inputDir.set(packageTask.map { it.outputDir.get().dir("AstroImageJ.app") })
+
+            extraArgs = listOf(
+                "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
+                //"--verbose",
+                "--app-version", version.toString().replace(".00", ""),
+            )
+
+            buildList {
+                addAll(
+                    listOf(
+                        "--type", "dmg",
+                        "--mac-package-identifier", "com.astroimagej.AstroImageJ",
+                        "--about-url", "https://astroimagej.com",
+                        "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+                        "--mac-app-store"
+                    )
+                )
+
+                if (System.getenv("DeveloperId") != null &&
+                    project.property("codeSignAndNotarize").toString().toBoolean()) {
+                    addAll(
+                        listOf(
+                            "--mac-sign",
+                            "--mac-signing-key-user-name", System.getenv("DeveloperId"),
+                        )
+                    )
+                }
+            }
+
+            launcher = packagingJdkToolchain
+
+            outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
         }
 
         packageTask {
+            finalizedBy(replaceExecTask)
+        }
+
+        replaceExecTask {
+            finalizedBy(createDmgTask)
+        }
+
+        val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
+            enabled = System.getenv("DeveloperId") != null &&
+                    project.property("codeSignAndNotarize").toString().toBoolean()
+            inputDir.set(createDmgTask.map { it.outputDir.get() })
+            keychainProfile = "AC_PASSWORD"
+        }
+
+        createDmgTask {
             finalizedBy(notaryTask)
         }
     }

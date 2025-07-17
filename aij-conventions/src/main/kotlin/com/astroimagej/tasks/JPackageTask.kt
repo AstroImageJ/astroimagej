@@ -25,6 +25,7 @@ abstract class JPackageTask
 
     // The name of the main JAR inside the input directory
     @get:Input
+    @get:Optional
     abstract val mainJarName: Property<String>
 
     // Additional args to pass to jpackage
@@ -88,22 +89,37 @@ abstract class JPackageTask
             it.executablePath.asFile.resolveSibling(jpackageName)
         }
 
+        val buildingApp = mainJarName.isPresent
+
         // Build the arguments list
         val fullArgs = mutableListOf(
             "--name", appName.get(),
-            "--input", inputDir.get().asFile.absolutePath,
-            "--main-jar", mainJarName.get(),
             "--dest", destDir.absolutePath,
         )
 
+        if (buildingApp) {
+            fullArgs.addAll(
+                listOf(
+                    "--main-jar", mainJarName.get(),
+                    "--input", inputDir.get().asFile.absolutePath,
+                )
+            )
+
+            fullArgs.addAll(
+                runtime.map {
+                    listOf("--runtime-image", getRuntime(it))
+                }.getOrElse(listOf())
+            )
+        } else {
+            fullArgs.addAll(
+                listOf(
+                    "--app-image", inputDir.get().asFile.absolutePath,
+                )
+            )
+        }
+
         // Append any additional args
         fullArgs.addAll(extraArgs.get())
-
-        fullArgs.addAll(
-            runtime.map {
-                listOf("--runtime-image", getRuntime(it))
-            }.getOrElse(listOf())
-        )
 
         //logger.lifecycle("Ran jpackage with args: {}", fullArgs)
 

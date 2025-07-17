@@ -417,11 +417,32 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         extraArgs = listOf(
             "--java-options", "-Duser.dir=\$APPDIR",
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
-            //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
+            "--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
             "--java-options", "-XX:MaxRAMPercentage=75"
         )
+
+        //todo handle other launchers
+        //mac:application-name-post-image.sh
+        //linux:modify files before zipping, or if making installers application-name-post-image.sh
+        when (sysInfo.os) {
+            MAC -> {
+                when (sysInfo.arch) {
+                    //todo make universal launchers with lipo?
+                    ARM_64 -> {
+                        //launcherOverride = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ")
+                    }
+                    X86_64 -> {
+                        appFileOverride = layout.buildDirectory.dir("temp/images").map { it.asFile.absolutePath }
+                        launcherOverride = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ-Intel")
+                    }
+                }
+            }
+            //LINUX -> TODO()
+            //WINDOWS -> TODO()
+            else -> {}
+        }
 
         launcher = packagingJdkToolchain
 

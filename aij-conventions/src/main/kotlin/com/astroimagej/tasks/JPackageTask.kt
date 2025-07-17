@@ -3,8 +3,10 @@ package com.astroimagej.tasks
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
@@ -34,6 +36,16 @@ abstract class JPackageTask
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val inputDir: DirectoryProperty
+
+    // Overridden Launcher
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:Optional
+    abstract val launcherOverride: RegularFileProperty
+
+    @get:Input
+    @get:Optional
+    abstract val appFileOverride: Property<String>
 
     @get:Nested
     @get:Optional
@@ -99,6 +111,13 @@ abstract class JPackageTask
         val exitCode = execOperations.exec {
             executable = jpackage.get().absolutePath
             args = fullArgs
+            if (launcherOverride.isPresent) {
+                environment("CustomLauncherPath", launcherOverride.get().asFile.absolutePath)
+            }
+
+            if (appFileOverride.isPresent) {
+                environment("JpAppImageDir", appFileOverride.get())
+            }
         }
 
         exitCode.rethrowFailure()

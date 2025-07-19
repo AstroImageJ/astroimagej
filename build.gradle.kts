@@ -461,6 +461,16 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                             "--mac-app-store"
                         )
                     )
+
+                    if (System.getenv("DeveloperId") != null &&
+                        project.property("codeSignAndNotarize").toString().toBoolean()) {
+                        addAll(
+                            listOf(
+                                "--mac-sign",
+                                "--mac-signing-key-user-name", System.getenv("DeveloperId"),
+                            )
+                        )
+                    }
                 }
             }
             LINUX -> {

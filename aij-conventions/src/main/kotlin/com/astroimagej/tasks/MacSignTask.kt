@@ -29,7 +29,7 @@ abstract class MacSignTask
     @get:Input
     abstract val signingIdentity: Property<String>
 
-    @get:Input
+    @get:InputFile
     @get:Optional
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val entitlementsFile: RegularFileProperty

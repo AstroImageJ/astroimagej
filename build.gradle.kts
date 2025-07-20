@@ -523,6 +523,17 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             into(packageTask.map { it.outputDir.get().dir("AstroImageJ.app/Contents/MacOS") })
         }
 
+        val signAppImage = tasks.register<MacSignTask>("signFor$sysId") {
+            enabled = providers.environmentVariable("DeveloperId").isPresent
+
+            inputs.dir(packageTask.map { it.outputDir.get() })
+
+            inputDir.set(packageTask.map { it.outputDir.get().dir("AstroImageJ.app") })
+
+            signingIdentity = providers.environmentVariable("DeveloperId")
+            entitlementsFile = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/entitlements.plist")
+        }
+
         val createDmgTask = tasks.register<JPackageTask>(installerTaskName) {
             inputs.dir(packageTask.map { it.outputDir.get() })
 
@@ -568,6 +579,10 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         }
 
         replaceExecTask {
+            finalizedBy(signAppImage)
+        }
+
+        signAppImage {
             finalizedBy(createDmgTask)
         }
 

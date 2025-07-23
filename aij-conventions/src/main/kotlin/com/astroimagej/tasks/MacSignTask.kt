@@ -95,7 +95,6 @@ abstract class MacSignTask
         execOperations.exec {
             executable = "codesign"
             args = buildList {
-                add("--force")
                 addAll(
                     listOf("-s", signingIdentity.get(), "-vvvv")
                 )
@@ -108,6 +107,7 @@ abstract class MacSignTask
                 addAll(
                     listOf("--prefix", "com.astroimagej.AstroImageJ")
                 )
+                add("--force")
             }
         }.rethrowFailure()
     }

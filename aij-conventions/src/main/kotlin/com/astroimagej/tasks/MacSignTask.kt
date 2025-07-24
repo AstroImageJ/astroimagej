@@ -42,6 +42,7 @@ abstract class MacSignTask
     }
 
     private fun unsign(p: Path) {
+        logger.lifecycle("Unsigning ${p.toUri()}")
         execOperations.exec {
             executable = "codesign"
             args = listOf("--remove-signature", p.toAbsolutePath().toString())
@@ -92,11 +93,12 @@ abstract class MacSignTask
 
     //no entitelements, force
     private fun signDir(p: Path) {
-        execOperations.exec {
+        logger.lifecycle("Signing dir ${p.toUri()}")
+        val r = execOperations.exec {
             executable = "codesign"
             args = buildList {
                 addAll(
-                    listOf("-s", signingIdentity.get(), "-vvvv")
+                    listOf("-s", signId(), "-vvvv")
                 )
                 addAll(
                     listOf("--timestamp", "--options", "runtime")
@@ -105,20 +107,25 @@ abstract class MacSignTask
                     listOf("--keychain", keychainProfile.get())
                 )*/
                 addAll(
-                    listOf("--prefix", "com.astroimagej.AstroImageJ")
+                    listOf("--prefix", "com.astroimagej.AstroImageJ.")
                 )
                 add("--force")
+                add(p.toAbsolutePath().toString())
             }
-        }.rethrowFailure()
+            logger.lifecycle(args.toString())
+        }
+        //logger.lifecycle(r.toString())
+        r.rethrowFailure()
     }
 
     //no entitelements
     private fun signFile(p: Path) {
-        execOperations.exec {
-            executable = "codesign"
+        logger.lifecycle("Signing file ${p.toUri()}")
+        val r = execOperations.exec {
+            executable = "/usr/bin/codesign"
             args = buildList {
                 addAll(
-                    listOf("-s", signingIdentity.get(), "-vvvv")
+                    listOf("-s", signId(), "-vvvv")
                 )
                 addAll(
                     listOf("--timestamp", "--options", "runtime")
@@ -127,18 +134,23 @@ abstract class MacSignTask
                     listOf("--keychain", keychainProfile.get())
                 )*/
                 addAll(
-                    listOf("--prefix", "com.astroimagej.AstroImageJ")
+                    listOf("--prefix", "com.astroimagej.AstroImageJ.")
                 )
+                add(p.toAbsolutePath().toString())
             }
-        }.rethrowFailure()
+            logger.lifecycle(args.toString())
+        }
+        //logger.lifecycle(r.toString())
+        r.rethrowFailure()
     }
 
     private fun signExec(p: Path) {
-        execOperations.exec {
+        logger.lifecycle("Signing exec ${p.toUri()}")
+        val r = execOperations.exec {
             executable = "codesign"
             args = buildList {
                 addAll(
-                    listOf("-s", signingIdentity.get(), "-vvvv")
+                    listOf("-s", signId(), "-vvvv")
                 )
                 addAll(
                     listOf("--timestamp", "--options", "runtime")
@@ -150,10 +162,14 @@ abstract class MacSignTask
                     listOf("--entitlements", entitlementsFile.get().asFile.absolutePath)
                 )
                 addAll(
-                    listOf("--prefix", "com.astroimagej.AstroImageJ")
+                    listOf("--prefix", "com.astroimagej.AstroImageJ.")
                 )
+                add(p.toAbsolutePath().toString())
             }
-        }.rethrowFailure()
+            logger.lifecycle(args.toString())
+        }
+        //logger.lifecycle(r.toString())
+        r.rethrowFailure()
     }
 
     private fun shouldSign(p: Path): Boolean {
@@ -183,5 +199,11 @@ abstract class MacSignTask
         } catch (ex: IOException) {
             throw ex
         }
+    }
+
+    private fun signId(): String {
+        val r = Regex("\\(([^(]+)\\)")
+        val m = r.find(signingIdentity.get())
+        return m?.value ?: signingIdentity.get()
     }
 }

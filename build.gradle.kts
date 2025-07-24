@@ -519,6 +519,11 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 rename {
                     "AstroImageJ"
                 }
+                filePermissions {
+                    user.execute = true
+                    other.execute = true
+                    group.execute = true
+                }
             }
             into(packageTask.map { it.outputDir.get().dir("AstroImageJ.app/Contents/MacOS") })
         }

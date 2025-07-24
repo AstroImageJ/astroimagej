@@ -67,8 +67,15 @@ abstract class MacSignTask
             }
         }
 
-        //todo sign runtime root directory
-        //todo sign Contents/Frameworks
+        sign(p.resolve("Contents/runtime"))
+
+        val framework = p.resolve("Contents/Frameworks")
+        if (Files.isDirectory(framework)) {
+            val content = Files.list(framework)
+            content.forEach { path ->
+                sign(path)
+            }
+        }
 
         sign(p)
     }

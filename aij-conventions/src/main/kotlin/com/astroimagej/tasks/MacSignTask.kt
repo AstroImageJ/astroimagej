@@ -114,6 +114,9 @@ abstract class MacSignTask
                     listOf("--keychain", keychainProfile.get())
                 )*/
                 addAll(
+                    listOf("--entitlements", entitlementsFile.get().asFile.absolutePath)
+                )
+                addAll(
                     listOf("--prefix", "com.astroimagej.AstroImageJ.")
                 )
                 add("--force")
@@ -140,6 +143,9 @@ abstract class MacSignTask
                 /*addAll(
                     listOf("--keychain", keychainProfile.get())
                 )*/
+                addAll(
+                    listOf("--entitlements", entitlementsFile.get().asFile.absolutePath)
+                )
                 addAll(
                     listOf("--prefix", "com.astroimagej.AstroImageJ.")
                 )

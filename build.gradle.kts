@@ -529,7 +529,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         }
 
         val signAppImage = tasks.register<MacSignTask>("signFor$sysId") {
-            enabled = providers.environmentVariable("DeveloperId").isPresent
+            enabled = providers.environmentVariable("DeveloperId").isPresent &&
+                    project.property("codeSignAndNotarize").toString().toBoolean()
 
             inputs.dir(packageTask.map { it.outputDir.get() })
 

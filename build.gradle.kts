@@ -511,18 +511,15 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             finalizedBy(replaceExecTask)
         }
 
-        if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
-            replaceExecTask {
-                finalizedBy(tasks.named("signFor$sysId"))
-            }
-        }
-
         packageTask.map { it.outputDir.get() }
     }
 
     val installerTask = tasks.register<JPackageTask>(installerTaskName) {
         if (!crossbuildAppImage.get()) {
             mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+            if (sysInfo.os == MAC) {
+                mustRunAfter(tasks.named("signFor$sysId"))
+            }
         }
 
         appName.set("AstroImageJ")
@@ -615,6 +612,12 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
         installerTask {
             finalizedBy(notaryTask)
+        }
+
+        if (!crossbuildAppImage.get()) {
+            tasks.named("replaceLauncherFor$sysId") {
+                finalizedBy(signAppImage)
+            }
         }
     }
 

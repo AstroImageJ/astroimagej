@@ -325,9 +325,15 @@ val packagingJdkToolchain = javaToolchains.launcherFor {
     vendor.set(JvmVendorSpec.ADOPTIUM)
 }
 
+val crossbuildAppImage = providers.provider {
+    val e = providers.environmentVariable("CROSSBUILD_APP_IMAGE")
+    e.isPresent && e.get().toBoolean()
+}
+
 javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val sysId = "${sysInfo.os.toString().uppercaseFirstChar()}_${sysInfo.arch}"
     val packageTaskName = "packageAijFor${sysId}"
+    val createAppImageTaskName = "createAppImageFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
     val verifySigTaskName = "verifySigFor${sysId}"
@@ -390,74 +396,159 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }
 
-    val packageTask = tasks.register<JPackageTask>(packageTaskName) {
-        group = "distribution"
-        description = "Bundles the application into a native installer/image via jpackage"
+    val appImageDir: Provider<Directory> = if (crossbuildAppImage.get()) {
+        //todo
+        layout.buildDirectory.dir("distributions/images/$sysId")
+    } else {
+        val packageTask = tasks.register<JPackageTask>(createAppImageTaskName) {
+            group = "distribution"
 
-        enabled = when (sysInfo.os) {
-            MAC -> Os.isFamily(Os.FAMILY_MAC)
-            WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
-            LINUX -> Os.isFamily(Os.FAMILY_UNIX)
-        } && version.toString()
-            .matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
+            enabled = when (sysInfo.os) {
+                MAC -> Os.isFamily(Os.FAMILY_MAC)
+                WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
+                LINUX -> Os.isFamily(Os.FAMILY_UNIX)
+            } && version.toString()
+                .matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
 
-        inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
-            .optional()
-            .withPropertyName("File associations")
-        inputs.files(layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFileTree)
-            .optional()
-            .withPropertyName("Resource overrides")
+            inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
+                .optional()
+                .withPropertyName("File associations")
+            inputs.files(layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFileTree)
+                .optional()
+                .withPropertyName("Resource overrides")
+
+            appName.set("AstroImageJ")
+
+            inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
+
+            // Specify the name of your main jar within that inputDir
+            mainJarName.set("ij.jar")
+
+            extraArgs = listOf(
+                "--java-options", "-Duser.dir=\$APPDIR",
+                "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
+                //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
+                //"--verbose",
+                "--app-version", version.toString().replace(".00", ""),
+                "--java-options", "-XX:MaxRAMPercentage=75"
+            )
+
+            launcher = packagingJdkToolchain
+
+            extraArgs(when (sysInfo.os) {
+                MAC -> {
+                    buildList {
+                        addAll(
+                            listOf(
+                                "--type", "app-image",
+                                "--mac-package-identifier", "com.astroimagej.AstroImageJ",
+                                //"--about-url", "https://astroimagej.com",
+                                //"--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+                                "--mac-app-store"
+                            )
+                        )
+
+                        if (System.getenv("DeveloperId") != null &&
+                            project.property("codeSignAndNotarize").toString().toBoolean()) {
+                            addAll(
+                                listOf(
+                                    "--mac-sign",
+                                    "--mac-signing-key-user-name", System.getenv("DeveloperId"),
+                                )
+                            )
+                        }
+                    }
+                }
+                LINUX -> {
+                    listOf(
+                        "--type", "app-image",
+                        //"--linux-shortcut",
+                    )
+                }
+                WINDOWS -> {
+                    listOf(
+                        "--type", "app-image",
+                    )
+                }
+            })
+
+            // Add file associations
+            if (sysInfo.os == MAC) { // app-image type cannot have file associations
+                layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
+                    extraArgs(listOf("--file-associations", it.absolutePath))
+                }
+            }
+
+            runtime = getRuntimeTask.flatMap { it.outputDir }
+
+            outputDir.set(layout.buildDirectory.dir("distributions/images/$sysId"))
+        }
+
+        val replaceExecTask = tasks.register<Copy>("replaceLauncherFor$sysId") {
+            inputs.dir(packageTask.flatMap { it.outputDir })
+            mustRunAfter(packageTask)
+
+            val suffix = if (sysInfo.os == WINDOWS) ".exe" else ""
+            from(layout.projectDirectory.file("packageFiles/assets/launchers/${sysId}/JavaLauncher$suffix")) {
+                rename {
+                    "AstroImageJ$suffix"
+                }
+                filePermissions {
+                    user.execute = true
+                    other.execute = true
+                    group.execute = true
+                }
+            }
+
+            when (sysInfo.os) {
+                MAC -> into(packageTask.map { it.outputDir.get() }.map { it.dir("AstroImageJ.app/Contents/MacOS") })
+                LINUX -> into(packageTask.map { it.outputDir.get() }.map { it.dir("AstroImageJ/bin") })
+                WINDOWS -> into(packageTask.map { it.outputDir.get() }.map { it.dir("AstroImageJ") })
+            }
+        }
+
+        packageTask {
+            finalizedBy(replaceExecTask)
+        }
+
+        if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
+            replaceExecTask {
+                finalizedBy(tasks.named("signFor$sysId"))
+            }
+        }
+
+        packageTask.map { it.outputDir.get() }
+    }
+
+    val installerTask = tasks.register<JPackageTask>(installerTaskName) {
+        if (!crossbuildAppImage.get()) {
+            mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+        }
 
         appName.set("AstroImageJ")
 
-        inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
-
-        // Specify the name of your main jar within that inputDir
-        mainJarName.set("ij.jar")
-
         extraArgs = listOf(
-            "--java-options", "-Duser.dir=\$APPDIR",
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
-            //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
             //"--verbose",
             "--app-version", version.toString().replace(".00", ""),
-            "--java-options", "-XX:MaxRAMPercentage=75"
         )
-
-        //todo handle other launchers
-        //mac:application-name-post-image.sh
-        //linux:modify files before zipping, or if making installers application-name-post-image.sh
-        when (sysInfo.os) {
-            MAC -> {
-                // Not used in favour of two-step process to work around jpackage running post-image scripts after signing,
-                // which prevents notarization
-                /*when (sysInfo.arch) {
-                    //todo make universal launchers with lipo?
-                    ARM_64 -> {
-                        //launcherOverride = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ")
-                    }
-                    X86_64 -> {
-                        appFileOverride = layout.buildDirectory.dir("temp/images").map { it.asFile.absolutePath }
-                        launcherOverride = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ-Intel")
-                    }
-                }*/
-            }
-            //LINUX -> TODO()
-            //WINDOWS -> TODO()
-            else -> {}
-        }
 
         launcher = packagingJdkToolchain
 
-        extraArgs(when (sysInfo.os) {
+        outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
+
+        when (sysInfo.os) {
             MAC -> {
-                buildList {
+                inputs.dir(appImageDir.map { it.dir("AstroImageJ.app") })
+                inputDir.set(appImageDir.map { it.dir("AstroImageJ.app") })
+
+                extraArgs(buildList {
                     addAll(
                         listOf(
-                            "--type", "app-image",
+                            "--type", "dmg",
                             "--mac-package-identifier", "com.astroimagej.AstroImageJ",
-                            //"--about-url", "https://astroimagej.com",
-                            //"--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
+                            "--about-url", "https://astroimagej.com",
+                            "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                             "--mac-app-store"
                         )
                     )
@@ -471,16 +562,17 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                             )
                         )
                     }
-                }
+                })
             }
             LINUX -> {
-                listOf(
-                    "--type", "app-image",
-                    //"--linux-shortcut",
-                )
+                inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
+                inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
             }
             WINDOWS -> {
-                listOf(
+                inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
+                inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
+
+                extraArgs(listOf(
                     "--type", "msi",
                     "--win-dir-chooser",
                     "--win-help-url", "https://github.com/AstroImageJ/astroimagej/discussions",
@@ -490,134 +582,60 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                     "--about-url", "https://astroimagej.com",
                     "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                     "--win-upgrade-uuid", "83f529ac-39a3-4fe7-9f97-e9f259321c26",
-                )
+                ))
+
+                layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
+                    extraArgs(listOf("--file-associations", it.absolutePath))
+                }
             }
-        })
-
-        // Add file associations
-        if (sysInfo.os != LINUX) { // app-image type cannot have file associations
-            layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {
-                extraArgs(listOf("--file-associations", it.absolutePath))
-            }
-        }
-
-        runtime = getRuntimeTask.flatMap { it.outputDir }
-
-        // Destination for the generated installer/image
-        if (sysInfo.os == MAC) {
-            outputDir.set(layout.buildDirectory.dir("distributions/images/$sysId"))
-        } else {
-            outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
         }
     }
 
     if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
-        val replaceExecTask = tasks.register<Copy>("replaceLauncherFor$sysId") {
-            enabled = sysInfo.arch == X86_64
-
-            from(layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/AstroImageJ-Intel")) {
-                rename {
-                    "AstroImageJ"
-                }
-                filePermissions {
-                    user.execute = true
-                    other.execute = true
-                    group.execute = true
-                }
-            }
-            into(packageTask.map { it.outputDir.get().dir("AstroImageJ.app/Contents/MacOS") })
-        }
-
         val signAppImage = tasks.register<MacSignTask>("signFor$sysId") {
             enabled = providers.environmentVariable("DeveloperId").isPresent &&
-                    project.property("codeSignAndNotarize").toString().toBoolean()
+                    project.property("codeSignAndNotarize").toString().toBoolean() &&
+                    Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
 
-            inputs.dir(packageTask.map { it.outputDir.get() })
+            inputs.dir(appImageDir)
 
-            inputDir.set(packageTask.map { it.outputDir.get().dir("AstroImageJ.app") })
+            inputDir.set(appImageDir.map { it.dir("AstroImageJ.app") })
 
             signingIdentity = providers.environmentVariable("DeveloperId")
             entitlementsFile = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/entitlements.plist")
         }
 
-        val createDmgTask = tasks.register<JPackageTask>(installerTaskName) {
-            inputs.dir(packageTask.map { it.outputDir.get() })
-
-            appName.set("AstroImageJ")
-
-            inputDir.set(packageTask.map { it.outputDir.get().dir("AstroImageJ.app") })
-
-            extraArgs = listOf(
-                "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
-                //"--verbose",
-                "--app-version", version.toString().replace(".00", ""),
-            )
-
-            buildList {
-                addAll(
-                    listOf(
-                        "--type", "dmg",
-                        "--mac-package-identifier", "com.astroimagej.AstroImageJ",
-                        "--about-url", "https://astroimagej.com",
-                        "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
-                        "--mac-app-store"
-                    )
-                )
-
-                if (System.getenv("DeveloperId") != null &&
-                    project.property("codeSignAndNotarize").toString().toBoolean()) {
-                    addAll(
-                        listOf(
-                            "--mac-sign",
-                            "--mac-signing-key-user-name", System.getenv("DeveloperId"),
-                        )
-                    )
-                }
-            }
-
-            launcher = packagingJdkToolchain
-
-            outputDir.set(layout.buildDirectory.dir("distributions/$sysId"))
-        }
-
-        packageTask {
-            finalizedBy(replaceExecTask)
-        }
-
-        replaceExecTask {
-            finalizedBy(signAppImage)
-        }
-
-        signAppImage {
-            finalizedBy(createDmgTask)
-        }
-
         val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
             enabled = System.getenv("DeveloperId") != null &&
-                    project.property("codeSignAndNotarize").toString().toBoolean()
-            inputDir.set(createDmgTask.map { it.outputDir.get() })
+                    project.property("codeSignAndNotarize").toString().toBoolean() &&
+                    Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
+            inputDir.set(installerTask.map { it.outputDir.get() })
             keychainProfile = "AC_PASSWORD"
         }
 
-        createDmgTask {
+        installerTask {
             finalizedBy(notaryTask)
         }
     }
 
     if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo.os == LINUX) {
-        val bundleTask = tasks.register<Tar>("bundleFor${sysId}") {
+        val bundleTask = tasks.register<Tar>(packageTaskName) {
+            if (!crossbuildAppImage.get()) {
+                mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+            }
+
             destinationDirectory = layout.buildDirectory.dir("distributions/$sysId")
             archiveBaseName = "AstroImageJ"
             archiveVersion = version.toString().replace(".00", "")
             compression = Compression.GZIP
 
-            from(packageTask) {
+            from(appImageDir) {
                 exclude("*.tgz")
             }
         }
-
-        packageTask {
-            finalizedBy(bundleTask)
+    } else {
+        tasks.register(packageTaskName) {
+            dependsOn(installerTask)
         }
     }
 }

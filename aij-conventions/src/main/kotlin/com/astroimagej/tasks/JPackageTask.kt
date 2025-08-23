@@ -6,7 +6,6 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
@@ -137,6 +136,13 @@ abstract class JPackageTask
         }
 
         exitCode.rethrowFailure()
+
+        // Set writable so we can replace the launcher
+        if (buildingApp) {
+            outputDir.get().asFileTree.forEach {
+                it.setWritable(true)
+            }
+        }
     }
 
     /**

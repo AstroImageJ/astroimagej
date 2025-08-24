@@ -16,12 +16,18 @@ on:
         required: false
         type: 'boolean'
         default: true
+      crosspackage:
+        description: 'Cross package applications'
+        required: false
+        type: 'boolean'
+        default: false
   push:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*.00'
 
 env:
   GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+  CROSSBUILD_APP_IMAGE: ${{ github.event.inputs.crosspackage }}
 
 jobs:
   package:

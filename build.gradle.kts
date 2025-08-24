@@ -124,10 +124,10 @@ tasks.test {
  * are excluded from the definition for brevity.
  */
 val javaRuntimeSystems = mapOf(
-    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
-    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
-    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
-    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
+    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JRE),//todo this or fix jre generation?
+    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JRE),
+    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX, type = RuntimeType.JRE),
+    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS, type = RuntimeType.JRE),
 )
 
 val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, JavaRuntimeSystem::class.java)
@@ -397,8 +397,44 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     }
 
     val appImageDir: Provider<Directory> = if (crossbuildAppImage.get()) {
-        //todo
-        layout.buildDirectory.dir("distributions/images/$sysId")
+        val packageTask = tasks.register<CreateAppImageTask>(createAppImageTaskName) {
+            group = "distribution"
+
+            inputs.files(layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree)
+                .optional()
+                .withPropertyName("File associations")
+            inputs.files(layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFileTree)
+                .optional()
+                .withPropertyName("Resource overrides")
+
+            resourcesDir = layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}")
+
+            targetOs = sysInfo.os
+
+            targetArch = sysInfo.arch
+
+            appName.set("AstroImageJ")
+
+            mainJarName.set("ij.jar")
+
+            appVersion = version.toString().replace(".00", "")
+
+            javaOpts("-XX:MaxRAMPercentage=75")
+            javaOpts("-Duser.dir=\$APPDIR")
+
+            inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
+
+            runtime = getRuntimeTask.flatMap { it.outputDir }
+
+            launcher = packagingJdkToolchain
+
+            val suffix = if (sysInfo.os == WINDOWS) ".exe" else ""
+            appLauncher = layout.projectDirectory.file("packageFiles/assets/launchers/${sysId}/JavaLauncher$suffix")
+
+            outputDir.set(layout.buildDirectory.dir("distributions/images/$sysId"))
+        }
+
+        packageTask.map { it.outputDir.get() }
     } else {
         val packageTask = tasks.register<JPackageTask>(createAppImageTaskName) {
             group = "distribution"

@@ -424,6 +424,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             // Specify the name of your main jar within that inputDir
             mainJarName.set("ij.jar")
 
+            targetOs = sysInfo.os
+
             extraArgs = listOf(
                 "--java-options", "-Duser.dir=\$APPDIR",
                 "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
@@ -520,9 +522,15 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             if (sysInfo.os == MAC) {
                 mustRunAfter(tasks.named("signFor$sysId"))
             }
+        } else {
+            if (sysInfo.os == MAC) {
+                mustRunAfter(tasks.named("signFor$sysId"))
+            }
         }
 
         appName.set("AstroImageJ")
+
+        targetOs = sysInfo.os
 
         extraArgs = listOf(
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,

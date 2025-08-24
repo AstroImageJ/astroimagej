@@ -1,0 +1,606 @@
+<?xml version="1.0" ?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+ <dict>
+  <key>LSMinimumSystemVersion</key>
+  <string>10.11</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>English</string>
+  <key>CFBundleAllowMixedLocalizations</key>
+  <true/>
+  <key>CFBundleExecutable</key>
+  <string>AstroImageJ</string>
+  <key>CFBundleIconFile</key>
+  <string>AstroImageJ.icns</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.astroimagej.AstroImageJ</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>AstroImageJ</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>${VERSION}</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <!-- See https://developer.apple.com/app-store/categories/ for list of AppStore categories -->
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.utilities</string>
+  <key>CFBundleVersion</key>
+  <string>${VERSION}</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>Copyright (C) 2025</string>
+  <key>CFBundleDocumentTypes</key>
+  <array>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.radec</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>AIJ radec file</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fit.fz</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fit</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fits.gz</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fit.gz</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fts</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.plotcfg</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>AIJ plot config file</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.apertures</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>AIJ apertures file</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fits</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fts.fz</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.tbl</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>AIJ Table</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fts.gz</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+ <dict>
+  <key>LSItemContentTypes</key>
+   <array>
+    <string>com.astroimagej.AstroImageJ.fits.fz</string>
+   </array>
+  <key>CFBundleTypeName</key>
+  <string>FITS File</string>
+
+  <key>LSHandlerRank</key>
+  <string>Owner</string>
+
+  <key>CFBundleTypeRole</key>
+  <string>Editor</string>
+
+  <key>LSIsAppleDefaultForType</key>
+  <true/>
+
+  </dict>
+  </array>
+
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.radec</string>
+
+  <key>UTTypeDescription</key>
+  <string>AIJ radec file</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>radec</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>text/radec</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fit.fz</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fit.fz</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fit</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fit</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fits.gz</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fits.gz</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fit.gz</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fit.gz</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fts</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fts</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.plotcfg</string>
+
+  <key>UTTypeDescription</key>
+  <string>AIJ plot config file</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>plotcfg</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>text/plotcfg</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.apertures</string>
+
+  <key>UTTypeDescription</key>
+  <string>AIJ apertures file</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>apertures</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>text/apertures</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fits</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fits</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fts.fz</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fts.fz</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.tbl</string>
+
+  <key>UTTypeDescription</key>
+  <string>AIJ Table</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>tbl</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>text/tbl</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fts.gz</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fts.gz</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  <dict>
+  <key>UTTypeIdentifier</key>
+  <string>com.astroimagej.AstroImageJ.fits.fz</string>
+
+  <key>UTTypeDescription</key>
+  <string>FITS File</string>
+
+  <key>UTTypeConformsTo</key>
+   <array>
+    <string>public.data</string>
+   </array>
+
+  <key>UTTypeTagSpecification</key>
+  <dict>
+
+  <key>public.filename-extension</key>
+   <array>
+    <string>fits.fz</string>
+   </array>
+  <key>public.mime-type</key>
+   <array>
+    <string>application/fits</string>
+   </array>
+  </dict>
+ </dict>
+  </array>
+
+  <key>NSHighResolutionCapable</key>
+  <string>true</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>The application AstroImageJ is requesting access to the microphone.</string>
+ </dict>
+</plist>

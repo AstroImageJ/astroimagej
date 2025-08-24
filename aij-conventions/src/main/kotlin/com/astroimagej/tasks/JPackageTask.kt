@@ -9,11 +9,13 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Optional
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.process.ExecOperations
+import java.util.*
 import javax.inject.Inject
 
 abstract class JPackageTask
@@ -42,6 +44,9 @@ abstract class JPackageTask
     @get:PathSensitive(PathSensitivity.NONE)
     @get:Optional
     abstract val launcherOverride: RegularFileProperty
+
+    @get:Input
+    abstract val targetOs: Property<com.astroimagej.meta.jdk.OperatingSystem>
 
     @get:Input
     @get:Optional
@@ -115,6 +120,8 @@ abstract class JPackageTask
                     "--app-image", inputDir.get().asFile.absolutePath,
                 )
             )
+
+            fixJpackageVersion(inputDir.get())
         }
 
         // Append any additional args
@@ -143,6 +150,26 @@ abstract class JPackageTask
                 it.setWritable(true)
             }
         }
+    }
+
+    // When creating ap image manually, we need to generate a .jpackage.xml with the correct
+    // version information for jpackage to then build the installer
+    private fun fixJpackageVersion(dir: Directory) {
+        val version = Properties().let {
+            it.load(launcher.get().metadata.installationPath.file("release").asFile.inputStream())
+            it.getProperty("JAVA_VERSION").replace("\"", "")
+        }
+
+        val path = when (targetOs.get()) {
+            com.astroimagej.meta.jdk.OperatingSystem.WINDOWS -> "/app/.jpackage.xml"
+            com.astroimagej.meta.jdk.OperatingSystem.LINUX -> "/lib/app/.jpackage.xml"
+            com.astroimagej.meta.jdk.OperatingSystem.MAC -> "/Contents/app/.jpackage.xml"
+        }
+
+        val file = dir.file(path).asFile
+        val content = file.readText()
+            .replace("\$VERSION", version)
+        file.writeText(content)
     }
 
     /**

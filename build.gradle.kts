@@ -662,6 +662,10 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             tasks.named("replaceLauncherFor$sysId") {
                 finalizedBy(signAppImage)
             }
+        } else {
+            tasks.named(createAppImageTaskName) {
+                finalizedBy(signAppImage)
+            }
         }
     }
 

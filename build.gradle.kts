@@ -124,10 +124,10 @@ tasks.test {
  * are excluded from the definition for brevity.
  */
 val javaRuntimeSystems = mapOf(
-    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JRE),//todo this or fix jre generation?
-    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JRE),
-    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX, type = RuntimeType.JRE),
-    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS, type = RuntimeType.JRE),
+    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
+    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
+    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
+    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
 )
 
 val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, JavaRuntimeSystem::class.java)

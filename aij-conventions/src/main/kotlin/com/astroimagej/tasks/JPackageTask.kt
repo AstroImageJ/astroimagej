@@ -161,9 +161,9 @@ abstract class JPackageTask
         }
 
         val path = when (targetOs.get()) {
-            com.astroimagej.meta.jdk.OperatingSystem.WINDOWS -> "/app/.jpackage.xml"
-            com.astroimagej.meta.jdk.OperatingSystem.LINUX -> "/lib/app/.jpackage.xml"
-            com.astroimagej.meta.jdk.OperatingSystem.MAC -> "/Contents/app/.jpackage.xml"
+            com.astroimagej.meta.jdk.OperatingSystem.WINDOWS -> "app/.jpackage.xml"
+            com.astroimagej.meta.jdk.OperatingSystem.LINUX -> "lib/app/.jpackage.xml"
+            com.astroimagej.meta.jdk.OperatingSystem.MAC -> "Contents/app/.jpackage.xml"
         }
 
         val file = dir.file(path).asFile

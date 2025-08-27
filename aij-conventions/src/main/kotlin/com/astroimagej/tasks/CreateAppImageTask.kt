@@ -14,6 +14,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.kotlin.dsl.expand
 import org.gradle.kotlin.dsl.getByType
 import javax.inject.Inject
 
@@ -107,7 +108,7 @@ abstract class CreateAppImageTask
         }
 
         val runtimeDir = when (targetOs.get()) {
-            OperatingSystem.MAC -> destDir.dir("Contents/runtime")
+            OperatingSystem.MAC -> destDir.dir("Contents/runtime/Contents/Home")
             OperatingSystem.LINUX -> destDir.dir("lib/runtime")
             OperatingSystem.WINDOWS -> destDir.dir("runtime")
         }
@@ -157,6 +158,19 @@ abstract class CreateAppImageTask
                     from(resourcesDir.file("PkgInfo"))
                     into(destDir.dir("Contents"))
                 }
+
+                // Build runtime information
+                fileOperations.copy {
+                    from("${getRuntime(runtime.get())}/lib/libjli.dylib")
+                    into(destDir.dir("Contents/runtime/Contents/MacOS"))
+                }
+                fileOperations.copy {
+                    from(resourcesDir.file("InfoRuntime.plist"))
+                    into(destDir.dir("Contents/runtime/Contents"))
+                    rename { "Info.plist" }
+                    expand("VERSION" to appVersion.get())
+                }
+
                 val icon = resourcesDir.file("${appName.get()}.icns")
                 if (icon.isPresent) {
                     fileOperations.copy {

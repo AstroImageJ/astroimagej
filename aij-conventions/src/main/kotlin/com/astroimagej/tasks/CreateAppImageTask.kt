@@ -14,6 +14,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.kotlin.dsl.expand
 import org.gradle.kotlin.dsl.getByType
 import javax.inject.Inject
 
@@ -163,12 +164,12 @@ abstract class CreateAppImageTask
                     from("${getRuntime(runtime.get())}/lib/libjli.dylib")
                     into(destDir.dir("Contents/runtime/Contents/MacOS"))
                 }
-                /*fileOperations.copy {
+                fileOperations.copy {
                     from(resourcesDir.file("InfoRuntime.plist"))
                     into(destDir.dir("Contents/runtime/Contents"))
                     rename { "Info.plist" }
                     expand("VERSION" to appVersion.get())
-                }*/
+                }
 
                 val icon = resourcesDir.file("${appName.get()}.icns")
                 if (icon.isPresent) {

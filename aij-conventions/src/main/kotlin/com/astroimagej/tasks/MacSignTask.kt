@@ -44,7 +44,7 @@ abstract class MacSignTask
     private fun unsign(p: Path) {
         logger.lifecycle("Unsigning ${p.toUri()}")
         execOperations.exec {
-            executable = "codesign"
+            executable = "/usr/bin/codesign"
             args = listOf("--remove-signature", p.toAbsolutePath().toString())
         }.rethrowFailure()
     }
@@ -102,7 +102,7 @@ abstract class MacSignTask
     private fun signDir(p: Path) {
         logger.lifecycle("Signing dir ${p.toUri()}")
         val r = execOperations.exec {
-            executable = "codesign"
+            executable = "/usr/bin/codesign"
             args = buildList {
                 addAll(
                     listOf("-s", signId(), "-vvvv")
@@ -160,7 +160,7 @@ abstract class MacSignTask
     private fun signExec(p: Path) {
         logger.lifecycle("Signing exec ${p.toUri()}")
         val r = execOperations.exec {
-            executable = "codesign"
+            executable = "/usr/bin/codesign"
             args = buildList {
                 addAll(
                     listOf("-s", signId(), "-vvvv")

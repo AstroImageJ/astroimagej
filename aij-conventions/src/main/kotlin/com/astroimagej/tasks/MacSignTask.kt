@@ -187,7 +187,7 @@ abstract class MacSignTask
 
     private fun shouldSign(p: Path): Boolean {
         // jpackage excludes the launcher from this signing
-        if (!Files.isRegularFile(p) /*|| otherExcludePaths.contains(p)*/) {
+        if (!Files.isRegularFile(p) || p.endsWith(Path.of("Contents", "MacOS", "AstroImageJ"))) {
             return false
         }
 

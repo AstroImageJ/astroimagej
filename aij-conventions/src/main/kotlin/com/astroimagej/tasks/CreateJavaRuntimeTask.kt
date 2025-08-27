@@ -30,6 +30,10 @@ abstract class CreateJavaRuntimeTask
     @get:InputFile
     abstract val bundledRuntime: RegularFileProperty
 
+    @get:InputFile
+    @get:Optional
+    abstract val bundledJmods: RegularFileProperty
+
     @get:Input
     abstract val runtimeType: Property<String>
 
@@ -50,6 +54,9 @@ abstract class CreateJavaRuntimeTask
     @get:OutputDirectory
     abstract val unpackedDir: DirectoryProperty
 
+    @get:OutputDirectory
+    abstract val unpackedJmodDir: DirectoryProperty
+
     @get:Inject
     protected abstract val javaToolchainService: JavaToolchainService
 
@@ -64,6 +71,8 @@ abstract class CreateJavaRuntimeTask
 
         unpackedDir.convention(layout.buildDirectory.dir("unpackedRuntime-$name"))
 
+        unpackedJmodDir.convention(layout.buildDirectory.dir("unpackedJmods-$name"))
+
         jlinkArgs.convention(listOf(
             "--strip-native-commands",
             "--strip-debug",
@@ -77,10 +86,13 @@ abstract class CreateJavaRuntimeTask
     fun buildJavaRuntime() {
         when (runtimeType(runtimeType.get())) {
             null -> GradleException("Missing runtime type information!")
+            RuntimeType.JMODS -> GradleException("Did not expect to create a runtime with type: jmods!")
             RuntimeType.JRE -> unpack(outputDir)
             RuntimeType.JDK -> {
                 // Unpack JDK
                 unpack(unpackedDir)
+
+                unpackJmods(unpackedJmodDir)
 
                 // Clean out existing destination
                 val destDir = outputDir.get().asFile
@@ -103,7 +115,7 @@ abstract class CreateJavaRuntimeTask
                 fullArgs.addAll(jlinkArgs.get())
 
                 // Specify modules
-                if (true) {
+                if (!bundledJmods.isPresent) {
                     // We can't use the modules method to build the jre with Adoptium
                     // since https://adoptium.net/blog/2025/03/eclipse-temurin-jdk24-JEP493-enabled/
                     // So cross compilation is no longer possible, but we're using jpackage anyway...
@@ -144,7 +156,8 @@ abstract class CreateJavaRuntimeTask
                     ))
                 } else {
                     fullArgs.addAll(listOf(
-                        "--module-path", findJmodsDir(unpackedDir.get().asFile).absolutePath,
+                        "--module-path", findJmodsDir(unpackedJmodDir.get().asFile).absolutePath,
+                        "--add-modules", "ALL-MODULE-PATH",
                     ))
                 }
 
@@ -160,7 +173,7 @@ abstract class CreateJavaRuntimeTask
     }
 
     private fun unpack(unpackLoc: DirectoryProperty) {
-        val result = fs.sync {
+        fs.sync {
             when (extension.get()) {
                 "tar.gz", "tgz" -> from(archiveOperations.tarTree(archiveOperations.gzip(bundledRuntime))) {
                     into("")
@@ -175,9 +188,25 @@ abstract class CreateJavaRuntimeTask
         }
     }
 
+    private fun unpackJmods(unpackLoc: DirectoryProperty) {
+        fs.sync {
+            when (extension.get()) {
+                "tar.gz", "tgz" -> from(archiveOperations.tarTree(archiveOperations.gzip(bundledJmods))) {
+                    into("")
+                }
+                "zip" -> from(archiveOperations.zipTree(bundledJmods)) {
+                    into("")
+                }
+                else -> throw GradleException("Did not know how to handle ${extension.get()}")
+            }
+
+            into(unpackLoc)
+        }
+    }
+
     private fun findJmodsDir(root: File): File {
         return root.walkTopDown()
-            .firstOrNull { it.isDirectory && it.name.equals("jmods") }
+            .firstOrNull { it.isDirectory && it.name.contains("jmods") }
             ?: throw GradleException("'jmods' directory not found under ${root.absolutePath}")
     }
 
@@ -191,6 +220,7 @@ abstract class CreateJavaRuntimeTask
         runtimeType.set(when (runtimeInfo.type) {
             RuntimeType.JDK -> "jdk"
             RuntimeType.JRE -> "jre"
+            RuntimeType.JMODS -> "jmods"
             null -> "null"
         })
 

@@ -8,6 +8,7 @@ import java.util.*
 enum class RuntimeType {
     @SerialName("jdk") JDK,
     @SerialName("jre") JRE,
+    @SerialName("jmods") JMODS,
     ;
 
     override fun toString(): String {

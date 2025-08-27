@@ -209,6 +209,37 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         }
     }
 
+    // Pull JMods
+    javaRuntimeSystems.mapValues { (_, sysInfo) ->
+        val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
+                "architecture=${sysInfo.arch}&" +
+                "image_type=jmods&" +
+                "os=${sysInfo.os}&" +
+                "vendor=eclipse"
+
+        // Find latest JDK
+        val meta = try {
+            JavaInfo.parseJdkInfoFromUrl(URI(url).toURL())
+        } catch (e: Exception) {
+            logger.error(e.toString())
+            logger.warn(
+                "A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
+                sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type
+            )
+            return@mapValues
+        }
+
+        val jdkMeta = meta.first()
+
+        // Update the maps with the metadata
+        sysInfo.apply {
+            jmodName = jdkMeta.name
+            jmodSha256 = jdkMeta.sha256
+            this.jmodUrl = jdkMeta.url
+            jmodSigUrl = jdkMeta.sigUrl
+        }
+    }
+
     // Save the fetched data to the JSON file
     jsonFile.parentFile.mkdirs() // Ensure the directory exists
     jsonFile.writeText(Json { prettyPrint = true }.encodeToString(javaRuntimeSystems))
@@ -337,26 +368,49 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
     val verifySigTaskName = "verifySigFor${sysId}"
+    val verifyJmodTaskName = "verifyJavaJmodFor${sysId}"
+    val verifyJmodSigTaskName = "verifyJmodSigFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
     val notaryTaskName = "notarizeFor${sysId}"
     val installerTaskName = "installerFor${sysId}"
     val getRuntimeTaskName = "getRuntimeFor${sysId}"
 
     val downloadTask = tasks.register<Download>(downloadTaskName) {
-        finalizedBy(cleanTaskName, verifyTaskName, verifySigTaskName)
+        finalizedBy(cleanTaskName, verifyTaskName, verifySigTaskName, verifyJmodSigTaskName, verifyJmodTaskName)
         mkdir(file("${projectDir}/jres"))
 
-        src(listOf(sysInfo.url, sysInfo.sigUrl))
+        src(listOf(sysInfo.url, sysInfo.sigUrl, sysInfo.jmodUrl, sysInfo.jmodSigUrl))
         overwrite(false)
         onlyIfModified(true)
         dest(layout.projectDirectory.dir("jres").dir(sysId))
         eachFile {
+            val type = if (sourceURL.toString().contains("jmod")) "-jmod" else ""
             name = if (!sourceURL.toString().endsWith(".sig")) {
-                "$sysId-${sysInfo.name}"
+                "$sysId-${sysInfo.name}${type}"
             } else {
-                "$sysId-${sysInfo.name}.sig"
+                "$sysId-${sysInfo.name}${type}.sig"
             }
         }
+    }
+
+    val isSig = { file: File ->
+        file.name.endsWith(".sig")
+    }
+
+    val isRuntime = { file: File ->
+        !file.name.contains("jmod") && !isSig(file)
+    }
+
+    val isRuntimeSig = { file: File ->
+        !file.name.contains("jmod") && isSig(file)
+    }
+
+    val isJmod = { file: File ->
+        file.name.contains("jmod") && !isSig(file)
+    }
+
+    val isJmodSig = { file: File ->
+        file.name.contains("jmod") && isSig(file)
     }
 
     tasks.register<Delete>(cleanTaskName) {
@@ -366,11 +420,13 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             include("$sysId*")
             exclude("$sysId-${sysInfo.name}")
             exclude("$sysId-${sysInfo.name}.sig")
+            exclude("$sysId-${sysInfo.name}-jmod")
+            exclude("$sysId-${sysInfo.name}-jmod.sig")
         })
     }
 
     tasks.register<Verify>(verifyTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> !f.name.endsWith(".sig") } })
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntime(f) } })
 
         inputs.file(bundledRuntime)
         src(bundledRuntime)
@@ -379,8 +435,26 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     }
 
     tasks.register<PGPVerify>(verifySigTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> !f.name.endsWith(".sig") } })
-        val signatureFile = layout.file(downloadTask.map { it.outputFiles.single { f -> f.name.endsWith(".sig") } })
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntime(f) } })
+        val signatureFile = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntimeSig(f) } })
+
+        file = bundledRuntime
+        signature = signatureFile
+        keyId = "3B04D753C9050D9A5D343F39843C48A565F8F04B"
+    }
+
+    tasks.register<Verify>(verifyJmodTaskName) {
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmod(f) } })
+
+        inputs.file(bundledRuntime)
+        src(bundledRuntime)
+        algorithm("SHA256")
+        checksum(sysInfo.jmodSha256)
+    }
+
+    tasks.register<PGPVerify>(verifyJmodSigTaskName) {
+        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmod(f) } })
+        val signatureFile = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmodSig(f) } })
 
         file = bundledRuntime
         signature = signatureFile
@@ -391,7 +465,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         launcher = packagingJdkToolchain
         fromRuntimeInfo(sysInfo)
 
-        bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> !f.name.endsWith(".sig") } })
+        bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntime(f) } })
+        bundledJmods = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmod(f) } })
 
         outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }

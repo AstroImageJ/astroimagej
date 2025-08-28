@@ -632,7 +632,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
             when (sysInfo.os) {
                 MAC -> into(packageTask.map { it.outputDir.get() }.map { it.dir("AstroImageJ.app/Contents/MacOS") })
-                LINUX -> into(packageTask.map { it.outputDir.get() }.map { it.dir("AstroImageJ/bin") })
+                LINUX -> into(packageTask.map { it.outputDir.get() }.map { it.dir("astroimagej/bin") })
                 WINDOWS -> into(packageTask.map { it.outputDir.get() }.map { it.dir("AstroImageJ") })
             }
         }
@@ -657,8 +657,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
             }
             LINUX -> {
-                inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
-                inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
+                inputs.dir(appImageDir.map { it.dir("astroimagej") })
+                inputDir.set(appImageDir.map { it.dir("astroimagej") })
             }
             MAC -> {
                 inputs.dir(appImageDir.map { it.dir("AstroImageJ.app") })
@@ -722,8 +722,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 })
             }
             LINUX -> {
-                inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
-                inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
+                inputs.dir(appImageDir.map { it.dir("astroimagej") })
+                inputDir.set(appImageDir.map { it.dir("astroimagej") })
             }
             WINDOWS -> {
                 inputs.dir(appImageDir.map { it.dir("AstroImageJ") })

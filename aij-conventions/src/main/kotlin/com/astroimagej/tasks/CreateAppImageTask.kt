@@ -217,7 +217,7 @@ abstract class CreateAppImageTask
               <app-version>${appVersion.get()}</app-version>
               <main-launcher>AstroImageJ</main-launcher>
               <main-class>ij.ImageJ</main-class>
-              <signed>${false}</signed>
+              <signed>${targetOs.get() == OperatingSystem.MAC}</signed>
               <app-store>${targetOs.get() == OperatingSystem.MAC}</app-store></jpackage-state>
         """.trimIndent()
 

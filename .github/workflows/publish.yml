@@ -64,7 +64,7 @@ jobs:
           if-no-files-found: error
           retention-days: 5
           path: |
-            build/distributions/**/images/Linux_x64/AstroImageJ
+            build/distributions/**/images/Linux_x64/astroimagej
 
       - name: Upload App Image For Windows x64
         uses: actions/upload-artifact@v4

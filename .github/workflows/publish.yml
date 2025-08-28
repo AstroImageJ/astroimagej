@@ -64,7 +64,7 @@ jobs:
           if-no-files-found: error
           retention-days: 5
           path: |
-            build/distributions/**/images/Linux_x64/
+            build/distributions/**/images/Linux_x64/AstroImageJ
 
       - name: Upload App Image For Windows x64
         uses: actions/upload-artifact@v4
@@ -73,7 +73,7 @@ jobs:
           if-no-files-found: error
           retention-days: 5
           path: |
-            build/distributions/**/images/Windows_x64/
+            build/distributions/**/images/Windows_x64/AstroImageJ
 
       - name: Upload App Image For Mac x64
         uses: actions/upload-artifact@v4
@@ -82,7 +82,7 @@ jobs:
           if-no-files-found: error
           retention-days: 5
           path: |
-            build/distributions/**/images/Mac_x64/
+            build/distributions/**/images/Mac_x64/AstroImageJ.app
 
       - name: Upload App Image For Mac Arm
         uses: actions/upload-artifact@v4
@@ -91,7 +91,7 @@ jobs:
           if-no-files-found: error
           retention-days: 5
           path: |
-            build/distributions/**/images/Mac_aarch64/
+            build/distributions/**/images/Mac_aarch64/AstroImageJ.app
 
   package:
     name: Package ${{ matrix.osName }}

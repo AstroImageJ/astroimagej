@@ -62,6 +62,8 @@ jobs:
         with:
           name: appimage-linux-x64
           if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
           retention-days: 5
           path: |
             build/distributions/**/images/Linux_x64/astroimagej
@@ -71,6 +73,8 @@ jobs:
         with:
           name: appimage-windows-x64
           if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
           retention-days: 5
           path: |
             build/distributions/**/images/Windows_x64/AstroImageJ
@@ -80,6 +84,8 @@ jobs:
         with:
           name: appimage-mac-x64
           if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
           retention-days: 5
           path: |
             build/distributions/**/images/Mac_x64/AstroImageJ.app
@@ -89,6 +95,8 @@ jobs:
         with:
           name: appimage-mac-aarch64
           if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
           retention-days: 5
           path: |
             build/distributions/**/images/Mac_aarch64/AstroImageJ.app

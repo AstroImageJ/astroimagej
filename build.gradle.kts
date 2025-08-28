@@ -523,7 +523,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 into(layout.buildDirectory.dir("distributions/images/$sysId"))
             }
 
-            layout.dir(unpackTask.map { it.destinationDir })
+            layout.dir(unpackTask.map { it.destinationDir }).map { it.dir("images/$sysId") }
         } else {
             packageTask.map { it.outputDir.get() }
         }

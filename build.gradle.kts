@@ -514,6 +514,12 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         if (downloadedAppImage.asFile.exists()) {
             logger.lifecycle("Using prebuilt app image: ${downloadedAppImage.asFile.absolutePath}")
 
+            if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
+                tasks.named(installerTaskName).configure {
+                    dependsOn("signFor$sysId")
+                }
+            }
+
             providers.provider { downloadedAppImage }
         } else {
             packageTask.map { it.outputDir.get() }

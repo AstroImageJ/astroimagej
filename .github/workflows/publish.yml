@@ -227,13 +227,6 @@ jobs:
         with:
           name: appimage-mac-aarch64
 
-      - name: Display structure of downloaded files
-        run: ls -R
-
-      - name: Set env var for app image artifact
-        if: ${{ github.event.inputs.crosspackage }}
-        run: echo "CROSSBUILD_APP_IMAGE_ARTIFACT_${{ matrix.sysId }}=${{ matrix.appImageName }}" >> $GITHUB_ENV
-
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }}
         env:

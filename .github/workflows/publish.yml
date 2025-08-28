@@ -105,7 +105,7 @@ jobs:
             gradleTask: packageAijForLinux_x64
             artifactExt: tgz
             wrapper: ./gradlew
-            appImageName: appimage-linux-x64
+            appImageName: appimage-linux-X64
             sysId: LINUX_x64
           - runner: macos-latest
             osName: mac-aarch64
@@ -226,6 +226,9 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: appimage-mac-aarch64
+
+      - name: Display structure of downloaded files
+        run: ls -R
 
       - name: Set env var for app image artifact
         if: ${{ github.event.inputs.crosspackage }}

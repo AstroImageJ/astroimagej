@@ -635,9 +635,18 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         launcher = packagingJdkToolchain
 
         when (sysInfo.os) {
-            WINDOWS -> inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
-            LINUX -> inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
-            MAC -> inputs.dir(appImageDir.map { it.dir("AstroImageJ.app") })
+            WINDOWS -> {
+                inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
+                inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
+            }
+            LINUX -> {
+                inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
+                inputDir.set(appImageDir.map { it.dir("AstroImageJ") })
+            }
+            MAC -> {
+                inputs.dir(appImageDir.map { it.dir("AstroImageJ.app") })
+                inputDir.set(appImageDir.map { it.dir("AstroImageJ.app") })
+            }
         }
     }
 

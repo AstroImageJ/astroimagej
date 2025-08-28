@@ -96,6 +96,7 @@ jobs:
   package:
     name: Package ${{ matrix.osName }}
     runs-on: ${{ matrix.runner }}
+    needs: crossbuild
     strategy:
       matrix:
         include:

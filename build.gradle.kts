@@ -471,6 +471,10 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }
 
+    val downloadedAppImage = providers.environmentVariable("CROSSBUILD_APP_IMAGE_ARTIFACT_$sysId".uppercase(Locale.US))
+        .orElse("bobPlaceholder") // Need a placeholder, or envVar will throw
+        .map { layout.projectDirectory.file(it) }
+
     val appImageDir: Provider<Directory> = if (crossbuildAppImage.get()) {
         val packageTask = tasks.register<CreateAppImageTask>(createAppImageTaskName) {
             group = "distribution"
@@ -509,7 +513,20 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             outputDir.set(layout.buildDirectory.dir("distributions/images/$sysId"))
         }
 
-        packageTask.map { it.outputDir.get() }
+        if (downloadedAppImage.get().asFile.exists()) {
+            val unpackTask = tasks.register<Sync>("unpackAppImageFor$sysId") {
+                doFirst {
+                    logger.lifecycle("Unpacking prebuilt app image: ${downloadedAppImage.get().asFile.absolutePath}")
+                }
+
+                from(zipTree(downloadedAppImage))
+                into(layout.buildDirectory.dir("distributions/images/$sysId"))
+            }
+
+            layout.dir(unpackTask.map { it.destinationDir })
+        } else {
+            packageTask.map { it.outputDir.get() }
+        }
     } else {
         val packageTask = tasks.register<JPackageTask>(createAppImageTaskName) {
             group = "distribution"

@@ -30,6 +30,69 @@ env:
   CROSSBUILD_APP_IMAGE: ${{ github.event.inputs.crosspackage }}
 
 jobs:
+  crossbuild:
+    if: ${{ github.event.inputs.crosspackage }}
+    name: Cross-package app image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+
+      - name: Make Gradle wrapper executable
+        if: ${{ matrix.runner != 'windows-latest' }}
+        run: chmod +x ./gradlew
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Create app images
+        run: |
+          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64 
+
+      - name: Upload App Image For Linux x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-linux-x64
+          if-no-files-found: error
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Linux_x64/
+
+      - name: Upload App Image For Windows x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-windows-x64
+          if-no-files-found: error
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Windows_x64/
+
+      - name: Upload App Image For Mac x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-mac-x64
+          if-no-files-found: error
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Mac_x64/
+
+      - name: Upload App Image For Mac Arm
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-mac-aarch64
+          if-no-files-found: error
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Mac_aarch64/
+
   package:
     name: Package ${{ matrix.osName }}
     runs-on: ${{ matrix.runner }}
@@ -41,21 +104,29 @@ jobs:
             gradleTask: packageAijForLinux_x64
             artifactExt: tgz
             wrapper: ./gradlew
+            appImageName: appimage-linux-x64
+            sysId: LINUX_x64
           - runner: macos-latest
             osName: mac-aarch64
             gradleTask: packageAijForMac_aarch64
             artifactExt: dmg
             wrapper: ./gradlew
+            appImageName: appimage-mac-aarch64
+            sysId: MAC_AARCH64
           - runner: macos-latest
             osName: mac-x64
             gradleTask: packageAijForMac_x64
             artifactExt: dmg
             wrapper: ./gradlew
+            appImageName: appimage-mac-x64
+            sysId: MAC_X64
           - runner: windows-latest
             osName: windows-x64
             gradleTask: packageAijForWindows_x64
             artifactExt: msi
             wrapper: ./gradlew.bat
+            appImageName: appimage-windows-x64
+            sysId: WINDOWS_X64
     outputs:
       artifact: ${{ steps.upload.outputs.artifact }}
     steps:
@@ -130,6 +201,34 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Download App Image For Linux x64
+        if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-linux-x64
+
+      - name: Download App Image For Windows x64
+        if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-windows-x64
+
+      - name: Download App Image For Mac x64
+        if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-mac-x64
+
+      - name: Download App Image For Mac Arm
+        if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-mac-aarch64
+
+      - name: Set env var for app image artifact
+        if: ${{ github.event.inputs.crosspackage }}
+        run: echo "CROSSBUILD_APP_IMAGE_ARTIFACT_${{ matrix.sysId }}=${{ matrix.appImageName }}" >> $GITHUB_ENV
 
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }}

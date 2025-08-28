@@ -471,6 +471,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }
 
+    val downloadedAppImage = layout.projectDirectory.dir("images/$sysId")
+
     val appImageDir: Provider<Directory> = if (crossbuildAppImage.get()) {
         val packageTask = tasks.register<CreateAppImageTask>(createAppImageTaskName) {
             group = "distribution"
@@ -509,16 +511,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             outputDir.set(layout.buildDirectory.dir("distributions/images/$sysId"))
         }
 
-        val downloadedAppImage = layout.projectDirectory.dir("images/$sysId")
-
         if (downloadedAppImage.asFile.exists()) {
             logger.lifecycle("Using prebuilt app image: ${downloadedAppImage.asFile.absolutePath}")
-
-            if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
-                tasks.named(installerTaskName).configure {
-                    dependsOn("signFor$sysId")
-                }
-            }
 
             providers.provider { downloadedAppImage }
         } else {
@@ -780,6 +774,12 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         } else {
             tasks.named(createAppImageTaskName) {
                 finalizedBy(signAppImage)
+            }
+
+            if (downloadedAppImage.asFile.exists()) {
+                tasks.named(installerTaskName).configure {
+                    dependsOn("signFor$sysId")
+                }
             }
         }
     }

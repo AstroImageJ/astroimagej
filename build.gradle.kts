@@ -627,6 +627,20 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         packageTask.map { it.outputDir.get() }
     }
 
+    tasks.register<FixJPackageMetadataTask>("fixJpackageMetadataFor$sysId") {
+        enabled = crossbuildAppImage.get()
+
+        targetOs = sysInfo.os
+
+        launcher = packagingJdkToolchain
+
+        when (sysInfo.os) {
+            WINDOWS -> inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
+            LINUX -> inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
+            MAC -> inputs.dir(appImageDir.map { it.dir("AstroImageJ.app") })
+        }
+    }
+
     val installerTask = tasks.register<JPackageTask>(installerTaskName) {
         if (!crossbuildAppImage.get()) {
             mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
@@ -634,6 +648,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 mustRunAfter(tasks.named("signFor$sysId"))
             }
         } else {
+            mustRunAfter(tasks.named("fixJpackageMetadataFor$sysId"))
             if (sysInfo.os == MAC) {
                 mustRunAfter(tasks.named("signFor$sysId"))
             }
@@ -712,6 +727,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             enabled = providers.environmentVariable("DeveloperId").isPresent &&
                     project.property("codeSignAndNotarize").toString().toBoolean() &&
                     Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
+            mustRunAfter(tasks.named("fixJpackageMetadataFor$sysId"))
+            dependsOn(tasks.named("fixJpackageMetadataFor$sysId"))
 
             inputs.dir(appImageDir)
 

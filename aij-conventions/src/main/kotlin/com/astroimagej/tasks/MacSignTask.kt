@@ -38,6 +38,9 @@ abstract class MacSignTask
     fun signAction() {
         logger.lifecycle("Signing...")
 
+        // Make sure the launcher is executable
+        inputDir.get().file("Contents/MacOS/AstroImageJ").asFile.setExecutable(true, false)
+
         signImage(inputDir.get().asFile)
     }
 

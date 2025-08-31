@@ -17,6 +17,7 @@ public class ConfigHandler {
 
     public static List<Line> readOptions() {
         var p = configFilePath();
+        ensureOverlayConfigExists(p);
 
         if (!Files.exists(p)) {
             IJ.error("Config Editor", "Failed to find 'AstroImageJ.cfg'");
@@ -53,6 +54,7 @@ public class ConfigHandler {
 
     public static void writeOptions(List<Line> lines) {
         var p = configFilePath();
+        ensureOverlayConfigExists(p);
 
         try {
             Files.write(p, (Iterable<String>) () -> lines.stream().filter(Objects::nonNull).map(l -> {
@@ -134,12 +136,39 @@ public class ConfigHandler {
         }
     }
 
-    private static Path configFilePath() {
+    private static void ensureOverlayConfigExists(Path p) {
         try {
-            return Path.of(ConfigHandler.class.getProtectionDomain().getCodeSource().getLocation().toURI())
-                    .getParent().resolve("AstroImageJ.cfg");
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            // Ensure parent directories exist
+            Path parent = p.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            // Ensure file exists
+            if (Files.notExists(p)) {
+                Files.createFile(p);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to ensure overlay config exists at: " + p, e);
+        }
+    }
+
+    private static Path configFilePath() {
+        // Use global config location, Why handles merging of the two configs
+        if (IJ.isMacOSX()) {
+            return Path.of(System.getProperty("user.home"), "Library", "Application Support", "AstroImageJ", "AstroImageJ_Overlay.cfg");
+        } else if (IJ.isWindows()) {
+            return Path.of(System.getenv("APPDATA"), "AstroImageJ", "AstroImageJ_Overlay.cfg");
+        } else if (IJ.isLinux()) {
+            return Path.of(System.getProperty("user.home"), ".local", ".astroimagej", "AstroImageJ_Overlay.cfg");
+        } else {
+            // Modify app config directly
+            try {
+                return Path.of(ConfigHandler.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                        .getParent().resolve("AstroImageJ.cfg");
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

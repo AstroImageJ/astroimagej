@@ -250,6 +250,28 @@ jobs:
           path: |
             build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
 
+      - name: Windows Signing
+        if: runner.os == 'Windows'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
+          project-slug: 'astroimagej'
+          signing-policy-slug: 'Windows_Signing'
+          github-artifact-id: '${{ steps.upload.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: 'signpath/output'
+
+      - name: Upload Signed Windows Installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 5
+          path: signpath/output
+          overwrite: true
+          name: installer-${{ matrix.osName }}
+          if-no-files-found: error
+
   create-release:
     name: Create GitHub Release
     needs: package

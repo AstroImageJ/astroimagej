@@ -31,6 +31,7 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.Executors;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
 
@@ -279,10 +280,11 @@ public class AstroImageJUpdaterV6 {
         return new BufferedReader(new InputStreamReader(response.body(), charset));
     }
 
-    public static InputStream streamForUri(URI uri) throws IOException, InterruptedException {
+    public static ProgressTrackingInputStream.SizedInputStream streamForUri(URI uri) throws IOException, InterruptedException {
         String scheme = uri.getScheme();
         if (scheme == null || scheme.equalsIgnoreCase("file")) {
-            return Files.newInputStream(Paths.get(uri));
+            var path = Paths.get(uri);
+            return new ProgressTrackingInputStream.SizedInputStream(Files.newInputStream(path), Files.size(path));
         }
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -299,7 +301,16 @@ public class AstroImageJUpdaterV6 {
             throw new IllegalStateException("Failed to access file");
         }
 
-        return response.body();
+        var contentLength = -1L;
+        Optional<String> maybeCL = response.headers().firstValue("Content-Length");
+        if (maybeCL.isPresent()) {
+            try {
+                contentLength = Long.parseLong(maybeCL.get());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return new ProgressTrackingInputStream.SizedInputStream(response.body(), contentLength);
     }
 
     public static BufferedReader readerForUri(URI uri) throws IOException, InterruptedException {
@@ -376,7 +387,13 @@ public class AstroImageJUpdaterV6 {
             d.dispose();
             System.out.println(selector.getSelectedItem());
             try {
-                downloadSpecificVersion((MetaVersion.VersionEntry) selector.getSelectedItem());
+                Executors.newSingleThreadExecutor().submit(() -> {
+                    try {
+                        downloadSpecificVersion((MetaVersion.VersionEntry) selector.getSelectedItem());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

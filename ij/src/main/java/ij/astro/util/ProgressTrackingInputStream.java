@@ -19,6 +19,16 @@ public class ProgressTrackingInputStream extends InputStream {
         }
     }
 
+    public ProgressTrackingInputStream(SizedInputStream stream) {
+        in = stream.inputStream();
+        try {
+            totalSizeInBytes = Math.max(stream.size(), in.available());
+        } catch (IOException ignored) {
+            totalSizeInBytes = stream.size();
+        }
+        IJ.showProgress(0);
+    }
+
     public long getInputByteCount() {
         return inputByteCount;
     }
@@ -116,4 +126,6 @@ public class ProgressTrackingInputStream extends InputStream {
             IJ.showProgress(inputByteCount / (double) totalSizeInBytes);
         }
     }
+
+    public record SizedInputStream(InputStream inputStream, long size) {}
 }

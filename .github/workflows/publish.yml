@@ -268,8 +268,9 @@ jobs:
         with:
           retention-days: 5
           path: signpath/output
+          # Overwrite does not seem to work since we are in the same job?
           overwrite: true
-          name: installer-${{ matrix.osName }}
+          name: signed-installer-${{ matrix.osName }}
           if-no-files-found: error
 
   create-release:
@@ -315,7 +316,7 @@ jobs:
       - name: Download installer (windows-x64)
         uses: actions/download-artifact@v4
         with:
-          name: installer-windows-x64
+          name: signed-installer-windows-x64
         continue-on-error: true
 
       - name: Prepare flat release assets

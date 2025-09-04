@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "artifact": "AstroImageJ-$VERSION-linux-x64.tgz",
+      "arch": [
+        "AMD64"
+      ],
+      "os": [
+        "LINUX"
+      ]
+    },
+    {
+      "artifact": "AstroImageJ-$VERSION-mac-x64.dmg",
+      "arch": [
+        "AMD64"
+      ],
+      "os": [
+        "MAC"
+      ]
+    },
+    {
+      "artifact": "AstroImageJ-$VERSION-mac-aarch64.dmg",
+      "arch": [
+        "ARM64"
+      ],
+      "os": [
+        "MAC"
+      ]
+    },
+    {
+      "artifact": "AstroImageJ-$VERSION-windows-x64.msi",
+      "arch": [
+        "AMD64"
+      ],
+      "os": [
+        "WINDOWS"
+      ]
+    }
+  ]
+}

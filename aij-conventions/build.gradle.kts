@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    kotlin("plugin.serialization") version embeddedKotlinVersion
 }
 
 kotlin {
@@ -7,7 +8,7 @@ kotlin {
     // but JVM auto-provisioning does not seem to work here,
     // so set a lower Java version.
     // Set to 11 to match the JGit requirement set in the root build.gradle.kts
-    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 repositories {
@@ -18,4 +19,11 @@ repositories {
 
 dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+
+    implementation("org.bouncycastle:bcprov-jdk18on:1.80")
+    implementation("org.bouncycastle:bcpg-jdk18on:1.80")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
+
+    implementation("dev.sigstore:sigstore-java:1.3.0")
 }

@@ -4,37 +4,36 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.2.3)'
+        description: 'Release version (e.g. 1.2.3.00)'
         required: true
+      skip_release:
+        description: 'Skip creating a GitHub release'
+        required: false
+        type: 'boolean'
+        default: false
+      notarize:
+        description: 'Notarize mac'
+        required: false
+        type: 'boolean'
+        default: true
+      crosspackage:
+        description: 'Cross package applications'
+        required: false
+        type: 'boolean'
+        default: false
   push:
     tags:
       - '[0-9]*.[0-9]*.[0-9]*.00'
 
+env:
+  GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+  CROSSBUILD_APP_IMAGE: ${{ github.event.inputs.crosspackage }}
+
 jobs:
-  package:
-    name: Package ${{ matrix.osName }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      matrix:
-        include:
-          - runner: ubuntu-latest
-            osName: linux-x64
-            gradleTask: packageAijForLinux_x64
-            artifactExt: tgz
-          - runner: macos-latest
-            osName: mac-aarch64
-            gradleTask: packageAijForMac_aarch64
-            artifactExt: dmg
-          - runner: macos-latest
-            osName: mac-x64
-            gradleTask: packageAijForMac_x64
-            artifactExt: dmg
-          - runner: windows-latest
-            osName: windows-x64
-            gradleTask: packageAijForWindows_x64
-            artifactExt: msi
-    outputs:
-      artifact: ${{ steps.upload.outputs.artifact }}
+  crossbuild:
+    if: ${{ github.event.inputs.crosspackage }}
+    name: Cross-package app image
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,52 +44,242 @@ jobs:
           distribution: 'temurin'
           java-version: '24'
 
+      - name: Make Gradle wrapper executable
+        if: ${{ matrix.runner != 'windows-latest' }}
+        run: chmod +x ./gradlew
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Create app images
+        run: |
+          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64 
+
+      - name: Upload App Image For Linux x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-linux-x64
+          if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Linux_x64/astroimagej
+
+      - name: Upload App Image For Windows x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-windows-x64
+          if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Windows_x64/AstroImageJ
+
+      - name: Upload App Image For Mac x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-mac-x64
+          if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Mac_x64/AstroImageJ.app
+
+      - name: Upload App Image For Mac Arm
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-mac-aarch64
+          if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
+          retention-days: 5
+          path: |
+            build/distributions/**/images/Mac_aarch64/AstroImageJ.app
+
+  package:
+    name: Package ${{ matrix.osName }}
+    runs-on: ${{ matrix.runner }}
+    needs: crossbuild
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            osName: linux-x64
+            gradleTask: packageAijForLinux_x64
+            artifactExt: tgz
+            wrapper: ./gradlew
+            appImageName: appimage-linux-X64
+            sysId: LINUX_x64
+          - runner: macos-latest
+            osName: mac-aarch64
+            gradleTask: packageAijForMac_aarch64
+            artifactExt: dmg
+            wrapper: ./gradlew
+            appImageName: appimage-mac-aarch64
+            sysId: MAC_AARCH64
+          - runner: macos-latest
+            osName: mac-x64
+            gradleTask: packageAijForMac_x64
+            artifactExt: dmg
+            wrapper: ./gradlew
+            appImageName: appimage-mac-x64
+            sysId: MAC_X64
+          - runner: windows-latest
+            osName: windows-x64
+            gradleTask: packageAijForWindows_x64
+            artifactExt: msi
+            wrapper: ./gradlew.bat
+            appImageName: appimage-windows-x64
+            sysId: WINDOWS_X64
+    outputs:
+      artifact: ${{ steps.upload.outputs.artifact }}
+    steps:
       - name: Install the Apple certificate and provisioning profile
-        if: matrix.runner == 'macos-latest'
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          DeveloperId: ${{ secrets.APPLE_DEV_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        if: |
+          (matrix.runner == 'macos-latest' || matrix.runner == 'macos-13') &&
+          (env.BUILD_CERTIFICATE_BASE64 != '') &&
+          (env.P12_PASSWORD != '') &&
+          (env.BUILD_PROVISION_PROFILE_BASE64 != '') &&
+          (env.KEYCHAIN_PASSWORD != '') &&
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.notarize == 'true')
         run: |
           # create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           PP_PATH=$RUNNER_TEMP/build_pp.provisionprofile
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          
+
           # import certificate and provisioning profile from secrets
+          echo "Importing..."
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
           echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-          
+
           # create temporary keychain
+          echo "Create Keychain..."
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          
+
           # import certificate to keychain
+          echo "Importing to keychain..."
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          echo "  Imported Certificate"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH  > /dev/null 2>&1
+          echo "  Imported Partition"
           security list-keychain -d user -s $KEYCHAIN_PATH
-          
+          echo "  Imported Keychain"
+
           # apply provisioning profile
+          echo "Applying profiles..."
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          echo "Storing notarytool credentials into keychain..."
+          xcrun notarytool store-credentials AC_PASSWORD \
+          --apple-id "${{ secrets.APPLE_ID }}" \
+          --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+          --team-id "${{ secrets.APPLE_TEAM_ID }}"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+
+      - name: Make Gradle wrapper executable
+        if: ${{ matrix.runner != 'windows-latest' }}
+        run: chmod +x ./gradlew
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Download App Image For Linux x64
+        if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-linux-x64
+
+      - name: Download App Image For Windows x64
+        if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-windows-x64
+
+      - name: Download App Image For Mac x64
+        if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-mac-x64
+
+      - name: Download App Image For Mac Arm
+        if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v5
+        with:
+          name: appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: ./gradlew ${{ matrix.gradleTask }}
+        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }}
+        env:
+          DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 
       - name: Upload installer ( ${{ matrix.osName }} )
         id: upload
         uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.osName }}
+          if-no-files-found: error
+          retention-days: 5
           path: |
             build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
+
+      - name: Windows Signing
+        if: runner.os == 'Windows'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
+          project-slug: 'astroimagej'
+          signing-policy-slug: 'test-signing'
+          github-artifact-id: '${{ steps.upload.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: 'signpath/output'
+
+      - name: Upload Signed Windows Installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 5
+          path: signpath/output
+          # Overwrite does not seem to work since we are in the same job?
+          overwrite: true
+          name: signed-installer-${{ matrix.osName }}
+          if-no-files-found: error
 
   create-release:
     name: Create GitHub Release
     needs: package
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - name: Determine version
         id: vars
@@ -102,59 +291,94 @@ jobs:
             echo "VERSION=$TAG_NAME" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Release
-        id: release
-        uses: actions/create-release@v1
-        with:
-          tag_name: v${{ steps.vars.outputs.VERSION }}
-          release_name: Release ${{ steps.vars.outputs.VERSION }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        # Checkout repo so gh cli can work
+        uses: actions/checkout@v4
 
       - name: Download installer (linux-x64)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: installer-linux-x64
         continue-on-error: true
 
       - name: Download installer (mac-aarch64)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: installer-mac-aarch64
         continue-on-error: true
 
       - name: Download installer (mac-x64)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: installer-mac-x64
         continue-on-error: true
 
       - name: Download installer (windows-x64)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: installer-windows-x64
+          name: signed-installer-windows-x64
         continue-on-error: true
 
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: |
-            installer-linux-x64/**/*.tgz
-            installer-mac-aarch64/**/*.dmg
-            installer-mac-x64/**/*.dmg
-            installer-windows-x64/**/*.msi
-          asset_name: |
-            aij-linux-x64-${{ steps.vars.outputs.VERSION }}.tgz
-            aij-mac-aarch64-${{ steps.vars.outputs.VERSION }}.dmg
-            aij-mac-x64-${{ steps.vars.outputs.VERSION }}.dmg
-            aij-windows-x64-${{ steps.vars.outputs.VERSION }}.msi
-          asset_content_type: |
-            application/gzip
-            application/x-apple-diskimage
-            application/x-apple-diskimage
-            application/octet-stream
+      - name: Prepare flat release assets
+        # move & rename each installer into release_assets/
+        run: |
+          VERSION=${{ steps.vars.outputs.VERSION }}
+          mkdir -p release_assets
+
+          mv Linux_x64/*.tgz release_assets/AstroImageJ-${VERSION}-linux-x64.tgz
+          mv Mac_aarch64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-aarch64.dmg
+          mv Mac_x64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-x64.dmg
+          mv Windows_x64/*.msi release_assets/AstroImageJ-${VERSION}-windows-x64.msi
+
+      - name: Render release notes
+        id: render-notes
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+          REPO: ${{ github.repository }}
+        run: |
+          # substitute placeholders
+          sed \
+            -e "s/{{VERSION}}/${VERSION}/g" \
+            -e "s@{{REPO}}@${REPO}@g" \
+            packageFiles/assets/github/tmpl_release_notes.md \
+            > release_notes.md
+
+      - name: Create release
+        # https://cli.github.com/manual/gh_release_create
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
+        shell: bash
+        run: |
+            for f in release_assets/*; do FILES+=" $f"; done
+            gh release create ${{ steps.vars.outputs.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Generate metadata
+        shell: bash
+        env:
+          VERSION: ${{ steps.vars.outputs.VERSION }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets -Pversion=$VERSION --stacktrace
+
+      - name: Update metadata
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update version metadata
+          file_pattern: '*.json'
+
+      - name: Upload assets & metadata (no release)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            release_assets/**
+            release_notes.md
+            website/meta/**/*.json

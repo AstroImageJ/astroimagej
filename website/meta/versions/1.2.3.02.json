@@ -2,56 +2,28 @@
     "version": "1.2.3.02",
     "artifacts": [
         {
-            "name": "AstroImageJ-1.2.3.02-linux-x64.tgz",
-            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-linux-x64.tgz",
-            "sha256": "386a9ba8ce9cfb8d8a7410505fdaa69bf26d72982ab893cf777960c77ae45af7",
-            "os": [
-                "LINUX"
-            ],
-            "arch": [
-                "AMD64"
-            ],
-            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-linux-x64.tgz.sigstore.json",
-            "signatureSha256": "fe1b0f1db0caf7e1011a809d880859b073f4c479ca870b8d8ebd5274ca6f8e29"
+            "name": "ij.jar",
+            "destination": "",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/ij.jar",
+            "sha256": "304094933664b23f2d21e64ea96924c8de8cc9c0f1909f5f30a60a26b7efe0f1",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/ij.jar.sigstore.json",
+            "signatureSha256": "bcd9bd5f022ee3a1009704ebc454f7809a1cd191fcfe4a4eff703b1d964b178e"
         },
         {
-            "name": "AstroImageJ-1.2.3.02-mac-x64.dmg",
-            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-mac-x64.dmg",
-            "sha256": "79ea340f76c851f2fd0fbcb48c0943a36078139dc1e23bbac0792e0223c208a0",
-            "os": [
-                "MAC"
-            ],
-            "arch": [
-                "AMD64"
-            ],
-            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-mac-x64.dmg.sigstore.json",
-            "signatureSha256": "a1d8b56c7f23e2a79642925bf97addb03f6178b02e59313a444e05adf060234c"
+            "name": "StartupMacros.txt",
+            "destination": "macros",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/StartupMacros.txt",
+            "sha256": "539cf05002d68dbc7824379069e38d5bc250187cf0f6777c8a2aa389e035d4fd",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/StartupMacros.txt.sigstore.json",
+            "signatureSha256": "a4fbeade7acff0896378cda704898167f4fe91b77af3e3b4c58fa22cfc97d752"
         },
         {
-            "name": "AstroImageJ-1.2.3.02-mac-aarch64.dmg",
-            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-mac-aarch64.dmg",
-            "sha256": "146b54b25c405d1c04708aa8c1f6a44469a510587538b54c2ad321931e43538e",
-            "os": [
-                "MAC"
-            ],
-            "arch": [
-                "ARM64"
-            ],
-            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-mac-aarch64.dmg.sigstore.json",
-            "signatureSha256": "0520e45afec5fcc52d5afd1ddbe4454862364335c038efcdbf1d7be2a1eb1407"
-        },
-        {
-            "name": "AstroImageJ-1.2.3.02-windows-x64.msi",
-            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-windows-x64.msi",
-            "sha256": "8af141d8cb741d9d54fe4549a6f4c1852f14c3f90355444abe64b44f5c8bb896",
-            "os": [
-                "WINDOWS"
-            ],
-            "arch": [
-                "AMD64"
-            ],
-            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-windows-x64.msi.sigstore.json",
-            "signatureSha256": "0fa335d85dc5da86704ac4e3f20e59982513d20f5ab7f2ac24b4a05a76e9e301"
+            "name": "Astronomy_.jar",
+            "destination": "plugins",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/Astronomy_.jar",
+            "sha256": "9c2f2fb9e01aab248ecebe07042e6fc5a8ff481b85754164a684c9a75323abbd",
+            "signatureUrl": "https://astroimagej.github.io/astroimagej/meta/signatures/1.2.3.02/Astronomy_.jar.sigstore.json",
+            "signatureSha256": "1fcce4c698316cce3360991d496ee74e13d63651f63d9f8d6a829d8086b127b4"
         }
     ]
 }

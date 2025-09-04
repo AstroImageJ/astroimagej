@@ -198,7 +198,7 @@ public class AstroImageJ_Updater implements PlugIn {
 		}
 
 		// Handle Window's specific files
-		if (IJ.isWindows()) {
+		if (IJ.isWindows() && false) {
 			// Update from older launcher that used old config file
 			if (!Files.exists(Path.of("launcher.ini"))) {
 				var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");
@@ -417,15 +417,17 @@ public class AstroImageJ_Updater implements PlugIn {
 		if (hasUpdateAvailable()) gd.addMessage(msg);
 
 		msg =
-			"You are currently running AstroImageJ "+IJ.getAstroVersion()+".\n"+
-			" \n"+
-			"To upgrade or downgrade to a different version, select it above.\n"+
-			"The \"daily build\" option may contain updates since the latest numbered version.\n"+
-			"Click \"OK\" to download and install the version you have selected above.\n"+
-            "After a successful download, AstroImageJ will close.\n"+
-			"Restart AstroImageJ to run the updated version.\n"+
-			" \n"+
-			"Click \"Cancel\" to continue using the current version.\n";
+                """
+                        You are currently running AstroImageJ %s.
+                        \s
+                        To upgrade or downgrade to a different version, select it above.
+                        The "daily build" option may contain updates since the latest numbered version.
+                        Click "OK" to download and install the version you have selected above.
+                        After a successful download, AstroImageJ will close.
+                        Restart AstroImageJ to run the updated version.
+                        \s
+                        Click "Cancel" to continue using the current version.
+                        """.formatted(IJ.getAstroVersion());
 
 		gd.addMessage(msg);
 		gd.addCheckbox("Allow automatic update notifications at startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
@@ -438,24 +440,6 @@ public class AstroImageJ_Updater implements PlugIn {
 		else
 			return gd.getNextChoiceIndex();
 	}
-
-//	String getUpgradeVersion() {
-//		String url = IJ.URL+"/notes.html";
-//		String notes = openUrlAsString(url, 20);
-//		if (notes==null) {
-//			error("Unable to connect to "+IJ.URL+". You\n"
-//				+"may need to use the Edit>Options>Proxy Settings\n"
-//				+"command to configure ImageJ to use a proxy server.");
-//			return null;
-//		}
-//		int index = notes.indexOf("Version ");
-//		if (index==-1) {
-//			error("Release notes are not in the expected format");
-//			return null;
-//		}
-//		String version = notes.substring(index+8, index+13);
-//		return version;
-//	}
 
 	String openUrlAsString(String address, int maxLines) {
 		StringBuffer sb;
@@ -500,23 +484,6 @@ public class AstroImageJ_Updater implements PlugIn {
 		return data;
 	}
 
-	/*Changes the name of ij.jar to ij-old.jar
-	boolean renameJar(File f) {
-		File backup = new File(Prefs.getHomeDir() + File.separator + "ij-old.jar");
-		if (backup.exists()) {
-			if (!backup.delete()) {
-				error("Unable to delete backup: "+backup.getPath());
-				return false;
-			}
-		}
-		if (!f.renameTo(backup)) {
-			error("Unable to rename to ij-old.jar: "+f.getPath());
-			return false;
-		}
-		return true;
-	}
-	*/
-
 	void saveFile(File f, byte[] data) {
 		try {
 			FileOutputStream out = new FileOutputStream(f);
@@ -550,18 +517,6 @@ public class AstroImageJ_Updater implements PlugIn {
 		IJ.showStatus("");
 		return lines;
 	}
-
-	// Use reflection to get version since early versions
-	// of ImageJ do not have the IJ.getVersion() method.
-//	String version() {
-//		String version = "";
-//		try {
-//			Class ijClass = ImageJ.class;
-//			Field field = ijClass.getField("VERSION");
-//			version = (String)field.get(ijClass);
-//		}catch (Exception ex) {}
-//		return version;
-//	}
     
 	public static int parseInteger(String s, int defaultValue) {
 		if (s==null) return defaultValue;
@@ -581,14 +536,5 @@ public class AstroImageJ_Updater implements PlugIn {
         IJ.beep();
 		IJ.error("AstroImageJ Updater", msg);
 	}
-	
-//	void updateMenus() {
-//		if (IJ.debugMode) {
-//			long start = System.currentTimeMillis();
-//			Menus.updateImageJMenus();
-//			IJ.log("Refresh Menus: "+(System.currentTimeMillis()-start)+" ms");
-//		} else
-//			Menus.updateImageJMenus();
-//	}
 
 }

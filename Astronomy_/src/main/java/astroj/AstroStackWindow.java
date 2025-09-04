@@ -3799,7 +3799,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
 
         else if (b == multiApertureMenuItem) {
-            Executors.newSingleThreadExecutor().submit(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
+            SwingUtilities.invokeLater(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
         } else if (b == multiPlotMenuItem) {
             IJ.runPlugIn("Astronomy.MultiPlot_", "");
         } else if (b == measurementMenuItem) {
@@ -4006,7 +4006,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             imp.unlock();
         } else if (b == buttonMultiAperture) {
             reenterAstronomyTool();
-            Executors.newSingleThreadExecutor().submit(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
+            SwingUtilities.invokeLater(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
         } else if (b == buttonAlign) {
             reenterAstronomyTool();
             IJ.runPlugIn("Astronomy.Stack_Aligner", "");
@@ -5710,15 +5710,17 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //            setValueTextField();
         photom.setMarkRemovedPixels(false);
         photom.measure(imp, exact, lastImageX, lastImageY, radius, rBack1, rBack2);
-        if (showMeanNotPeak) {
-            peakLabel.setText("Mean:");
-            writeNumericPanelField(photom.meanBrightness(), peakTextField);
-        } else {
-            peakLabel.setText("Peak:");
-            writeNumericPanelField(photom.peakBrightness(), peakTextField);
-        }
-        lengthLabel.setText("Int Cnts:");
-        writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+        SwingUtilities.invokeLater(() -> {
+            if (showMeanNotPeak) {
+                peakLabel.setText("Mean:");
+                writeNumericPanelField(photom.meanBrightness(), peakTextField);
+            } else {
+                peakLabel.setText("Peak:");
+                writeNumericPanelField(photom.peakBrightness(), peakTextField);
+            }
+            lengthLabel.setText("Int Cnts:");
+            writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+        });
     }
 
 

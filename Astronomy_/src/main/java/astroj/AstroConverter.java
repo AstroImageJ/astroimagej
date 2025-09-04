@@ -24,8 +24,8 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Timer;
 import java.util.*;
+import java.util.Timer;
 
 
 /**
@@ -3413,7 +3413,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
                 {
                 objectIDTextField.setBackground(leapYellow);
                 objectIDTextField.setText("accessing SIMBAD...");
-                objectIDTextField.paint(objectIDTextField.getGraphics());
+                objectIDTextField.repaint();
                 }
             };
         t.start();
@@ -3493,7 +3493,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
                 objectIDTextField.setText(objectText);
                 objectIDTextField.setCaretPosition(objectText.length());
                 objectIDTextField.setBackground(coordinateEntryEnabled?Color.WHITE:leapGray);
-                objectIDTextField.paint(objectIDTextField.getGraphics());
+                objectIDTextField.repaint();
                 }
             };
         t2.start();
@@ -3570,7 +3570,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
                 {
                 eoiBJDTextField.setBackground(leapYellow);
                 eoiBJDTextField.setText("accessing OSU...");
-                eoiBJDTextField.paint(eoiBJDTextField.getGraphics());
+                eoiBJDTextField.repaint();
                 }
             };
 
@@ -5634,7 +5634,7 @@ public class HTMLDialog extends JDialog implements ActionListener {
         ignoreObservatoryAction = true;
         observatoryIDComboBox.setSelectedIndex(selectedObservatory);
         ignoreObservatoryAction = false;
-        observatoryIDComboBox.paint(observatoryIDComboBox.getGraphics());
+        observatoryIDComboBox.repaint();
         }
 
     public boolean setObservatory(String name)
@@ -5647,7 +5647,7 @@ public class HTMLDialog extends JDialog implements ActionListener {
                 ignoreObservatoryAction = true;
                 observatoryIDComboBox.setSelectedIndex(selectedObservatory);
                 ignoreObservatoryAction = false;
-                observatoryIDComboBox.paint(observatoryIDComboBox.getGraphics());
+                observatoryIDComboBox.repaint();
                 lat = selectedObservatory < observatoryLats.length ? observatoryLats[selectedObservatory] : 0.0;
                 lon = selectedObservatory < observatoryLons.length ? observatoryLons[selectedObservatory] : 0.0;
                 alt = selectedObservatory < observatoryAlts.length ? observatoryAlts[selectedObservatory] : 0.0;

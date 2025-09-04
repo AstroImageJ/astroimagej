@@ -37,7 +37,10 @@ tasks.jar {
     archiveFileName.set("ij-standalone.jar")
 
     manifest {
-        attributes("Main-Class" to mainClassName)
+        attributes(
+            "Main-Class" to mainClassName,
+            "Enable-Native-Access" to "ALL-UNNAMED"
+        )
         // "Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}"
     }
 }

@@ -40,3 +40,10 @@ run the project. To build the project, double-click on any of the `packageAij` t
 your-project-root/build/distributions. To build only ij.jar or astronomy_.jar, navigate to the build commands under
 their respective modules (instead of Tasks > ..., it will be ij > ... or Astronomy_ > ...). The built jar will be in
 your-project-root/<ij or Astronomy_>/build/libs.
+
+# Code Signing Policy
+## Windows
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
+# Privacy Policy
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.

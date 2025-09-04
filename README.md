@@ -43,7 +43,7 @@ your-project-root/<ij or Astronomy_>/build/libs.
 
 # Code Signing Policy
 ## Windows
-Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
 # Privacy Policy
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.

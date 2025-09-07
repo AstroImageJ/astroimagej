@@ -148,6 +148,12 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     public void downloadSpecificVersion(MetaVersion.VersionEntry entry) throws Exception {
         var version = SpecificVersion.readJson(new URI(entry.url()));
 
+        if (version.message() != null && !version.message().isBlank()) {
+            if (!IJ.showMessageWithCancel("Updater", version.message())) {
+                return;
+            }
+        }
+
         var appFolder = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
         Path baseDir;
         if (IJ.isWindows()) {

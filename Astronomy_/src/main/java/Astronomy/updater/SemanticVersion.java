@@ -91,6 +91,8 @@ public record SemanticVersion(int[] core, String[] prerelease) implements Compar
     }
 
     private static int[] getCore(String s) {
+        var start = s.indexOf('+');
+        if (start != -1) s = s.substring(0, start);
         var end = s.indexOf('-');
         if (end == -1) end = s.length();
 
@@ -105,7 +107,9 @@ public record SemanticVersion(int[] core, String[] prerelease) implements Compar
     }
 
     private static String[] getPrerelease(String s) {
-        int start = s.indexOf('-');
+        var start = s.indexOf('+');
+        if (start != -1) s = s.substring(0, start);
+        start = s.indexOf('-');
         if (start == -1) return new String[0];
 
         return s.substring(start + 1).split("\\.");

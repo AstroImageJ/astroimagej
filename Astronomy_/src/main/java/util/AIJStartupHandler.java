@@ -1,6 +1,6 @@
 package util;
 
-import Astronomy.AstroImageJ_Updater;
+import Astronomy.AstroImageJUpdaterV6;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
@@ -246,7 +246,7 @@ public class AIJStartupHandler implements PlugIn {
         ObjectShare.putIfAbsent("customApertureKey", FreeformPixelApertureHandler.APS.getPropertyKey());
         ensureConfigFileExists();
         Executors.newSingleThreadExecutor()
-                .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));
+                .execute(() -> IJ.runPlugIn(AstroImageJUpdaterV6.class.getCanonicalName(), "check"));
     }
 
     private void ensureConfigFileExists() {

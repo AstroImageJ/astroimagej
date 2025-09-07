@@ -1,11 +1,14 @@
 package Astronomy;
 
 import Astronomy.updater.MetaVersion;
+import Astronomy.updater.SemanticVersion;
 import Astronomy.updater.SpecificVersion;
 import ij.IJ;
 import ij.ImageJ;
+import ij.Prefs;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.gui.MultiLineLabel;
+import ij.plugin.PlugIn;
 
 import javax.net.ssl.*;
 import javax.swing.*;
@@ -35,7 +38,8 @@ import java.util.concurrent.Executors;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
 
-public class AstroImageJUpdaterV6 {
+public class AstroImageJUpdaterV6 implements PlugIn {
+    public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
     private static final URI META;
     private static final HttpClient INSECURE_CLIENT;
     private static final TrustManager MOCK_MANAGER = new X509ExtendedTrustManager() {
@@ -74,6 +78,7 @@ public class AstroImageJUpdaterV6 {
             return new X509Certificate[0];
         }
     };
+    private MetaVersion meta;
 
     static {
         try {
@@ -102,8 +107,42 @@ public class AstroImageJUpdaterV6 {
         }
     }
 
-    public MetaVersion fetchVersions() {
-        return MetaVersion.readJson(META);
+    MetaVersion fetchVersions() {
+        if (meta == null) {
+            meta = MetaVersion.readJson(META);
+        }
+
+        return meta;
+    }
+
+    public void update() {
+        SwingUtilities.invokeLater(() -> {
+            AstroImageJUpdaterV6.META.hashCode();
+            var u = new AstroImageJUpdaterV6();
+            u.dialog();
+        });
+    }
+
+    public void updateCheck() {
+        if (Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true)) {
+            if (hasUpdateAvailable()) {
+                dialog();
+            }
+        }
+    }
+
+    private boolean hasUpdateAvailable() {
+        var meta = fetchVersions();
+        var current = new SemanticVersion(IJ.getAstroVersion());
+        for (MetaVersion.VersionEntry version : meta.versions()) {
+            if (version.releaseType() == MetaVersion.ReleaseType.RELEASE) {
+                if (version.version().compareTo(current) > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public void downloadSpecificVersion(MetaVersion.VersionEntry entry) throws Exception {
@@ -129,7 +168,8 @@ public class AstroImageJUpdaterV6 {
         }
 
         if (fileEntry == null) {
-            //todo
+            IJ.error("Unable to find file entry for current system.");
+            return;
         }
 
         var pid = ProcessHandle.current().pid();
@@ -206,7 +246,7 @@ public class AstroImageJUpdaterV6 {
             System.exit(0);
         }
 
-        //todo error
+        throw new IllegalStateException("Unknown OS: Could not handle update");
     }
 
     public byte[] downloadAndComputeHash(SpecificVersion.FileEntry fileEntry, int maxRetries) throws Exception {
@@ -351,7 +391,21 @@ public class AstroImageJUpdaterV6 {
 
         var b = Box.createVerticalBox();
 
-        b.add(new MultiLineLabel("""
+        MultiLineLabel msg;
+        if (hasUpdateAvailable()) {
+            msg = new MultiLineLabel("""
+                    A new version of AstroImageJ is available.
+                    \s
+                    You are currently running AstroImageJ %s.
+                    \s
+                    Click "Ok" to download and install the version you have selected below.
+                    After a successful download, AstroImageJ will close.
+                    Restart AstroImageJ to run the updated version.
+                    \s
+                    Click "Cancel" to continue using the current version.
+            """.formatted(IJ.getAstroVersion()));
+        } else {
+            msg = new MultiLineLabel("""
                 You are currently running AstroImageJ %s.
                 \s
                 To upgrade or downgrade to a different version, select it below.
@@ -360,10 +414,15 @@ public class AstroImageJUpdaterV6 {
                 Restart AstroImageJ to run the updated version.
                 \s
                 Click "Cancel" to continue using the current version.
-                """.formatted(IJ.getAstroVersion())));
+                """.formatted(IJ.getAstroVersion()));
+        }
+        b.add(msg);
 
         var enablePrereleases = new JCheckBox("Show Prereleases", false);
         b.add(enablePrereleases);
+
+        var updateCheckOnStartup = new JCheckBox("Perform Update Check on startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
+        b.add(updateCheckOnStartup);
 
         var selector = new JComboBox<>(new Vector<>(releaseOnlyVersions));
         b.add(selector);
@@ -376,6 +435,10 @@ public class AstroImageJUpdaterV6 {
                 selector.removeAllItems();
                 selector.setModel(new DefaultComboBoxModel<>(new Vector<>(releaseOnlyVersions)));
             }
+        });
+
+        updateCheckOnStartup.addActionListener($ -> {
+            Prefs.set(DO_UPDATE_NOTIFICATION.substring(1), updateCheckOnStartup.isSelected());
         });
 
         var buttons = Box.createHorizontalBox();
@@ -415,12 +478,14 @@ public class AstroImageJUpdaterV6 {
         d.setVisible(true);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            AstroImageJUpdaterV6.META.hashCode();
-            var u = new AstroImageJUpdaterV6();
-            u.dialog();
-        });
+    @Override
+    public void run(String arg) {
+        if ("check".equals(arg)) {
+            updateCheck();
+            return;
+        }
+
+        update();
     }
 
     private record Download(byte[] bytes) {}

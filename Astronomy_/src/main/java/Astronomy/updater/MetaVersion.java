@@ -24,7 +24,11 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
 
             if (o instanceof JSONObject object) {
                 if (object.get("metaVersion") instanceof JSONObject meta) {
-                    //todo check for wrong meta version
+                    var mVersion = MetadataVersion.fromJson(meta);
+                    if (mVersion.major() > 1) {
+                        System.out.println("Unsupported meta version: " + mVersion);
+                        return null;
+                    }
                     if (object.get("versions") instanceof JSONArray array) {
                         var versions = new ArrayList<VersionEntry>();
                         for (Object o1 : array) {
@@ -33,7 +37,7 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
                             }
                         }
 
-                        return new MetaVersion(MetadataVersion.fromJson(meta), versions);
+                        return new MetaVersion(mVersion, versions);
                     }
                 }
             }

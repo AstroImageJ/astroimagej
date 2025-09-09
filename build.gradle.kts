@@ -76,6 +76,9 @@ dependencies {
     implementation(project(":ij"))
     implementation(project(":Astronomy_"))
 
+    // Sigstore versions before 2.0.0-rc1 fail to sign on Windows
+    sigstoreClient(files("aijLibs/sigstore-java-2.0.0-rc1-SNAPSHOT.jar"))
+
     // Jars to be packaged and shipped
     add("shippingIJ", project(mapOf("path" to ":ij", "configuration" to "shippingJar")))
     add("shippingAstro", project(mapOf("path" to ":Astronomy_", "configuration" to "shippingJar")))
@@ -885,7 +888,7 @@ val updaterFiles = providers.gradleProperty("updateMetadataFiles")
     }
 
 val signTask = tasks.register<SigstoreSignFiles>("signAssets") {
-    signatureDirectory = layout.projectDirectory.dir("website/meta/signatures")
+    signatureDirectory = layout.projectDirectory.dir("website/public/meta/signatures")
         .dir(providers.gradleProperty("version"))
 
     filesToSign = files(updaterFiles)
@@ -893,8 +896,8 @@ val signTask = tasks.register<SigstoreSignFiles>("signAssets") {
 
 tasks.register<GenerateMetadata>("updateMetadata") {
     version = providers.gradleProperty("version")
-    specificJson = layout.projectDirectory.file("website/meta/versions/${version.get()}.json")
-    generalJson = layout.projectDirectory.file("website/meta/versions.json")
+    specificJson = layout.projectDirectory.file("website/public/meta/versions/${version.get()}.json")
+    generalJson = layout.projectDirectory.file("website/public/meta/versions.json")
     baseMetaUrl = "https://astroimagej.github.io/astroimagej/meta"
     updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
     baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"

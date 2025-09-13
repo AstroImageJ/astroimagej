@@ -17,10 +17,8 @@ import ij.astro.util.ProgressTrackingInputStream;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
 
-import javax.net.ssl.*;
 import javax.swing.*;
 import java.io.*;
-import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -32,7 +30,10 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.security.*;
+import java.security.DigestInputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -45,43 +46,7 @@ import static java.nio.file.attribute.PosixFilePermission.*;
 public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
     private static final URI META;
-    private static final HttpClient INSECURE_CLIENT;
-    private static final TrustManager MOCK_MANAGER = new X509ExtendedTrustManager() {
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
-
-        }
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
-
-        }
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    };
+    private static final HttpClient HTTP_CLIENT;
     //todo set for master
     public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/feature/updater-v6";
     private MetaVersion meta;
@@ -94,17 +59,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
 
         try {
-            //todo actually setup certificate on the domain
-            //todo github seems to handle this?
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[]{MOCK_MANAGER}, new SecureRandom());
-
-            SSLParameters sslParams = sslContext.getDefaultSSLParameters();
-            sslParams.setEndpointIdentificationAlgorithm(null);
-
-            INSECURE_CLIENT = HttpClient.newBuilder()
-                    .sslContext(sslContext)
-                    .sslParameters(sslParams)
+            HTTP_CLIENT = HttpClient.newBuilder()
                     .followRedirects(HttpClient.Redirect.ALWAYS)
                     .build();
 
@@ -389,7 +344,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                 .GET()
                 .build();
 
-        HttpResponse<InputStream> response = INSECURE_CLIENT.send(
+        HttpResponse<InputStream> response = HTTP_CLIENT.send(
                 request,
                 HttpResponse.BodyHandlers.ofInputStream()
         );
@@ -413,7 +368,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                 .GET()
                 .build();
 
-        HttpResponse<InputStream> response = INSECURE_CLIENT.send(
+        HttpResponse<InputStream> response = HTTP_CLIENT.send(
                 request,
                 HttpResponse.BodyHandlers.ofInputStream()
         );

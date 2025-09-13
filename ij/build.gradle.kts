@@ -9,6 +9,7 @@ dependencies {
     api("de.rototor.pdfbox:graphics2d:3.0.2")
     api("net.java.dev.jna:jna-platform:5.17.0")
     api(fileTree(mapOf("dir" to "${rootDir}/aijLibs", "include" to listOf("*.jar"))))
+    api("dev.sigstore:sigstore-java:2.0.0-rc1")
     implementation("ch.randelshofer:fastdoubleparser:2.0.1")
     api("org.hipparchus:hipparchus-stat:3.1")
 }

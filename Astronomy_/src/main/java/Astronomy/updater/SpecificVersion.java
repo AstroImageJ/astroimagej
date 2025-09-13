@@ -33,13 +33,15 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
         return null;
     }
 
-    public record FileEntry(String name, String url, String sha256, Os[] os, Arch[] arch) {
+    public record FileEntry(String name, String url, String sha256, Os[] os, Arch[] arch, String signatureUrl, String signatureSha256) {
         public FileEntry {
             Objects.requireNonNull(name);
             Objects.requireNonNull(url);
             Objects.requireNonNull(sha256);
             Objects.requireNonNull(os);
             Objects.requireNonNull(arch);
+            Objects.requireNonNull(signatureUrl);
+            Objects.requireNonNull(signatureSha256);
         }
 
         public static FileEntry[] fromJson(JSONArray array) {
@@ -63,7 +65,8 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
             }
 
             return new FileEntry((String) object.get("name"),
-                    (String) object.get("url"), (String) object.get("sha256"), os, arch);
+                    (String) object.get("url"), (String) object.get("sha256"), os, arch,
+                    (String) object.get("signatureUrl"), (String) object.get("signatureSha256"));
         }
 
         public boolean matchOs() {

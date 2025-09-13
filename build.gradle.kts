@@ -44,7 +44,7 @@ plugins {
 
     id("aij.java-reproducible-builds")
 
-    id("dev.sigstore.sign-base") version "1.3.0"
+    id("dev.sigstore.sign-base") version "2.0.0-rc1"
 }
 
 repositories {
@@ -75,9 +75,6 @@ dependencies {
     implementation(project(":Nom_Fits"))
     implementation(project(":ij"))
     implementation(project(":Astronomy_"))
-
-    // Sigstore versions before 2.0.0-rc1 fail to sign on Windows
-    sigstoreClient(files("aijLibs/sigstore-java-2.0.0-rc1-SNAPSHOT.jar"))
 
     // Jars to be packaged and shipped
     add("shippingIJ", project(mapOf("path" to ":ij", "configuration" to "shippingJar")))

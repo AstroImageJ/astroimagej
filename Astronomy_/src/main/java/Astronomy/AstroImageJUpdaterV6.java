@@ -3,6 +3,13 @@ package Astronomy;
 import Astronomy.updater.MetaVersion;
 import Astronomy.updater.SemanticVersion;
 import Astronomy.updater.SpecificVersion;
+import dev.sigstore.KeylessVerificationException;
+import dev.sigstore.KeylessVerifier;
+import dev.sigstore.VerificationOptions;
+import dev.sigstore.bundle.Bundle;
+import dev.sigstore.encryption.certificates.Certificates;
+import dev.sigstore.strings.StringMatcher;
+import dev.sigstore.trustroot.SigstoreConfigurationException;
 import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
@@ -12,10 +19,7 @@ import ij.plugin.PlugIn;
 
 import javax.net.ssl.*;
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,11 +32,11 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.Executors;
 
@@ -78,6 +82,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             return new X509Certificate[0];
         }
     };
+    //todo set for master
+    public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/feature/updater-v6";
     private MetaVersion meta;
 
     static {
@@ -223,7 +229,12 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
         var inst = tmpFolder.resolve("installer" + ext);
 
-        Files.write(inst, downloadAndComputeHash(fileEntry, 5));
+        var installerBytes = downloadAndComputeHash(fileEntry, 5);
+        if (installerBytes == null) {
+            IJ.error("Unable to download installer.");
+            return;
+        }
+        Files.write(inst, installerBytes);
 
         if (IJ.isWindows()) {
             ProcessBuilder pb = new ProcessBuilder(
@@ -256,40 +267,104 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     }
 
     public byte[] downloadAndComputeHash(SpecificVersion.FileEntry fileEntry, int maxRetries) throws Exception {
+        // Download file
+        byte[] buffer = null;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             System.out.printf("Attempt %d of %d...%n", attempt, maxRetries);
 
-            MessageDigest md = MessageDigest.getInstance("SHA256");
-
-            byte[] buffer;
-            try (InputStream in = new DigestInputStream(new ProgressTrackingInputStream(streamForUri(new URI(fileEntry.url()))), md)) {
-                buffer = in.readAllBytes();
-            } catch (Exception e) {
-                System.err.printf("Download error on attempt %d: %s%n", attempt, e.getMessage());
-                if (attempt == maxRetries) throw e;
-                wait(attempt);
-                continue;
-            }
-
-            String actualSha256 = toHex(md.digest());
-            System.out.println("Computed SHA256: " + actualSha256);
-            System.out.println("Expected SHA256: " + fileEntry.sha256());
-
-            if (actualSha256.equalsIgnoreCase(fileEntry.sha256())) {
-                System.out.println("SHA256 matches expected.");
-                return buffer;
-            } else {
-                System.err.printf("SHA256 mismatch on attempt %d (%s vs %s).%n",
-                        attempt, actualSha256, fileEntry.sha256());
-
-                if (attempt == maxRetries) {
-                    throw new RuntimeException("SHA256 did not match after " + maxRetries + " attempts");
-                }
-
-                wait(attempt);
-            }
+            buffer = downloadFile(fileEntry.url(), fileEntry.sha256(), maxRetries, attempt);
+            if (buffer != null) break;
         }
 
+        // Download signature
+        byte[] signatureBuffer = null;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            System.out.printf("Attempt %d of %d...%n", attempt, maxRetries);
+
+            signatureBuffer = downloadFile(fileEntry.signatureUrl(), fileEntry.signatureSha256(), maxRetries, attempt);
+            if (signatureBuffer != null) break;
+        }
+
+        System.out.println("Downloaded file and signature.");
+
+        // Verify signature
+        if (buffer != null && signatureBuffer != null) {
+            System.out.println("Verifying signature...");
+            var bundle = Bundle.from(new InputStreamReader(new ByteArrayInputStream(signatureBuffer)));
+            var options = VerificationOptions.builder().addCertificateMatchers(
+                    VerificationOptions.CertificateMatcher.fulcio()
+                            .subjectAlternativeName(StringMatcher.string(CERTIFICATE_IDENTITY))
+                            // See https://docs.sigstore.dev/quickstart/verification-cheat-sheet/#verifying-a-signature-created-by-a-workflow
+                            .issuer(StringMatcher.string("https://token.actions.githubusercontent.com"))
+                            .build()
+            ).build();
+
+            try {
+                var signingCert = bundle.getCertPath();
+                var leafCert = Certificates.getLeaf(signingCert);
+                var certpath = Certificates.toCertPath(leafCert);
+                for (Certificate certificate : certpath.getCertificates()) {
+                    if (certificate instanceof X509Certificate x509Certificate) {
+                        System.out.println(x509Certificate.getIssuerAlternativeNames());
+                        System.out.println(x509Certificate.getSubjectAlternativeNames());
+                    }
+                    System.out.println(certificate);
+                }
+                System.out.println(Certificates.toCertPath(leafCert));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                var verifier = new KeylessVerifier.Builder().sigstorePublicDefaults().build();
+                verifier.verify(HexFormat.of().parseHex(fileEntry.sha256()), bundle, options);
+                System.out.println("Signature verified.");
+            } catch (InvalidAlgorithmParameterException | SigstoreConfigurationException | NoSuchAlgorithmException |
+                     InvalidKeySpecException | CertificateException e) {
+                IJ.log(e.getMessage());
+                IJ.error("Updater", "Signature verification failed");
+                throw new RuntimeException(e);
+            } catch (KeylessVerificationException e) {
+                IJ.error("Updater", "Signature verification failed, the installer was not signed by the AIJ repository.");
+                throw new RuntimeException(e);
+            }
+
+            return buffer;
+        }
+
+        return null;
+    }
+
+    private static byte[] downloadFile(String url, String hash, int maxRetries, int attempt) throws NoSuchAlgorithmException, IOException, InterruptedException, URISyntaxException {
+        MessageDigest md = MessageDigest.getInstance("SHA256");
+
+        byte[] buffer;
+        try (InputStream in = new DigestInputStream(new ProgressTrackingInputStream(streamForUri(new URI(url))), md)) {
+            buffer = in.readAllBytes();
+        } catch (Exception e) {
+            System.err.printf("Download error on attempt %d: %s%n", attempt, e.getMessage());
+            if (attempt == maxRetries) throw e;
+            wait(attempt);
+            return null;
+        }
+
+        String actualSha256 = toHex(md.digest());
+        System.out.println("Computed SHA256: " + actualSha256);
+        System.out.println("Expected SHA256: " + hash);
+
+        if (actualSha256.equalsIgnoreCase(hash)) {
+            System.out.println("SHA256 matches expected.");
+            return buffer;
+        } else {
+            System.err.printf("SHA256 mismatch on attempt %d (%s vs %s).%n",
+                    attempt, actualSha256, hash);
+
+            if (attempt == maxRetries) {
+                throw new RuntimeException("SHA256 did not match after " + maxRetries + " attempts");
+            }
+
+            wait(attempt);
+        }
         return null;
     }
 

@@ -12,7 +12,12 @@ on:
         type: 'boolean'
         default: false
       notarize:
-        description: 'Notarize mac'
+        description: 'Notarize Mac Package'
+        required: false
+        type: 'boolean'
+        default: true
+      windows_sign:
+        description: 'Sign Windows Package'
         required: false
         type: 'boolean'
         default: true
@@ -251,7 +256,7 @@ jobs:
             build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
 
       - name: Windows Signing
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && github.event.inputs.windows_sign == 'true'
         uses: signpath/github-action-submit-signing-request@v1
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -263,7 +268,7 @@ jobs:
           output-artifact-directory: 'signpath/output'
 
       - name: Upload Signed Windows Installer
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && github.event.inputs.windows_sign == 'true'
         uses: actions/upload-artifact@v4
         with:
           retention-days: 5
@@ -314,9 +319,17 @@ jobs:
         continue-on-error: true
 
       - name: Download installer (windows-x64)
+        if: github.event.inputs.windows_sign == 'true'
         uses: actions/download-artifact@v4
         with:
           name: signed-installer-windows-x64
+        continue-on-error: true
+
+      - name: Download installer (windows-x64)
+        if: github.event.inputs.windows_sign == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-windows-x64
         continue-on-error: true
 
       - name: Prepare flat release assets

@@ -47,3 +47,17 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 
 # Privacy Policy
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
+
+# Credits
+## Icon
+The AIJ icon is a modified version of [this image](https://esahubble.org/images/heic0504d/) from ESA/Hubble,
+[Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
+
+Credit:
+[NASA](http://www.nasa.gov/), [ESA](http://www.esa.int/), J. Clarke (Boston University, USA), and Z. Levay ([STScI](http://www.stsci.edu/))
+
+The image was modified to remove the planet shadow.
+
+## ImageJ
+AstroImageJ includes a modified version of [ImageJ](https://github.com/imagej/ImageJ), which is in the 
+[public domain](https://github.com/imagej/ImageJ?tab=License-1-ov-file).

@@ -7,7 +7,6 @@ import dev.sigstore.KeylessVerificationException;
 import dev.sigstore.KeylessVerifier;
 import dev.sigstore.VerificationOptions;
 import dev.sigstore.bundle.Bundle;
-import dev.sigstore.encryption.certificates.Certificates;
 import dev.sigstore.strings.StringMatcher;
 import dev.sigstore.trustroot.SigstoreConfigurationException;
 import ij.IJ;
@@ -34,9 +33,7 @@ import java.security.DigestInputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -47,8 +44,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
     private static final URI META;
     private static final HttpClient HTTP_CLIENT;
-    //todo set for master
-    public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/feature/updater-v6";
+    public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master";
     private MetaVersion meta;
 
     static {
@@ -254,7 +250,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                             .build()
             ).build();
 
-            try {
+            /*try {
                 var signingCert = bundle.getCertPath();
                 var leafCert = Certificates.getLeaf(signingCert);
                 var certpath = Certificates.toCertPath(leafCert);
@@ -268,7 +264,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                 System.out.println(Certificates.toCertPath(leafCert));
             } catch (Exception e) {
                 throw new RuntimeException(e);
-            }
+            }*/
 
             try {
                 var verifier = new KeylessVerifier.Builder().sigstorePublicDefaults().build();

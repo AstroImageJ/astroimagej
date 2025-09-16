@@ -672,3 +672,9 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
+
+Additional permission under GNU GPL version 3 section 7
+
+If you modify this Program, or any covered work, by linking or combining it with BiSlider,
+containing parts covered by the terms of BiSlider's license (https://perso.limsi.fr/vernier/BiSlider/),
+the licensors of this Program grant you additional permission to convey the resulting work.

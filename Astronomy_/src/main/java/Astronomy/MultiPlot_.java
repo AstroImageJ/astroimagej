@@ -11,9 +11,6 @@ import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
 import Jama.Matrix;
 import astroj.*;
-import flanagan.analysis.Regression;
-import flanagan.math.Minimization;
-import flanagan.math.MinimizationFunction;
 import ij.*;
 import ij.astro.accessors.TransferablePlot;
 import ij.astro.gui.GenericSwingDialog;
@@ -1020,7 +1017,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean[] usesYModel2;
     private static boolean performingBulkShiftUpdate;
     private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
-    static boolean usImageJFitter = true;
 
     static {
         initializeVariables();
@@ -2939,7 +2935,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             usesYModel2[curve] = false;
             var createDetrendModel = false;
             if (plotY[curve]) {
-                var minimization = new Minimization();
                 fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
                 fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
                 fitLeft[curve] = dMarker2Value + xOffset;
@@ -3236,7 +3231,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 if (finalUpdateFit[curve]) {
                                     int fittedDetrendParStart;
                                     if (detrendFitIndex[curve] == 9) {
-                                        minimization.removeConstraints();
                                         if (autoUpdatePriors[curve]) updatePriorCenters(curve);
                                         int nFitted = 0;
                                         for (int p = 0; p < 7; p++) {
@@ -3284,7 +3278,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                                             index[curve] = new int[1];
                                             start[curve][0] = ArrayUtil.median(detrendYs[curve]);
-                                            minimization.addConstraint(0, -1, 0.0);
                                         }
 
                                         // 0 = f0 = baseline flux
@@ -3300,25 +3293,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 start[curve][fp] = Math.sqrt(priorCenter[curve][1]);
                                                 width[curve][fp] = Math.sqrt(priorWidth[curve][1]);
                                                 step[curve][fp] = Math.sqrt(getFitStep(curve, 1));
-                                                minimization.addConstraint(fp, -1, 0.0);
                                             } else if (index[curve][fp] == 4) {
                                                 if (bpLock[curve]) continue;
                                                 start[curve][fp] = priorCenter[curve][4] * Math.PI / 180.0;  // inclination
                                                 width[curve][fp] = priorWidth[curve][4] * Math.PI / 180.0;
                                                 step[curve][fp] = getFitStep(curve, 4) * Math.PI / 180.0;
-                                                minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
-                                                minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
                                             } else {
-                                                if (index[curve][fp] == 0) minimization.addConstraint(fp, -1, 0.0);
-                                                if (index[curve][fp] == 2) minimization.addConstraint(fp, -1, 2.0);
-                                                if (index[curve][fp] == 5) {
-                                                    minimization.addConstraint(fp, 1, 1.0);
-                                                    minimization.addConstraint(fp, -1, -1.0);
-                                                }
-                                                if (index[curve][fp] == 6) {
-                                                    minimization.addConstraint(fp, 1, 1.0);
-                                                    minimization.addConstraint(fp, -1, -1.0);
-                                                }
                                                 start[curve][fp] = priorCenter[curve][index[curve][fp]];
                                                 width[curve][fp] = priorWidth[curve][index[curve][fp]];
                                                 step[curve][fp] = getFitStep(curve, index[curve][fp]);
@@ -3354,47 +3334,29 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 chi2dof[curve] = chi2[curve] / dof[curve];
                                             }
                                         } else {
-                                            if (usImageJFitter) {
-                                                var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
+                                            var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
 
-                                                var m = new Minimizer();
-                                                // For maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
-                                                // seems to be an issue with the tolerence
-                                                //todo add button to abort?
-                                                m.setMaxRestarts(0);
-                                                m.setMaxIterations(maxFitSteps[curve]);
-                                                m.setMaxError(tolerance[curve]);
-                                                m.setFunction(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length-1],
-                                                        nFitted == 0 && !useTransitFit[curve],
-                                                        detrendYs[curve], dof[curve], bp[curve], detrendXs[curve],
-                                                        detrendYEs[curve], isFitted[curve], detrendYAverage[curve],
-                                                        priorCenter[curve], detrendIndex[curve], maxFittedVars,
-                                                        detrendVars[curve], index[curve]),
-                                                        start[curve].length);
-                                                var result = m.minimize(start[curve], step[curve]);
+                                            var m = new Minimizer();
+                                            // For maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
+                                            // seems to be an issue with the tolerence
+                                            //todo add button to abort?
+                                            m.setMaxRestarts(0);
+                                            m.setMaxIterations(maxFitSteps[curve]);
+                                            m.setMaxError(tolerance[curve]);
+                                            m.setFunction(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length-1],
+                                                            nFitted == 0 && !useTransitFit[curve],
+                                                            detrendYs[curve], dof[curve], bp[curve], detrendXs[curve],
+                                                            detrendYEs[curve], isFitted[curve], detrendYAverage[curve],
+                                                            priorCenter[curve], detrendIndex[curve], maxFittedVars,
+                                                            detrendVars[curve], index[curve]),
+                                                    start[curve].length);
+                                            var result = m.minimize(start[curve], step[curve]);
 
-                                                nTries[curve] = m.getIterations();
-                                                coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
-                                                chi2dof[curve] = m.getFunctionValue();
-                                                chi2[curve] = chi2dof[curve] * dof[curve];
-                                                converged[curve] = result == Minimizer.SUCCESS;
-                                                //System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
-                                            } else {
-                                                var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
-                                                minimization.setNrestartsMax(1);
-                                                minimization.nelderMead(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length-1],
-                                                        nFitted == 0 && !useTransitFit[curve],
-                                                        detrendYs[curve], dof[curve], bp[curve], detrendXs[curve],
-                                                        detrendYEs[curve], isFitted[curve], detrendYAverage[curve],
-                                                        priorCenter[curve], detrendIndex[curve], maxFittedVars,
-                                                        detrendVars[curve], index[curve]), start[curve], step[curve],
-                                                        tolerance[curve], maxFitSteps[curve]);
-                                                coeffs[curve] = minimization.getParamValues();
-                                                nTries[curve] = minimization.getNiter() - 1;
-                                                converged[curve] = minimization.getConvStatus();
-                                                chi2[curve] = minimization.getMinimum() * dof[curve];
-                                                chi2dof[curve] = minimization.getMinimum();
-                                            }
+                                            nTries[curve] = m.getIterations();
+                                            coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
+                                            chi2dof[curve] = m.getFunctionValue();
+                                            chi2[curve] = chi2dof[curve] * dof[curve];
+                                            converged[curve] = result == Minimizer.SUCCESS;
                                         }
 
                                         fp = 0;
@@ -3435,11 +3397,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                         }
 
-                                        if (usImageJFitter) {
-
-                                        } else {
-                                            chi2dof[curve] = minimization.getMinimum(); // verified independently using residuals, errors, and degrees of freedom
-                                        }
                                         //chi2 + p * log(n)
                                         bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
 
@@ -3453,7 +3410,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             }
                                         }
                                     } else if (useNelderMeadChi2ForDetrend) {
-                                        minimization.removeConstraints();
                                         start[curve] = new double[detrendVars[curve].length];
                                         step[curve] = new double[detrendVars[curve].length];
                                         for (int i = 0; i < start[curve].length; i++) {
@@ -3463,78 +3419,47 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         double fTol = 1e-10;
                                         int nMax = 20000;
 
-                                        if (usImageJFitter) {
-                                            var m = new Minimizer();
-                                            m.setMaxRestarts(0);
-                                            m.setMaxIterations(nMax);
-                                            m.setMaxError(fTol);
-                                            m.setFunction(new FitDetrendChi2(curve), start[curve].length);
-                                            var result = m.minimize(start[curve], step[curve]);
-                                            //System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
+                                        var m = new Minimizer();
+                                        m.setMaxRestarts(0);
+                                        m.setMaxIterations(nMax);
+                                        m.setMaxError(fTol);
+                                        m.setFunction(new FitDetrendChi2(curve), start[curve].length);
+                                        var result = m.minimize(start[curve], step[curve]);
+                                        //System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
 
-                                            nTries[curve] = m.getIterations();
-                                            coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
-                                            chi2dof[curve] = m.getFunctionValue();
-                                            chi2[curve] = chi2dof[curve] * dof[curve];
-                                            converged[curve] = result == Minimizer.SUCCESS;
+                                        nTries[curve] = m.getIterations();
+                                        coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
+                                        chi2dof[curve] = m.getFunctionValue();
+                                        chi2[curve] = chi2dof[curve] * dof[curve];
+                                        converged[curve] = result == Minimizer.SUCCESS;
 
-                                            varCount = 0;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                    varCount++;
-                                                }
+                                        varCount = 0;
+                                        for (int v = 0; v < maxDetrendVars; v++) {
+                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                varCount++;
                                             }
-
-                                            fitConvergeceArr[curve] = result == Minimizer.SUCCESS;
-                                        } else {
-                                            minimization.nelderMead(new FitDetrendChi2(curve), start[curve], step[curve], fTol, nMax);
-                                            coeffs[curve] = minimization.getParamValues();
-
-                                            varCount = 0;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                    varCount++;
-                                                }
-                                            }
-
-                                            fitConvergeceArr[curve] = minimization.getConvStatus();
                                         }
 
+                                        fitConvergeceArr[curve] = result == Minimizer.SUCCESS;
                                     } else { //use regression
-                                        if (usImageJFitter) {
-                                            coeffs[curve] = new double[maxDetrendVars];
-                                            if (detrendVars[curve].length > 0) {
-                                                var reg = new OLSMultipleLinearRegression();
-                                                reg.newSampleData(detrendYs[curve], new Matrix(detrendVars[curve]).transpose().getArray());
-                                                var beta = reg.estimateRegressionParameters();
-                                                for (int i = 0; i < beta.length; i++) {
-                                                    coeffs[curve][i] = beta[i];
-                                                }
+                                        coeffs[curve] = new double[maxDetrendVars];
+                                        if (detrendVars[curve].length > 0) {
+                                            var reg = new OLSMultipleLinearRegression();
+                                            reg.newSampleData(detrendYs[curve], new Matrix(detrendVars[curve]).transpose().getArray());
+                                            var beta = reg.estimateRegressionParameters();
+                                            for (int i = 0; i < beta.length; i++) {
+                                                coeffs[curve][i] = beta[i];
                                             }
+                                        }
 
-                                            //System.out.println(Arrays.toString(coeffs[curve]));
+                                        //System.out.println(Arrays.toString(coeffs[curve]));
 
-                                            varCount = 1;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                    varCount++;
-                                                }
-                                            }
-                                        } else {
-                                            Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
-                                            regression.linear();
-                                            coeffs[curve] = regression.getCoeff();
-
-                                            //System.out.println(Arrays.toString(coeffs[curve]));
-                                            varCount = 1;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                    varCount++;
-                                                }
+                                        varCount = 1;
+                                        for (int v = 0; v < maxDetrendVars; v++) {
+                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                varCount++;
                                             }
                                         }
                                     }
@@ -4769,7 +4694,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    public static class FitDetrendOnly implements MinimizationFunction {
+    public static class FitDetrendOnly {
         final int curve;
 
         public FitDetrendOnly(int curve) {
@@ -4792,14 +4717,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    public static class NoTransitFit implements MinimizationFunction {
-        @Override
+    public static class NoTransitFit {
         public double function(double[] param) {
             return 0;
         }
     }
 
-    public static class FitDetrendChi2 implements MinimizationFunction, UserFunction {
+    public static class FitDetrendChi2 implements UserFunction {
         final int curve;
 
         public FitDetrendChi2(int curve) {
@@ -8093,12 +8017,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         preferencesmenu.add(usedefaultsettingsCB);
 
         preferencesmenu.addSeparator();
-        var minimizerToggle = new JCheckBoxMenuItem("Use IJ Fitter", usImageJFitter);
-        minimizerToggle.addActionListener($ -> {
-            usImageJFitter = minimizerToggle.getState();
-            updatePlot(updateAllFits());
-        });
-        preferencesmenu.add(minimizerToggle);
         mainmenubar.add(preferencesmenu);
 
 

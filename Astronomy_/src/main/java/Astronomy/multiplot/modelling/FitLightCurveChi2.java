@@ -1,12 +1,11 @@
 package Astronomy.multiplot.modelling;
 
 import astroj.IJU;
-import flanagan.math.MinimizationFunction;
 import ij.measure.UserFunction;
 
 import static Astronomy.MultiPlot_.*;
 
-public class FitLightCurveChi2 implements MinimizationFunction, UserFunction {
+public class FitLightCurveChi2 implements UserFunction {
     final int curve;
     private final double min;
     private final double max;

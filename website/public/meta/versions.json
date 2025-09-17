@@ -5,16 +5,19 @@
     },
     "versions": [
         {
-            "version": "1.2.3.02",
-            "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.3.02.json",
-            "type": "RELEASE",
-            "minJava": 17
+          "version": "1.2.3.00",
+          "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.3.00.json",
+          "type": "RELEASE"
         },
         {
-            "version": "5.5.0.00",
-            "url": "https://astroimagej.github.io/astroimagej/meta/versions/5.5.0.00.json",
-            "type": "PRERELEASE",
-            "minJava": 17
+          "version": "1.2.3.01",
+          "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.3.01.json",
+          "type": "PRERELEASE"
+        },
+        {
+            "version": "1.2.3.02",
+            "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.3.02.json",
+            "type": "RELEASE"
         }
     ]
 }

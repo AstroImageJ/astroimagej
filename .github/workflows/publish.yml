@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.2.3.00)'
+        description: 'Release version (e.g. 1.2.3.00). Must end in .00 as some systems only accept x.y.z format.'
         required: true
       skip_release:
         description: 'Skip creating a GitHub release'

@@ -96,7 +96,7 @@ All Rights Reserved, with permission to use, copy, modify and distribute this so
 for educational, research and non-profit purposes. See the [full license here](https://perso.limsi.fr/vernier/BiSlider/).
 
 For AstroImageJ, additional permission under GNU GPL version 3 section 7 is granted:
-If you modify this Program, or any covered work, by linking or combining it with BiSlider (or a modified version of that library),
+If you modify this Program (AstroImageJ), or any covered work, by linking or combining it with BiSlider (or a modified version of that library),
 containing parts covered by the terms of BiSlider's license, the licensors of this Program (AstroImageJ) grant you 
 additional permission to convey the resulting work.
 

@@ -388,4 +388,4 @@ jobs:
           path: |
             release_assets/**
             release_notes.md
-            website/meta/**/*.json
+            website/public/meta/**/*.json

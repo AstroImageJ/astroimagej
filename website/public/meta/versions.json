@@ -10,14 +10,14 @@
           "type": "RELEASE"
         },
         {
-          "version": "1.2.3.01",
-          "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.3.01.json",
+          "version": "1.2.4.00",
+          "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.4.00.json",
           "type": "PRERELEASE"
         },
         {
-            "version": "1.2.3.02",
-            "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.3.02.json",
-            "type": "RELEASE"
+          "version": "1.2.5.00",
+          "url": "https://astroimagej.github.io/astroimagej/meta/versions/1.2.5.00.json",
+          "type": "RELEASE"
         }
     ]
 }

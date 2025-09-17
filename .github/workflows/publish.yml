@@ -247,7 +247,7 @@ jobs:
           name: appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion=$VERSION
+        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion=${{ env.VERSION }}
         env:
           DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 
@@ -358,7 +358,7 @@ jobs:
         shell: bash
         run: |
             for f in release_assets/*; do FILES+=" $f"; done
-            gh release create ${{ steps.vars.outputs.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
+            gh release create ${{ env.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

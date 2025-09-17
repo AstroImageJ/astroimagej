@@ -66,7 +66,7 @@ jobs:
 
       - name: Create app images
         run: |
-          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64  -Pversion=$VERSION
+          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64 -Pversion=${{ env.VERSION }}
 
       - name: Upload App Image For Linux x64
         uses: actions/upload-artifact@v4
@@ -247,7 +247,7 @@ jobs:
           name: appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion=${{ env.VERSION }}
+        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}"
         env:
           DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 

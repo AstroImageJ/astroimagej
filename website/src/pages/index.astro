@@ -1,5 +1,6 @@
 ---
 import Welcome from '../components/Welcome.astro';
+import ImageCard from '../components/ImageComponenent.astro';
 import Layout from '../layouts/Layout.astro';
 
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
@@ -59,6 +60,14 @@ import Layout from '../layouts/Layout.astro';
         <a href="https://www.gnu.org/licenses/gpl-faq.en.html#CombinePublicDomainWithGPL">public domain</a>.
     </p>
 </section>
+
+
+<center>
+<span>
+<ImageCard imagePath="/src/assets/aij_image_display_w400.png" altText="Image Display"/>
+<ImageCard imagePath="/src/assets/aij_light_curve_w400.png" altText="Light Curve"/>
+</span>
+</center>
 
 <section id="features">
     <h2>Key Features</h2>

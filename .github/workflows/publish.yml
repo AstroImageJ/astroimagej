@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.2.3.00). Must end in .00 as some systems only accept x.y.z format.'
+        description: 'Release version (e.g. x.y.z.w)'
         required: true
       skip_release:
         description: 'Skip creating a GitHub release'
@@ -28,7 +28,7 @@ on:
         default: true
   push:
     tags:
-      - '[0-9]*.[0-9]*.[0-9]*.00'
+      - '[0-9]*.[0-9]*.[0-9]*.[0-9]*'
 
 env:
   GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}

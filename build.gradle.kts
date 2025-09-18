@@ -494,7 +494,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
             mainJarName.set("ij.jar")
 
-            appVersion = version.toString().replace(".00", "")
+            appVersion = version.toString()
 
             javaOpts("-XX:MaxRAMPercentage=75")
             javaOpts("-Duser.dir=\$APPDIR")
@@ -550,7 +550,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
                 //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
                 //"--verbose",
-                "--app-version", version.toString().replace(".00", ""),
+                "--app-version", version.toString(),
                 "--java-options", "-XX:MaxRAMPercentage=75"
             )
 
@@ -675,10 +675,13 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
         targetOs = sysInfo.os
 
+        // Mac only allows 3 version components, but right now jpackage seems to strip them for us
+        //https://github.com/openjdk/jdk/blob/master/src/jdk.jpackage/macosx/classes/jdk/jpackage/internal/model/MacApplication.java#L42
+        //https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleversion
         extraArgs = listOf(
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
             //"--verbose",
-            "--app-version", version.toString().replace(".00", ""),
+            "--app-version", version.toString(),
         )
 
         launcher = packagingJdkToolchain
@@ -792,7 +795,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
             destinationDirectory = layout.buildDirectory.dir("distributions/$sysId")
             archiveBaseName = "AstroImageJ"
-            archiveVersion = version.toString().replace(".00", "")
+            archiveVersion = version.toString()
             compression = Compression.GZIP
 
             from(appImageDir) {

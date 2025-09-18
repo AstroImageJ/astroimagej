@@ -25,7 +25,7 @@ public class MacAdapter9 implements PlugIn, AboutHandler, OpenFilesHandler, Quit
 
    @Override
    public void handleAbout(AboutEvent e) {
-      IJ.doCommand("About ImageJ...");
+      IJ.doCommand("About AstroImageJ...");
    }
 
    @Override

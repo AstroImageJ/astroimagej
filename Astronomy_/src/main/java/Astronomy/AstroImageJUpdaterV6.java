@@ -415,7 +415,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     public void dialog() {
         var meta = fetchVersions();
         var versions = meta.versions();
-        versions.sort(Comparator.comparing(MetaVersion.VersionEntry::version));
+        versions.sort(Comparator.comparing(MetaVersion.VersionEntry::version).reversed());
         var releaseOnlyVersions = versions.stream()
                 .filter(v -> v.releaseType() == MetaVersion.ReleaseType.RELEASE).toList();
 

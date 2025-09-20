@@ -119,6 +119,10 @@ public class UIHelper {
     }
 
     public static int getScreen(Container window) {
+        if (window == null) {
+            return 0;
+        }
+
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         var screens = ge.getScreenDevices();
         var screen = 0;

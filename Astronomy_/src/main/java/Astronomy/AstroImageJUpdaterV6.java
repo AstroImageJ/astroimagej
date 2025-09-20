@@ -13,6 +13,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
 import ij.astro.util.ProgressTrackingInputStream;
+import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
 
@@ -62,6 +63,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
+    }
+
+    public AstroImageJUpdaterV6() {
+        UIHelper.setLookAndFeel();
     }
 
     MetaVersion fetchVersions() {
@@ -412,6 +417,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
     }
 
+    public static void main(String[] args) {
+        new AstroImageJUpdaterV6().dialog();
+    }
+
     public void dialog() {
         var meta = fetchVersions();
         var versions = meta.versions();
@@ -457,7 +466,12 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         b.add(updateCheckOnStartup);
 
         var selector = new JComboBox<>(new Vector<>(releaseOnlyVersions));
-        b.add(selector);
+        var selectorArea = Box.createHorizontalBox();
+        selectorArea.add(Box.createHorizontalStrut(10));
+        selectorArea.add(selector);
+        selectorArea.add(Box.createHorizontalStrut(10));
+        b.add(selectorArea);
+        b.add(Box.createVerticalStrut(10));
 
         enablePrereleases.addActionListener($ -> {
             if (enablePrereleases.isSelected()) {
@@ -503,10 +517,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         buttons.add(cancel);
 
         b.add(buttons);
+        b.add(Box.createVerticalStrut(10));
 
         d.add(b);
         d.pack();
         d.doLayout();
+
+        UIHelper.setCenteredOnScreen(d, IJ.getInstance());
+
         d.setVisible(true);
     }
 

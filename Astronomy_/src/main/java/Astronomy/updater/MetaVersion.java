@@ -80,12 +80,23 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
 
         @Override
         public String toString() {
-            return version.toString();
+            return version.toString() + " (" + releaseType + ")";
         }
     }
 
     public enum ReleaseType {
-        RELEASE,
-        PRERELEASE
+        RELEASE("Release"),
+        PRERELEASE("Prerelease");
+
+        private final String name;
+
+        ReleaseType(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 }

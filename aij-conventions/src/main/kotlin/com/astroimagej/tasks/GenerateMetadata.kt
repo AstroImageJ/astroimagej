@@ -137,7 +137,7 @@ abstract class GenerateMetadata
         val r = Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(?<daily>[0-9]\\d*)")
         val m = r.find(version)
         if (m != null && m.groups["daily"]?.value != "00") {
-            return Type.PRERELEASE
+            return Type.DAILY_BUILD
         }
 
         return Type.RELEASE

@@ -468,7 +468,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var updateCheckOnStartup = new JCheckBox("Perform Update Check on startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
         b.add(updateCheckOnStartup);
 
-        var selector = new JComboBox<>(new Vector<>(releaseOnlyVersions));
+        var selector = new JComboBox<>(new Vector<>(ENABLE_PRERELEASES.get() ? versions : releaseOnlyVersions));
         selector.setRenderer(new ToolTipRenderer());
         var selectorArea = Box.createHorizontalBox();
         selectorArea.add(Box.createHorizontalStrut(10));
@@ -499,8 +499,12 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var cancel = new JButton("Cancel");
 
         yes.addActionListener($ -> {
+            if (((MetaVersion.VersionEntry) selector.getSelectedItem()).version().equals(new SemanticVersion(IJ.getAstroVersion()))) {
+                IJ.error("You are already running the selected version of AstroImageJ.");
+                return;
+            }
+
             d.dispose();
-            System.out.println(selector.getSelectedItem());
             try {
                 Executors.newSingleThreadExecutor().submit(() -> {
                     try {

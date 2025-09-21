@@ -1,5 +1,6 @@
 package Astronomy.updater;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -137,5 +138,19 @@ public record SemanticVersion(int[] core, String[] prerelease) implements Compar
 
         System.out.println("Max:");
         list.stream().max(Comparator.naturalOrder()).ifPresent(System.out::println);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof SemanticVersion that)) return false;
+
+        return Arrays.equals(core, that.core) && Arrays.equals(prerelease, that.prerelease);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(core);
+        result = 31 * result + Arrays.hashCode(prerelease);
+        return result;
     }
 }

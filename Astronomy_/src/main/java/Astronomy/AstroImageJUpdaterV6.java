@@ -50,6 +50,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master";
     private MetaVersion meta;
     private static final Property<Boolean> ENABLE_PRERELEASES = new Property<>(false, AstroImageJUpdaterV6.class);
+    private static final Property<Boolean> ENABLE_DAILY_BUILDS = new Property<>(false, AstroImageJUpdaterV6.class);
 
     static {
         try {
@@ -428,8 +429,18 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var meta = fetchVersions();
         var versions = meta.versions();
         versions.sort(Comparator.comparing(MetaVersion.VersionEntry::version).reversed());
-        var releaseOnlyVersions = versions.stream()
-                .filter(v -> v.releaseType() == MetaVersion.ReleaseType.RELEASE).toList();
+
+        var filterType = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
+
+        if (ENABLE_DAILY_BUILDS.get()) {
+            filterType.add(MetaVersion.ReleaseType.DAILY_BUILD);
+        }
+
+        if (ENABLE_PRERELEASES.get()) {
+            filterType.add(MetaVersion.ReleaseType.PRERELEASE);
+        }
+
+        var filteredVersions = versions.stream().filter(v -> filterType.contains(v.releaseType())).toList();
 
         var d = new JDialog(IJ.getInstance(), "AstroImageJ Updater");
 
@@ -465,10 +476,13 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var enablePrereleases = new JCheckBox("Show Prereleases", ENABLE_PRERELEASES.get());
         b.add(enablePrereleases);
 
+        var enableDailyBuilds = new JCheckBox("Show Daily Builds", ENABLE_DAILY_BUILDS.get());
+        b.add(enableDailyBuilds);
+
         var updateCheckOnStartup = new JCheckBox("Perform Update Check on startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
         b.add(updateCheckOnStartup);
 
-        var selector = new JComboBox<>(new Vector<>(ENABLE_PRERELEASES.get() ? versions : releaseOnlyVersions));
+        var selector = new JComboBox<>(new Vector<>(filteredVersions));
         selector.setRenderer(new ToolTipRenderer());
         var selectorArea = Box.createHorizontalBox();
         selectorArea.add(Box.createHorizontalStrut(10));
@@ -477,17 +491,34 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         b.add(selectorArea);
         b.add(Box.createVerticalStrut(10));
 
-        enablePrereleases.addActionListener($ -> {
-            if (enablePrereleases.isSelected()) {
-                ENABLE_PRERELEASES.set(true);
-                selector.removeAllItems();
-                selector.setModel(new DefaultComboBoxModel<>(new Vector<>(versions)));
-            } else {
-                ENABLE_PRERELEASES.set(false);
-                selector.removeAllItems();
-                selector.setModel(new DefaultComboBoxModel<>(new Vector<>(releaseOnlyVersions)));
+        enableDailyBuilds.addActionListener($ -> ENABLE_DAILY_BUILDS.set(enableDailyBuilds.isSelected()));
+        enablePrereleases.addActionListener($ -> ENABLE_PRERELEASES.set(enablePrereleases.isSelected()));
+
+        ENABLE_DAILY_BUILDS.addListener(((key, newValue) -> {
+            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
+
+            if (newValue) {
+                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
             }
-        });
+
+            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
+
+            selector.removeAllItems();
+            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
+        }));
+
+        ENABLE_PRERELEASES.addListener(((key, newValue) -> {
+            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
+
+            if (newValue) {
+                filter.add(MetaVersion.ReleaseType.PRERELEASE);
+            }
+
+            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
+
+            selector.removeAllItems();
+            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
+        }));
 
         updateCheckOnStartup.addActionListener($ -> {
             Prefs.set(DO_UPDATE_NOTIFICATION.substring(1), updateCheckOnStartup.isSelected());

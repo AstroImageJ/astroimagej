@@ -10,6 +10,7 @@ import ij.astro.gui.ToolTipProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
@@ -106,7 +107,7 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
         @Override
         public String getToolTip() {
             if (releaseTime != null) {
-                return DATE_TIME_FORMATTER.format(releaseTime);
+                return DATE_TIME_FORMATTER.format(releaseTime.atZone(ZoneId.systemDefault()));
             }
 
             return "No release date present";

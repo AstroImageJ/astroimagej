@@ -1,15 +1,6 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import ImageCard from '../components/ImageComponenent.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
-
-// Commented out welcome component
-//<Layout>
-//	<Welcome />
-//</Layout>
+import DownloadPicker from '../components/DownloadPicker.astro';
 ---
 
 <head>
@@ -116,7 +107,13 @@ import Layout from '../layouts/Layout.astro';
 
 <section id="download">
     <h2>Download</h2>
-    <a href="https://www.astro.louisville.edu/software/astroimagej/installation_packages/">Available on all major platforms: Windows, macOS, and Linux.</a>
+
+    <div class="download-wrapper">
+      <DownloadPicker />
+      <p style="font-size:0.9rem;color:#666;margin-top:0.5rem;">
+        If automatic detection fails, select your platform from the radio or visit <a href="/downloads">all downloads</a>.
+      </p>
+    </div>
 </section>
 
 <section id="contact">

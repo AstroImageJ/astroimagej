@@ -1,0 +1,341 @@
+---
+import fs from 'fs';
+import path from "path";
+
+const versionsIndexPath = path.join(process.cwd(), "public", "meta", "versions.json");
+let versionsIndex = { versions: [] };
+try {
+  versionsIndex = JSON.parse(fs.readFileSync(versionsIndexPath, "utf-8"));
+} catch (e) {
+  console.warn("[DownloadPage] couldn't read versions index:", e);
+}
+
+function loadVersionMeta(entry) {
+  const metaPath = path.join(process.cwd(), "public", "meta", "versions", `${entry.version}.json`);
+    try {
+      return JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+    } catch (e) {
+      console.warn("[DownloadButton] couldn't read version metadata:", metaPath, e);
+    }
+}
+
+const loaded = [];
+for (const v of (versionsIndex.versions || [])) {
+  const loadedOne = loadVersionMeta(v);
+  loadedOne.releaseTime = v.releaseTime;
+  loadedOne.type = v.type;
+  loaded.push(loadedOne);
+  console.log("[DownloadPage] loaded", v.version, loadedOne ? 'OK' : 'ERROR');
+  //console.log(loadedOne);
+}
+
+function compareVersions(a, b) {
+  const aParts = a.version.split('.').map(Number);
+  const bParts = b.version.split('.').map(Number);
+  const len = Math.max(aParts.length, bParts.length);
+  for (let i = 0; i < len; i++) {
+    const aVal = aParts[i] || 0;
+    const bVal = bParts[i] || 0;
+    if (aVal !== bVal) return bVal - aVal;
+  }
+  return 0;
+}
+
+// Sort versions by version number
+loaded.sort(compareVersions);
+
+const list = loaded.map(l => ({
+  version: l.version,
+  type: l.type,
+  artifacts: (l.artifacts) ? l.artifacts : [],
+  releaseTime: l.releaseTime,
+  _loadError: l._error || null
+}));
+
+const latestRelease = list.find(v => v.type === "RELEASE");
+const chosenVersion = latestRelease ? latestRelease : list[0];
+
+const payload = {
+  version: chosenVersion
+};
+
+const payloadJson = JSON.stringify(payload);
+---
+
+<div class="download" aria-live="polite">
+  <input type="hidden" id="download-payload" value={payloadJson} />
+
+  <div class="controls" style="display:flex;gap:0.5rem;align-items:center;">
+        <fieldset class="platform-fieldset" style="border:none;padding:0;margin:0;">
+            <legend class="sr-only">Choose platform</legend>
+
+            <label style="margin-right:0.5rem;">
+              <input type="radio" name="dl-platform" value="auto" checked /> Auto
+            </label>
+            <label style="margin-right:0.5rem;">
+              <input type="radio" name="dl-platform" value="windows" /> Windows
+            </label>
+            <label style="margin-right:0.5rem;">
+              <input type="radio" name="dl-platform" value="linux" /> Linux
+            </label>
+            <label style="margin-right:0.5rem;">
+              <input type="radio" name="dl-platform" value="mac-intel" /> Mac (Intel)
+              <a href="https://support.apple.com/en-us/116943#:~:text=On%20Mac%20computers%20with%20Apple,name%20of%20an%20Intel%20processor." target="_blank" rel="noopener" title="Which Mac do I have?">?</a>
+            </label>
+            <label>
+              <input type="radio" name="dl-platform" value="mac-arm" /> Mac (Arm)
+              <a href="https://support.apple.com/en-us/116943#:~:text=On%20Mac%20computers%20with%20Apple,name%20of%20an%20Intel%20processor." target="_blank" rel="noopener" title="Which Mac do I have?">?</a>
+            </label>
+      </fieldset>
+  </div>
+
+  <div style="margin-top:0.7rem;">
+    <!-- Button text is set client-side to: "Download AstroImageJ <version> for <platform>" -->
+    <a id="download-btn" class="download-btn" href="/downloads" role="button" aria-disabled="true">See downloads page</a>
+  </div>
+
+  <div id="download-meta" class="download-meta" style="margin-top:0.6rem;font-size:0.9rem;color:var(--muted,#666);">
+    <!-- SHA-256 and signature (sigstore) shown here -->
+  </div>
+
+  <div id="download-note" style="margin-top:0.4rem;font-size:0.85rem;color:var(--muted,#777);">
+    Version: <strong>{chosenVersion.version ?? "unknown"}</strong>
+  </div>
+</div>
+
+<style>
+  .download-btn {
+    display:inline-block;
+    padding:0.6rem 1rem;
+    border-radius:0.45rem;
+    background:linear-gradient(180deg,#0b74ff,#0059d6);
+    color:white;
+    font-weight:600;
+    text-decoration:none;
+  }
+  input[type="radio"] { margin-right:0.25rem; }
+  .download-meta a { margin-right:0.8rem; }
+  .meta-copy-btn {
+    margin-left:0.5rem;
+    padding:0.15rem 0.4rem;
+    border-radius:0.3rem;
+    border:1px solid rgba(0,0,0,0.08);
+    background:transparent;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+</style>
+
+<script type="module" client:load>
+  const payloadInput = document.getElementById("download-payload");
+  let payload = {};
+  try { payload = JSON.parse(payloadInput.value); } catch (e) { console.error("[DownloadButton] invalid payload", e); }
+
+  const version = payload.version;
+  const btn = document.getElementById("download-btn");
+  const metaDiv = document.getElementById("download-meta");
+  const noteDiv = document.getElementById("download-note");
+
+  // Prefer navigator.userAgentData if available,
+  // otherwise fallback to parsing navigator.userAgent string.
+  async function detectPlatformKey() {
+    try {
+      const uaData = navigator.userAgentData;
+      if (uaData && (uaData.platform || uaData.getHighEntropyValues)) {
+        // Try to get platform and architecture from high-entropy data if supported.
+        const highEntropy = uaData.getHighEntropyValues ? await uaData.getHighEntropyValues(['platform', 'architecture']) : {};
+        const platform = highEntropy.platform || uaData.platform || '';
+        const architecture = (highEntropy.architecture || '').toLowerCase();
+
+        if (/win/i.test(platform)) return "windows";
+        if (/linux/i.test(platform)) return "linux";
+        if (/mac/i.test(platform) || /darwin/i.test(platform)) {
+          if (/arm|aarch|arm64/i.test(architecture)) return "mac-arm";
+          return "mac-intel";
+        }
+      }
+    } catch (e) {
+      // ignore and fallback to UA parsing
+    }
+
+    // Fallback: userAgent parsing (no navigator.platform)
+    const ua = navigator.userAgent || "";
+    // Simple heuristics:
+    if (/windows/i.test(ua)) return "windows";
+    if (/linux/i.test(ua) && !/android/i.test(ua)) return "linux"; // avoid Android
+    if (/android/i.test(ua)) return "linux"; // map Android -> linux artifact generally
+    if (/macintosh|mac os x|darwin/i.test(ua)) {
+      if (/arm|aarch64|apple silicon|arm64/i.test(ua)) return "mac-arm";
+      return "mac-intel";
+    }
+    return "unknown";
+  }
+
+  // ---- artifact selection ----
+  function findArtifact(versionMeta, platformKey = "unknown") {
+    if (!versionMeta || !Array.isArray(versionMeta.artifacts)) return null;
+    const artifacts = versionMeta.artifacts;
+
+    const isOS = (a, osRegexOrName) => {
+      if (!a) return false;
+      if (Array.isArray(a.os)) return a.os.includes(osRegexOrName.toUpperCase());
+      return !!(a.os && new RegExp(osRegexOrName, "i").test(a.os));
+    };
+    const isArch = (a, archRegex) => {
+      if (!a) return false;
+      if (Array.isArray(a.arch)) return a.arch.some(ar => archRegex.test(ar));
+      return !!(a.arch && archRegex.test(a.arch));
+    };
+
+    const matchers = {
+      windows: a => isOS(a, "WINDOWS"),
+      linux: a => isOS(a, "LINUX"),
+      "mac-intel": a => isOS(a, "MAC") && isArch(a, /(x86|amd|intel|x64|x86_64)/i),
+      "mac-arm": a => isOS(a, "MAC") && isArch(a, /(arm|aarch|arm64|aarch64)/i)
+    };
+
+    const matcher = matchers[platformKey];
+    if (matcher) {
+      const exact = artifacts.find(matcher);
+      if (exact) return exact;
+    }
+
+    // Fallback selection strategy
+    if (platformKey && platformKey.startsWith("mac")) {
+      const anyMac = artifacts.find(a => isOS(a, "MAC"));
+      if (anyMac) return anyMac;
+    }
+
+    const anyWin = artifacts.find(a => isOS(a, "WINDOWS"));
+    if (anyWin) return anyWin;
+    const anyLinux = artifacts.find(a => isOS(a, "LINUX"));
+    if (anyLinux) return anyLinux;
+
+    return artifacts[0] ?? null;
+  }
+
+  // ---- render sha + signature HTML (safe escaping) ----
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderShaAndSignature(artifact, versionMeta) {
+    const parts = [];
+    const sha = artifact?.sha256 ?? versionMeta?.sha256 ?? null;
+    if (sha) {
+      const short = sha.length > 20 ? sha.slice(0, 8) + "…" + sha.slice(-8) : sha;
+      parts.push(`<span id="sha-text">SHA256: <code title="${escapeHtml(sha)}">${escapeHtml(short)}</code></span>`);
+      parts.push(`<button id="sha-copy-btn" class="meta-copy-btn" type="button" aria-label="Copy SHA-256">Copy SHA-256</button>`);
+    }
+
+    const sigUrl = artifact?.signatureUrl ?? versionMeta?.signatureUrl ?? null;
+    if (sigUrl) {
+      parts.push(`<a id="sig-link" href="${escapeHtml(sigUrl)}" target="_blank" rel="noopener">Signature (sigstore)</a>`);
+    }
+
+    return parts.join(" · ");
+  }
+
+  function platformLabelForKey(k) {
+    if (k === "windows") return "Windows";
+    if (k === "linux") return "Linux";
+    if (k === "mac-intel") return "Mac (Intel)";
+    if (k === "mac-arm") return "Mac (Arm)";
+    return "Unknown platform";
+  }
+
+  function updateForPlatformKey(platformKey) {
+    if (!version) {
+      btn.removeAttribute("href");
+      btn.setAttribute("aria-disabled", "true");
+      btn.textContent = "Downloads unavailable";
+      metaDiv.textContent = "No metadata available.";
+      return;
+    }
+
+    const artifact = findArtifact(version, platformKey);
+    if (!artifact) {
+      btn.removeAttribute("href");
+      btn.setAttribute("aria-disabled", "true");
+      btn.textContent = `No build for ${platformLabelForKey(platformKey)}`;
+      metaDiv.textContent = "No artifact matched that platform.";
+      return;
+    }
+
+    // set anchor href and friendly text
+    if (artifact.url) {
+      btn.href = artifact.url;
+      btn.setAttribute("aria-disabled", "false");
+      const platformLabel = platformLabelForKey(platformKey);
+      btn.textContent = `Download AstroImageJ ${version.version} for ${platformLabel}`;
+      btn.target = "_self";
+      btn.rel = "noopener";
+    } else {
+      btn.removeAttribute("href");
+      btn.setAttribute("aria-disabled", "true");
+      btn.textContent = "No URL for artifact";
+    }
+
+    // render sha and signature
+    metaDiv.innerHTML = renderShaAndSignature(artifact, version);
+
+    // wire up copy button (if present)
+    const copyBtn = document.getElementById("sha-copy-btn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        const shaVal = artifact && artifact.sha256 ? artifact.sha256 : "";
+        if (!shaVal) {
+          // no-op
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(shaVal);
+          copyBtn.textContent = "Copied!";
+          setTimeout(()=> copyBtn.textContent = "Copy SHA-256", 2000);
+        } catch (err) {
+          console.error("Clipboard write failed", err);
+          // fallback: select the short text so user can copy manually
+          copyBtn.textContent = "Copy failed";
+          setTimeout(()=> copyBtn.textContent = "Copy SHA-256", 2000);
+        }
+      }, { once: false });
+    }
+  }
+
+  // ---- radio handling ----
+  const radios = document.querySelectorAll('input[name="dl-platform"]');
+
+  function getSelectedRadioValue() {
+    const r = document.querySelector('input[name="dl-platform"]:checked');
+    return r ? r.value : "auto";
+  }
+
+  async function init() {
+    if (!version) {
+      updateForPlatformKey("unknown");
+      return;
+    }
+
+    // initial detection
+    const selected = getSelectedRadioValue();
+    const initialPlatformKey = (selected && selected !== "auto") ? selected : await detectPlatformKey();
+    updateForPlatformKey(initialPlatformKey);
+
+    // attach change listeners for radios
+    document.querySelectorAll('input[name="dl-platform"]').forEach(r => {
+      r.addEventListener("change", async () => {
+        const v = getSelectedRadioValue();
+        const pk = (v && v !== "auto") ? v : await detectPlatformKey();
+        updateForPlatformKey(pk);
+      });
+    });
+  }
+
+  // run
+  init();
+
+</script>

@@ -1,0 +1,144 @@
+---
+import fs from 'fs';
+import path from "path";
+
+const versionsIndexPath = path.join(process.cwd(), "public", "meta", "versions.json");
+let versionsIndex = { versions: [] };
+try {
+  versionsIndex = JSON.parse(fs.readFileSync(versionsIndexPath, "utf-8"));
+} catch (e) {
+  console.warn("[DownloadPage] couldn't read versions index:", e);
+}
+
+function loadVersionMeta(entry) {
+  const metaPath = path.join(process.cwd(), "public", "meta", "versions", `${entry.version}.json`);
+    try {
+      return JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+    } catch (e) {
+      console.warn("[DownloadButton] couldn't read version metadata:", metaPath, e);
+    }
+}
+
+const loaded = [];
+for (const v of (versionsIndex.versions || [])) {
+  const loadedOne = loadVersionMeta(v);
+  loadedOne.releaseTime = v.releaseTime;
+  loadedOne.type = v.type;
+  loaded.push(loadedOne);
+  console.log("[DownloadPage] loaded", v.version, loadedOne ? 'OK' : 'ERROR');
+  //console.log(loadedOne);
+}
+
+
+function compareVersions(a, b) {
+  const aParts = a.version.split('.').map(Number);
+  const bParts = b.version.split('.').map(Number);
+  const len = Math.max(aParts.length, bParts.length);
+  for (let i = 0; i < len; i++) {
+    const aVal = aParts[i] || 0;
+    const bVal = bParts[i] || 0;
+    if (aVal !== bVal) return bVal - aVal;
+  }
+  return 0;
+}
+
+// Sort versions by version number
+loaded.sort(compareVersions);
+
+const embedVersions = loaded.map(l => ({
+  version: l.version,
+  type: l.type,
+  artifacts: (l.artifacts) ? l.artifacts : [],
+  releaseTime: l.releaseTime,
+  _loadError: l._error || null
+}));
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Downloads — AstroImageJ</title>
+    <style>
+      :root{--accent:#f9a825;--muted:#666}
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;padding:1rem;background:#fff;color:#111}
+      .wrap{max-width:1000px;margin:0 auto}
+      h1{margin:0 0 .25rem}
+      .lead{color:var(--muted);margin-bottom:1rem}
+      .global-picker{display:flex;gap:0.75rem;align-items:center;margin:0.5rem 0 1rem;padding:0.5rem;border-radius:8px;background:#f6f6f6}
+      .release{border:1px solid #e6e6e6;border-radius:8px;padding:1rem;margin:1rem 0;background:#fff}
+      .meta{color:var(--muted);margin-bottom:.5rem;font-size:.95rem}
+      .assets{margin-top:.5rem}
+      .asset{display:flex;gap:.75rem;align-items:flex-start;padding:.5rem 0;border-top:1px dashed #eee}
+      .asset:first-child{border-top:none}
+      .asset a.name{font-weight:600;text-decoration:underline;color:inherit}
+      .right{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+      button.copy{background:#f3f3f3;border:1px solid #ddd;padding:.35rem .6rem;border-radius:6px;cursor:pointer}
+      details.meta-detail{margin-left:.25rem;margin-top:.25rem}
+      .picker{margin-top:1rem;display:flex;gap:.5rem;align-items:center}
+      .primary{padding:.55rem .9rem;border-radius:8px;background:var(--accent);color:#041323;font-weight:700;text-decoration:none}
+      .small{font-size:.9rem;color:var(--muted)}
+      .error{color:crimson}
+      @media (prefers-color-scheme:dark){
+        body{background:#041323;color:#dfefff}
+        .global-picker{background:#072233}
+        .release{background:#071426;border-color:#123047}
+        .asset{border-top:1px dashed #0b3246}
+        button.copy{background:#0b2a3d;color:#dfefff;border:1px solid #0b2a3d}
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <h1>Downloads</h1>
+
+      <div class="info">
+        <p> Signatures can be verified using <a href="https://docs.sigstore.dev/quickstart/quickstart-cosign/#verifying-a-signed-blob" target="_blank" rel="noopener noreferrer">Sigstore</a>. </p>
+        <p> For Sigstore verification, the signing identity is <code>https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master</code>
+        and the OIDC provider is <code>https://token.actions.githubusercontent.com</code>. </p>
+      </div>
+
+      <div id="releases">
+        {embedVersions.length === 0 ? (
+          <div class="release">
+            <p class="small">No versions were found. Ensure <code>public/meta/versions.json</code> exists and contains a `versions` array.</p>
+            {versionsIndex._error ? <p class="error small">Read error: {versionsIndex._error}</p> : null}
+          </div>
+        ) : null}
+
+        {embedVersions.map((v) => (
+          <section class="release" data-version={v.version}>
+            <h2>{v.version}{v.type ? ` ${v.type === 'PRERELEASE' ? '(Pre-release)' : v.type === 'DAILY_BUILD' ? '(Daily Build)' : ''}` : ''}</h2>
+            <div class="meta">Published: {v.releaseTime || 'unknown'}</div>
+
+            {v._loadError ? <p class="error small">Failed to read per-version metadata at build time: {v._loadError}</p> : null}
+
+            <p class="small">Release assets:</p>
+
+            <div class="assets">
+              {v.artifacts.length === 0 ? <p class="small">No artifacts found in metadata for this release.</p> : null}
+
+              {v.artifacts.map((a) => (
+                <div class="asset">
+                  <a class="name" href={a.url} target="_blank" rel="noopener noreferrer">AstroImageJ for {a.os} {a.arch}</a>
+
+                  <div class="right">
+                    {a.sha256 ? (
+                      <button class="copy" type="button" data-sha={a.sha256} title="Copy SHA256">sha256</button>
+                    ) : null}
+                    {a.signatureUrl ? (
+                      <a class="small" href={a.signatureUrl} target="_blank" rel="noopener noreferrer">Sigstore signature</a>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <p class="small">If auto-detection picks the wrong file, use the global selector above to override for all releases.</p>
+    </div>
+  </body>
+</html>

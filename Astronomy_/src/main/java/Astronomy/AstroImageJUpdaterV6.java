@@ -501,6 +501,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                 filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
             }
 
+            if (ENABLE_PRERELEASES.get()) {
+                filter.add(MetaVersion.ReleaseType.PRERELEASE);
+            }
+
             var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
 
             selector.removeAllItems();
@@ -512,6 +516,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             if (newValue) {
                 filter.add(MetaVersion.ReleaseType.PRERELEASE);
+            }
+
+            if (ENABLE_DAILY_BUILDS.get()) {
+                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
             }
 
             var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();

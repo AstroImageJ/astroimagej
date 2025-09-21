@@ -13,6 +13,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
 import ij.astro.gui.ToolTipRenderer;
+import ij.astro.io.prefs.Property;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
@@ -48,6 +49,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     private static final HttpClient HTTP_CLIENT;
     public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master";
     private MetaVersion meta;
+    private static final Property<Boolean> ENABLE_PRERELEASES = new Property<>(false, AstroImageJUpdaterV6.class);
 
     static {
         try {
@@ -460,7 +462,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
         b.add(msg);
 
-        var enablePrereleases = new JCheckBox("Show Prereleases", false);
+        var enablePrereleases = new JCheckBox("Show Prereleases", ENABLE_PRERELEASES.get());
         b.add(enablePrereleases);
 
         var updateCheckOnStartup = new JCheckBox("Perform Update Check on startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
@@ -477,9 +479,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         enablePrereleases.addActionListener($ -> {
             if (enablePrereleases.isSelected()) {
+                ENABLE_PRERELEASES.set(true);
                 selector.removeAllItems();
                 selector.setModel(new DefaultComboBoxModel<>(new Vector<>(versions)));
             } else {
+                ENABLE_PRERELEASES.set(false);
                 selector.removeAllItems();
                 selector.setModel(new DefaultComboBoxModel<>(new Vector<>(releaseOnlyVersions)));
             }

@@ -14,6 +14,8 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.*
 import javax.inject.Inject
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 abstract class GenerateMetadata
 @Inject constructor(private var providerFactory: ProviderFactory): DefaultTask() {
@@ -76,11 +78,13 @@ abstract class GenerateMetadata
         generalJson.get().asFile.writeText(json.encodeToString(Versions(versions.metaVersion, newVersions)))
     }
 
+    @OptIn(ExperimentalTime::class)
     fun buildVersion(version: String, updateData: UpdateData, baseUrl: String): Version {
         return Version(
             version = version,
             url = "$baseUrl/versions/$version.json",
             type = type(version),
+            releaseTime = Clock.System.now(),
         )
     }
 

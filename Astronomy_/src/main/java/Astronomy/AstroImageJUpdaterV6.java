@@ -12,6 +12,7 @@ import dev.sigstore.trustroot.SigstoreConfigurationException;
 import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
+import ij.astro.gui.ToolTipRenderer;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
@@ -466,6 +467,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         b.add(updateCheckOnStartup);
 
         var selector = new JComboBox<>(new Vector<>(releaseOnlyVersions));
+        selector.setRenderer(new ToolTipRenderer());
         var selectorArea = Box.createHorizontalBox();
         selectorArea.add(Box.createHorizontalStrut(10));
         selectorArea.add(selector);

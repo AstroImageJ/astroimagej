@@ -5,14 +5,20 @@ import astroj.json.simple.JSONArray;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import astroj.json.simple.parser.ParseException;
+import ij.astro.gui.ToolTipProvider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+
     public MetaVersion {
         Objects.requireNonNull(version);
         Objects.requireNonNull(versions);
@@ -63,7 +69,7 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
         }
     }
 
-    public record VersionEntry(SemanticVersion version, String url, ReleaseType releaseType) {
+    public record VersionEntry(SemanticVersion version, String url, ReleaseType releaseType, Instant releaseTime) implements ToolTipProvider {
         public VersionEntry {
             Objects.requireNonNull(version);
             Objects.requireNonNull(releaseType);
@@ -75,12 +81,35 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
 
             var url = object.get("url");
 
-            return new VersionEntry(new SemanticVersion((String) object.get("version")), (String) url, type);
+            Instant releaseTime = null;
+            if (object.get("releaseTime") != null) {
+                try {
+                    releaseTime = Instant.parse((String) object.get("releaseTime"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return new VersionEntry(new SemanticVersion((String) object.get("version")), (String) url, type, releaseTime);
         }
 
         @Override
         public String toString() {
-            return version.toString() + " (" + releaseType + ")";
+            var sb = new StringBuilder();
+            sb.append(version);
+            sb.append(" ");
+            sb.append("(").append(releaseType).append(")");
+
+            return sb.toString();
+        }
+
+        @Override
+        public String getToolTip() {
+            if (releaseTime != null) {
+                return DATE_TIME_FORMATTER.format(releaseTime);
+            }
+
+            return "No release date present";
         }
     }
 

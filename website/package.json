@@ -12,5 +12,8 @@
     "@astrojs/starlight": "^0.35.2",
     "astro": "^5.13.7",
     "sharp": "^0.34.3"
+  },
+  "devDependencies": {
+    "sass-embedded": "^1.93.0"
   }
 }

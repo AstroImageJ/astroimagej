@@ -18,6 +18,7 @@ import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
+import util.BrowserOpener;
 
 import javax.swing.*;
 import java.io.*;
@@ -562,8 +563,22 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             System.out.println(selector.getSelectedItem());
         });
 
+        var changes = new JButton("Changelog");
+        changes.addActionListener($ -> {
+            try {
+                BrowserOpener.openURL("https://astroimagej.com/releases");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        buttons.add(Box.createHorizontalStrut(10));
+        buttons.add(changes);
+        buttons.add(Box.createHorizontalGlue());
+
         buttons.add(yes);
         buttons.add(cancel);
+        buttons.add(Box.createHorizontalStrut(10));
 
         b.add(buttons);
         b.add(Box.createVerticalStrut(10));

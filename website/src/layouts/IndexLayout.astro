@@ -1,0 +1,20 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+
+const { ...head } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead {...head} title="Releases" />
+	</head>
+	<body>
+		<div class="glow"></div>
+		<Header />
+		<slot />
+		<Footer />
+	</body>
+</html>

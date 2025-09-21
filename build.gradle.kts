@@ -898,7 +898,7 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     version = providers.gradleProperty("version")
     specificJson = layout.projectDirectory.file("website/public/meta/versions/${version.get()}.json")
     generalJson = layout.projectDirectory.file("website/public/meta/versions.json")
-    baseMetaUrl = "https://astroimagej.github.io/astroimagej/meta"
+    baseMetaUrl = "https://astroimagej.com/meta"
     updateDataJson = layout.projectDirectory.file("packageFiles/assets/github/updateData.json")
     baseArtifactUrl = "https://github.com/AstroImageJ/astroimagej/releases/download"
 

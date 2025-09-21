@@ -19,5 +19,6 @@ data class Version(val version: String, val url: String, val type: Type,
 @Serializable
 enum class Type {
     RELEASE,
-    PRERELEASE
+    PRERELEASE,
+    DAILY_BUILD,
 }

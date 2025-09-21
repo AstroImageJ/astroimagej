@@ -116,6 +116,7 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
 
     public enum ReleaseType {
         RELEASE("Release"),
+        DAILY_BUILD("Daily Build"),
         PRERELEASE("Prerelease");
 
         private final String name;

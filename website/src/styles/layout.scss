@@ -133,6 +133,16 @@ nav {
 		margin-bottom: 1em;
 	}
 
+    ol {
+		list-style: decimal;
+
+		li::before { display: none !important; }
+		li::marker {
+        			color: #be4f97;
+        			font-weight: bold;
+        		}
+	}
+
 	ul {
 		list-style: none;
 

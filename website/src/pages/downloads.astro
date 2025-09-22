@@ -52,6 +52,27 @@ const embedVersions = loaded.map(l => ({
   releaseTime: l.releaseTime,
   _loadError: l._error || null
 }));
+
+function presentArchs(arch) {
+  arch = arch.map(a => {
+      switch (a) {
+        case 'ARM64': return 'arm64';
+        case 'AMD64': return 'x64';
+        default: return a;
+      }
+  });
+  return arch;
+}
+function presentOs(os) {
+  os = os.map(a => {
+      return a.charAt(0) + a.substring(1).toLowerCase()
+  });
+  return os;
+}
+
+function versionToUrl(version) {
+  return "/releases/" + version.replace(/\./g, "");
+}
 ---
 <!doctype html>
 <html lang="en">
@@ -78,7 +99,7 @@ const embedVersions = loaded.map(l => ({
       button.copy{background:#f3f3f3;border:1px solid #ddd;padding:.35rem .6rem;border-radius:6px;cursor:pointer}
       details.meta-detail{margin-left:.25rem;margin-top:.25rem}
       .picker{margin-top:1rem;display:flex;gap:.5rem;align-items:center}
-      .primary{padding:.55rem .9rem;border-radius:8px;background:var(--accent);color:#041323;font-weight:700;text-decoration:none}
+      //.primary{padding:.1rem .1rem;border-radius:8px;background:var(--accent);color:#041323;font-weight:700;text-decoration:none}
       .small{font-size:.9rem;color:var(--muted)}
       .error{color:crimson}
       @media (prefers-color-scheme:dark){
@@ -114,6 +135,9 @@ const embedVersions = loaded.map(l => ({
           <section class="release" data-version={v.version}>
             <h2>{v.version}{v.type ? ` ${v.type === 'PRERELEASE' ? '(Pre-release)' : v.type === 'DAILY_BUILD' ? '(Daily Build)' : ''}` : ''}</h2>
             <div class="meta">Published: {v.releaseTime || 'unknown'}</div>
+            <div class="meta">
+              <a href={versionToUrl(v.version)} class="primary">View release notes</a>
+            </div>
 
             {v._loadError ? <p class="error small">Failed to read per-version metadata at build time: {v._loadError}</p> : null}
 
@@ -124,7 +148,7 @@ const embedVersions = loaded.map(l => ({
 
               {v.artifacts.map((a) => (
                 <div class="asset">
-                  <a class="name" href={a.url} target="_blank" rel="noopener noreferrer">AstroImageJ for {a.os} {a.arch}</a>
+                  <a class="name" href={a.url} target="_blank" rel="noopener noreferrer">AstroImageJ for {presentOs(a.os)} {presentArchs(a.arch)}</a>
 
                   <div class="right">
                     {a.sha256 ? (

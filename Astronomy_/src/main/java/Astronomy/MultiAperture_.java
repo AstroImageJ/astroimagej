@@ -494,6 +494,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         o.add(KEY_PREFIX+PREFS_XLOCATION);
         o.add(KEY_PREFIX+PREFS_YLOCATION);
         o.add(KEY_PREFIX+PREFS_PREVNUMMONITORS);
+        o.add(KEY_PREFIX+SHAPED_AP_AREA_LOCKED.getPropertyKey());
+        o.add(KEY_PREFIX+SHAPED_AP_ECCENTRICITY_LOCKED.getPropertyKey());
+        o.add(KEY_PREFIX+SHAPED_AP_ECCENTRICITY.getPropertyKey());
+        o.add(KEY_PREFIX+SHAPED_VARIATION_LOCKED.getPropertyKey());
+        o.add(KEY_PREFIX+SHAPED_AP_ANGLE_LOCKED.getPropertyKey());
+        o.add(KEY_PREFIX+SHAPED_AP_ANGLE.getPropertyKey());
 
         return o;
     }
@@ -6888,6 +6894,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var s = new Section("root", true);
 
         s.addSubsection(new Section("handlerApertures"));
+        //s.addSubsection(Transformers.write());
         for (ShapedApertureRoi aperture : apertures) {
             s.addSubsection(Transformers.write(Aperture.class, aperture));
         }

@@ -110,7 +110,7 @@ public class Property<T> {
     public void forceWrite() {
         updatePrefs(value);
         for (@SuppressWarnings("unchecked") PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
-            l.valueChanged(getPropertyKey(), value);
+            l.valueChanged(value, value);
         }
     }
 
@@ -137,10 +137,11 @@ public class Property<T> {
         }
 
         updatePrefs(value);
+        var oldVal = this.value;
         this.value = value;
         if (doNotify && valueChanged) {
             for (PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
-                l.valueChanged(getPropertyKey(), value);
+                l.valueChanged(oldVal, value);
             }
         }
     }
@@ -446,7 +447,7 @@ public class Property<T> {
      */
     @FunctionalInterface
     public interface PropertyChangeListener<T> {
-        void valueChanged(String key, T newValue);
+        void valueChanged(T oldVal, T newValue);
     }
 
     /**

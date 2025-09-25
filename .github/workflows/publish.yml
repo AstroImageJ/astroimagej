@@ -243,6 +243,8 @@ jobs:
         run: |
           mkdir appimage-linux-x64
           tar -xvf astroimagej-linux-x64.tar -p
+          ls -l images/Linux_x64/astroimagej/lib/runtime/lib/jspawnhelper
+          ls -l images/Linux_x64/astroimagej/bin/AstroImageJ
 
       - name: Download App Image For Windows x64
         if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'

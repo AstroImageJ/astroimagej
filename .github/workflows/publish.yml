@@ -266,13 +266,13 @@ jobs:
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
         uses: actions/download-artifact@v5
         with:
-          name: appimage-mac-arm
+          name: appimage-mac-aarch64
 
       - name: Unpack App Image For Mac Arm
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
         run: |
           mkdir appimage-mac-aarch64
-          tar -xvf astroimagej-mac-arm.tar -C appimage-mac-aarch64
+          tar -xvf astroimagej-mac-aarch64.tar -C appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}"

@@ -19,7 +19,7 @@
         {
           "version": "1.2.5.00",
           "url": "https://astroimagej.com/meta/versions/1.2.5.00.json",
-          "type": "DAILY_BUILD",
+          "type": "PRERELEASE",
           "releaseTime": "2025-09-21T07:00:40.267768400Z"
         }
     ]

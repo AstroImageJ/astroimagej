@@ -70,13 +70,13 @@ jobs:
 
       # Need to tar the app image to preserve file permissions
       - name: Tar Linux x64
-        run: tar -cvf astroimagej-linux-x64.tar build/distributions/images/Linux_x64/astroimagej
+        run: tar -cvf astroimagej-linux-x64.tar -C build/distributions/images/Linux_x64 astroimagej
 
       - name: Tar Mac x64
-        run: tar -cvf astroimagej-mac-x64.tar build/distributions/images/Mac_x64/AstroImageJ.app
+        run: tar -cvf astroimagej-mac-x64.tar -C build/distributions/images/Mac_x64 AstroImageJ.app
 
       - name: Tar Mac Arm
-        run: tar -cvf astroimagej-mac-arm.tar build/distributions/images/Mac_aarch64/AstroImageJ.app
+        run: tar -cvf astroimagej-mac-arm.tar -C build/distributions/images/Mac_aarch64 AstroImageJ.app
 
       - name: Upload App Image For Linux x64
         uses: actions/upload-artifact@v4
@@ -243,7 +243,7 @@ jobs:
         run: |
           mkdir appimage-linux-x64
           ls
-          tar -xvf appimage-linux-x64.tar -C appimage-linux-x64
+          tar -xvf astroimagej-linux-x64.tar -C appimage-linux-x64
 
       - name: Download App Image For Windows x64
         if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'
@@ -275,7 +275,7 @@ jobs:
         run: |
           mkdir appimage-mac-aarch64
           ls
-          tar -xvf astroimagej-mac-aarch64.tar -C appimage-mac-aarch64
+          tar -xvf astroimagej-mac-arm.tar -C appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}"

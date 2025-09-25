@@ -68,6 +68,8 @@ Bohyunsan Optical Ast. Obs. Youngchun/Mt. Bohyun	36.1666666666667	128.9766666666
 Bologna Univ. Obs. Loiano	44.2583333333333	11.3366666666667	785
 Bordeaux Univ. Obs. R Floirac	44.835	-0.528333333333333	73
 Bosscha Obs. Lembang (Java)	-6.825	107.616666666667	1300
+Boyce-Astro Research Obs. (BARO)	32.613000	-116.332000	1130
+Boyce-Astro Research Obs. North (BARON)	37.071000	-119.413000	1400
 Boyden Obs. Mazelspoort	-29.0383333333333	26.405	1387
 Bradley Obs. Decatur	33.765	-84.2933333333333	316
 Bradstreet	40.050278	-75.368889	0
@@ -381,6 +383,7 @@ Nyrolan	62.342222	25.513056	0
 Oak Ridge Obs. R Harvard	42.505	-71.5583333333333	185
 O'Brien Obs. Marine-on-St. Croix	45.1816666666667	-92.7766666666667	308
 Obs. of Haute-Provence Forcalquier/St. Michel	43.9316666666667	5.71333333333333	665
+Obserwatorium Astronomiczne Niedźwiady	53.062000	17.681000	80
 Odeillo Solar Obs.	42.493959	2.029316	0
 Odessa Obs. Odessa	46.4766666666667	30.7583333333333	60
 Okayama Astrophysical Obs. Kurashiki/Mt. Chikurin	34.5733333333333	133.596666666667	372

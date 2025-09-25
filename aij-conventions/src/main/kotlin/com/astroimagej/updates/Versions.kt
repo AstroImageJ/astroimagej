@@ -21,4 +21,6 @@ enum class Type {
     RELEASE,
     PRERELEASE,
     DAILY_BUILD,
+    ALPHA,
+    BETA,
 }

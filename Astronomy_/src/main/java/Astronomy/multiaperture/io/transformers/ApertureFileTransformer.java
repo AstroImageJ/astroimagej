@@ -14,7 +14,7 @@ import java.util.Properties;
 
 public class ApertureFileTransformer implements Transformer<ApFile, Void> {
     public static final int maxSupportedMajor = 2;
-    public static final int maxSupportedMinor = 1;
+    public static final int maxSupportedMinor = 2;
 
     @Override
     public ApFile load(Void params, Section section) {

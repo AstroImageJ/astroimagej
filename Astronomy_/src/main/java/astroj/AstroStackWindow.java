@@ -4908,6 +4908,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
                     Prefs.ijPrefs.putAll(d.prefs());
                     ac.removeApertureRois();
+                    Property.resetLoadStatus();
 
                     if (!pixelAps.isEmpty()) {
                         FreeformPixelApertureHandler.APS.set(pixelAps);
@@ -4934,6 +4935,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                             ac.add(ap);
                         }
                     }
+                    MultiAperture_.copyShapedForPrev();
+                    MultiAperture_.copyShapedForImport();
                     return;
                 }
             } catch (Exception e) {

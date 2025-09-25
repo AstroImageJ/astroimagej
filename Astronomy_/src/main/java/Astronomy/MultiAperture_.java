@@ -340,6 +340,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<Double> SHAPED_AP_ANGLE= new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> MOVING_T1 = new Property<>(false, MultiAperture_.class);
     private static final boolean USE_FMA = testForFma();
+    private static final Property<Boolean> PREV_SHAPED_AP_AREA_LOCKED = SHAPED_AP_AREA_LOCKED.getOrCreateVariant("PREV");
+    private static final Property<Boolean> PREV_SHAPED_AP_ECCENTRICITY_LOCKED = SHAPED_AP_ECCENTRICITY_LOCKED.getOrCreateVariant("PREV");
+    private static final Property<Double> PREV_SHAPED_AP_ECCENTRICITY = SHAPED_AP_ECCENTRICITY.getOrCreateVariant("PREV");
+    private static final Property<Boolean> PREV_SHAPED_AP_ANGLE_LOCKED = SHAPED_AP_ANGLE_LOCKED.getOrCreateVariant("PREV");
+    private static final Property<Boolean> PREV_SHAPED_VARIATION_LOCKED = SHAPED_VARIATION_LOCKED.getOrCreateVariant("PREV");
+    private static final Property<Double> PREV_SHAPED_AP_ANGLE= SHAPED_AP_ANGLE.getOrCreateVariant("PREV");
+    private static final Property<Boolean> IMP_SHAPED_AP_AREA_LOCKED = SHAPED_AP_AREA_LOCKED.getOrCreateVariant("IMP");
+    private static final Property<Boolean> IMP_SHAPED_AP_ECCENTRICITY_LOCKED = SHAPED_AP_ECCENTRICITY_LOCKED.getOrCreateVariant("IMP");
+    private static final Property<Double> IMP_SHAPED_AP_ECCENTRICITY = SHAPED_AP_ECCENTRICITY.getOrCreateVariant("IMP");
+    private static final Property<Boolean> IMP_SHAPED_AP_ANGLE_LOCKED = SHAPED_AP_ANGLE_LOCKED.getOrCreateVariant("IMP");
+    private static final Property<Boolean> IMP_SHAPED_VARIATION_LOCKED = SHAPED_VARIATION_LOCKED.getOrCreateVariant("IMP");
+    private static final Property<Double> IMP_SHAPED_AP_ANGLE = SHAPED_AP_ANGLE.getOrCreateVariant("IMP");
 
     public MultiAperture_() {
         freeformPixelApertureHandler.setExitCallback(() -> {
@@ -531,6 +543,42 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         o.add(KEY_PREFIX+PREFS_YLOCATION);
 
         return o;
+    }
+
+    public static void copyShapedForImport() {
+        IMP_SHAPED_AP_AREA_LOCKED.set(SHAPED_AP_AREA_LOCKED.get());
+        IMP_SHAPED_AP_ECCENTRICITY_LOCKED.set(SHAPED_AP_ECCENTRICITY_LOCKED.get());
+        IMP_SHAPED_AP_ECCENTRICITY.set(SHAPED_AP_ECCENTRICITY.get());
+        IMP_SHAPED_AP_ANGLE_LOCKED.set(SHAPED_AP_ANGLE_LOCKED.get());
+        IMP_SHAPED_VARIATION_LOCKED.set(SHAPED_VARIATION_LOCKED.get());
+        IMP_SHAPED_AP_ANGLE.set(SHAPED_AP_ANGLE.get());
+    }
+
+    public static void copyShapedForPrev() {
+        PREV_SHAPED_AP_AREA_LOCKED.set(SHAPED_AP_AREA_LOCKED.get());
+        PREV_SHAPED_AP_ECCENTRICITY_LOCKED.set(SHAPED_AP_ECCENTRICITY_LOCKED.get());
+        PREV_SHAPED_AP_ECCENTRICITY.set(SHAPED_AP_ECCENTRICITY.get());
+        PREV_SHAPED_AP_ANGLE_LOCKED.set(SHAPED_AP_ANGLE_LOCKED.get());
+        PREV_SHAPED_VARIATION_LOCKED.set(SHAPED_VARIATION_LOCKED.get());
+        PREV_SHAPED_AP_ANGLE.set(SHAPED_AP_ANGLE.get());
+    }
+
+    public static void copyShapedFromPrev() {
+        SHAPED_AP_AREA_LOCKED.set(PREV_SHAPED_AP_AREA_LOCKED.get());
+        SHAPED_AP_ECCENTRICITY_LOCKED.set(PREV_SHAPED_AP_ECCENTRICITY_LOCKED.get());
+        SHAPED_AP_ECCENTRICITY.set(PREV_SHAPED_AP_ECCENTRICITY.get());
+        SHAPED_AP_ANGLE_LOCKED.set(PREV_SHAPED_AP_ANGLE_LOCKED.get());
+        SHAPED_VARIATION_LOCKED.set(PREV_SHAPED_VARIATION_LOCKED.get());
+        SHAPED_AP_ANGLE.set(PREV_SHAPED_AP_ANGLE.get());
+    }
+
+    public static void copyShapedFromImp() {
+        SHAPED_AP_AREA_LOCKED.set(IMP_SHAPED_AP_AREA_LOCKED.get());
+        SHAPED_AP_ECCENTRICITY_LOCKED.set(IMP_SHAPED_AP_ECCENTRICITY_LOCKED.get());
+        SHAPED_AP_ECCENTRICITY.set(IMP_SHAPED_AP_ECCENTRICITY.get());
+        SHAPED_AP_ANGLE_LOCKED.set(IMP_SHAPED_AP_ANGLE_LOCKED.get());
+        SHAPED_VARIATION_LOCKED.set(IMP_SHAPED_VARIATION_LOCKED.get());
+        SHAPED_AP_ANGLE.set(IMP_SHAPED_AP_ANGLE.get());
     }
 
     static void checkAndLockTable() {
@@ -4190,6 +4238,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         if (!autoMode) {
             GenericSwingDialog gd = null;
+            switch (apLoading.get()) {
+                case IMPORTED -> copyShapedFromImp();
+                case ALL_PREVIOUS, FIRST_PREVIOUS -> copyShapedFromPrev();
+            }
             try {
                 gd = dialog();
 
@@ -4201,6 +4253,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             yLocation = gd.getY();
             Prefs.set(MultiAperture_.PREFS_XLOCATION, xLocation);
             Prefs.set(MultiAperture_.PREFS_YLOCATION, yLocation);
+            copyShapedForPrev();
             if (gd.wasCanceled()) {
                 cancelled = true;
                 return false;
@@ -6043,6 +6096,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }).setToolTipText("Select aperture type");
 
+        var shapedHolder = new EllOptHolder();
         gd.addNewSwappableSectionPanel(ApertureShape.class, (g, shape) -> {
             switch (shape) {
                 case CIRCULAR -> {
@@ -6122,10 +6176,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     g.addLineSeparator();
 
-                    g.addCheckbox("Lock eccentricity", SHAPED_AP_ECCENTRICITY_LOCKED.get(), SHAPED_AP_ECCENTRICITY_LOCKED::set);
+                    var lockEcc = g.addCheckbox("Lock eccentricity", SHAPED_AP_ECCENTRICITY_LOCKED.get(), SHAPED_AP_ECCENTRICITY_LOCKED::set);
                     g.addToSameRow();
                     var ePanel = g.addFloatSlider("Eccentricity", 0, 1, SHAPED_AP_ECCENTRICITY.get(), 3, 0.01, SHAPED_AP_ECCENTRICITY::set);
-                    g.addCheckbox("Lock angle", SHAPED_AP_ANGLE_LOCKED.get(), SHAPED_AP_ANGLE_LOCKED::set);
+                    var lockAng = g.addCheckbox("Lock angle", SHAPED_AP_ANGLE_LOCKED.get(), SHAPED_AP_ANGLE_LOCKED::set);
                     g.addToSameRow();
                     var aPanel = g.addFloatSlider("Angle", 0, 360, SHAPED_AP_ANGLE.get(), 3, 1, SHAPED_AP_ANGLE::set);
                     var indep = g.addCheckbox("Lock all apertures' ecc. and angle to T1's", SHAPED_VARIATION_LOCKED.get(), SHAPED_VARIATION_LOCKED::set);
@@ -6134,8 +6188,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             centroiding result at each aperture location.
                             If disabled, all apertures will use the angle and eccentricity measured for T1.
                             """);
-                    g.addCheckbox("Keep aperture area constant", SHAPED_AP_AREA_LOCKED.get(), SHAPED_AP_AREA_LOCKED::set);
-
+                    var lockArea = g.addCheckbox("Keep aperture area constant", SHAPED_AP_AREA_LOCKED.get(), SHAPED_AP_AREA_LOCKED::set);
+                    shapedHolder.setGui(lockEcc, ePanel, lockAng, aPanel, indep, lockArea);
                     setEnabled(ePanel, SHAPED_AP_ECCENTRICITY_LOCKED.get());
                     setEnabled(aPanel, SHAPED_AP_ANGLE_LOCKED.get());
                     SHAPED_AP_ANGLE_LOCKED.addListener((k, b) -> {
@@ -6205,6 +6259,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 apLoading.set(ApLoading.ALL_NEW);
             }
         }
+
+        apLoading.addListener((o, n) -> {
+            if (apertureShape.get() == ApertureShape.ELLIPTICAL) {
+                if (o != n) {
+                    if (n == ApLoading.IMPORTED) {
+                        copyShapedForImport();
+                        shapedHolder.updateGUI();
+                    }
+                    if (n == ApLoading.FIRST_PREVIOUS || n == ApLoading.ALL_PREVIOUS) {
+                        copyShapedFromPrev();
+                        shapedHolder.updateGUI();
+                    }
+                }
+            }
+        });
 
         // Swap button text for next shape
         apertureShape.addListener((key, val) -> {
@@ -7098,6 +7167,36 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {
+    }
+
+    private static class EllOptHolder {
+        private JCheckBox lockEccCheckbox;
+        private JPanel eccPanel;
+        private JCheckBox lockAngCheckbox;
+        private JPanel angPanel;
+        private JCheckBox lock2T1Checkbox;
+        private JCheckBox lockAreaCheckbox;
+
+        public void updateGUI() {
+            if (lockEccCheckbox == null) {
+                return;
+            }
+            lockEccCheckbox.setSelected(SHAPED_AP_ECCENTRICITY_LOCKED.get());
+            lockAngCheckbox.setSelected(SHAPED_AP_ANGLE_LOCKED.get());
+            lock2T1Checkbox.setSelected(SHAPED_VARIATION_LOCKED.get());
+            lockAreaCheckbox.setSelected(SHAPED_AP_AREA_LOCKED.get());
+            GenericSwingDialog.getSpinnerFromSlider(angPanel).ifPresent(s -> s.setValue(SHAPED_AP_ANGLE.get()));
+            GenericSwingDialog.getSpinnerFromSlider(eccPanel).ifPresent(s -> s.setValue(SHAPED_AP_ECCENTRICITY.get()));
+        }
+
+        public void setGui(JCheckBox lockEcc, JPanel ecc, JCheckBox lockAng, JPanel ang, JCheckBox lock2T1, JCheckBox lockArea) {
+            this.lockEccCheckbox = lockEcc;
+            this.eccPanel = ecc;
+            this.lockAngCheckbox = lockAng;
+            this.angPanel = ang;
+            this.lock2T1Checkbox = lock2T1;
+            this.lockAreaCheckbox = lockArea;
+        }
     }
 
     record Output(double r, double r1, double r2, int count) {

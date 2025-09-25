@@ -82,6 +82,8 @@ public class AIJStartupHandler implements PlugIn {
                             FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
+                            MultiAperture_.copyShapedForPrev();
+                            MultiAperture_.copyShapedForImport();
                         } else {
                             asw.openApertures(new ByteArrayInputStream(tableRead.apertures()));
                         }
@@ -102,6 +104,8 @@ public class AIJStartupHandler implements PlugIn {
                                 }
                                 Prefs.ijPrefs.putAll(d.prefs());
                                 Property.resetLoadStatus();
+                                MultiAperture_.copyShapedForPrev();
+                                MultiAperture_.copyShapedForImport();
                             } else {
                                 Prefs.set("multiaperture.xapertures", "");
                                 Prefs.set("multiaperture.yapertures", "");
@@ -165,6 +169,8 @@ public class AIJStartupHandler implements PlugIn {
 
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
+                            MultiAperture_.copyShapedForPrev();
+                            MultiAperture_.copyShapedForImport();
                             if (asw.getCanvas() instanceof AstroCanvas ac) {
                                 ac.removeApertureRois();
                             }
@@ -204,6 +210,8 @@ public class AIJStartupHandler implements PlugIn {
 
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
+                            MultiAperture_.copyShapedForPrev();
+                            MultiAperture_.copyShapedForImport();
                         } else {
                             Prefs.set("multiaperture.xapertures", "");
                             Prefs.set("multiaperture.yapertures", "");

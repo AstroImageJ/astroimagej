@@ -13,3 +13,6 @@ fi
 
 mkdir -p "$DEST"
 tar --strip-components=1 -xzf "$TGZ" -C "$DEST"
+
+# Rerun AIJ
+$DEST/bin/AstroImageJ

@@ -64,34 +64,40 @@ import DownloadPicker from '../components/DownloadPicker.astro';
 <section id="features">
     <h2>Key Features</h2>
     <ul>
-        <li> Provides an interactive interface similar to ds9</li>
-        <li> Reads and writes FITS images with standard headers</li>
-        <li> Allows FITS header viewing and editing</li>
-        <li> Plate solves and adds WCS to images seamlessly using the Astrometry.net web interface</li>
-        <li> Displays astronomical coordinates for images with WCS</li>
+        <li> General astronomical image and data analysis</li>
+        <li> Interactive image display similar to DS9</li>
+        <li> Reads and writes standard FITS images and tables, including FPACK compressed, and 3D image cubes</li>
+        <li> TESS image (e.g. TESScut) and SPOC lightcurve analysis</li>
+        <li> FITS header viewing and editing</li>
+        <li> Plate solving via Astrometry.net web interface (local solver capability on Microsoft Windows)</li>
+        <li> Displays astronomical coordinates at mouse pointer for images with WCS headers</li>
         <li> Provides object identification via an embedded SIMBAD interface</li>
         <li> Aligns image sequences using WCS headers or by using apertures to correlate stars</li>
         <li> Image calibration including bias, dark, flat, and non-linearity correction with option to run in real-time</li>
         <li> Interactive time-series differential photometry interface with option to run in real-time</li>
-        <li> Allows comparison star ensemble changes without re-running differential photometry</li>
-        <li> Provides an interactive multi-curve plotting tool streamlined for plotting light curves</li>
-        <li> Includes an interactive light curve fitting interface with simultaneous detrending</li>
-        <li> Allows non-destructive object annotations/labels using FITS header keywords</li>
-        <li> Provides a time and coordinate converter tool with capability to update/enhance FITS header content (AIRMASS, BJD, etc.)</li>
-        <li> Exports analyses formatted as spreadsheets </li>
-        <li> Creates color images and with native ImageJ processing power</li>
+        <li> Various aperture options (fixed, auto-fixed, variable size; circular, elliptical, arbitrary shape)</li>
+        <li> Comparison ensemble apertures can optionally be automatically selected in images</li>
+        <li> Time-series photometry of moving objects (such as asteroids, etc.)</li>
+        <li> Comparison star ensemble and detrend can be changed without re-running differential photometry</li>
+        <li> Interactive multi-curve plotting tool streamlined for plotting light curves</li>
+        <li> Automated plot titling capability (from FITS headers, measurements tables, filenames)</li>
+        <li> Interactive light curve fitting interface with simultaneous detrending</li>
+        <li> Automated comparison ensemble and detrend optimization and light curve outlier removal</li>
+        <li> Non-destructive object annotations/labels using FITS header keywords</li>
+        <li> Time and coordinate conversion with capability to update/enhance FITS header content (AIRMASS, BJD, etc.)</li>
+        <li> Powerful photometry table (measurements table) editing</li>
+        <li> Handling of debayering of color images</li>
         <li> Optionally enter reference star apparent magnitudes to calculate target star magnitudes automatically </li>
         <li> Optionally create Minor Planet Center (MPC) format for direct submission of data to the MPC</li>
-        <li> Recently added when you update to the daily build after installation -- </li>
-        <ul>
-            <li>Nearby eclipsing binary star identification from expected depth versus light curve RMS table for TESS follow-up</li>
-            <li>Delta-magnitude versus RMS plot </li>
-            <li>Enhanced contrast controls</li>
-            <li>Annotations are retained when placing apertures</li>
-            <li>FITS header search feature</li>
-        </ul>
+        <li> Optionally create AAVSO formatted lightcurves</li>
+        <li> Automated check for nearby eclipsing binary signals for TESS follow-up (thanks to Dennis Conti)</li>
     </ul>
 </section>
+
+
+<center>
+<embed src="AstroImageJ_Panels.pdf" type="application/pdf" width="900px" height="530px" title="AstroImageJ Panels and Features" />
+</center>
 
 <section id="docs">
     <h2>Documentation</h2>

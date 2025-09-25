@@ -7823,9 +7823,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     String objectCoords = URLEncoder.encode(coordsText, "UTF-8");
                     URL simbad;
                     if (useHarvard)
-                        simbad = new URL("http://simbad.cfa.harvard.edu/simbad/sim-coo?Coord=" + objectCoords + "&Radius=" + simbadSearchRadius + "&Radius.unit=arcsec&output.format=ASCII");
+                        simbad = new URL("https://simbad.cfa.harvard.edu/simbad/sim-coo?Coord=" + objectCoords + "&Radius=" + simbadSearchRadius + "&Radius.unit=arcsec&output.format=ASCII");
                     else
-                        simbad = new URL("http://simbad.u-strasbg.fr/simbad/sim-coo?Coord=" + objectCoords + "&Radius=" + simbadSearchRadius + "&Radius.unit=arcsec&output.format=ASCII");
+                        simbad = new URL("https://simbad.u-strasbg.fr/simbad/sim-coo?Coord=" + objectCoords + "&Radius=" + simbadSearchRadius + "&Radius.unit=arcsec&output.format=ASCII");
 
                     URLConnection simbadCon;
                     if (Prefs.get("coords.useProxy", false)) {

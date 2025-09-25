@@ -3424,9 +3424,9 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
             String objectID = URLEncoder.encode(objectText,"UTF-8");
             URL simbad;
             if (useHarvard)
-                simbad = new URL("http://simbad.cfa.harvard.edu/simbad/sim-id?Ident="+objectID+"&output.format=ASCII");
+                simbad = new URL("https://simbad.cfa.harvard.edu/simbad/sim-id?Ident="+objectID+"&output.format=ASCII");
             else
-                simbad = new URL("http://simbad.u-strasbg.fr/simbad/sim-id?Ident="+objectID+"&output.format=ASCII");
+                simbad = new URL("https://simbad.u-strasbg.fr/simbad/sim-id?Ident="+objectID+"&output.format=ASCII");
             URLConnection simbadCon;
             if (useProxy) simbadCon = simbad.openConnection(proxy);
             else simbadCon = simbad.openConnection();
@@ -3548,9 +3548,9 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
                 }
             URI simbad;
             if (useHarvard)
-                simbad = new URI("http://simbad.cfa.harvard.edu/simbad/"+queryType+object);
+                simbad = new URI("https://simbad.cfa.harvard.edu/simbad/"+queryType+object);
             else
-                simbad = new URI("http://simbad.u-strasbg.fr/simbad/"+queryType+object);
+                simbad = new URI("https://simbad.u-strasbg.fr/simbad/"+queryType+object);
 
             BrowserOpener.openURL(simbad.toString());
             }

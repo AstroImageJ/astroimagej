@@ -242,6 +242,7 @@ jobs:
         if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
         run: |
           mkdir appimage-linux-x64
+          ls
           tar -xvf appimage-linux-x64.tar -C appimage-linux-x64
 
       - name: Download App Image For Windows x64
@@ -260,6 +261,7 @@ jobs:
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
         run: |
           mkdir appimage-mac-x64
+          ls
           tar -xvf astroimagej-mac-x64.tar -C appimage-mac-x64
 
       - name: Download App Image For Mac Arm
@@ -272,6 +274,7 @@ jobs:
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
         run: |
           mkdir appimage-mac-aarch64
+          ls
           tar -xvf astroimagej-mac-aarch64.tar -C appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})

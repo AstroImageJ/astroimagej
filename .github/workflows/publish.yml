@@ -68,6 +68,16 @@ jobs:
         run: |
           ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64 -Pversion=${{ env.VERSION }}
 
+      # Need to tar the app image to preserve file permissions
+      - name: Tar Linux x64
+        run: tar -cvf astroimagej-linux-x64.tar build/distributions/**/images/Linux_x64/astroimagej
+
+      - name: Tar Mac x64
+        run: tar -cvf astroimagej-mac-x64.tar build/distributions/**/images/Mac_x64/AstroImageJ.app
+
+      - name: Tar Mac Arm
+        run: tar -cvf astroimagej-mac-arm.tar build/distributions/**/images/Mac_aarch64/AstroImageJ.app
+
       - name: Upload App Image For Linux x64
         uses: actions/upload-artifact@v4
         with:
@@ -77,7 +87,7 @@ jobs:
           include-hidden-files: true
           retention-days: 5
           path: |
-            build/distributions/**/images/Linux_x64/astroimagej
+            astroimagej-linux-x64.tar
 
       - name: Upload App Image For Windows x64
         uses: actions/upload-artifact@v4
@@ -99,7 +109,7 @@ jobs:
           include-hidden-files: true
           retention-days: 5
           path: |
-            build/distributions/**/images/Mac_x64/AstroImageJ.app
+            astroimagej-mac-x64.tar
 
       - name: Upload App Image For Mac Arm
         uses: actions/upload-artifact@v4
@@ -110,7 +120,7 @@ jobs:
           include-hidden-files: true
           retention-days: 5
           path: |
-            build/distributions/**/images/Mac_aarch64/AstroImageJ.app
+            astroimagej-mac-arm.tar
 
   package:
     name: Package ${{ matrix.osName }}
@@ -226,7 +236,11 @@ jobs:
         if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
         uses: actions/download-artifact@v5
         with:
-          name: appimage-linux-x64
+          name: appimage-linux-x64.tar
+
+      - name: Unpack App Image For Linux x64
+        if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
+        run: tar -xvf appimage-linux-x64.tar -C appimage-linux-x64
 
       - name: Download App Image For Windows x64
         if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'
@@ -238,13 +252,21 @@ jobs:
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
         uses: actions/download-artifact@v5
         with:
-          name: appimage-mac-x64
+          name: appimage-mac-x64.tar
+
+      - name: Unpack App Image For Mac x64
+        if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
+        run: tar -xvf astroimagej-mac-x64.tar -C appimage-mac-x64
 
       - name: Download App Image For Mac Arm
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
         uses: actions/download-artifact@v5
         with:
-          name: appimage-mac-aarch64
+          name: appimage-mac-aarch64.tar
+
+      - name: Unpack App Image For Mac Arm
+        if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
+        run: tar -xvf astroimagej-mac-aarch64.tar -C appimage-mac-aarch64
 
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}"

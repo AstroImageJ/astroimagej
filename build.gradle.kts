@@ -801,15 +801,10 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             from(appImageDir) {
                 exclude("*.tgz")
 
-                if (path.contains("astroimagej/bin/") ||
-                    path.endsWith("/jspawnhelper") ||
-                    path.contains("/lib/runtime/lib/")) {
-
-                    filePermissions {
-                        user.execute = true
-                        other.execute = true
-                        group.execute = true
-                    }
+                filePermissions {
+                    user.execute = true
+                    other.execute = true
+                    group.execute = true
                 }
             }
         }

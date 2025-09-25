@@ -1,6 +1,7 @@
 ---
 import ImageCard from '../components/ImageComponenent.astro';
 import DownloadPicker from '../components/DownloadPicker.astro';
+import { Swiper, SwiperWrapper, SwiperSlide, SwiperPagination, SwiperButtonPrev, SwiperButtonNext } from "astro-swiper";
 ---
 
 <head>
@@ -24,6 +25,30 @@ import DownloadPicker from '../components/DownloadPicker.astro';
         .feature h3 { margin-top: 0; }
         footer { background: #333; color: #fff; text-align: center; padding: 1rem; font-size: 0.9rem; }
         footer a { color: #f9a825; text-decoration: none; }
+        /* container: size to the images and act as positioning context */
+        .presentation-swiper {
+          position: relative;
+          max-width: 1000px;
+          width: 100%;
+          margin: 1rem auto;
+          overflow: hidden;
+        }
+
+        /* make slides/images fit the container cleanly */
+        .presentation-swiper .swiper-slide {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .presentation-swiper .swiper-slide img {
+          width: 100%;
+          height: auto;
+          display: block;
+          object-fit: contain;
+        }
+        .presentation-swiper .swiper-button-prev { left: 12px; }
+        .presentation-swiper .swiper-button-next { right: 12px; }
     </style>
 </head>
 <body>
@@ -63,6 +88,40 @@ import DownloadPicker from '../components/DownloadPicker.astro';
 
 <section id="features">
     <h2>Key Features</h2>
+    <center>
+        <Swiper class="presentation-swiper"
+              // check options at https://swiperjs.com/swiper-api
+              options={{
+                navigation: {
+                  nextEl: ".swiper-button-next",
+                  prevEl: ".swiper-button-prev",
+                },
+                pagination: {
+                  el: ".swiper-pagination",
+                  type: "progressbar",
+                },
+              }}
+        >
+        <SwiperWrapper>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide1.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide2.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide3.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide4.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide5.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide6.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide7.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide8.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide9.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide10.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide11.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide12.svg" altText=""/> </SwiperSlide>
+            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide13.svg" altText=""/> </SwiperSlide>
+        </SwiperWrapper>
+        <SwiperButtonPrev />
+        <SwiperButtonNext />
+        <SwiperPagination />
+        </Swiper>
+    </center>
     <ul>
         <li> General astronomical image and data analysis</li>
         <li> Interactive image display similar to DS9</li>
@@ -93,11 +152,6 @@ import DownloadPicker from '../components/DownloadPicker.astro';
         <li> Automated check for nearby eclipsing binary signals for TESS follow-up (thanks to Dennis Conti)</li>
     </ul>
 </section>
-
-
-<center>
-<embed src="AstroImageJ_Panels.pdf" type="application/pdf" width="900px" height="530px" title="AstroImageJ Panels and Features" />
-</center>
 
 <section id="docs">
     <h2>Documentation</h2>

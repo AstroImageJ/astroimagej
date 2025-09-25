@@ -206,12 +206,20 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString()
             );
-            Process p = pb.start();
+            try {
+                Process p = pb.start();
+            } catch (Exception e) {
+                IJ.error("Updater", "Failed to run elevator: " + e.getMessage());
+                e.printStackTrace();
+                return;
+            }
 
             System.exit(0);
         } else if (IJ.isMacOSX() || IJ.isLinux()) {
             var perms = Files.getPosixFilePermissions(tmp);
             perms.add(PosixFilePermission.OWNER_EXECUTE);
+            perms.add(PosixFilePermission.GROUP_EXECUTE);
+            perms.add(PosixFilePermission.OTHERS_EXECUTE);
             Files.setPosixFilePermissions(tmp, perms);
             ProcessBuilder pb = new ProcessBuilder(
                     tmp.toAbsolutePath().toString(),
@@ -219,7 +227,13 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString()
             );
-            Process p = pb.start();
+            try {
+                Process p = pb.start();
+            } catch (Exception e) {
+                IJ.error("Updater", "Failed to run elevator: " + e.getMessage());
+                e.printStackTrace();
+                return;
+            }
 
             System.exit(0);
         }
@@ -550,7 +564,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     try {
                         downloadSpecificVersion((MetaVersion.VersionEntry) selector.getSelectedItem());
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        e.printStackTrace();
                     }
                 });
             } catch (Exception e) {

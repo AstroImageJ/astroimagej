@@ -1,4 +1,5 @@
 ---
+import '../styles/global.scss';
 import fs from 'fs';
 import path from "path";
 
@@ -83,7 +84,7 @@ function versionToUrl(version) {
     <title>Downloads — AstroImageJ</title>
     <style>
       :root{--accent:#f9a825;--muted:#666}
-      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;padding:1rem;background:#fff;color:#111}
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:1rem;background:#fff;color:#111}
       .wrap{max-width:1000px;margin:0 auto}
       h1{margin:0 0 .25rem}
       a{color:var(--accent)}
@@ -111,6 +112,23 @@ function versionToUrl(version) {
       }
     </style>
   </head>
+
+  <header>
+  	<nav>
+  		<h2 id="site_title">
+  			<a href="/">
+  				<embed src="/favicon.svg" type="image/svg+xml" width="32" height="32"/>
+  				AstroImageJ
+  			</a>
+  		</h2>
+  		<div class="links">
+  			<a href="/">Home</a>
+  			<a href="https://github.com/AstroImageJ/AstroImageJ">Github</a>
+  			<a href="/#download">Download</a>
+  			<a href="/#contact">Contact</a>
+  		</div>
+  	</nav>
+  </header>
 
   <body>
     <div class="wrap">

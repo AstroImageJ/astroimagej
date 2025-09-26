@@ -4907,7 +4907,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
                         }
 
-                        shapedApertureRois.get(ap).setEllipticalBaseRadius(vradius);
+                        if (useVariableAp) {
+                            shapedApertureRois.get(ap).setEllipticalBaseRadius(vradius);
+                        }
 
                         // MEASURE NEW POSITION
                         boolean holdReposition = Prefs.get("aperture.reposition", reposition);

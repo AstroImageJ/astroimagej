@@ -186,5 +186,25 @@ function versionToUrl(version) {
 
       <p class="small">If auto-detection picks the wrong file, use the global selector above to override for all releases.</p>
     </div>
+    <script>
+      // Copy SHA256 on button click
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button.copy');
+        if (!btn) return;
+        const sha = btn.getAttribute('data-sha');
+        if (!sha) return;
+        const text = btn.textContent;
+        try {
+          await navigator.clipboard.writeText(sha);
+          btn.textContent = "Copied!";
+          setTimeout(()=> btn.textContent = text, 2000);
+        } catch (err) {
+          console.error("Clipboard write failed", err);
+          // fallback: select the short text so user can copy manually
+          btn.textContent = "Copy failed";
+          setTimeout(()=> btn.textContent = text, 2000);
+        }
+      });
+    </script>
   </body>
 </html>

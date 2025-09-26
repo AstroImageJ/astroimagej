@@ -1815,6 +1815,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
 
+                    apMag = ap.getAMag();
                     setApertureName(ap.getName());
                     measureAperture(hdr, ap);
 

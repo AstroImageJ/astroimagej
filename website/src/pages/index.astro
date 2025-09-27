@@ -89,40 +89,6 @@ import { Swiper, SwiperWrapper, SwiperSlide, SwiperPagination, SwiperButtonPrev,
 
 <section id="features">
     <h2>Key Features</h2>
-    <center>
-        <Swiper class="presentation-swiper"
-              // check options at https://swiperjs.com/swiper-api
-              options={{
-                navigation: {
-                  nextEl: ".swiper-button-next",
-                  prevEl: ".swiper-button-prev",
-                },
-                pagination: {
-                  el: ".swiper-pagination",
-                  type: "progressbar",
-                },
-              }}
-        >
-        <SwiperWrapper>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide1.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide2.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide3.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide4.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide5.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide6.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide7.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide8.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide9.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide10.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide11.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide12.svg" altText=""/> </SwiperSlide>
-            <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide13.svg" altText=""/> </SwiperSlide>
-        </SwiperWrapper>
-        <SwiperButtonPrev />
-        <SwiperButtonNext />
-        <SwiperPagination />
-        </Swiper>
-    </center>
     <ul>
         <li> General astronomical image and data analysis</li>
         <li> Interactive image display similar to DS9</li>
@@ -152,6 +118,40 @@ import { Swiper, SwiperWrapper, SwiperSlide, SwiperPagination, SwiperButtonPrev,
         <li> Optionally create AAVSO formatted lightcurves</li>
         <li> Automated check for nearby eclipsing binary signals for TESS follow-up (thanks to Dennis Conti)</li>
     </ul>
+        <center>
+            <Swiper class="presentation-swiper"
+                  // check options at https://swiperjs.com/swiper-api
+                  options={{
+                    navigation: {
+                      nextEl: ".swiper-button-next",
+                      prevEl: ".swiper-button-prev",
+                    },
+                    pagination: {
+                      el: ".swiper-pagination",
+                      type: "progressbar",
+                    },
+                  }}
+            >
+            <SwiperWrapper>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide1.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide2.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide3.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide4.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide5.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide6.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide7.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide8.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide9.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide10.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide11.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide12.svg" altText=""/> </SwiperSlide>
+                <SwiperSlide> <ImageCard imagePath="/src/assets/presentation/Slide13.svg" altText=""/> </SwiperSlide>
+            </SwiperWrapper>
+            <SwiperButtonPrev />
+            <SwiperButtonNext />
+            <SwiperPagination />
+            </Swiper>
+        </center>
 </section>
 
 <section id="docs">

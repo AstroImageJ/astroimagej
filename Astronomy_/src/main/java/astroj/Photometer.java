@@ -1501,6 +1501,7 @@ public class Photometer {
                 back = backAdder.sum();
                 back2 = back * back;
                 backCount = backCountAdder.sum();
+                sourceCount = sourceCountAdder.sum();
             } else {
                 for (int j = j1; j <= j2; j++) {
                     dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;

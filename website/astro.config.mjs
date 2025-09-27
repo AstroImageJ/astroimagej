@@ -15,7 +15,7 @@ export default defineConfig({
                 baseUrl: 'https://github.com/AstroImageJ/astroimagej/edit/master/website/',
             },
             components: {
-                SocialIcons: './src/components/StarlightHeader.astro',
+                SocialIcons: './src/components/StarlightSocialIcons.astro',
             },
         }),
     ],

@@ -292,15 +292,16 @@ const payloadJson = JSON.stringify(payload);
           // no-op
           return;
         }
+        const text = copyBtn.textContent;
         try {
           await navigator.clipboard.writeText(shaVal);
           copyBtn.textContent = "Copied!";
-          setTimeout(()=> copyBtn.textContent = "Copy SHA-256", 2000);
+          setTimeout(()=> copyBtn.textContent = text, 2000);
         } catch (err) {
           console.error("Clipboard write failed", err);
           // fallback: select the short text so user can copy manually
           copyBtn.textContent = "Copy failed";
-          setTimeout(()=> copyBtn.textContent = "Copy SHA-256", 2000);
+          setTimeout(()=> copyBtn.textContent = text, 2000);
         }
       }, { once: false });
     }

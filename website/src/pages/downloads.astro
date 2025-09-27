@@ -1,4 +1,5 @@
 ---
+import '../styles/global.scss';
 import fs from 'fs';
 import path from "path";
 
@@ -83,7 +84,7 @@ function versionToUrl(version) {
     <title>Downloads — AstroImageJ</title>
     <style>
       :root{--accent:#f9a825;--muted:#666}
-      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;padding:1rem;background:#fff;color:#111}
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:1rem;background:#fff;color:#111}
       .wrap{max-width:1000px;margin:0 auto}
       h1{margin:0 0 .25rem}
       a{color:var(--accent)}
@@ -109,17 +110,58 @@ function versionToUrl(version) {
         .asset{border-top:1px dashed #0b3246}
         button.copy{background:#0b2a3d;color:#dfefff;border:1px solid #0b2a3d}
       }
+      code {
+        background-color: #0b3246;
+        padding: 0.1rem 0.2rem;
+        border-radius: 0.5rem;
+      }
+      table, th, td {
+        overflow-x: auto;
+        border-radius: 6px;
+        border: 1px solid #0b3246;
+        background-color: #072233;
+        border-collapse: collapse;
+      }
     </style>
   </head>
+
+  <header>
+  	<nav>
+  		<h2 id="site_title">
+  			<a href="/">
+  				<embed src="/favicon.svg" type="image/svg+xml" width="32" height="32"/>
+  				AstroImageJ
+  			</a>
+  		</h2>
+  		<div class="links">
+  			<a href="/">Home</a>
+  			<a href="https://github.com/AstroImageJ/AstroImageJ">Github</a>
+  			<a href="/#download">Download</a>
+  			<a href="/#contact">Contact</a>
+  		</div>
+  	</nav>
+  </header>
 
   <body>
     <div class="wrap">
       <h1>Downloads</h1>
 
-      <div class="info">
+      <div class="signatures">
         <p> Signatures can be verified using <a href="https://docs.sigstore.dev/quickstart/quickstart-cosign/#verifying-a-signed-blob" target="_blank" rel="noopener noreferrer">Sigstore</a>. </p>
-        <p> For Sigstore verification, the signing identity is <code>https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master</code>
-        and the OIDC provider is <code>https://token.actions.githubusercontent.com</code>. </p>
+          <table>
+              <tr>
+                <td>Signing Identity</td>
+                <td><code>https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master</code></td>
+              </tr>
+              <tr>
+               <td>OIDC Provider</td>
+               <td><code>https://token.actions.githubusercontent.com</code></td>
+              </tr>
+          </table>
+      </div>
+      <br>
+
+      <div class="info">
         <p><a href="https://support.apple.com/en-us/116943#:~:text=On%20Mac%20computers%20with%20Apple,name%20of%20an%20Intel%20processor." target="_blank" rel="noopener">Which Mac version do I need?</a></p>
         <p><a href="https://github.com/AstroImageJ/AstroImageJ" target="_blank" rel="noopener">View the source on GitHub</a></p>
       </div>
@@ -165,8 +207,26 @@ function versionToUrl(version) {
           </section>
         ))}
       </div>
-
-      <p class="small">If auto-detection picks the wrong file, use the global selector above to override for all releases.</p>
     </div>
+    <script>
+      // Copy SHA256 on button click
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button.copy');
+        if (!btn) return;
+        const sha = btn.getAttribute('data-sha');
+        if (!sha) return;
+        const text = btn.textContent;
+        try {
+          await navigator.clipboard.writeText(sha);
+          btn.textContent = "Copied!";
+          setTimeout(()=> btn.textContent = text, 2000);
+        } catch (err) {
+          console.error("Clipboard write failed", err);
+          // fallback: select the short text so user can copy manually
+          btn.textContent = "Copy failed";
+          setTimeout(()=> btn.textContent = text, 2000);
+        }
+      });
+    </script>
   </body>
 </html>

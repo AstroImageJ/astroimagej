@@ -4,6 +4,7 @@ import astroj.MeasurementTable;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.astro.io.prefs.Property;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.plugin.PlugIn;
@@ -29,6 +30,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Periodogram_ implements PlugIn {
+    private static final Property<String> DATA_SOURCE = new Property<>("Synthetic", Periodogram_.class);
+    private static final Property<String> ALGORITHM = new Property<>("BLS", Periodogram_.class);
+    private static final Property<String> T0_MASK = new Property<>("Model center (sliding fit)", Periodogram_.class);
+    private static final Property<String> TIME_COL = new Property<>("", Periodogram_.class);
+    private static final Property<String> FLUX_COL = new Property<>("", Periodogram_.class);
+    private static final Property<Double> MIN_PERIOD = new Property<>(0.0, Periodogram_.class);
+    private static final Property<Double> MAX_PERIOD = new Property<>(0.0, Periodogram_.class);
+    private static final Property<Double> STEPS = new Property<>(5000.0, Periodogram_.class);
+    private static final Property<Double> MIN_FRACTIONAL_DURATION = new Property<>(0.01, Periodogram_.class);
+    private static final Property<Double> MAX_FRACTIONAL_DURATION = new Property<>(0.1, Periodogram_.class);
+    private static final Property<Double> DURATION_STEPS = new Property<>(200.0, Periodogram_.class);
+    private static final Property<Double> PEAK_WIDTH_CUTOFF = new Property<>(0.2, Periodogram_.class);
+    private static final Property<Double> PEAK_COUNT = new Property<>(1.0, Periodogram_.class);
+    private static final Property<Double> PLANET_COUNT = new Property<>(1.0, Periodogram_.class);
+    private static final Property<Double> TRANSIT_MASK_FACTOR = new Property<>(3.0, Periodogram_.class);
+    private static final Property<Double> MASK_FACTOR_PERIOD = new Property<>(0.1, Periodogram_.class);
+    private static final Property<Double> LIMB_U1 = new Property<>(0.3, Periodogram_.class);
+    private static final Property<Double> LIMB_U2 = new Property<>(0.3, Periodogram_.class);
+
     @Override
     public void run(String arg) {
         // Gather measurement tables
@@ -42,14 +62,20 @@ public class Periodogram_ implements PlugIn {
         String[] dataSources = dataSourceList.toArray(new String[0]);
         String defaultDataSource = (tableNames != null && tableNames.length > 0) ? tableNames[0] : "Synthetic";
 
+        // Use previous source
+        if (dataSourceList.contains(DATA_SOURCE.get())) {
+            defaultDataSource = DATA_SOURCE.get();
+        }
+
         GenericDialog gd = new GenericDialog("Periodogram");
         gd.addChoice("Data Source", dataSources, defaultDataSource);
-        gd.addChoice("Algorithm", new String[]{"BLS", "TLS", "Lomb-Scargle"}, "BLS");
+        gd.addChoice("Algorithm", new String[]{"BLS", "TLS", "Lomb-Scargle"}, ALGORITHM.get());
         gd.showDialog();
         if (gd.wasCanceled()) return;
 
         String dataSource = gd.getNextChoice();
         String algorithm = gd.getNextChoice();
+        ALGORITHM.set(algorithm);
         boolean isMeasurementTable = false;
         if (tableNames != null) {
             for (String t : tableNames) {
@@ -74,19 +100,19 @@ public class Periodogram_ implements PlugIn {
                         return;
                     }
                     GenericDialog gdCol = new GenericDialog("BLS Settings");
-                    gdCol.addChoice("Time column", columns, columns[0]);
-                    gdCol.addChoice("Flux column", columns, columns[1]);
-                    gdCol.addNumericField("Min period", 0.0, 6, 12, null); // 0 means auto
-                    gdCol.addNumericField("Max period", 0.0, 6, 12, null); // 0 means auto
-                    gdCol.addNumericField("Steps", 5000, 0, 6, null);
-                    gdCol.addNumericField("Min fractional duration (0-1)", 0.01, 3);
-                    gdCol.addNumericField("Max fractional duration (0-1)", 0.1, 3);
-                    gdCol.addNumericField("Duration steps", 200, 0);
-                    gdCol.addNumericField("Peak width cutoff (0-1)", 0.2, 2, 6, null);
-                    gdCol.addNumericField("Number of peaks", 1, 0, 6, null);
-                    gdCol.addNumericField("Number of planets to search", 1, 0);
-                    gdCol.addNumericField("In-transit masking factor", 3.0, 2);
-                    gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, "Model center (sliding fit)");
+                    gdCol.addChoice("Time column", columns, TIME_COL.get().isEmpty() ? columns[0] : TIME_COL.get());
+                    gdCol.addChoice("Flux column", columns, FLUX_COL.get().isEmpty() ? columns[1] : FLUX_COL.get());
+                    gdCol.addNumericField("Min period", MIN_PERIOD.get(), 6, 12, null); // 0 means auto
+                    gdCol.addNumericField("Max period", MAX_PERIOD.get(), 6, 12, null); // 0 means auto
+                    gdCol.addNumericField("Steps", STEPS.get(), 0, 6, null);
+                    gdCol.addNumericField("Min fractional duration (0-1)", MIN_FRACTIONAL_DURATION.get(), 3);
+                    gdCol.addNumericField("Max fractional duration (0-1)", MAX_FRACTIONAL_DURATION.get(), 3);
+                    gdCol.addNumericField("Duration steps", DURATION_STEPS.get(), 0);
+                    gdCol.addNumericField("Peak width cutoff (0-1)", PEAK_WIDTH_CUTOFF.get(), 2, 6, null);
+                    gdCol.addNumericField("Number of peaks", PEAK_COUNT.get(), 0, 6, null);
+                    gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
+                    gdCol.addNumericField("In-transit masking factor", TRANSIT_MASK_FACTOR.get(), 2);
+                    gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, T0_MASK.get());
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -102,6 +128,18 @@ public class Periodogram_ implements PlugIn {
                     int nPlanets = (int) gdCol.getNextNumber();
                     double maskFactor = gdCol.getNextNumber();
                     String t0MaskingChoice = gdCol.getNextChoice();
+                    TIME_COL.set(timeCol);
+                    FLUX_COL.set(fluxCol);
+                    MIN_PERIOD.set(minPeriodUser);
+                    MAX_PERIOD.set(maxPeriodUser);
+                    STEPS.set((double) nPeriods);
+                    MIN_FRACTIONAL_DURATION.set(minFracDur);
+                    MAX_FRACTIONAL_DURATION.set(maxFracDur);
+                    DURATION_STEPS.set((double) nDurations);
+                    PEAK_WIDTH_CUTOFF.set((double) userNumPeaks);
+                    PLANET_COUNT.set((double) nPlanets);
+                    TRANSIT_MASK_FACTOR.set(maskFactor);
+                    T0_MASK.set(t0MaskingChoice);
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;
@@ -806,15 +844,15 @@ public class Periodogram_ implements PlugIn {
                     return;
                 }
                 GenericDialog gdCol = new GenericDialog("Lomb-Scargle Settings");
-                gdCol.addChoice("Time column", columns, columns[0]);
-                gdCol.addChoice("Flux column", columns, columns[1]);
-                gdCol.addNumericField("Min period", 0.0, 6, 12, null); // 0 means auto
-                gdCol.addNumericField("Max period", 0.0, 6, 12, null); // 0 means auto
-                gdCol.addNumericField("Steps", 5000, 0, 6, null);
-                gdCol.addNumericField("Peak width cutoff (0-1)", 0.2, 2, 6, null);
-                gdCol.addNumericField("Number of peaks", 1, 0, 6, null);
-                gdCol.addNumericField("Number of planets to search", 1, 0);
-                gdCol.addNumericField("Masking factor (in period phase)", 0.1, 3);
+                gdCol.addChoice("Time column", columns, TIME_COL.get().isEmpty() ? columns[0] : TIME_COL.get());
+                gdCol.addChoice("Flux column", columns, FLUX_COL.get().isEmpty() ? columns[1] : FLUX_COL.get());
+                gdCol.addNumericField("Min period", MIN_PERIOD.get(), 6, 12, null); // 0 means auto
+                gdCol.addNumericField("Max period", MAX_PERIOD.get(), 6, 12, null); // 0 means auto
+                gdCol.addNumericField("Steps", STEPS.get(), 0, 6, null);
+                gdCol.addNumericField("Peak width cutoff (0-1)", PEAK_WIDTH_CUTOFF.get(), 2, 6, null);
+                gdCol.addNumericField("Number of peaks", PEAK_COUNT.get(), 0, 6, null);
+                gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
+                gdCol.addNumericField("Masking factor (in period phase)", MASK_FACTOR_PERIOD.get(), 3);
                 gdCol.showDialog();
                 if (gdCol.wasCanceled()) return;
                 String timeCol = gdCol.getNextChoice();
@@ -826,6 +864,15 @@ public class Periodogram_ implements PlugIn {
                 int userNumPeaks = (int) gdCol.getNextNumber();
                 int nPlanets = (int) gdCol.getNextNumber();
                 double maskFactor = gdCol.getNextNumber();
+                TIME_COL.set(timeCol);
+                FLUX_COL.set(fluxCol);
+                MIN_PERIOD.set(minPeriodUser);
+                MAX_PERIOD.set(maxPeriodUser);
+                STEPS.set((double) nPeriods);
+                PEAK_WIDTH_CUTOFF.set((double) userNumPeaks);
+                PLANET_COUNT.set((double) nPlanets);
+                MASK_FACTOR_PERIOD.set(maskFactor);
+
                 time = table.getDoubleColumn(table.getColumnIndex(timeCol));
                 flux = table.getDoubleColumn(table.getColumnIndex(fluxCol));
                 if (time == null || flux == null || time.length != flux.length || time.length < 2) {
@@ -1131,21 +1178,21 @@ public class Periodogram_ implements PlugIn {
                         return;
                     }
                     GenericDialog gdCol = new GenericDialog("TLS Settings");
-                    gdCol.addChoice("Time column", columns, columns[0]);
-                    gdCol.addChoice("Flux column", columns, columns[1]);
-                    gdCol.addNumericField("Min period", 0.0, 6, 12, null); // 0 means auto
-                    gdCol.addNumericField("Max period", 0.0, 6, 12, null); // 0 means auto
-                    gdCol.addNumericField("Steps", 5000, 0, 6, null);
-                    gdCol.addNumericField("Min fractional duration (0-1)", 0.01, 3);
-                    gdCol.addNumericField("Max fractional duration (0-1)", 0.1, 3);
-                    gdCol.addNumericField("Duration steps", 200, 0);
-                    gdCol.addNumericField("Peak width cutoff (0-1)", 0.2, 2, 6, null);
-                    gdCol.addNumericField("Number of peaks", 1, 0, 6, null);
-                    gdCol.addNumericField("Number of planets to search", 1, 0);
-                    gdCol.addNumericField("In-transit masking factor", 3.0, 2);
-                    gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, "Model center (sliding fit)");
-                    gdCol.addNumericField("Limb darkening u1", 0.3, 3);
-                    gdCol.addNumericField("Limb darkening u2", 0.3, 3);
+                    gdCol.addChoice("Time column", columns, TIME_COL.get().isEmpty() ? columns[0] : TIME_COL.get());
+                    gdCol.addChoice("Flux column", columns, FLUX_COL.get().isEmpty() ? columns[1] : FLUX_COL.get());
+                    gdCol.addNumericField("Min period", MIN_PERIOD.get(), 6, 12, null); // 0 means auto
+                    gdCol.addNumericField("Max period", MAX_PERIOD.get(), 6, 12, null); // 0 means auto
+                    gdCol.addNumericField("Steps", STEPS.get(), 0, 6, null);
+                    gdCol.addNumericField("Min fractional duration (0-1)", MIN_FRACTIONAL_DURATION.get(), 3);
+                    gdCol.addNumericField("Max fractional duration (0-1)", MAX_FRACTIONAL_DURATION.get(), 3);
+                    gdCol.addNumericField("Duration steps", DURATION_STEPS.get(), 0);
+                    gdCol.addNumericField("Peak width cutoff (0-1)", PEAK_WIDTH_CUTOFF.get(), 2, 6, null);
+                    gdCol.addNumericField("Number of peaks", PEAK_COUNT.get(), 0, 6, null);
+                    gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
+                    gdCol.addNumericField("In-transit masking factor", TRANSIT_MASK_FACTOR.get(), 2);
+                    gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, T0_MASK.get());
+                    gdCol.addNumericField("Limb darkening u1", LIMB_U1.get(), 3);
+                    gdCol.addNumericField("Limb darkening u2", LIMB_U2.get(), 3);
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -1163,6 +1210,21 @@ public class Periodogram_ implements PlugIn {
                     String t0MaskingChoice = gdCol.getNextChoice();
                     double u1 = gdCol.getNextNumber();
                     double u2 = gdCol.getNextNumber();
+                    TIME_COL.set(timeCol);
+                    FLUX_COL.set(fluxCol);
+                    MIN_PERIOD.set(minPeriod);
+                    MAX_PERIOD.set(maxPeriod);
+                    STEPS.set((double) nPeriods);
+                    MIN_FRACTIONAL_DURATION.set(minFracDur);
+                    MAX_FRACTIONAL_DURATION.set(maxFracDur);
+                    DURATION_STEPS.set((double) nDurations);
+                    PEAK_WIDTH_CUTOFF.set((double) userNumPeaks);
+                    PLANET_COUNT.set((double) nPlanets);
+                    TRANSIT_MASK_FACTOR.set(maskFactor);
+                    T0_MASK.set(t0MaskingChoice);
+                    LIMB_U1.set(u1);
+                    LIMB_U2.set(u2);
+
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;

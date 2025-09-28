@@ -417,7 +417,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     MenuItem apertureSettingsMenuItem, multiApertureMenuItem, multiPlotMenuItem, openMeasurementsTableMenuItem, threeDSurfacePlotMenuItem;
     MenuItem bestEdgesMenuItem, imageCalcMenuItem, seeingProfileMenuItem, dynamicProfilerMenuItem;
     MenuItem contourLinesMenuItem, contourPlottersMenuItem, azimuthalAverageMenuItem;
-    MenuItem measurementSettingsMenuItem, measurementMenuItem, smoothMenuItem, sharpenMenuItem, removeOutliersMenuItem;
+    MenuItem measurementSettingsMenuItem, measurementMenuItem, periodogramMenuItem, smoothMenuItem, sharpenMenuItem, removeOutliersMenuItem;
     MenuItem dataReducerMenuItem, selectBestFramesMenuItem, setPixelScaleMenuItem, setZoomIndicatorSizeMenuItem, setAutoScaleParametersMenuItem,
             grabAutoScaleParametersMenuItem, resetAutoScaleParametersMenuItem;
     MenuItem defaultAnnotationColorMenuItem, defaultMeasurementColorMenuItem;
@@ -1778,6 +1778,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         measurementMenuItem = new MenuItem("Measure *");
         measurementMenuItem.addActionListener(this);
         analyzeMenu.add(measurementMenuItem);
+
+        periodogramMenuItem = new MenuItem("Periodogram Analysis...");
+        periodogramMenuItem.addActionListener(this);
+        analyzeMenu.add(periodogramMenuItem);
 
         analyzeMenu.addSeparator();
 
@@ -3804,6 +3808,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             IJ.runPlugIn("Astronomy.MultiPlot_", "");
         } else if (b == measurementMenuItem) {
             IJ.run("Measure", "");
+        } else if (b == periodogramMenuItem) {
+            IJ.run("Astronomy.Periodogram_", "");
         } else if (b == seeingProfileMenuItem) {
             IJ.runPlugIn("Astronomy.Seeing_Profile", "");
         } else if (b == staticProfilerMenuItem) {

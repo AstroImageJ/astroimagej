@@ -2,21 +2,23 @@ package Astronomy;
 
 /**
  * Mandel & Agol (2002) analytic transit model for quadratic limb darkening.
- * Reference: https://arxiv.org/abs/astro-ph/0210099
+ * <p>
+ * Reference: <a href="https://arxiv.org/abs/astro-ph/0210099">Arxiv</a>
  */
 public class MandelAgolTransitModel {
     /**
      * Compute the normalized flux for a given phase array.
-     * @param phase Array of phases (0 = mid-transit)
-     * @param period Orbital period (days)
-     * @param t0 Transit center (same units as phase)
+     *
+     * @param phase    Array of phases (0 = mid-transit)
+     * @param period   Orbital period (days)
+     * @param t0       Transit center (same units as phase)
      * @param duration Transit duration (days)
-     * @param depth Transit depth (fractional, e.g. 0.01 for 1%)
-     * @param rprs Planet/star radius ratio (sqrt(depth) if no limb darkening)
-     * @param aRs Scaled semi-major axis (a/Rs)
-     * @param inc Inclination (degrees)
-     * @param u1 Linear limb darkening coefficient
-     * @param u2 Quadratic limb darkening coefficient
+     * @param depth    Transit depth (fractional, e.g. 0.01 for 1%)
+     * @param rprs     Planet/star radius ratio (sqrt(depth) if no limb darkening)
+     * @param aRs      Scaled semi-major axis (a/Rs)
+     * @param inc      Inclination (degrees)
+     * @param u1       Linear limb darkening coefficient
+     * @param u2       Quadratic limb darkening coefficient
      * @return Array of normalized fluxes
      */
     public static double[] compute(double[] time, double period, double t0, double duration, double depth, double rprs, double aRs, double inc, double u1, double u2) {

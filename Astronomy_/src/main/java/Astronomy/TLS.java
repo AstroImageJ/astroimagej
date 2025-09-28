@@ -1,42 +1,31 @@
 package Astronomy;
 
 import ij.IJ;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.IntConsumer;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
+
+import static Astronomy.Periodogram_.huberLoss;
 
 public class TLS {
-    public static class Result {
-        public double[] periods;
-        public double[] sde;
-        public double[] bestDurations;
-        public double[] bestDepths;
-        public double t0_sliding;
-        public double t0_minavg;
-        public Result(double[] periods, double[] sde, double[] bestDurations, double[] bestDepths, double t0_sliding, double t0_minavg) {
-            this.periods = periods;
-            this.sde = sde;
-            this.bestDurations = bestDurations;
-            this.bestDepths = bestDepths;
-            this.t0_sliding = t0_sliding;
-            this.t0_minavg = t0_minavg;
-        }
-    }
-
     /**
      * Perform a parallel TLS search using the Mandel & Agol model.
-     * @param time Time array
-     * @param flux Flux array
-     * @param minPeriod Minimum period (days)
-     * @param maxPeriod Maximum period (days)
-     * @param nPeriods Number of period steps
-     * @param minDuration Minimum duration (days)
-     * @param maxDuration Maximum duration (days)
-     * @param nDurations Number of duration steps
-     * @param u1 Linear limb darkening coefficient (default 0.3)
-     * @param u2 Quadratic limb darkening coefficient (default 0.3)
+     *
+     * @param time             Time array
+     * @param flux             Flux array
+     * @param minPeriod        Minimum period (days)
+     * @param maxPeriod        Maximum period (days)
+     * @param nPeriods         Number of period steps
+     * @param minDuration      Minimum duration (days)
+     * @param maxDuration      Maximum duration (days)
+     * @param nDurations       Number of duration steps
+     * @param u1               Linear limb darkening coefficient (default 0.3)
+     * @param u2               Quadratic limb darkening coefficient (default 0.3)
      * @param progressCallback Callback to report progress (period index)
      * @return Result object with period grid and SDE
      */
@@ -190,14 +179,14 @@ public class TLS {
         double minTauFrac = 0.01;
         double maxTauFrac = 0.99;
         double tauFracStep = 0.01;
-        int nTau = (int)Math.round((maxTauFrac - minTauFrac) / tauFracStep) + 1;
+        int nTau = (int) Math.round((maxTauFrac - minTauFrac) / tauFracStep) + 1;
         double phaseStep = (bestDuration / bestPeriod) / 200.0;
-        int nPhaseSteps = (int)Math.ceil(1.0 / phaseStep);
+        int nPhaseSteps = (int) Math.ceil(1.0 / phaseStep);
         double delta = 0.002; // Huber loss parameter
         int halfPhaseSteps = nPhaseSteps / 2;
-        System.out.printf("[TLS DIAG] Sliding fit scan: %d steps, phase range = %.6f to %.6f around t0MinAvg\n", 
-            nPhaseSteps, t0MinAvg - halfPhaseSteps * bestPeriod / nPhaseSteps, t0MinAvg + halfPhaseSteps * bestPeriod / nPhaseSteps);
-        
+        System.out.printf("[TLS DIAG] Sliding fit scan: %d steps, phase range = %.6f to %.6f around t0MinAvg\n",
+                nPhaseSteps, t0MinAvg - halfPhaseSteps * bestPeriod / nPhaseSteps, t0MinAvg + halfPhaseSteps * bestPeriod / nPhaseSteps);
+
         // Pre-calculate phases using time[0] as reference (like BLS)
         double[] phasesForSliding = new double[flux.length];
         double phaseRef = time[0];
@@ -306,17 +295,21 @@ public class TLS {
         return Double.NEGATIVE_INFINITY;
     }
 
-    // Add Huber loss helper
-    private static double huberLoss(double[] residuals, double delta) {
-        double sum = 0.0;
-        for (int i = 0; i < residuals.length; i++) {
-            double r = residuals[i];
-            if (Math.abs(r) <= delta) {
-                sum += 0.5 * r * r;
-            } else {
-                sum += delta * (Math.abs(r) - 0.5 * delta);
-            }
+    public static class Result {
+        public double[] periods;
+        public double[] sde;
+        public double[] bestDurations;
+        public double[] bestDepths;
+        public double t0_sliding;
+        public double t0_minavg;
+
+        public Result(double[] periods, double[] sde, double[] bestDurations, double[] bestDepths, double t0_sliding, double t0_minavg) {
+            this.periods = periods;
+            this.sde = sde;
+            this.bestDurations = bestDurations;
+            this.bestDepths = bestDepths;
+            this.t0_sliding = t0_sliding;
+            this.t0_minavg = t0_minavg;
         }
-        return sum / residuals.length;
     }
 } 

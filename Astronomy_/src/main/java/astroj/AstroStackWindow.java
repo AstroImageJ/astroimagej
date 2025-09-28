@@ -3809,7 +3809,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         } else if (b == measurementMenuItem) {
             IJ.run("Measure", "");
         } else if (b == periodogramMenuItem) {
-            IJ.run("Astronomy.Periodogram_", "");
+            IJ.runPlugIn("Astronomy.Periodogram_", "");
         } else if (b == seeingProfileMenuItem) {
             IJ.runPlugIn("Astronomy.Seeing_Profile", "");
         } else if (b == staticProfilerMenuItem) {

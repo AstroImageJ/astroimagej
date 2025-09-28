@@ -51,10 +51,12 @@ public class Periodogram_ implements PlugIn {
         String dataSource = gd.getNextChoice();
         String algorithm = gd.getNextChoice();
         boolean isMeasurementTable = false;
-        for (String t : tableNames) {
-            if (dataSource.equals(t)) {
-                isMeasurementTable = true;
-                break;
+        if (tableNames != null) {
+            for (String t : tableNames) {
+                if (dataSource.equals(t)) {
+                    isMeasurementTable = true;
+                    break;
+                }
             }
         }
 
@@ -341,20 +343,7 @@ public class Periodogram_ implements PlugIn {
                                     if (bin >= nBins) bin = nBins - 1;
                                     binFluxes.get(bin).add(sortedFlux[i]);
                                 }
-                                double minAvg = Double.POSITIVE_INFINITY;
-                                int minBin = -1;
-                                for (int i = 0; i < nBins; i++) {
-                                    List<Double> fluxes = binFluxes.get(i);
-                                    if (fluxes.size() < minPointsPerBin) continue;
-                                    double sum = 0.0;
-                                    for (double v : fluxes) sum += v;
-                                    double avg = sum / fluxes.size();
-                                    if (avg < minAvg) {
-                                        minAvg = avg;
-                                        minBin = i;
-                                    }
-                                }
-                                double minPhase = (minBin + 0.5) / nBins;
+                                double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
                                 minAverageT0 = (bjdOffset + bestPhase + 0.5 * bestDuration) + minPhase * bestPeriod;
                             }
                             System.out.printf("[DIAG] minAverageT0 = %.6f\n", minAverageT0);
@@ -577,20 +566,7 @@ public class Periodogram_ implements PlugIn {
                                 if (bin >= nBins) bin = nBins - 1;
                                 binFluxes.get(bin).add(sortedFlux[i]);
                             }
-                            double minAvg = Double.POSITIVE_INFINITY;
-                            int minBin = -1;
-                            for (int i = 0; i < nBins; i++) {
-                                List<Double> fluxes = binFluxes.get(i);
-                                if (fluxes.size() < minPointsPerBin) continue;
-                                double sum = 0.0;
-                                for (double v : fluxes) sum += v;
-                                double avg = sum / fluxes.size();
-                                if (avg < minAvg) {
-                                    minAvg = avg;
-                                    minBin = i;
-                                }
-                            }
-                            double minPhase = (minBin + 0.5) / nBins;
+                            double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
                             t0_ref_masking_model_center = modelCenterTimeForMasking + minPhase * bestPeriod;
                         }
                         // Min average (phase bin)
@@ -612,20 +588,7 @@ public class Periodogram_ implements PlugIn {
                                 if (bin >= nBins) bin = nBins - 1;
                                 binFluxes.get(bin).add(sortedFlux[i]);
                             }
-                            double minAvg = Double.POSITIVE_INFINITY;
-                            int minBin = -1;
-                            for (int i = 0; i < nBins; i++) {
-                                List<Double> fluxes = binFluxes.get(i);
-                                if (fluxes.size() < minPointsPerBin) continue;
-                                double sum = 0.0;
-                                for (double v : fluxes) sum += v;
-                                double avg = sum / fluxes.size();
-                                if (avg < minAvg) {
-                                    minAvg = avg;
-                                    minBin = i;
-                                }
-                            }
-                            double minPhase = (minBin + 0.5) / nBins;
+                            double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
                             t0_ref_masking_min_avg = minAverageT0 + minPhase * bestPeriod;
                         }
                         // Save all peaks for this iteration
@@ -657,20 +620,7 @@ public class Periodogram_ implements PlugIn {
                                 if (bin >= nBins) bin = nBins - 1;
                                 binFluxes.get(bin).add(sortedFlux[i]);
                             }
-                            double minAvg = Double.POSITIVE_INFINITY;
-                            int minBin = -1;
-                            for (int i = 0; i < nBins; i++) {
-                                List<Double> fluxes = binFluxes.get(i);
-                                if (fluxes.size() < minPointsPerBin) continue;
-                                double sum = 0.0;
-                                for (double v : fluxes) sum += v;
-                                double avg = sum / fluxes.size();
-                                if (avg < minAvg) {
-                                    minAvg = avg;
-                                    minBin = i;
-                                }
-                            }
-                            double minPhase = (minBin + 0.5) / nBins;
+                            double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
                             t0_ref_masking = t0_ref_masking + minPhase * bestPeriod;
                             // Mask in-transit points using this T0
                             double halfMask = 0.5 * maskFactor * bestDuration;
@@ -794,104 +744,11 @@ public class Periodogram_ implements PlugIn {
                         lastIter = pr.iteration;
                     }
                     // Show results in a JTable with Save as CSV button
-                    SwingUtilities.invokeLater(() -> {
-                        String[] columnNames = {"Iter", "Pk", "Period", "Power", "Duration (hr)", "Depth", "Phase", "T0 (masking, Model center)"};
-                        List<String[]> rowList = new ArrayList<>();
-                        String[] lines = resultMsg.toString().split("\\n");
-                        for (String line : lines) {
-                            if (line.trim().isEmpty() || line.startsWith("Iter") || line.startsWith("----")) continue;
-                            String[] row = line.trim().split("\\s+");
-                            if (row.length >= columnNames.length) rowList.add(row);
-                        }
-                        String[][] data = rowList.toArray(new String[0][]);
-                        JTable blsTable = new JTable(data, columnNames);
-                        blsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                        blsTable.setCellSelectionEnabled(true);
-                        JScrollPane scrollPane = new JScrollPane(blsTable);
-                        JButton saveButton = new JButton("Save as CSV");
-                        saveButton.addActionListener(e -> {
-                            JFileChooser fileChooser = new JFileChooser();
-                            fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
-                            if (fileChooser.showSaveDialog(blsTable) == JFileChooser.APPROVE_OPTION) {
-                                File file = fileChooser.getSelectedFile();
-                                String fname = file.getName().toLowerCase();
-                                if (!fname.endsWith(".csv")) {
-                                    file = new File(file.getParentFile(), file.getName() + ".csv");
-                                }
-                                try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-                                    for (int i = 0; i < columnNames.length; i++) {
-                                        pw.print(columnNames[i]);
-                                        if (i < columnNames.length - 1) pw.print(",");
-                                    }
-                                    pw.println();
-                                    for (String[] row : data) {
-                                        for (int i = 0; i < columnNames.length; i++) {
-                                            pw.print(row.length > i ? row[i] : "");
-                                            if (i < columnNames.length - 1) pw.print(",");
-                                        }
-                                        pw.println();
-                                    }
-                                } catch (Exception ex) {
-                                    JOptionPane.showMessageDialog(blsTable, "Error saving file: " + ex.getMessage());
-                                }
-                            }
-                        });
-                        JPanel panel = new JPanel(new BorderLayout());
-                        panel.add(scrollPane, BorderLayout.CENTER);
-                        panel.add(saveButton, BorderLayout.SOUTH);
-                        JFrame frame = new JFrame("BLS Multi-Planet Results");
-                        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                        frame.setContentPane(panel);
-                        // Auto-resize columns to fit content first
-                        TableColumnModel blsColumnModel = blsTable.getColumnModel();
-                        for (int col = 0; col < blsTable.getColumnCount(); col++) {
-                            int width = 75; // min width
-                            for (int row = 0; row < blsTable.getRowCount(); row++) {
-                                Component comp = blsTable.getCellRenderer(row, col).getTableCellRendererComponent(blsTable, blsTable.getValueAt(row, col), false, false, row, col);
-                                width = Math.max(comp.getPreferredSize().width + 10, width);
-                            }
-                            blsColumnModel.getColumn(col).setPreferredWidth(width);
-                        }
-                        // Dynamically expand the last column (T0...) so full text is visible
-                        if (blsTable.getColumnCount() > 0) {
-                            int lastCol = blsTable.getColumnCount() - 1;
-                            TableColumn col = blsColumnModel.getColumn(lastCol);
-                            JTableHeader headerComp = blsTable.getTableHeader();
-                            Component headerRenderer = col.getHeaderRenderer() != null ?
-                                    col.getHeaderRenderer().getTableCellRendererComponent(blsTable, col.getHeaderValue(), false, false, 0, lastCol)
-                                    : headerComp.getDefaultRenderer().getTableCellRendererComponent(blsTable, col.getHeaderValue(), false, false, 0, lastCol);
-                            int headerWidth = headerRenderer.getPreferredSize().width + 10;
-                            int maxCellWidth = headerWidth;
-                            for (int row = 0; row < blsTable.getRowCount(); row++) {
-                                Component comp = blsTable.getCellRenderer(row, lastCol).getTableCellRendererComponent(blsTable, blsTable.getValueAt(row, lastCol), false, false, row, lastCol);
-                                maxCellWidth = Math.max(maxCellWidth, comp.getPreferredSize().width + 10);
-                            }
-                            col.setPreferredWidth(maxCellWidth);
-                        }
-
-                        // Force the table to recalculate its preferred size with the new column widths
-                        blsTable.setPreferredScrollableViewportSize(blsTable.getPreferredSize());
-
-                        // Use pack() to size the frame based on the updated preferred sizes
-                        frame.pack();
-
-                        // Ensure the frame is wide enough for all columns
-                        Dimension tablePref = blsTable.getPreferredSize();
-                        Dimension scrollPanePref = scrollPane.getPreferredSize();
-                        int requiredWidth = Math.max(tablePref.width, scrollPanePref.width) + 20; // Add small padding
-                        int requiredHeight = scrollPanePref.height + 80; // Add space for save button
-
-                        frame.setSize(requiredWidth, requiredHeight);
-                        // Set minimum size to ensure usability
-                        frame.setMinimumSize(new Dimension(600, 300));
-                        try {
-                            frame.setIconImage(IJ.getInstance().getIconImage());
-                        } catch (Exception ex) {
-                            // Ignore if not running in ImageJ
-                        }
-                        frame.setLocationRelativeTo(null);
-                        frame.setVisible(true);
-                    });
+                    SwingUtilities.invokeLater(() -> 
+                            createResultsTable(new String[]{"Iter", "Pk", "Period", "Power", "Duration (hr)", 
+                                            "Depth", "Phase", "T0 (masking, Model center)"
+                                    },
+                                    resultMsg, "BLS Multi-Planet Results"));
                 }).start();
             } else {
                 IJ.showMessage("Periodogram", "BLS is only implemented for Measurements Table.");
@@ -1202,101 +1059,8 @@ public class Periodogram_ implements PlugIn {
                     lastIter = res.iteration;
                 }
                 SwingUtilities.invokeLater(() -> {
-                    String[] columnNames = {"Iter", "Pk", "Period", "Power", "Mask Center"};
-                    List<String[]> rowList = new ArrayList<>();
-                    String[] lines = resultMsg.toString().split("\\n");
-                    for (String line : lines) {
-                        if (line.trim().isEmpty() || line.startsWith("Iter") || line.startsWith("----")) continue;
-                        String[] row = line.trim().split("\\s+");
-                        if (row.length >= columnNames.length) rowList.add(row);
-                    }
-                    String[][] data = rowList.toArray(new String[0][]);
-                    JTable lsTable = new JTable(data, columnNames);
-                    lsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                    lsTable.setCellSelectionEnabled(true);
-                    JScrollPane scrollPane = new JScrollPane(lsTable);
-                    JButton saveButton = new JButton("Save as CSV");
-                    saveButton.addActionListener(e -> {
-                        JFileChooser fileChooser = new JFileChooser();
-                        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
-                        if (fileChooser.showSaveDialog(lsTable) == JFileChooser.APPROVE_OPTION) {
-                            File file = fileChooser.getSelectedFile();
-                            String fname = file.getName().toLowerCase();
-                            if (!fname.endsWith(".csv")) {
-                                file = new File(file.getParentFile(), file.getName() + ".csv");
-                            }
-                            try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-                                for (int i = 0; i < columnNames.length; i++) {
-                                    pw.print(columnNames[i]);
-                                    if (i < columnNames.length - 1) pw.print(",");
-                                }
-                                pw.println();
-                                for (String[] row : data) {
-                                    for (int i = 0; i < columnNames.length; i++) {
-                                        pw.print(row.length > i ? row[i] : "");
-                                        if (i < columnNames.length - 1) pw.print(",");
-                                    }
-                                    pw.println();
-                                }
-                            } catch (Exception ex) {
-                                JOptionPane.showMessageDialog(lsTable, "Error saving file: " + ex.getMessage());
-                            }
-                        }
-                    });
-                    JPanel panel = new JPanel(new BorderLayout());
-                    panel.add(scrollPane, BorderLayout.CENTER);
-                    panel.add(saveButton, BorderLayout.SOUTH);
-                    JFrame frame = new JFrame("Lomb-Scargle Multi-Planet Results");
-                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                    frame.setContentPane(panel);
-                    // Auto-resize columns to fit content first
-                    TableColumnModel lsColumnModel = lsTable.getColumnModel();
-                    for (int col = 0; col < lsTable.getColumnCount(); col++) {
-                        int width = 75;
-                        for (int row = 0; row < lsTable.getRowCount(); row++) {
-                            Component comp = lsTable.getCellRenderer(row, col).getTableCellRendererComponent(lsTable, lsTable.getValueAt(row, col), false, false, row, col);
-                            width = Math.max(comp.getPreferredSize().width + 10, width);
-                        }
-                        lsColumnModel.getColumn(col).setPreferredWidth(width);
-                    }
-                    if (lsTable.getColumnCount() > 0) {
-                        int lastCol = lsTable.getColumnCount() - 1;
-                        TableColumn col = lsColumnModel.getColumn(lastCol);
-                        JTableHeader headerComp = lsTable.getTableHeader();
-                        Component headerRenderer = col.getHeaderRenderer() != null ?
-                                col.getHeaderRenderer().getTableCellRendererComponent(lsTable, col.getHeaderValue(), false, false, 0, lastCol)
-                                : headerComp.getDefaultRenderer().getTableCellRendererComponent(lsTable, col.getHeaderValue(), false, false, 0, lastCol);
-                        int headerWidth = headerRenderer.getPreferredSize().width + 10;
-                        int maxCellWidth = headerWidth;
-                        for (int row = 0; row < lsTable.getRowCount(); row++) {
-                            Component comp = lsTable.getCellRenderer(row, lastCol).getTableCellRendererComponent(lsTable, lsTable.getValueAt(row, lastCol), false, false, row, lastCol);
-                            maxCellWidth = Math.max(maxCellWidth, comp.getPreferredSize().width + 10);
-                        }
-                        col.setPreferredWidth(maxCellWidth);
-                    }
-
-                    // Force the table to recalculate its preferred size with the new column widths
-                    lsTable.setPreferredScrollableViewportSize(lsTable.getPreferredSize());
-
-                    // Use pack() to size the frame based on the updated preferred sizes
-                    frame.pack();
-
-                    // Ensure the frame is wide enough for all columns
-                    Dimension tablePref = lsTable.getPreferredSize();
-                    Dimension scrollPanePref = scrollPane.getPreferredSize();
-                    int requiredWidth = Math.max(tablePref.width, scrollPanePref.width) + 20; // Add small padding
-                    int requiredHeight = scrollPanePref.height + 80; // Add space for save button
-
-                    frame.setSize(requiredWidth, requiredHeight);
-                    // Set minimum size to ensure usability
-                    frame.setMinimumSize(new Dimension(600, 300));
-                    try {
-                        frame.setIconImage(IJ.getInstance().getIconImage());
-                    } catch (Exception ex) {
-                        // Ignore if not running in ImageJ
-                    }
-                    frame.setLocationRelativeTo(null);
-                    frame.setVisible(true);
+                    createResultsTable(new String[]{"Iter", "Pk", "Period", "Power", "Mask Center"},
+                            resultMsg, "Lomb-Scargle Multi-Planet Results");
                 });
                 return;
             }
@@ -1711,109 +1475,136 @@ public class Periodogram_ implements PlugIn {
                         lastIter = tr.iteration;
                     }
                     // Show results in a JTable with Save as CSV button
-                    SwingUtilities.invokeLater(() -> {
-                        String[] columnNames = {"Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth", "T0 (masking, Model center)"};
-                        List<String[]> rowList = new ArrayList<>();
-                        String[] lines = resultMsg.toString().split("\\n");
-                        for (String line : lines) {
-                            if (line.trim().isEmpty() || line.startsWith("Iter") || line.startsWith("----")) continue;
-                            String[] row = line.trim().split("\\s+");
-                            if (row.length >= columnNames.length) rowList.add(row);
-                        }
-                        String[][] data = rowList.toArray(new String[0][]);
-                        JTable tlsTable = new JTable(data, columnNames);
-                        tlsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                        tlsTable.setCellSelectionEnabled(true);
-                        JScrollPane scrollPane = new JScrollPane(tlsTable);
-                        JButton saveButton = new JButton("Save as CSV");
-                        saveButton.addActionListener(e -> {
-                            JFileChooser fileChooser = new JFileChooser();
-                            fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
-                            if (fileChooser.showSaveDialog(tlsTable) == JFileChooser.APPROVE_OPTION) {
-                                File file = fileChooser.getSelectedFile();
-                                String fname = file.getName().toLowerCase();
-                                if (!fname.endsWith(".csv")) {
-                                    file = new File(file.getParentFile(), file.getName() + ".csv");
-                                }
-                                try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-                                    for (int i = 0; i < columnNames.length; i++) {
-                                        pw.print(columnNames[i]);
-                                        if (i < columnNames.length - 1) pw.print(",");
-                                    }
-                                    pw.println();
-                                    for (String[] row : data) {
-                                        for (int i = 0; i < columnNames.length; i++) {
-                                            pw.print(row.length > i ? row[i] : "");
-                                            if (i < columnNames.length - 1) pw.print(",");
-                                        }
-                                        pw.println();
-                                    }
-                                } catch (Exception ex) {
-                                    JOptionPane.showMessageDialog(tlsTable, "Error saving file: " + ex.getMessage());
-                                }
-                            }
-                        });
-                        JPanel panel = new JPanel(new BorderLayout());
-                        panel.add(scrollPane, BorderLayout.CENTER);
-                        panel.add(saveButton, BorderLayout.SOUTH);
-                        JFrame frame = new JFrame("TLS Multi-Planet Results");
-                        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                        frame.setContentPane(panel);
-                        // Auto-resize columns to fit content first
-                        TableColumnModel tlsColumnModel = tlsTable.getColumnModel();
-                        for (int col = 0; col < tlsTable.getColumnCount(); col++) {
-                            int width = 75; // min width
-                            for (int row = 0; row < tlsTable.getRowCount(); row++) {
-                                Component comp = tlsTable.getCellRenderer(row, col).getTableCellRendererComponent(tlsTable, tlsTable.getValueAt(row, col), false, false, row, col);
-                                width = Math.max(comp.getPreferredSize().width + 10, width);
-                            }
-                            tlsColumnModel.getColumn(col).setPreferredWidth(width);
-                        }
-                        // Dynamically expand the last column (T0...) so full text is visible
-                        if (tlsTable.getColumnCount() > 0) {
-                            int lastCol = tlsTable.getColumnCount() - 1;
-                            TableColumn col = tlsColumnModel.getColumn(lastCol);
-                            JTableHeader headerComp = tlsTable.getTableHeader();
-                            Component headerRenderer = col.getHeaderRenderer() != null ?
-                                    col.getHeaderRenderer().getTableCellRendererComponent(tlsTable, col.getHeaderValue(), false, false, 0, lastCol)
-                                    : headerComp.getDefaultRenderer().getTableCellRendererComponent(tlsTable, col.getHeaderValue(), false, false, 0, lastCol);
-                            int headerWidth = headerRenderer.getPreferredSize().width + 10;
-                            int maxCellWidth = headerWidth;
-                            for (int row = 0; row < tlsTable.getRowCount(); row++) {
-                                Component comp = tlsTable.getCellRenderer(row, lastCol).getTableCellRendererComponent(tlsTable, tlsTable.getValueAt(row, lastCol), false, false, row, lastCol);
-                                maxCellWidth = Math.max(maxCellWidth, comp.getPreferredSize().width + 10);
-                            }
-                            col.setPreferredWidth(maxCellWidth);
-                        }
-
-                        // Force the table to recalculate its preferred size with the new column widths
-                        tlsTable.setPreferredScrollableViewportSize(tlsTable.getPreferredSize());
-
-                        // Use pack() to size the frame based on the updated preferred sizes
-                        frame.pack();
-
-                        // Ensure the frame is wide enough for all columns
-                        Dimension tablePref = tlsTable.getPreferredSize();
-                        Dimension scrollPanePref = scrollPane.getPreferredSize();
-                        int requiredWidth = Math.max(tablePref.width, scrollPanePref.width) + 20; // Add small padding
-                        int requiredHeight = scrollPanePref.height + 80; // Add space for save button
-
-                        frame.setSize(requiredWidth, requiredHeight);
-                        // Set minimum size to ensure usability
-                        frame.setMinimumSize(new Dimension(600, 300));
-                        try {
-                            frame.setIconImage(IJ.getInstance().getIconImage());
-                        } catch (Exception ex) {
-                            // Ignore if not running in ImageJ
-                        }
-                        frame.setLocationRelativeTo(null);
-                        frame.setVisible(true);
-                    });
+                    SwingUtilities.invokeLater(() -> 
+                            createResultsTable(new String[]{"Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth", 
+                                    "T0 (masking, Model center)"
+                            }, resultMsg, "TLS Multi-Planet Results"));
                 }).start();
             } else {
                 IJ.showMessage("Periodogram", "TLS is only implemented for Measurements Table.");
             }
         }
+    }
+
+    private static void createResultsTable(String[] columnNames, StringBuilder resultMsg, String title) {
+        List<String[]> rowList = new ArrayList<>();
+        String[] lines = resultMsg.toString().split("\\n");
+        for (String line : lines) {
+            if (line.trim().isEmpty() || line.startsWith("Iter") || line.startsWith("----")) continue;
+            String[] row = line.trim().split("\\s+");
+            if (row.length >= columnNames.length) rowList.add(row);
+        }
+        String[][] data = rowList.toArray(new String[0][]);
+        JTable blsTable = new JTable(data, columnNames);
+        blsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        blsTable.setCellSelectionEnabled(true);
+        JScrollPane scrollPane = new JScrollPane(blsTable);
+        JButton saveButton = createSaveButton(blsTable, columnNames, data);
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(saveButton, BorderLayout.SOUTH);
+        JFrame frame = new JFrame(title);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setContentPane(panel);
+        // Auto-resize columns to fit content first
+        TableColumnModel blsColumnModel = blsTable.getColumnModel();
+        for (int col = 0; col < blsTable.getColumnCount(); col++) {
+            int width = 75; // min width
+            for (int row = 0; row < blsTable.getRowCount(); row++) {
+                Component comp = blsTable.getCellRenderer(row, col).getTableCellRendererComponent(blsTable, blsTable.getValueAt(row, col), false, false, row, col);
+                width = Math.max(comp.getPreferredSize().width + 10, width);
+            }
+            blsColumnModel.getColumn(col).setPreferredWidth(width);
+        }
+        // Dynamically expand the last column (T0...) so full text is visible
+        if (blsTable.getColumnCount() > 0) {
+            int lastCol = blsTable.getColumnCount() - 1;
+            TableColumn col = blsColumnModel.getColumn(lastCol);
+            JTableHeader headerComp = blsTable.getTableHeader();
+            Component headerRenderer = col.getHeaderRenderer() != null ?
+                    col.getHeaderRenderer().getTableCellRendererComponent(blsTable, col.getHeaderValue(), false, false, 0, lastCol)
+                    : headerComp.getDefaultRenderer().getTableCellRendererComponent(blsTable, col.getHeaderValue(), false, false, 0, lastCol);
+            int headerWidth = headerRenderer.getPreferredSize().width + 10;
+            int maxCellWidth = headerWidth;
+            for (int row = 0; row < blsTable.getRowCount(); row++) {
+                Component comp = blsTable.getCellRenderer(row, lastCol).getTableCellRendererComponent(blsTable, blsTable.getValueAt(row, lastCol), false, false, row, lastCol);
+                maxCellWidth = Math.max(maxCellWidth, comp.getPreferredSize().width + 10);
+            }
+            col.setPreferredWidth(maxCellWidth);
+        }
+
+        // Force the table to recalculate its preferred size with the new column widths
+        blsTable.setPreferredScrollableViewportSize(blsTable.getPreferredSize());
+
+        // Use pack() to size the frame based on the updated preferred sizes
+        frame.pack();
+
+        // Ensure the frame is wide enough for all columns
+        Dimension tablePref = blsTable.getPreferredSize();
+        Dimension scrollPanePref = scrollPane.getPreferredSize();
+        int requiredWidth = Math.max(tablePref.width, scrollPanePref.width) + 20; // Add small padding
+        int requiredHeight = scrollPanePref.height + 80; // Add space for save button
+
+        frame.setSize(requiredWidth, requiredHeight);
+        // Set minimum size to ensure usability
+        frame.setMinimumSize(new Dimension(600, 300));
+        try {
+            frame.setIconImage(IJ.getInstance().getIconImage());
+        } catch (Exception ex) {
+            // Ignore if not running in ImageJ
+        }
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    private static JButton createSaveButton(JTable blsTable, String[] columnNames, String[][] data) {
+        JButton saveButton = new JButton("Save as CSV");
+        saveButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
+            if (fileChooser.showSaveDialog(blsTable) == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                String fname = file.getName().toLowerCase();
+                if (!fname.endsWith(".csv")) {
+                    file = new File(file.getParentFile(), file.getName() + ".csv");
+                }
+                try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+                    for (int i = 0; i < columnNames.length; i++) {
+                        pw.print(columnNames[i]);
+                        if (i < columnNames.length - 1) pw.print(",");
+                    }
+                    pw.println();
+                    for (String[] row : data) {
+                        for (int i = 0; i < columnNames.length; i++) {
+                            pw.print(row.length > i ? row[i] : "");
+                            if (i < columnNames.length - 1) pw.print(",");
+                        }
+                        pw.println();
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(blsTable, "Error saving file: " + ex.getMessage());
+                }
+            }
+        });
+        return saveButton;
+    }
+
+    private static double getMinPhase(int nBins, List<List<Double>> binFluxes, int minPointsPerBin) {
+        double minAvg = Double.POSITIVE_INFINITY;
+        int minBin = -1;
+        for (int i = 0; i < nBins; i++) {
+            List<Double> fluxes = binFluxes.get(i);
+            if (fluxes.size() < minPointsPerBin) continue;
+            double sum = 0.0;
+            for (double v : fluxes) sum += v;
+            double avg = sum / fluxes.size();
+            if (avg < minAvg) {
+                minAvg = avg;
+                minBin = i;
+            }
+        }
+
+        return (minBin + 0.5) / nBins;
     }
 
     // Helper method to find peaks with minimum separation

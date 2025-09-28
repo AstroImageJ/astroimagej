@@ -479,11 +479,13 @@ public class Periodogram_ implements PlugIn {
                                 lossValsPlot[plotIdx] = minLoss;
                                 plotIdx++;
                             }
-                            Plot lossPlot = new Plot(String.format("Phase-Folded Sliding Trapezoid Huber Loss vs. Phase Offset (Planet %d)", planet + 1), "Phase Offset", "Huber Loss", phaseOffsetsPlot, lossValsPlot);
+                            Plot lossPlot = new Plot(String.format("Phase-Folded Sliding Trapezoid Huber Loss vs. Phase Offset (Planet %d)", planet + 1), "Phase Offset", "Huber Loss");
+                            lossPlot.addPoints(phaseOffsetsPlot, lossValsPlot, Plot.LINE);
                             lossPlot.addLabel(0.01, 0.95, String.format("Best T0 = %.6f, tauFrac = %.3f", bestT0, bestTauFrac));
                             lossPlot.show();
                             // Optionally plot phase-folded data with best-fit trapezoid model
-                            Plot phasePlot = new Plot(String.format("Phase-Folded Data with Trapezoid Model (Planet %d)", planet + 1), "Phase", "Flux", phases, f);
+                            Plot phasePlot = new Plot(String.format("Phase-Folded Data with Trapezoid Model (Planet %d)", planet + 1), "Phase", "Flux");
+                            phasePlot.addPoints(phases, f, Plot.LINE);
                             phasePlot.setLimits(0, 1, -bestDepth * 1.2, bestDepth * 0.2);
                             // Sort phases and bestModel for plotting the model as a line
                             double[] sortedPhases = phases.clone();
@@ -963,7 +965,8 @@ public class Periodogram_ implements PlugIn {
                         }
                     }
                     // Plot periodogram for this iteration
-                    Plot plot = new Plot("Lomb-Scargle Periodogram (Planet " + (planet + 1) + ")", "Period", "Power", periods, power);
+                    Plot plot = new Plot("Lomb-Scargle Periodogram (Planet " + (planet + 1) + ")", "Period", "Power");
+                    plot.add("line", periods, power);
 
                     // Highlight the most dominant peak with vertical shaded band
                     if (bestIdx >= 0 && bestIdx < periods.length) {
@@ -1107,7 +1110,8 @@ public class Periodogram_ implements PlugIn {
             }
             double[] periods2 = new double[nPeriods2];
             for (int i = 0; i < nPeriods2; i++) periods2[i] = 1.0 / freq2[i];
-            Plot plot2 = new Plot("Lomb-Scargle Periodogram", "Period", "Power", periods2, power2);
+            Plot plot2 = new Plot("Lomb-Scargle Periodogram", "Period", "Power");
+            plot2.add("line", periods2, power2);
             plot2.show();
             return;
         }
@@ -1378,7 +1382,8 @@ public class Periodogram_ implements PlugIn {
                         }
 
                         // Show periodogram plot for this iteration
-                        Plot plot = new Plot("TLS Periodogram (Planet " + (planetFinal + 1) + ")", "Period", "SDE", tlsResult.periods, tlsResult.sde);
+                        Plot plot = new Plot("TLS Periodogram (Planet " + (planetFinal + 1) + ")", "Period", "SDE");
+                        plot.add("line", tlsResult.periods, tlsResult.sde);
 
                         // Highlight the most dominant peak with vertical shaded band
                         if (bestIdx >= 0 && bestIdx < tlsResult.periods.length) {

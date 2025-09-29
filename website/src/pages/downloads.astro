@@ -3,6 +3,7 @@ import '../styles/global.scss';
 import '../styles/downloads.scss';
 import fs from 'fs';
 import path from "path";
+import Header from '../components/Header.astro';
 
 const versionsIndexPath = path.join(process.cwd(), "public", "meta", "versions.json");
 let versionsIndex = { versions: [] };
@@ -85,24 +86,8 @@ function versionToUrl(version) {
     <title>Downloads — AstroImageJ</title>
   </head>
 
-  <header>
-  	<nav>
-  		<h2 id="site_title">
-  			<a href="/">
-  				<embed src="/favicon.svg" type="image/svg+xml" width="32" height="32"/>
-  				AstroImageJ
-  			</a>
-  		</h2>
-  		<div class="links">
-  			<a href="/">Home</a>
-  			<a href="https://github.com/AstroImageJ/AstroImageJ">Github</a>
-  			<a href="/#download">Download</a>
-  			<a href="/#contact">Contact</a>
-  		</div>
-  	</nav>
-  </header>
-
   <body>
+    <Header title="" link="/" />
     <div class="wrap">
       <h1>Downloads</h1>
 

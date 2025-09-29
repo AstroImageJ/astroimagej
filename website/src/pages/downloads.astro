@@ -3,6 +3,7 @@ import '../styles/global.scss';
 import '../styles/downloads.scss';
 import fs from 'fs';
 import path from "path";
+import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 
 const versionsIndexPath = path.join(process.cwd(), "public", "meta", "versions.json");
@@ -79,39 +80,25 @@ function versionToUrl(version) {
 ---
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Downloads — AstroImageJ</title>
-  </head>
+  <BaseHead title="Downloads"/>
 
   <body>
+    <div class="glow"></div>
     <Header title="" link="/" />
     <div class="wrap">
       <h1>Downloads</h1>
 
-      <div class="signatures">
-        <p> Signatures can be verified using <a href="https://docs.sigstore.dev/quickstart/quickstart-cosign/#verifying-a-signed-blob" target="_blank" rel="noopener noreferrer">Sigstore</a>. </p>
-          <table>
-              <tr>
-                <td>Signing Identity</td>
-                <td><code>https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master</code></td>
-              </tr>
-              <tr>
-               <td>OIDC Provider</td>
-               <td><code>https://token.actions.githubusercontent.com</code></td>
-              </tr>
-          </table>
+      <div class="info release">
+        <p> Signatures can be verified using <a href="https://docs.sigstore.dev/quickstart/quickstart-cosign/#verifying-a-signed-blob" target="_blank" rel="noopener noreferrer">Sigstore</a>.
+          <button class="copy" type="button" data-sha="https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master" title="Copy Signing Identity">Signing Identity</button>
+          <button class="copy" type="button" data-sha="https://token.actions.githubusercontent.com" title="Copy OIDC Provider">OIDC Provider</button>
+        <p><a href="https://support.apple.com/en-us/116943#:~:text=On%20Mac%20computers%20with%20Apple,name%20of%20an%20Intel%20processor." target="_blank" rel="noopener">Which Mac version do I need?</a></p>
       </div>
       <br>
+      <hr>
+      <br>
 
-      <div class="info">
-        <p><a href="https://support.apple.com/en-us/116943#:~:text=On%20Mac%20computers%20with%20Apple,name%20of%20an%20Intel%20processor." target="_blank" rel="noopener">Which Mac version do I need?</a></p>
-        <p><a href="https://github.com/AstroImageJ/AstroImageJ" target="_blank" rel="noopener">View the source on GitHub</a></p>
-      </div>
-
-      <div id="releases">
+      <div id="releases" class="posts" transition:name="post">
         {embedVersions.length === 0 ? (
           <div class="release">
             <p class="small">No versions were found. Ensure <code>public/meta/versions.json</code> exists and contains a `versions` array.</p>
@@ -120,7 +107,7 @@ function versionToUrl(version) {
         ) : null}
 
         {embedVersions.map((v) => (
-          <section class="release" data-version={v.version}>
+          <section class="release content" data-version={v.version}>
             <h2>{v.version}{v.type ? ` ${v.type === 'PRERELEASE' ? '(Pre-release)' : v.type === 'DAILY_BUILD' ? '(Daily Build)' : ''}` : ''}</h2>
             <div class="meta">Published: {v.releaseTime || 'unknown'}</div>
             <div class="meta">

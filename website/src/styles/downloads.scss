@@ -1,12 +1,8 @@
+@use 'global.scss';
+
 :root {
     --accent: #f9a825;
     --muted: #666
-}
-
-body {
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    background: #fff;
-    color: #111
 }
 
 .wrap {
@@ -100,7 +96,6 @@ details.meta-detail {
     align-items: center
 }
 
-//.primary{padding:.1rem .1rem;border-radius:8px;background:var(--accent);color:#041323;font-weight:700;text-decoration:none}
 .small {
     font-size: .9rem;
     color: var(--muted)
@@ -111,11 +106,6 @@ details.meta-detail {
 }
 
 @media (prefers-color-scheme:dark) {
-    body {
-        background: #041323;
-        color: #dfefff
-    }
-
     .global-picker {
         background: #072233
     }
@@ -145,9 +135,7 @@ code {
 table,
 th,
 td {
-    overflow-x: auto;
-    border-radius: 6px;
-    border: 1px solid #0b3246;
-    background-color: #072233;
+    border: 1px solid #123047;
+    background-color: #071426;
     border-collapse: collapse;
 }

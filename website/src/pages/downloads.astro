@@ -107,7 +107,7 @@ function versionToUrl(version) {
         ) : null}
 
         {embedVersions.map((v) => (
-          <section class="release content" data-version={v.version}>
+          <section class="release content" data-version={v.version} id={v.version}>
             <h2>{v.version}{v.type ? ` ${v.type === 'PRERELEASE' ? '(Pre-release)' : v.type === 'DAILY_BUILD' ? '(Daily Build)' : ''}` : ''}</h2>
             <div class="meta">Published: {v.releaseTime || 'unknown'}</div>
             <div class="meta">

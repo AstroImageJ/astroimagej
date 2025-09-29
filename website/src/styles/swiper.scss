@@ -1,0 +1,30 @@
+/* container: size to the images and act as positioning context */
+.presentation-swiper {
+    position: relative;
+    max-width: 1000px;
+    width: 100%;
+    margin: 1rem auto;
+    overflow: hidden;
+}
+
+/* make slides/images fit the container cleanly */
+.presentation-swiper .swiper-slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.presentation-swiper .swiper-slide img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.presentation-swiper .swiper-button-prev {
+    left: 12px;
+}
+
+.presentation-swiper .swiper-button-next {
+    right: 12px;
+}

@@ -173,6 +173,7 @@ public class CurveFitter {
         }
         excluded = excludedHeadSamples + excludedTailSamples;
 
+        period /= periodAlias.get();
         netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
         netPeriod = twoxPeriod ? 2 * period : period;
 

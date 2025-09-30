@@ -930,6 +930,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static final Property<Boolean> savePlotAsPdf = new Property<>(false, MultiPlot_.class);
     private static final Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
+    @PropertyKey(value = "plot.periodAlias", ignoreAffixes = true)
+    static final Property<Integer> periodAlias = new Property<>(1, MultiPlot_.class);
 
     public static IntConsumer addTableData = i -> {
         if (!autoAstroDataUpdate || !addAstroDataFrameWasShowing) {
@@ -2353,6 +2355,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         excluded = excludedHeadSamples + excludedTailSamples;
 
+        period /= periodAlias.get();
         netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
         netPeriod = twoxPeriod ? 2 * period : period;
         if (!showXAxisNormal && periodSync) {
@@ -10526,6 +10529,27 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         periodpanel.add(periodspinner);
         SpringUtil.makeCompactGrid(periodpanel, 1, periodpanel.getComponentCount(), 0, 0, 0, 0);
         phasefoldpanel.add(periodpanel);
+
+        var periodAliasPanel = new JPanel(new SpringLayout());
+        TitledBorder periodAliasBorder = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Period Alias (P/N)", TitledBorder.CENTER, TitledBorder.TOP, p11);
+        periodAliasPanel.setBorder(periodAliasBorder);
+
+        var periodAliasSpinner = new JSpinner(new SpinnerNumberModel(periodAlias.get(), 1, null, 1));
+        periodAliasSpinner.setFont(p11);
+        periodAliasSpinner.setEditor(new JSpinner.NumberEditor(periodAliasSpinner, "####0"));
+        periodAliasSpinner.setPreferredSize(new Dimension(100, 25));
+        periodAliasSpinner.setEnabled(true);
+        periodAliasSpinner.setToolTipText("<html>" + "Period Alias (P/N)" + "</html>");
+        periodAliasPanel.add(periodAliasSpinner);
+
+        periodAliasSpinner.addChangeListener(ev -> {
+           var alias = (int) periodAliasSpinner.getValue();
+           periodAlias.set(alias);
+           updatePlot(updateAllFits());
+        });
+
+        SpringUtil.makeCompactGrid(periodAliasPanel, 1, periodAliasPanel.getComponentCount(), 0, 0, 0, 0);
+        phasefoldpanel.add(periodAliasPanel);
 
         durationpanel = new JPanel(new SpringLayout());
         TitledBorder durationborder = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Duration (Hours)", TitledBorder.CENTER, TitledBorder.TOP, p11);

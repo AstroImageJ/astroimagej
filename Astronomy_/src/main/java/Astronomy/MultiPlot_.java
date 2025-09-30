@@ -2355,9 +2355,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         excluded = excludedHeadSamples + excludedTailSamples;
 
-        period /= periodAlias.get();
-        netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
-        netPeriod = twoxPeriod ? 2 * period : period;
+        var aliasedPeriod = period / periodAlias.get();
+        netT0 = (twoxPeriod && oddNotEven) ? T0 - aliasedPeriod : T0;
+        netPeriod = twoxPeriod ? 2 * aliasedPeriod : aliasedPeriod;
         if (!showXAxisNormal && periodSync) {
             for (int c = 0; c < maxCurves; c++) {
                 boolean holdUpdateFit;

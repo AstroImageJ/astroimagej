@@ -173,9 +173,9 @@ public class CurveFitter {
         }
         excluded = excludedHeadSamples + excludedTailSamples;
 
-        period /= periodAlias.get();
-        netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
-        netPeriod = twoxPeriod ? 2 * period : period;
+        var aliasedPeriod = period / periodAlias.get();
+        netT0 = (twoxPeriod && oddNotEven) ? T0 - aliasedPeriod : T0;
+        netPeriod = twoxPeriod ? 2 * aliasedPeriod : aliasedPeriod;
 
         int magSign = negateMag ? 1 : -1;
 

@@ -742,7 +742,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         }
     }
 
-    if (Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC) {
+    if (sysInfo.os == MAC) {
         val signAppImage = tasks.register<MacSignTask>("signFor$sysId") {
             enabled = providers.environmentVariable("DeveloperId").isPresent &&
                     project.property("codeSignAndNotarize").toString().toBoolean() &&

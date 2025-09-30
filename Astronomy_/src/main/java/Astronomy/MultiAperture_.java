@@ -6472,9 +6472,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         });
 
-        minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
-        maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
-
         suggestionComponents.add(autoPeaks);
         suggestionComponents.add(minPeak.c2());
         suggestionComponents.add(maxPeak.c2());
@@ -6569,6 +6566,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
 
         toggleComponents(suggestionComponents, suggestCompStars);
+        minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
+        maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
 
         gd.addDoubleSpaceLineSeparator();
 

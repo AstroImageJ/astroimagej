@@ -872,18 +872,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             if (v.compareTo(bounds.boxedMin()) < 0) {
                 v = bounds.boxedMin();
                 tf.setValue(v);
-                return;
             } else if (v.compareTo(bounds.boxedMax()) > 0) {
                 v = bounds.boxedMax();
                 tf.setValue(v);
-                return;
             }
 
             if (!useInt && !(v.compareTo(bounds.boxedMin()) == 0 || v.compareTo(bounds.boxedMax()) == 0)) {
                 var bv = BigDecimal.valueOf(v);
                 bv = bv.setScale(10, RoundingMode.HALF_EVEN);
                 tf.setValue(bv.doubleValue());
-                return;
             }
 
             consumer.accept(useInt ? Math.rint(v) : v);

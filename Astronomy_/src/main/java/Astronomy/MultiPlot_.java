@@ -10539,7 +10539,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         periodAliasSpinner.setEditor(new JSpinner.NumberEditor(periodAliasSpinner, "####0"));
         periodAliasSpinner.setPreferredSize(new Dimension(100, 25));
         periodAliasSpinner.setEnabled(true);
-        periodAliasSpinner.setToolTipText("<html>" + "Period Alias (P/N)" + "</html>");
+        periodAliasSpinner.setToolTipText("<html>" + "Period Alias (P/N) should normally be set to 1.<br>" +
+                "Values greater than 1 are useful for analyzing TESS duo transits or similar to check orbital period aliases.<br>" +
+                "The net orbital period used for phase folding, fitting, and plotting is Period / Period Alias." + "</html>");
         periodAliasPanel.add(periodAliasSpinner);
 
         periodAliasSpinner.addChangeListener(ev -> {

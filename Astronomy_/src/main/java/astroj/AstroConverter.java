@@ -5418,7 +5418,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             var gd = new GenericSwingDialog("Sky Map Options", astroConverter.frame);
 
             gd.addBoundedNumericField("Radius", new GenericSwingDialog.Bounds(0.01, 60),
-                    0.1, 5, "Arcmin", true, RADIUS);
+                    0.1, 8, "Arcmin", false, RADIUS);
 
             gd.centerDialog(true);
             gd.showDialog();

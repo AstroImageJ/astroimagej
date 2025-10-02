@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * Class to facilitate in the opening of webpages in the system's default browser.
@@ -53,6 +56,41 @@ public class BrowserOpener {
         process.getOutputStream().close();
 
 
+    }
+
+    public static URL buildURL(String baseUrl, Map<String, Object> queries) throws IOException {
+        return buildURL(baseUrl, queries, "&");
+    }
+
+    public static URL buildURL(String baseUrl, Map<String, Object> queries, String querySeparator) throws IOException {
+        var sb = new StringBuilder(baseUrl);
+        if (!baseUrl.endsWith("?")) {
+            sb.append("?");
+        }
+
+        if (queries!=null) {
+            var firstQuery = true;
+            for (var entry : queries.entrySet()) {
+                if (entry.getValue()==null) {
+                    continue;
+                }
+
+                var value = String.valueOf(entry.getValue());
+                if (value.isBlank()) {
+                    continue;
+                }
+
+                if (!firstQuery) {
+                    sb.append(querySeparator);
+                }
+
+                firstQuery = false;
+                sb.append(entry.getKey().trim()).append("=")
+                        .append(URLEncoder.encode(value.trim(), StandardCharsets.UTF_8));
+            }
+        }
+
+        return new URL(sb.toString());
     }
 
 }

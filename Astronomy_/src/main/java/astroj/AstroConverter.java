@@ -27,6 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Timer;
 
+import static ij.astro.util.UIHelper.createImageIcon;
+import static java.util.Map.entry;
+
 
 /**
  * This plugin converts sky coordinates in a variety of formats.
@@ -143,7 +146,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     JMenuBar menuBar;
     JMenu fileMenu, prefsMenu, networkMenu, helpMenu;
     JMenuItem savePrefsMenuItem, exitMenuItem, showLeapSecondTableMenuItem, helpMenuItem, setProxyAddressMenuItem, setProxyPortMenuItem;
-    JCheckBoxMenuItem showSexagesimalCB, useHarvardCB, useOhioStateCB, useSkyMapBetaCB, useProxyCB, autoTimeZoneCB, reportSSBDownCB;
+    JCheckBoxMenuItem showSexagesimalCB, useHarvardCB, useOhioStateCB, useProxyCB, autoTimeZoneCB, reportSSBDownCB;
     JCheckBoxMenuItem useAMPMCB, showLocalTwilightCB, showToolTipsCB, useCustomObservatoryListCB;
     JCheckBoxMenuItem usePMCB, usePrecCB, useNutCB, useAberCB, useRefrCB;
     JCheckBox useNowEpochCB, autoLeapSecCB, useOhioStateCheckBox;
@@ -365,7 +368,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         pmTwilightIcon = createImageIcon("images/pmtwilight.png", "PM Twilight");
         amTwilightIcon = createImageIcon("images/amtwilight.png", "AM Twilight");
         simbadIcon = createImageIcon("images/simbad.png", "Simbad Link");
-        skymapIcon = createImageIcon("images/skymap.png", "Sky-Map Link");
+        skymapIcon = createImageIcon("images/aladin-logo.png", 38, 30);
 
         for (int i=0; i<moonIcon.length; i++)
             {
@@ -376,7 +379,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             frameTitle = "AstroCC Coordinate Converter";
 		dialogFrame = new JFrame (frameTitle);
         dialogFrame.setIconImage(dialogFrameIcon.getImage());
-        if (!dp) dialogFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        if (!dp) dialogFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dialogFrame.addWindowListener(new WindowAdapter(){
             @Override
             public void windowClosing(WindowEvent e){
@@ -483,11 +486,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         useOhioStateCB = new JCheckBoxMenuItem("Use Ohio State BJD server, deselect to calculate internally",useOhioState);
         useOhioStateCB.addItemListener(this);
-        networkMenu.add(useOhioStateCB);  
-        
-        useSkyMapBetaCB = new JCheckBoxMenuItem("Use Sky-Map.org beta server, deselect to use standard site",useSkyMapBeta);
-        useSkyMapBetaCB.addItemListener(this);
-        networkMenu.add(useSkyMapBetaCB);        
+        networkMenu.add(useOhioStateCB);
         
         useProxyCB = new JCheckBoxMenuItem("Use proxy server for internet access",useProxy);
         useProxyCB.addItemListener(this);
@@ -1947,10 +1946,6 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 useOhioStateCB.setSelected(useOhioState);
                 useOhioStateCheckBox.setSelected(useOhioState);
                 }
-            else if (source == useSkyMapBetaCB)
-                {
-                useSkyMapBeta = true;
-                }
             else if(source == useProxyCB)
 				useProxy = true;            
             else if(source == usePMCB)
@@ -2011,10 +2006,6 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 useOhioStateCB.setSelected(useOhioState);
                 useOhioStateCheckBox.setSelected(useOhioState);
                 }
-            else if (source == useSkyMapBetaCB)
-                {
-                useSkyMapBeta = false;
-                }            
             else if(source == useProxyCB)
 				useProxy = false;            
             else if(source == showToolTipsCB)
@@ -3331,18 +3322,6 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         catch (InterruptedException ex) {}
         }
 
-
-    /** Returns an ImageIcon, or null if the path was invalid. */
-    protected ImageIcon createImageIcon(String path, String description) {
-        java.net.URL imgURL = getClass().getClassLoader().getResource(path);
-        if (imgURL != null) {
-            return new ImageIcon(imgURL, description);
-        } else {
-            showMessage("Couldn't find icon file: " + path);
-            return null;
-        }
-    }
-
     boolean checkSSObjects()
         {
         ssObject = false;
@@ -3505,18 +3484,24 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
     void showInSkyMap()
         {
         try {
+            var uri = BrowserOpener.buildURL("https://astro.swarthmore.edu/transits/aladin.html", Map.ofEntries(
+                    entry("name", objectIDText),
+                    entry("ra", sixPlaces.format(radecJ2000[0])),
+                    entry("dec", sixPlaces.format(radecJ2000[1])),
+                    entry("show-Blends", 0),
+                    entry("show-Gaia", 0),
+                    entry("show-TIC", 0),
+                    entry("showEBs", 1),
+                    entry("showVars", 1),
+                    entry("showMis-matches", 0),
+                    entry("gaiaDistThresh", 0.5),
+                    entry("gaiaMagThresh", 0.5),
+                    entry("showFov", 1),
+                    entry("fovHeight", 26),
+                    entry("fovWidth", 26),
+                    entry("fovPA", 0)
+            )).toURI();
 
-//            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
-            String raText = URLEncoder.encode(raJ2000TextField.getText().replace(":", " ").trim(),"UTF-8");
-            String decText = URLEncoder.encode(decJ2000TextField.getText().replace(":", " ").trim(),"UTF-8");
-//            IJ.log("http://www.sky-map.org/?ra="+raText+"&de="+decText+"&zoom=8&show_box=1&show_grid=1&show_constellation_lines=1&show_constellation_boundaries=1&show_const_names=0&show_galaxies=1&img_source=DSS2");
-            URI uri;
-            if (useSkyMapBeta)
-                uri = new java.net.URI("http://server1.sky-map.org/v2?ra="+raText+"&de="+decText+"&zoom=8&show_box=1&show_grid=1&show_constellation_lines=1&show_constellation_boundaries=1&show_const_names=0&show_galaxies=1&img_source=DSS2");
-            else
-                uri = new java.net.URI("http://www.sky-map.org/?ra="+raText+"&de="+decText+"&zoom=8&show_box=1&show_grid=1&show_constellation_lines=1&show_constellation_boundaries=1&show_const_names=0&show_galaxies=1&img_source=DSS2");
-
-//            desktop.browse( uri );
             BrowserOpener.openURL(uri.toString());
             }
         catch ( Exception e )
@@ -3750,10 +3735,10 @@ void getInternalObservatories(String filename)
 void processObservatories(String line, BufferedReader in)
         {
         try {
-            java.util.ArrayList<String> observatory = new java.util.ArrayList<String>(0);
-            java.util.ArrayList<Double> latitude = new java.util.ArrayList<Double>(0);
-            java.util.ArrayList<Double> longitude = new java.util.ArrayList<Double>(0);
-            java.util.ArrayList<Double> altitude = new java.util.ArrayList<Double>(0);
+            ArrayList<String> observatory = new ArrayList<String>(0);
+            ArrayList<Double> latitude = new ArrayList<Double>(0);
+            ArrayList<Double> longitude = new ArrayList<Double>(0);
+            ArrayList<Double> altitude = new ArrayList<Double>(0);
             observatory.add("Custom Lon, Lat, and Alt entry");
             latitude.add(0.0);
             longitude.add(0.0);

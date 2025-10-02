@@ -550,7 +550,6 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
                 //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
                 //"--verbose",
-                "--app-version", version.toString(),
                 "--java-options", "-XX:MaxRAMPercentage=75"
             )
 
@@ -565,7 +564,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                                 "--mac-package-identifier", "com.astroimagej.AstroImageJ",
                                 //"--about-url", "https://astroimagej.com",
                                 //"--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
-                                "--mac-app-store"
+                                "--mac-app-store",
+                                // Mac must be 3 ints for the version number
+                                "--app-version", version.toString().split(".").take(3).joinToString("."),
                             )
                         )
 
@@ -583,12 +584,14 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 LINUX -> {
                     listOf(
                         "--type", "app-image",
+                        "--app-version", version.toString(),
                         //"--linux-shortcut",
                     )
                 }
                 WINDOWS -> {
                     listOf(
                         "--type", "app-image",
+                        "--app-version", version.toString(),
                     )
                 }
             })

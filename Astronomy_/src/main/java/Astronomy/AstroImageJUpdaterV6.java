@@ -46,7 +46,7 @@ import static java.nio.file.attribute.PosixFilePermission.*;
 
 public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
-    private static final URI META;
+    private final URI metaUrl = new URI("https://astroimagej.com/meta/versions.json");
     private static final HttpClient HTTP_CLIENT;
     public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master";
     private MetaVersion meta;
@@ -54,29 +54,18 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     private static final Property<Boolean> ENABLE_DAILY_BUILDS = new Property<>(false, AstroImageJUpdaterV6.class);
 
     static {
-        try {
-            META = new URI("https://astroimagej.com/meta/versions.json");
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-
-        try {
-            HTTP_CLIENT = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.ALWAYS)
-                    .build();
-
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        HTTP_CLIENT = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build();
     }
 
-    public AstroImageJUpdaterV6() {
+    public AstroImageJUpdaterV6() throws URISyntaxException {
         UIHelper.setLookAndFeel();
     }
 
     MetaVersion fetchVersions() {
         if (meta == null) {
-            meta = MetaVersion.readJson(META);
+            meta = MetaVersion.readJson(metaUrl);
         }
 
         return meta;
@@ -84,8 +73,13 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
     public void update() {
         SwingUtilities.invokeLater(() -> {
-            AstroImageJUpdaterV6.META.hashCode();
-            var u = new AstroImageJUpdaterV6();
+            AstroImageJUpdaterV6 u;
+            try {
+                u = new AstroImageJUpdaterV6();
+            } catch (URISyntaxException e) {
+                IJ.error("Failed to connect AstroImageJ meta");
+                return;
+            }
             u.dialog();
         });
     }
@@ -434,10 +428,6 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         } catch (URISyntaxException e) {
             throw new RuntimeException("Failed to resolve code source location", e);
         }
-    }
-
-    public static void main(String[] args) {
-        new AstroImageJUpdaterV6().dialog();
     }
 
     public void dialog() {

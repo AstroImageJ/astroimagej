@@ -3166,7 +3166,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     void showInSkyMap() {
         try {
             var uri = BrowserOpener.buildURL("https://astro.swarthmore.edu/transits/aladin.html", Map.ofEntries(
-                    entry("name", objectIDText),
+                    entry("name", objectIDTextField.getText()),
                     entry("ra", sixPlaces.format(15*radecJ2000[0])),
                     entry("dec", sixPlaces.format(radecJ2000[1])),
                     entry("showBlends", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_BLEND)),

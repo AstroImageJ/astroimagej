@@ -269,6 +269,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     // used to weight barycenter calculation only.
     private Frame frame;
     private static final SkyMapOptions SKY_MAP_OPTIONS = new SkyMapOptions();
+    private static final SimbadOptions SIMBAD_OPTIONS = new SimbadOptions();
 
 
     public AstroConverter(boolean showWindow, boolean dpControlled, String title) {
@@ -425,6 +426,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         skyMapSettingsButton = new JMenuItem("Edit Aladin Settings");
         skyMapSettingsButton.addActionListener($ -> SKY_MAP_OPTIONS.dialog(this));
         prefsMenu.add(skyMapSettingsButton);
+
+        var simbadSettingsButton = new JMenuItem("Edit SIMBAD Settings");
+        simbadSettingsButton.addActionListener($ -> SIMBAD_OPTIONS.dialog(this));
+        prefsMenu.add(simbadSettingsButton);
 
         showSexagesimalCB = new JCheckBoxMenuItem("Show coordinates in sexagesimal format", showSexagesimal);
         showSexagesimalCB.addItemListener(this);
@@ -821,6 +826,14 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         simbadButton.setMargin(linkButtonMargin);
         simbadButton.setToolTipText("Click to show the object/coordinates in Simbad");
         simbadButton.addActionListener(this);
+        simbadButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    SIMBAD_OPTIONS.dialog(AstroConverter.this);
+                }
+            }
+        });
         simbadPanel.add(simbadButton);
 
         SpringUtil.makeCompactGrid(simbadPanel, 1, simbadPanel.getComponentCount(), 0, 0, 0, 0);
@@ -3203,7 +3216,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             } else if (!raText.equals("") && !decText.equals("")) {
                 queryType = "sim-coo?Coord=";
                 object = URLEncoder.encode(decToSex(radecJ2000[0], 3, 24, false) + decToSex(radecJ2000[1], 2, 90, true), StandardCharsets.UTF_8);
-                object += "&Radius=2&Radius.unit=arcmin";
+                object += "&Radius=" + URLEncoder.encode(String.valueOf(SimbadOptions.RADIUS.get()), StandardCharsets.UTF_8) + "&Radius.unit=arcmin";
             }
             URI simbad;
             if (useHarvard)
@@ -5388,6 +5401,24 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     1D, 5, "arcsec    ", true, GAIA_DIST_THRESH);
             gd.addBoundedNumericField("GAIA Mag Thresh", new GenericSwingDialog.Bounds(0, 25),
                     1D, 5, "                ", true, GAIA_MAG_THRESH);
+
+            gd.centerDialog(true);
+            gd.showDialog();
+        }
+
+        static int normalize(Property<Boolean> p) {
+            return p.get() ? 1 : 0;
+        }
+    }
+
+    private static class SimbadOptions {
+        public static Property<Double> RADIUS = new Property<>(2D, SimbadOptions.class);
+
+        public void dialog(AstroConverter astroConverter) {
+            var gd = new GenericSwingDialog("Sky Map Options", astroConverter.frame);
+
+            gd.addBoundedNumericField("Radius", new GenericSwingDialog.Bounds(0.01, 60),
+                    0.1, 5, "Arcmin", true, RADIUS);
 
             gd.centerDialog(true);
             gd.showDialog();

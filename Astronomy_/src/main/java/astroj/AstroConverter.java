@@ -5355,12 +5355,12 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     }
 
     private static class SkyMapOptions {
-        public static Property<Boolean> SHOW_GAIA = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_GAIA = new Property<>(false, SkyMapOptions.class);
         public static Property<Boolean> SHOW_BLEND = new Property<>(true, SkyMapOptions.class);
-        public static Property<Boolean> SHOW_TIC = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_TIC = new Property<>(false, SkyMapOptions.class);
         public static Property<Boolean> SHOW_EBs = new Property<>(true, SkyMapOptions.class);
         public static Property<Boolean> SHOW_VARS = new Property<>(true, SkyMapOptions.class);
-        public static Property<Boolean> SHOW_MISMATCHES = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_MISMATCHES = new Property<>(false, SkyMapOptions.class);
         public static Property<Boolean> SHOW_FOV = new Property<>(true, SkyMapOptions.class);
         public static Property<Double> FOV_HEIGHT = new Property<>(26D, SkyMapOptions.class);
         public static Property<Double> FOV_WIDTH = new Property<>(26D, SkyMapOptions.class);

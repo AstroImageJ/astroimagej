@@ -5,6 +5,7 @@ import astroj.json.simple.JSONArray;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import astroj.json.simple.parser.ParseException;
+import ij.IJ;
 import ij.astro.gui.ToolTipProvider;
 
 import java.io.IOException;
@@ -49,7 +50,7 @@ public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) 
                 }
             }
         } catch (IOException | ParseException | InterruptedException e) {
-            e.printStackTrace();
+            IJ.error("Updater", "Failed to read metadata: " + e.getMessage());
         }
 
         return null;

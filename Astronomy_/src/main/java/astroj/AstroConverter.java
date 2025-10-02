@@ -2,6 +2,8 @@
 package astroj;
 
 import ij.Prefs;
+import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.prefs.Property;
 import ij.astro.util.LeapSeconds;
 import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
@@ -151,7 +153,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     ImageIcon currentMoonPhaseIcon;
     JMenuBar menuBar;
     JMenu fileMenu, prefsMenu, networkMenu, helpMenu;
-    JMenuItem savePrefsMenuItem, exitMenuItem, showLeapSecondTableMenuItem, helpMenuItem, setProxyAddressMenuItem, setProxyPortMenuItem;
+    JMenuItem savePrefsMenuItem, exitMenuItem, showLeapSecondTableMenuItem, helpMenuItem, setProxyAddressMenuItem, setProxyPortMenuItem, skyMapSettingsButton;
     JCheckBoxMenuItem showSexagesimalCB, useHarvardCB, useOhioStateCB, useProxyCB, autoTimeZoneCB, reportSSBDownCB;
     JCheckBoxMenuItem useAMPMCB, showLocalTwilightCB, showToolTipsCB, useCustomObservatoryListCB;
     JCheckBoxMenuItem usePMCB, usePrecCB, useNutCB, useAberCB, useRefrCB;
@@ -266,6 +268,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     Font b14 = new Font(fontName, Font.BOLD, 14);
     // used to weight barycenter calculation only.
     private Frame frame;
+    private static final SkyMapOptions SKY_MAP_OPTIONS = new SkyMapOptions();
 
 
     public AstroConverter(boolean showWindow, boolean dpControlled, String title) {
@@ -418,6 +421,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
 
         prefsMenu = new JMenu("Preferences");
+
+        skyMapSettingsButton = new JMenuItem("Edit Aladin Settings");
+        skyMapSettingsButton.addActionListener($ -> SKY_MAP_OPTIONS.dialog(this));
+        prefsMenu.add(skyMapSettingsButton);
 
         showSexagesimalCB = new JCheckBoxMenuItem("Show coordinates in sexagesimal format", showSexagesimal);
         showSexagesimalCB.addItemListener(this);
@@ -909,6 +916,14 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         skyMapButton.setMargin(linkButtonMargin);
         skyMapButton.setToolTipText("Click to show the coordinates in Sky-Map");
         skyMapButton.addActionListener(this);
+        skyMapButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    SKY_MAP_OPTIONS.dialog(AstroConverter.this);
+                }
+            }
+        });
         skyMapPanel.add(skyMapButton);
 
         SpringUtil.makeCompactGrid(skyMapPanel, 1, skyMapPanel.getComponentCount(), 0, 0, 0, 0);
@@ -3152,20 +3167,20 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         try {
             var uri = BrowserOpener.buildURL("https://astro.swarthmore.edu/transits/aladin.html", Map.ofEntries(
                     entry("name", objectIDText),
-                    entry("ra", sixPlaces.format(radecJ2000[0])),
+                    entry("ra", sixPlaces.format(15*radecJ2000[0])),
                     entry("dec", sixPlaces.format(radecJ2000[1])),
-                    entry("show-Blends", 0),
-                    entry("show-Gaia", 0),
-                    entry("show-TIC", 0),
-                    entry("showEBs", 1),
-                    entry("showVars", 1),
-                    entry("showMis-matches", 0),
-                    entry("gaiaDistThresh", 0.5),
-                    entry("gaiaMagThresh", 0.5),
-                    entry("showFov", 1),
-                    entry("fovHeight", 26),
-                    entry("fovWidth", 26),
-                    entry("fovPA", 0)
+                    entry("showBlends", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_BLEND)),
+                    entry("showGaia", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_GAIA)),
+                    entry("showTIC", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_TIC)),
+                    entry("showEBs", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_EBs)),
+                    entry("showVars", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_VARS)),
+                    entry("showMismatches", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_MISMATCHES)),
+                    entry("gaiaDistThresh", SKY_MAP_OPTIONS.GAIA_DIST_THRESH.get()),
+                    entry("gaiaMagThresh", SKY_MAP_OPTIONS.GAIA_MAG_THRESH.get()),
+                    entry("showFov", SkyMapOptions.normalize(SKY_MAP_OPTIONS.SHOW_FOV)),
+                    entry("fovHeight", SKY_MAP_OPTIONS.FOV_HEIGHT.get()),
+                    entry("fovWidth", SKY_MAP_OPTIONS.FOV_WIDTH.get()),
+                    entry("fovPA", SKY_MAP_OPTIONS.FOV_PA.get())
             )).toURI();
 
             BrowserOpener.openURL(uri.toString());
@@ -5336,6 +5351,50 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         public void actionPerformed(ActionEvent e) {
             //setVisible(false);
             dispose();
+        }
+    }
+
+    private static class SkyMapOptions {
+        public static Property<Boolean> SHOW_GAIA = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_BLEND = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_TIC = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_EBs = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_VARS = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_MISMATCHES = new Property<>(true, SkyMapOptions.class);
+        public static Property<Boolean> SHOW_FOV = new Property<>(true, SkyMapOptions.class);
+        public static Property<Double> FOV_HEIGHT = new Property<>(26D, SkyMapOptions.class);
+        public static Property<Double> FOV_WIDTH = new Property<>(26D, SkyMapOptions.class);
+        public static Property<Double> FOV_PA = new Property<>(0D, SkyMapOptions.class);
+        public static Property<Double> GAIA_DIST_THRESH = new Property<>(0.5, SkyMapOptions.class);
+        public static Property<Double> GAIA_MAG_THRESH = new Property<>(0.5, SkyMapOptions.class);
+
+        public void dialog(AstroConverter astroConverter) {
+            var gd = new GenericSwingDialog("Sky Map Options", astroConverter.frame);
+            gd.addCheckbox("Show Blend", SHOW_BLEND);
+            gd.addCheckbox("Show GAIA", SHOW_GAIA);
+            gd.addCheckbox("Show TIC", SHOW_TIC);
+            gd.addCheckbox("Show EBs", SHOW_EBs);
+            gd.addCheckbox("Show Vars", SHOW_VARS);
+            gd.addCheckbox("Show Mismatches", SHOW_MISMATCHES);
+            gd.addCheckbox("Show FOV", SHOW_FOV);
+
+            gd.addBoundedNumericField("FOV Width", new GenericSwingDialog.Bounds(0, 360),
+                    1D, 5, "Degrees", true, FOV_WIDTH);
+            gd.addBoundedNumericField("FOV Height", new GenericSwingDialog.Bounds(0, 360),
+                    1D, 5, "Degrees", true, FOV_HEIGHT);
+            gd.addBoundedNumericField("FOV PA", new GenericSwingDialog.Bounds(),
+                    1D, 5, "Degrees", true, FOV_PA);
+            gd.addBoundedNumericField("GAIA Dist Thresh", new GenericSwingDialog.Bounds(),
+                    1D, 5, "arcsec    ", true, GAIA_DIST_THRESH);
+            gd.addBoundedNumericField("GAIA Mag Thresh", new GenericSwingDialog.Bounds(0, 25),
+                    1D, 5, "                ", true, GAIA_MAG_THRESH);
+
+            gd.centerDialog(true);
+            gd.showDialog();
+        }
+
+        static int normalize(Property<Boolean> p) {
+            return p.get() ? 1 : 0;
         }
     }
 }

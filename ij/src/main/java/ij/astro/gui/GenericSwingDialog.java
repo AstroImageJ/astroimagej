@@ -391,6 +391,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return x;
     }
 
+    public JCheckBox addCheckbox(String label, Property<Boolean> property) {
+        return addCheckbox(label, property.get(), property::set);
+    }
+
     public JCheckBox addCheckbox(String label, boolean initValue, Consumer<Boolean> consumer) {
         var c = getConstraints();
         var x = getXPos();
@@ -815,6 +819,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                         .filter(c -> !c.getName().contains("Thread") && !c.equals(GenericSwingDialog.class)).findFirst());
         var s = classOptional.map(Class::getName).orElse("NONAME");
         return "stepSize." + s + label.replaceAll("[\s:]", "");
+    }
+
+    public ComponentPair addBoundedNumericField(String label, Bounds bounds, double stepSize, int columns, String units, boolean useInt, Property<Double> property) {
+        return addBoundedNumericField(label, bounds, property.get(), stepSize, columns, units, useInt, property::set);
     }
 
     public ComponentPair addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {

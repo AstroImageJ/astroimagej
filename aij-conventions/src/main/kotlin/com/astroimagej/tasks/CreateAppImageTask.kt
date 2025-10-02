@@ -168,7 +168,7 @@ abstract class CreateAppImageTask
                     from(resourcesDir.file("InfoRuntime.plist"))
                     into(destDir.dir("Contents/runtime/Contents"))
                     rename { "Info.plist" }
-                    expand("VERSION" to appVersion.get())
+                    expand("VERSION" to appVersion.get().split(".").take(3).joinToString("."))
                 }
 
                 val icon = resourcesDir.file("${appName.get()}.icns")
@@ -211,10 +211,14 @@ abstract class CreateAppImageTask
             it.getProperty("JAVA_VERSION").replace("\"", "")
         }*/
 
+        val version = if (targetOs.get() == OperatingSystem.MAC)
+            appVersion.get().split(".").take(3).joinToString(".")
+        else appVersion.get()
+
         val text = """
             <?xml version="1.0" ?>
             <jpackage-state version="${'$'}VERSION" platform="${osString}">
-              <app-version>${appVersion.get()}</app-version>
+              <app-version>${version}</app-version>
               <main-launcher>AstroImageJ</main-launcher>
               <main-class>ij.ImageJ</main-class>
               <signed>${targetOs.get() == OperatingSystem.MAC}</signed>
@@ -250,7 +254,7 @@ abstract class CreateAppImageTask
         fileOperations.copy {
             from(resourcesDir.file("Info.plist")) {
                 expand(mapOf(
-                    "VERSION" to appVersion.get(),
+                    "VERSION" to appVersion.get().split(".").take(3).joinToString("."),
                 ))
             }
             into(dest.dir("Contents"))

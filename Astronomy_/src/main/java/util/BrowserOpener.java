@@ -1,6 +1,7 @@
 package util;
 
 import ij.IJ;
+import ij.plugin.PlugIn;
 
 import java.awt.*;
 import java.io.IOException;
@@ -16,7 +17,7 @@ import java.util.Map;
  *
  * @author Kevin Eastridge
  */
-public class BrowserOpener {
+public class BrowserOpener implements PlugIn {
 
     public static void openURL(URL url) throws IOException {
         openURL(url.toString());
@@ -93,4 +94,15 @@ public class BrowserOpener {
         return new URL(sb.toString());
     }
 
+    @Override
+    public void run(String arg) {
+        try {
+            if (arg.isBlank()) {
+                return;
+            }
+            openURL(arg);
+        } catch (IOException ignored) {
+            System.out.println("Failed to open URL: " + arg);
+        }
+    }
 }

@@ -252,7 +252,7 @@ public class Menus {
 		help.add(examplesMenu);
 		help.addSeparator();
 		addPlugInItem(help, "Update AstroImageJ...", "Astronomy.AstroImageJUpdaterV6", 0, false);
-		addPlugInItem(help, "Release Notes...", "ij.plugin.BrowserLauncher(\"https://wsr.imagej.net/notes.html\")", 0, false);
+		addPlugInItem(help, "Release Notes...", "util.BrowserOpener(\"https://astroimagej.com/releases/" + IJ.getAstroVersion() + "\")", 0, false);
 		addPlugInItem(help, "Refresh Menus", "ij.plugin.ImageJ_Updater(\"menus\")", 0, false);
 		help.addSeparator();
 		Menu aboutMenu = getMenu("Help>About Plugins", true);

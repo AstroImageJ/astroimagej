@@ -132,10 +132,11 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
         ARM64;
 
         public static Arch getArch() {
-            return switch (System.getProperty("os.arch")) {
-                case "amd64" -> AMD64;
-                case "aarch64" -> ARM64;
-                case "x86" -> X86;
+            return switch (System.getProperty("os.arch").toLowerCase(Locale.ENGLISH)) {
+                case "amd64", "x86_64", "x86-64", "x8664", "ia32e", "em64t", "x64" -> AMD64;
+                case "aarch64", "arm" -> ARM64;
+                case "x86", "i386", "i486", "i586", "i686", "x8632", "ia32", "x32" -> X86;
+
                 default -> throw new UnsupportedOperationException("Unknown architecture: " + System.getProperty("os.arch"));
             };
         }

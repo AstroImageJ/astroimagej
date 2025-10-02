@@ -678,13 +678,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
         targetOs = sysInfo.os
 
-        // Mac only allows 3 version components, but right now jpackage seems to strip them for us
-        //https://github.com/openjdk/jdk/blob/master/src/jdk.jpackage/macosx/classes/jdk/jpackage/internal/model/MacApplication.java#L42
-        //https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleversion
         extraArgs = listOf(
             "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
             //"--verbose",
-            "--app-version", version.toString(),
         )
 
         launcher = packagingJdkToolchain
@@ -703,7 +699,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                             "--mac-package-identifier", "com.astroimagej.AstroImageJ",
                             "--about-url", "https://astroimagej.com",
                             "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
-                            "--mac-app-store"
+                            "--mac-app-store",
+                            // Mac must be 3 ints for the version number
+                            "--app-version", version.toString().split(".").take(3).joinToString("."),
                         )
                     )
 
@@ -721,6 +719,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             LINUX -> {
                 inputs.dir(appImageDir.map { it.dir("astroimagej") })
                 inputDir.set(appImageDir.map { it.dir("astroimagej") })
+                extraArgs(listOf(
+                    "--app-version", version.toString(),
+                ))
             }
             WINDOWS -> {
                 inputs.dir(appImageDir.map { it.dir("AstroImageJ") })
@@ -736,6 +737,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                     "--about-url", "https://astroimagej.com",
                     "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
                     "--win-upgrade-uuid", "83f529ac-39a3-4fe7-9f97-e9f259321c26",
+                    "--app-version", version.toString(),
                 ))
 
                 layout.projectDirectory.dir("packageFiles/assets/associations").asFileTree.forEach {

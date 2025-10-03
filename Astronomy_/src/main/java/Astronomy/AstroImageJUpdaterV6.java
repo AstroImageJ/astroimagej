@@ -135,10 +135,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         var gd = new GenericDialog("Updater");
         gd.addMessage("""
-                AstroImageJ update will OVERWRITE or REMOVE the files in its install directory.
-                Please make sure AIJ has a dedicated install directory, not shared with other software.
-                Install directory: %s
-                """.formatted(baseDir.toAbsolutePath()));
+               AstroImageJ update will OVERWRITE or REMOVE the files in its install directory.
+               Please make sure AIJ has a dedicated install directory, not shared with other software.
+                \s
+               Install directory: %s
+               """.formatted(baseDir.toAbsolutePath()));
         gd.showDialog();
 
         if (gd.wasCanceled()) {

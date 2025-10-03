@@ -209,7 +209,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             }
 
             System.exit(0);
-        } else if (IJ.isMacOSX() || IJ.isLinux()) {
+        } else if (IJ.isLinux()) {
             var perms = Files.getPosixFilePermissions(tmp);
             perms.add(PosixFilePermission.OWNER_EXECUTE);
             perms.add(PosixFilePermission.GROUP_EXECUTE);
@@ -220,6 +220,22 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     Long.toString(pid),
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString()
+            );
+            try {
+                Process p = pb.start();
+            } catch (Exception e) {
+                IJ.error("Updater", "Failed to run elevator: " + e.getMessage());
+                e.printStackTrace();
+                return;
+            }
+
+            System.exit(0);
+        } else if (IJ.isMacOSX()) {
+            // Mac sandbox prevents running extracted scripts, and the update requires a manual step anyways,
+            // so just do everyting manually.
+            ProcessBuilder pb = new ProcessBuilder(
+                    "open",
+                    inst.toAbsolutePath().toString()
             );
             try {
                 Process p = pb.start();

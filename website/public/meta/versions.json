@@ -5,22 +5,10 @@
     },
     "versions": [
         {
-            "version": "1.2.7.00",
-            "url": "https://astroimagej.com/meta/versions/1.2.7.00.json",
-            "type": "PRERELEASE",
-            "releaseTime": "2025-10-02T06:11:27.366862822Z"
-        },
-        {
-            "version": "1.2.6.01",
-            "url": "https://astroimagej.com/meta/versions/1.2.6.01.json",
+            "version": "1.2.7.01",
+            "url": "https://astroimagej.com/meta/versions/1.2.7.01.json",
             "type": "DAILY_BUILD",
-            "releaseTime": "2025-10-02T05:55:22.783066501Z"
-        },
-        {
-            "version": "1.2.6.00",
-            "url": "https://astroimagej.com/meta/versions/1.2.6.00.json",
-            "type": "RELEASE",
-            "releaseTime": "2025-10-02T05:40:28.299288580Z"
+            "releaseTime": "2025-10-03T14:02:41.450911590Z"
         }
     ]
 }

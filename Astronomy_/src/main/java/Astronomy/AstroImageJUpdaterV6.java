@@ -189,6 +189,12 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             IJ.error("Unable to download installer.");
             return;
         }
+
+        if (IJ.isAijDev()) {
+            IJ.showMessage("Updater", "Running in development mode, skipping installation");
+            return;
+        }
+
         Files.write(inst, installerBytes);
 
         if (IJ.isWindows()) {

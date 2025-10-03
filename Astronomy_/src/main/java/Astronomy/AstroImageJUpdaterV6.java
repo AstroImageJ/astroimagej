@@ -16,6 +16,7 @@ import ij.astro.gui.ToolTipRenderer;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
+import ij.gui.GenericDialog;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
 import util.BrowserOpener;
@@ -125,6 +126,23 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             baseDir = appFolder.getParent().getParent();
         } else {
             throw new IllegalStateException("Unknown OS - could not find installation directory");
+        }
+
+        if (!Files.exists(baseDir)) {
+            IJ.error("Unable to find installation directory.");
+            return;
+        }
+
+        var gd = new GenericDialog("Updater");
+        gd.addMessage("""
+                AstroImageJ update will OVERWRITE or REMOVE the files in its install directory.
+                Please make sure AIJ has a dedicated install directory, not shared with other software.
+                Install directory: %s
+                """.formatted(baseDir.toAbsolutePath()));
+        gd.showDialog();
+
+        if (gd.wasCanceled()) {
+            return;
         }
 
         SpecificVersion.FileEntry fileEntry = null;

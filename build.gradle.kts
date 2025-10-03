@@ -761,6 +761,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
             signingIdentity = providers.environmentVariable("DeveloperId")
             entitlementsFile = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/entitlements.plist")
+            entitlementsFile = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/inheritEntitlements.plist")
         }
 
         val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {

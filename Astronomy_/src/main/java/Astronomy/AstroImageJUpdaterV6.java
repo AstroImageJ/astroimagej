@@ -187,10 +187,6 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         // Manually manage temp folder and deletion as Windows doesn't automatically clean them
         var tmpFolder = Path.of(System.getProperty("java.io.tmpdir")).resolve("aij-updater");
 
-        if (IJ.isMacOSX()) {
-            tmpFolder = Path.of("/tmp/astroimagej/aij-updater");
-        }
-
         if (Files.exists(tmpFolder)) {
             Files.walkFileTree(tmpFolder,
                     new SimpleFileVisitor<>() {

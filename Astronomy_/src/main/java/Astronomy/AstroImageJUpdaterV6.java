@@ -1,5 +1,53 @@
 package Astronomy;
 
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.security.DigestInputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HexFormat;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Vector;
+import java.util.concurrent.Executors;
+
+import javax.swing.Box;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
+
 import Astronomy.updater.MetaVersion;
 import Astronomy.updater.SemanticVersion;
 import Astronomy.updater.SpecificVersion;
@@ -20,30 +68,6 @@ import ij.gui.GenericDialog;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
 import util.BrowserOpener;
-
-import javax.swing.*;
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.security.DigestInputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.*;
-import java.util.concurrent.Executors;
-
-import static java.nio.file.attribute.PosixFilePermission.*;
 
 public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
@@ -162,6 +186,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         // Manually manage temp folder and deletion as Windows doesn't automatically clean them
         var tmpFolder = Path.of(System.getProperty("java.io.tmpdir")).resolve("aij-updater");
+
+        if (IJ.isMacOSX()) {
+            tmpFolder = Path.of("/private/tmp/astroimagej/aij-updater");
+        }
 
         if (Files.exists(tmpFolder)) {
             Files.walkFileTree(tmpFolder,

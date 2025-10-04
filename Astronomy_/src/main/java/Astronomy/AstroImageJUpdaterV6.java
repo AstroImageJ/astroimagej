@@ -212,10 +212,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
 
         if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
-            Files.createDirectory(tmpFolder, PosixFilePermissions.asFileAttribute(EnumSet
+            Files.createDirectories(tmpFolder, PosixFilePermissions.asFileAttribute(EnumSet
                     .of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE)));
         } else {
-            Files.createDirectory(tmpFolder);
+            Files.createDirectories(tmpFolder);
         }
 
         var tmp = tmpFolder.resolve("updateScript" + (IJ.isWindows() ? ".bat" : ".sh"));

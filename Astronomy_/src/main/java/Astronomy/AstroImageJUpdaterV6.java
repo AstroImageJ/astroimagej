@@ -4,10 +4,8 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 
-import java.awt.FileDialog;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -189,7 +187,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         // Manually manage temp folder and deletion as Windows doesn't automatically clean them
         var tmpFolder = Path.of(System.getProperty("java.io.tmpdir")).resolve("aij-updater");
 
-        if (!IJ.isMacOSX() && Files.exists(tmpFolder)) {
+        if (Files.exists(tmpFolder)) {
             Files.walkFileTree(tmpFolder,
                     new SimpleFileVisitor<>() {
                         @Override
@@ -219,10 +217,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var tmp = tmpFolder.resolve("updateScript" + (IJ.isWindows() ? ".bat" : ".sh"));
 
         // Copy script to location for execution
-        if (!IJ.isMacOSX()) {
-            Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader()
-                    .getResourceAsStream(getScriptPath())), tmp, StandardCopyOption.REPLACE_EXISTING);
-        }
+        Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), tmp, StandardCopyOption.REPLACE_EXISTING);
 
         var ext = ".msi";
         if (IJ.isLinux()) {
@@ -243,26 +238,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             return;
         }
 
-        if (IJ.isMacOSX()) {
-            var p = Path.of("/tmp/aij-updater/installer.dmg");
-            var f = new File[1];
-            SwingUtilities.invokeAndWait(() -> {
-                var fd = new FileDialog(IJ.getInstance(), "Save update as...", FileDialog.SAVE);
-                fd.setFile(p.toAbsolutePath().toString());
-                fd.setVisible(true);
-                if (fd.getFiles().length == 1) {
-                    f[0] = fd.getFiles()[0];
-                }
-            });
-
-            if (f[0] != null) {
-                Files.write(f[0].toPath(), installerBytes);
-            } else {
-                return;
-            }
-        } else {
-            Files.write(inst, installerBytes);
-        }
+        Files.write(inst, installerBytes);
 
         if (IJ.isWindows()) {
             ProcessBuilder pb = new ProcessBuilder(

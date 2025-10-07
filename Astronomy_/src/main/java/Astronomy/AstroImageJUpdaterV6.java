@@ -187,26 +187,6 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         // Manually manage temp folder and deletion as Windows doesn't automatically clean them
         var tmpFolder = Path.of(System.getProperty("java.io.tmpdir")).resolve("aij-updater");
 
-        if (Files.exists(tmpFolder)) {
-            Files.walkFileTree(tmpFolder,
-                    new SimpleFileVisitor<>() {
-                        @Override
-                        public FileVisitResult postVisitDirectory(
-                                Path dir, IOException exc) throws IOException {
-                            Files.deleteIfExists(dir);
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult visitFile(
-                                Path file, BasicFileAttributes attrs)
-                                throws IOException {
-                            Files.deleteIfExists(file);
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-        }
-
         if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
             Files.createDirectories(tmpFolder, PosixFilePermissions.asFileAttribute(EnumSet
                     .of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE)));
@@ -214,10 +194,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             Files.createDirectories(tmpFolder);
         }
 
-        var tmp = tmpFolder.resolve("updateScript" + (IJ.isWindows() ? ".bat" : ".sh"));
+        var elevator = tmpFolder.resolve("updateScript" + (IJ.isWindows() ? ".bat" : ".sh"));
+        Files.deleteIfExists(elevator);
 
         // Copy script to location for execution
-        Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), tmp, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), elevator, StandardCopyOption.REPLACE_EXISTING);
 
         var ext = ".msi";
         if (IJ.isLinux()) {
@@ -225,7 +206,9 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         } else if (IJ.isMacOSX()) {
             ext = ".dmg";
         }
+
         var inst = tmpFolder.resolve("installer" + ext);
+        Files.deleteIfExists(inst);
 
         var installerBytes = downloadAndComputeHash(fileEntry, 5);
         if (installerBytes == null) {
@@ -244,7 +227,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             ProcessBuilder pb = new ProcessBuilder(
                     "cmd", "/c",
                     "start", "\"\"", "/b",
-                    tmp.toAbsolutePath().toString(),
+                    elevator.toAbsolutePath().toString(),
                     Long.toString(pid),
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString()
@@ -259,13 +242,13 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             System.exit(0);
         } else if (IJ.isLinux()) {
-            var perms = Files.getPosixFilePermissions(tmp);
+            var perms = Files.getPosixFilePermissions(elevator);
             perms.add(PosixFilePermission.OWNER_EXECUTE);
             perms.add(PosixFilePermission.GROUP_EXECUTE);
             perms.add(PosixFilePermission.OTHERS_EXECUTE);
-            Files.setPosixFilePermissions(tmp, perms);
+            Files.setPosixFilePermissions(elevator, perms);
             ProcessBuilder pb = new ProcessBuilder(
-                    tmp.toAbsolutePath().toString(),
+                    elevator.toAbsolutePath().toString(),
                     Long.toString(pid),
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString()
@@ -319,11 +302,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             if (signatureBuffer != null) break;
         }
 
-        System.out.println("Downloaded file and signature.");
+        IJ.showStatus("Downloaded file and signature.");
 
         // Verify signature
         if (buffer != null && signatureBuffer != null) {
-            System.out.println("Verifying signature...");
+            IJ.showStatus("Verifying signature...");
             var bundle = Bundle.from(new InputStreamReader(new ByteArrayInputStream(signatureBuffer)));
             var options = VerificationOptions.builder().addCertificateMatchers(
                     VerificationOptions.CertificateMatcher.fulcio()
@@ -352,7 +335,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             try {
                 var verifier = new KeylessVerifier.Builder().sigstorePublicDefaults().build();
                 verifier.verify(HexFormat.of().parseHex(fileEntry.sha256()), bundle, options);
-                System.out.println("Signature verified.");
+                IJ.showStatus("Signature verified.");
             } catch (InvalidAlgorithmParameterException | SigstoreConfigurationException | NoSuchAlgorithmException |
                      InvalidKeySpecException | CertificateException e) {
                 IJ.log(e.getMessage());

@@ -102,8 +102,20 @@ public class ManifestVerifier {
                             return true;
                         }
 
-                        if (IJ.isMacOSX() && p.endsWith(".DS_Store")) {
-                            return false;
+                        if (IJ.isMacOSX()) {
+                            if (p.endsWith(".DS_Store")) {
+                                return false;
+                            }
+
+                            // Ignore files add by signing
+                            if (p.toString().contains("_CodeSignature")) {
+                                return false;
+                            }
+
+                            if (Files.isExecutable(p)) {
+                                // Mac signing modifies the executable
+                                return false;
+                            }
                         }
 
                         return !p.endsWith("manifest.json") && !p.endsWith(".package");

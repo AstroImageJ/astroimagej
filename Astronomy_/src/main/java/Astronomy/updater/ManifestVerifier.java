@@ -106,7 +106,7 @@ public class ManifestVerifier {
                             return false;
                         }
 
-                        return !p.endsWith("manifest.json");
+                        return !p.endsWith("manifest.json") && !p.endsWith(".package");
                     })
                     // Relativize the paths to match what is in the manifest
                     .map(baseDirPath::relativize)

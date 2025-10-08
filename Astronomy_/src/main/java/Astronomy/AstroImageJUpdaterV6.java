@@ -17,13 +17,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.DigestInputStream;
@@ -48,6 +45,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
+import Astronomy.updater.ManifestVerifier;
 import Astronomy.updater.MetaVersion;
 import Astronomy.updater.SemanticVersion;
 import Astronomy.updater.SpecificVersion;
@@ -64,7 +62,6 @@ import ij.astro.gui.ToolTipRenderer;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
-import ij.gui.GenericDialog;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
 import util.BrowserOpener;
@@ -157,16 +154,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             return;
         }
 
-        var gd = new GenericDialog("Updater");
-        gd.addMessage("""
-               AstroImageJ update will OVERWRITE or REMOVE the files in its install directory.
-               Please make sure AIJ has a dedicated install directory, not shared with other software.
-                \s
-               Install directory: %s
-               """.formatted(baseDir.toAbsolutePath()));
-        gd.showDialog();
-
-        if (gd.wasCanceled()) {
+        if (!ManifestVerifier.check(baseDir, appFolder.resolve("manifest.json"), 50)) {
             return;
         }
 

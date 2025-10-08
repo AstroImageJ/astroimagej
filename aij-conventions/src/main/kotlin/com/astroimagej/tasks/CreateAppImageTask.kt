@@ -2,6 +2,8 @@ package com.astroimagej.tasks
 
 import com.astroimagej.meta.jdk.Architecture
 import com.astroimagej.meta.jdk.OperatingSystem
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -16,6 +18,9 @@ import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.expand
 import org.gradle.kotlin.dsl.getByType
+import java.io.InputStream
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import javax.inject.Inject
 
 
@@ -194,6 +199,42 @@ abstract class CreateAppImageTask
         }
 
         createJpackageXml(appDir)
+
+        createManifest(destDir, appDir)
+    }
+
+    private fun createManifest(destDir: Directory, appDir: Directory) {
+        val manifestData = mutableListOf<ManifestEntry>()
+
+        destDir.asFile.walkTopDown()
+            .filter { !it.isHidden }
+            .filter { it.isFile }
+            .forEach { file ->
+                val relativePath = file.relativeTo(destDir.asFile).toPath().joinToString("/")
+                manifestData.add(ManifestEntry(relativePath, computeMD5(file.inputStream())))
+            }
+
+        manifestData.sortBy { it.path }
+
+        val manifest = Manifest(manifestData)
+
+        val json = Json { prettyPrint = false }
+        appDir.file("manifest.json").asFile.writeText(json.encodeToString(manifest))
+    }
+
+    private fun computeMD5(input: InputStream): String {
+        input.use { stream ->
+            val md = MessageDigest.getInstance("MD5")
+            DigestInputStream(stream, md).use { dis ->
+                val buffer = ByteArray(8 * 1024)
+                while (true) {
+                    val read = dis.read(buffer)
+                    if (read <= 0) break
+                }
+            }
+
+            return md.digest().toHexString(HexFormat { upperCase = true })
+        }
     }
 
     // Create .jpackage.xml file so that jpackage will create the installers
@@ -297,4 +338,15 @@ abstract class CreateAppImageTask
 
     @get:Inject
     protected abstract val javaToolchainService: JavaToolchainService
+
+    @Serializable
+    private data class ManifestEntry(
+        val path: String,
+        val md5: String,
+    )
+
+    @Serializable
+    private data class Manifest(
+        val entries: List<ManifestEntry>,
+    )
 }

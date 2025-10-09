@@ -111,11 +111,6 @@ public class ManifestVerifier {
                             if (p.toString().contains("_CodeSignature")) {
                                 return false;
                             }
-
-                            if (Files.isExecutable(p)) {
-                                // Mac signing modifies the executable
-                                return false;
-                            }
                         }
 
                         return !p.endsWith("manifest.json") && !p.endsWith(".package");
@@ -178,10 +173,17 @@ public class ManifestVerifier {
                 return new Change.Unknown(path);
             }
 
+            var fullPath = baseDirPath.resolve(path);
+
+            if (IJ.isMacOSX() && Files.isExecutable(fullPath)) {
+                // Mac signing modifies the executable
+                return new Change.Unchanged();
+            }
+
             // compute MD5
             String actualMd5;
             try {
-                actualMd5 = md5HexOfFile(baseDirPath.resolve(path));
+                actualMd5 = md5HexOfFile(fullPath);
             } catch (IOException ex) {
                 ex.printStackTrace();
                 return new Change.Modified(path);

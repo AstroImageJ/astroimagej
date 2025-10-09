@@ -1,0 +1,57 @@
+{
+    "version": "1.2.3.02",
+    "artifacts": [
+        {
+            "name": "AstroImageJ-1.2.3.02-linux-x64.tgz",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-linux-x64.tgz",
+            "sha256": "c1053d7f7f513d1792f00c2a2f6f0586bd3cb0a0504e82379011a611bc0a040e",
+            "os": [
+                "LINUX"
+            ],
+            "arch": [
+                "AMD64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-linux-x64.tgz.sigstore.json",
+            "signatureSha256": "c4d7de18c66837960ec7268b234a7e1cbd6d8a1855372ac479a6c3b4f1583314"
+        },
+        {
+            "name": "AstroImageJ-1.2.3.02-mac-x64.dmg",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-mac-x64.dmg",
+            "sha256": "93ecaf1e5df166a8f3ae98d9161768dfdb9e599dd07b4fc30d454a66d020713c",
+            "os": [
+                "MAC"
+            ],
+            "arch": [
+                "AMD64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-mac-x64.dmg.sigstore.json",
+            "signatureSha256": "58b7fe29a4f35acdc2334a218aaa5ec2f8af7fddbb5d1a930648c669343d3011"
+        },
+        {
+            "name": "AstroImageJ-1.2.3.02-mac-aarch64.dmg",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-mac-aarch64.dmg",
+            "sha256": "9ccc80969557a4b339054abf754a3086f69532928199fc3a80b74258de9ceb4c",
+            "os": [
+                "MAC"
+            ],
+            "arch": [
+                "ARM64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-mac-aarch64.dmg.sigstore.json",
+            "signatureSha256": "1fe112d7ce79045ca0ecc5559160c0f9c0e16644f8b878691151067e2b672262"
+        },
+        {
+            "name": "AstroImageJ-1.2.3.02-windows-x64.msi",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/1.2.3.02/AstroImageJ-1.2.3.02-windows-x64.msi",
+            "sha256": "74b0a32c69d64fabaf05f4d71f6be49220e268d82eb6ab442f847c71ee810822",
+            "os": [
+                "WINDOWS"
+            ],
+            "arch": [
+                "AMD64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/1.2.3.02/AstroImageJ-1.2.3.02-windows-x64.msi.sigstore.json",
+            "signatureSha256": "23919167fc7e11301814332d4eb5c8ecc0508ca3b0edc9ee0dd788f4284428b7"
+        }
+    ]
+}

@@ -1,16 +1,95 @@
 // AstroConvertor.java
 package astroj;
 
-import ij.Prefs;
-import ij.astro.gui.GenericSwingDialog;
-import ij.astro.io.prefs.Property;
-import ij.astro.util.LeapSeconds;
-import ij.astro.util.UIHelper;
-import ij.gui.MultiLineLabel;
-import ij.util.Tools;
-import util.BrowserOpener;
+import static ij.astro.util.UIHelper.createImageIcon;
+import static java.util.Map.entry;
 
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerListModel;
+import javax.swing.SpinnerModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpringLayout;
+import javax.swing.SwingUtilities;
+import javax.swing.ToolTipManager;
+import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -19,18 +98,16 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Timer;
 
-import static ij.astro.util.UIHelper.createImageIcon;
-import static java.util.Map.entry;
+import ij.Prefs;
+import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.prefs.Property;
+import ij.astro.util.LeapSeconds;
+import ij.astro.util.UIHelper;
+import ij.gui.MultiLineLabel;
+import ij.plugin.frame.Editor;
+import ij.util.Tools;
+import util.BrowserOpener;
 
 
 /**
@@ -460,6 +537,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         useCustomObservatoryListCB = new JCheckBoxMenuItem("Use custom observatory list (restart of AstroCC required)", useCustomObservatoryList);
         useCustomObservatoryListCB.addItemListener(this);
         prefsMenu.add(useCustomObservatoryListCB);
+
+        var editObservatories = new JMenuItem("Edit Observatories");
+        editObservatories.addActionListener($ -> this.editObservatories());
+        prefsMenu.add(editObservatories);
 
         prefsMenu.addSeparator();
 
@@ -3300,24 +3381,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         BufferedReader in = null;
         String line = "";
         try {
-//            showMessage(this.getClass().toString());
-            URL astroccDir = this.getClass().getProtectionDomain().getCodeSource().getLocation();//.toURI().toString().substring(6);
-            prefsDir = (new File(astroccDir.getFile())).getParent();
-            prefsDir = URLDecoder.decode(prefsDir, StandardCharsets.UTF_8);
-            if (!this.getClass().toString().contains("Coordinate_Converter"))
-                prefsDir = (new File(prefsDir)).getParent();
-
-            File dir = new File(prefsDir);
-
-            if (isWin && (!dir.exists() || prefsDir.endsWith("Desktop"))) {
-                prefsDir = System.getProperty("user.home");
-            } else if (!isWin) {
-                prefsDir = System.getProperty("user.home");  // Mac Preferences folder or Linux home dir
-                if (isMac)
-                    prefsDir += "/Library/Preferences";
-                else
-                    prefsDir += "/.astrocc";
-            }
+            prefsDir = Prefs.getPrefsDir();
 
             filename = prefsDir + separator + "observatories.txt";
 
@@ -3340,11 +3404,27 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             } else {
                 getInternalObservatories(filename);
             }
+
+            var cp = Path.of(filename);
+            if (Files.notExists(cp)) {
+                Files.copy(Path.of(getClass().getClassLoader().getResource("observatories.txt").toURI()), cp);
+            }
         } catch (IOException e) {
             useCustomObservatoryList = false;
             showMessage("Error opening observatory list");
             getInternalObservatories(filename);
+        } catch (URISyntaxException e) {
+            showMessage("Error copying internal observatory to prefs directory");
+            getInternalObservatories(filename);
         }
+    }
+
+    void editObservatories() {
+        prefsDir = Prefs.getPrefsDir();
+
+        var filename = prefsDir + separator + "observatories.txt";
+        var ed = new Editor(filename);
+        ed.open(prefsDir + separator, "observatories.txt");
     }
 
 
@@ -3454,7 +3534,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
             while (line != null) {
                 if (!line.startsWith("#") && line.length() > 0) {
-                    String[] words = line.trim().split("[\t]{1,}");
+                    String[] words = line.trim().split("[\t]{1,}|\s{2,}");
                     if (words.length > 0) {
                         observatory.add(words[0].trim());
                         latitude.add(words.length > 1 ? Tools.parseDouble(words[1], 0.0) : 0.0);

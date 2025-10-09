@@ -175,7 +175,7 @@ public class ManifestVerifier {
 
             var fullPath = baseDirPath.resolve(path);
 
-            if (IJ.isMacOSX() && Files.isExecutable(fullPath)) {
+            if (IJ.isMacOSX() && (Files.isExecutable(fullPath) || path.startsWith("Contents/runtime"))) {
                 // Mac signing modifies the executable
                 return new Change.Unchanged();
             }

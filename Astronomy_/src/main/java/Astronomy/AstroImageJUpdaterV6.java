@@ -163,7 +163,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                 IJ.showMessageWithCancel("Updater", """
                         Detected mounted volume named 'AstroImageJ,'
                         which may be a previously mounted update.
-                        Please unmount it first to proceed, or the update may not succeed.
+                        Please eject it first to proceed, or the update may not succeed.
                         """);
             }
         }

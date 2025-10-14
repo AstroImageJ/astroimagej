@@ -104,3 +104,13 @@ See the [GPL FAQ for details on use of GPL incompatible libraries in a GPL work]
 
 ### [Json Simple](https://github.com/fangyidong/json-simple)
 Licensed under [Apache 2.0](https://github.com/fangyidong/json-simple?tab=Apache-2.0-1-ov-file).
+
+## Sponsors
+<table>
+ <tbody>
+  <tr>
+   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
+   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
+  </tr>
+ </tbody>
+</table>

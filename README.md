@@ -42,8 +42,17 @@ their respective modules (instead of Tasks > ..., it will be ij > ... or Astrono
 your-project-root/<ij or Astronomy_>/build/libs.
 
 # Code Signing Policy
-## Windows
-Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+<table>
+ <tbody>
+  <tr>
+   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
+   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
+  </tr>
+ </tbody>
+</table>
+
+### Team Members
+[Authors](https://github.com/orgs/AstroImageJ/people?query=role%3Aowner)
 
 # Privacy Policy
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.

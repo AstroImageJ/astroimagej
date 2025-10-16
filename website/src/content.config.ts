@@ -14,6 +14,7 @@ const releases = defineCollection({
 			versionNumber: z.string(),
 			// Transform string to Date object
 			date: z.date({ coerce: true }),
+			draft: z.boolean({ coerce: true }),
 		}),
 });
 

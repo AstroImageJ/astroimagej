@@ -30,6 +30,7 @@ on:
         description: 'Release type'
         required: true
         type: choice
+        default: 'Release'
         options:
           - 'Alpha'
           - 'Beta'

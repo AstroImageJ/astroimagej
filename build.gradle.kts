@@ -918,6 +918,7 @@ val signTask = tasks.register<SigstoreSignFiles>("signAssets") {
 
 tasks.register<GenerateMetadata>("updateMetadata") {
     version = providers.gradleProperty("version")
+    releaseType = providers.gradleProperty("releaseType")
     specificJson = layout.projectDirectory.file("website/public/meta/versions/${version.get()}.json")
     generalJson = layout.projectDirectory.file("website/public/meta/versions.json")
     baseMetaUrl = "https://astroimagej.com/meta"

@@ -41,6 +41,7 @@ on:
 env:
   GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
   CROSSBUILD_APP_IMAGE: ${{ github.event.inputs.crosspackage }}
+  NOTARIZE_MAC: ${{ github.event.inputs.notarize }}
   VERSION: ${{
     github.event_name == 'workflow_dispatch' && github.event.inputs.version ||
     github.ref_name
@@ -286,7 +287,7 @@ jobs:
           tar -xvf astroimagej-mac-arm.tar -p
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}"
+        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}" -PcodeSignAndNotarize="${{ env.NOTARIZE_MAC }}"
         env:
           DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 

@@ -16,10 +16,15 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Objects;
 
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.VirtualStack;
 import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
@@ -252,48 +257,78 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
     }
 
     void reverse() {
-        for (int iSlice = 1; iSlice < numSlices; iSlice++) {
-            stack.addSlice(stack.getSliceLabel(1), stack.getProcessor(1), numSlices - iSlice + 1);
-            stack.deleteSlice(1);
+        if (stack instanceof VirtualStack virtualStack) {
+            var is = new int[numSlices];
+            for (int iSlice = 0; iSlice < numSlices; iSlice++) {
+                is[iSlice] = numSlices - iSlice - 1;
+            }
+            virtualStack.sortByIndexes(is);
+        } else {
+            for (int iSlice = 1; iSlice < numSlices; iSlice++) {
+                stack.addSlice(stack.getSliceLabel(1), stack.getProcessor(1), numSlices - iSlice + 1);
+                stack.deleteSlice(1);
+            }
         }
         imp.setStack(null, stack);
         imp.updateAndDraw();
     }
 
     void sortByLabel() {
-        boolean swapped = false;
-        for (int pass = 0; pass < numSlices; pass++) {
-            for (int iSlice = 1; iSlice < (numSlices - pass); iSlice++) {
-                int comp = stack.getSliceLabel(iSlice).compareTo(stack.getSliceLabel(iSlice + 1));
-                if (comp > 0) {
-                    swapped = true;
-                    stack.addSlice(stack.getSliceLabel(iSlice), stack.getProcessor(iSlice), iSlice + 1);
-                    stack.deleteSlice(iSlice);
-                }
+        if (stack instanceof VirtualStack virtualStack) {
+            record Id(int i, String l) {}
+            var ls = new Id[numSlices];
+            for (int iSlice = 0; iSlice < ls.length; iSlice++) {
+                ls[iSlice] = new Id(iSlice, Objects.requireNonNullElse(stack.getSliceLabel(iSlice + 1), ""));
             }
-            if (!swapped) break;
+            var is = Arrays.stream(ls).sorted(Comparator.comparing(Id::l)).mapToInt(Id::i).toArray();
+            virtualStack.sortByIndexes(is);
+        } else {
+            boolean swapped = false;
+            for (int pass = 0; pass < numSlices; pass++) {
+                for (int iSlice = 1; iSlice < (numSlices - pass); iSlice++) {
+                    int comp = stack.getSliceLabel(iSlice).compareTo(stack.getSliceLabel(iSlice + 1));
+                    if (comp > 0) {
+                        swapped = true;
+                        stack.addSlice(stack.getSliceLabel(iSlice), stack.getProcessor(iSlice), iSlice + 1);
+                        stack.deleteSlice(iSlice);
+                    }
+                }
+                if (!swapped) break;
+            }
         }
         imp.setStack(null, stack);
         imp.updateAndDraw();
     }
 
     void sortByMean() {
-        float[] y = getZAxisProfile();
-        if (y == null) return;
-        boolean swapped = false;
-        for (int pass = 0; pass < numSlices; pass++) {
-            for (int iSlice = 1; iSlice < (numSlices - pass); iSlice++) {
-                float comp = y[iSlice - 1] - y[iSlice];
-                if (comp > 0) {
-                    swapped = true;
-                    stack.addSlice(stack.getSliceLabel(iSlice), stack.getProcessor(iSlice), iSlice + 1);
-                    stack.deleteSlice(iSlice);
-                    float temp = y[iSlice - 1];
-                    y[iSlice - 1] = y[iSlice];
-                    y[iSlice] = temp;
-                }
+        if (stack instanceof VirtualStack virtualStack) {
+            record Id(int i, float l) {}
+            float[] y = getZAxisProfile();
+            if (y == null) return;
+            var ls = new Id[numSlices];
+            for (int iSlice = 0; iSlice < ls.length; iSlice++) {
+                ls[iSlice] = new Id(iSlice, y[iSlice]);
             }
-            if (!swapped) break;
+            var is = Arrays.stream(ls).sorted(Comparator.comparing(Id::l)).mapToInt(Id::i).toArray();
+            virtualStack.sortByIndexes(is);
+        } else {
+            float[] y = getZAxisProfile();
+            if (y == null) return;
+            boolean swapped = false;
+            for (int pass = 0; pass < numSlices; pass++) {
+                for (int iSlice = 1; iSlice < (numSlices - pass); iSlice++) {
+                    float comp = y[iSlice - 1] - y[iSlice];
+                    if (comp > 0) {
+                        swapped = true;
+                        stack.addSlice(stack.getSliceLabel(iSlice), stack.getProcessor(iSlice), iSlice + 1);
+                        stack.deleteSlice(iSlice);
+                        float temp = y[iSlice - 1];
+                        y[iSlice - 1] = y[iSlice];
+                        y[iSlice] = temp;
+                    }
+                }
+                if (!swapped) break;
+            }
         }
         imp.setStack(null, stack);
         imp.updateAndDraw();
@@ -301,8 +336,12 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
 
     void first() {
         if (slice != 1) {
-            stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), 0);
-            stack.deleteSlice(slice + 1);
+            if (stack instanceof VirtualStack virtualStack) {
+                virtualStack.swapSlices(slice, 1);
+            } else {
+                stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), 0);
+                stack.deleteSlice(slice + 1);
+            }
             imp.setStack(null, stack);
             imp.setSlice(1);
             imp.updateAndDraw();
@@ -311,8 +350,12 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
 
     void bkwd() {
         if (slice != numSlices) {
-            stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), slice + 1);
-            stack.deleteSlice(slice);
+            if (stack instanceof VirtualStack virtualStack) {
+                virtualStack.swapSlices(slice, slice + 1);
+            } else {
+                stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), slice + 1);
+                stack.deleteSlice(slice);
+            }
             imp.setStack(null, stack);
             imp.setSlice(slice + 1);
             imp.updateAndDraw();
@@ -321,8 +364,12 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
 
     void fwd() {
         if (slice != 1) {
-            stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), slice - 2);
-            stack.deleteSlice(slice + 1);
+            if (stack instanceof VirtualStack virtualStack) {
+                virtualStack.swapSlices(slice, slice - 2);
+            } else {
+                stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), slice - 2);
+                stack.deleteSlice(slice + 1);
+            }
             imp.setStack(null, stack);
             imp.setSlice(slice - 1);
             imp.updateAndDraw();
@@ -331,8 +378,12 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
 
     void last() {
         if (slice != numSlices) {
-            stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), numSlices);
-            stack.deleteSlice(slice);
+            if (stack instanceof VirtualStack virtualStack) {
+                virtualStack.swapSlices(slice, numSlices);
+            } else {
+                stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice), numSlices);
+                stack.deleteSlice(slice);
+            }
             imp.setStack(null, stack);
             imp.setSlice(numSlices);
             imp.updateAndDraw();
@@ -340,7 +391,12 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
     }
 
     void dup() {
-        stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice).duplicate(), slice);
+        if (stack instanceof VirtualStack virtualStack) {
+            virtualStack.addSlice(virtualStack.getFileName(slice));
+            virtualStack.swapSlices(slice, virtualStack.getSize() - 1);
+        } else {
+            stack.addSlice(stack.getSliceLabel(slice), stack.getProcessor(slice).duplicate(), slice);
+        }
         imp.setStack(null, stack);
         imp.setSlice(slice + 1);
         imp.updateAndDraw();
@@ -352,6 +408,10 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
     }
 
     void ins() {
+        if (stack instanceof VirtualStack) {
+            IJ.error("Insert not supported for virtual stacks.");
+            return;
+        }
         ImagePlus imp1 = showDialog(imp.getTitle());
         insImp1(imp1);
     }
@@ -359,17 +419,50 @@ class StackSorter extends PlugInFrame implements ActionListener, Measurements {
     void insf() {
         String path = getFileName();
         if (path != null) {
-            ImagePlus imp1 = new Opener().openImage(path);
-            insImp1(imp1);
+            if (stack instanceof VirtualStack virtualStack) {
+                var vsRoot = Path.of(virtualStack.path);
+                var p = Path.of(path);
+                try {
+                    p = vsRoot.relativize(p);
+                } catch (IllegalArgumentException e) {
+                    IJ.error("Can only insert files in the same directory as the virtual stack.");
+                }
+                virtualStack.addSlice(p.toString());
+
+                if (slice < numSlices) {
+                    var is = new int[numSlices + 1];
+                    for (int iSlice = 0; iSlice < is.length; iSlice++) {
+                        is[iSlice] = iSlice;
+                    }
+                    System.arraycopy(is, slice, is, slice + 1, numSlices - slice);
+                    is[slice] = numSlices;
+                    virtualStack.sortByIndexes(is);
+                }
+                
+                imp.setStack(null, virtualStack);
+                imp.setSlice(++slice);
+                imp.updateAndDraw();
+            } else {
+                ImagePlus imp1 = new Opener().openImage(path);
+                insImp1(imp1);
+            }
         }
     }
 
     void insURL() {
+        if (stack instanceof VirtualStack) {
+            IJ.error("Insert (URL) not supported for virtual stacks.");
+            return;
+        }
         ImagePlus imp1 = getImagePlusFromURL();
         insImp1(imp1);
     }
 
     void pasteSys() {
+        if (stack instanceof VirtualStack) {
+            IJ.error("Paste (system) not supported for virtual stacks.");
+            return;
+        }
         ImagePlus imp1 = getSystemClipboardImage();
         insImp1(imp1);
     }

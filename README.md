@@ -111,6 +111,9 @@ additional permission to convey the resulting work.
 
 See the [GPL FAQ for details on use of GPL incompatible libraries in a GPL work](https://www.gnu.org/licenses/gpl-faq.en.html#GPLIncompatibleLibs).
 
+### [Stack Sorter](https://www.optinav.info/Stack-Sorter.htm)
+Licensed under [BSD-3-clause](https://www.optinav.info/Stack-Sorter.htm#:~:text=and%20Stack%20Plugins.-,license,-%3A).
+
 ### [Json Simple](https://github.com/fangyidong/json-simple)
 Licensed under [Apache 2.0](https://github.com/fangyidong/json-simple?tab=Apache-2.0-1-ov-file).
 

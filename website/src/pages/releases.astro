@@ -3,8 +3,22 @@ import { getCollection, render } from 'astro:content';
 import FormattedDate from '../components/FormattedDate.astro';
 import Layout from '../layouts/IndexLayout.astro';
 
-const posts = await getCollection('releases');
-posts.sort((a, b) => +b.data.date - +a.data.date);
+function compareVersions(a: any, b: any) {
+  const aParts = a.versionNumber.split('.').map(Number);
+  const bParts = b.versionNumber.split('.').map(Number);
+  const len = Math.max(aParts.length, bParts.length);
+  for (let i = 0; i < len; i++) {
+    const aVal = aParts[i] || 0;
+    const bVal = bParts[i] || 0;
+    if (aVal !== bVal) return bVal - aVal;
+  }
+  return 0;
+}
+
+const posts = await getCollection('releases', ({ data }) => {
+         return import.meta.env.PROD ? data.draft !== true : true;
+       });
+posts.sort((a, b) => compareVersions(a.data, b.data));
 ---
 
 <Layout>

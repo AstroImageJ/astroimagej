@@ -3,7 +3,9 @@ import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/PostLayout.astro';
 
 export async function getStaticPaths() {
-	const releases = await getCollection('releases');
+	const releases = await getCollection('releases', ({ data }) => {
+         return import.meta.env.PROD ? data.draft !== true : true;
+       });
 
 	return releases.map((release) => ({
 		params: { slug: release.id },

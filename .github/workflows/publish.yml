@@ -26,17 +26,27 @@ on:
         required: false
         type: 'boolean'
         default: true
-  push:
-    tags:
-      - '[0-9]*.[0-9]*.[0-9]*.[0-9]*'
+      release_type:
+        description: 'Release type'
+        required: true
+        type: choice
+        default: 'Release'
+        options:
+          - 'Alpha'
+          - 'Beta'
+          - 'Daily_build'
+          - 'Prerelease'
+          - 'Release'
 
 env:
   GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
   CROSSBUILD_APP_IMAGE: ${{ github.event.inputs.crosspackage }}
+  NOTARIZE_MAC: ${{ github.event.inputs.notarize }}
   VERSION: ${{
     github.event_name == 'workflow_dispatch' && github.event.inputs.version ||
     github.ref_name
     }}
+  RELEASE_TYPE: ${{ github.event.inputs.release_type }}
 
 jobs:
   crossbuild:
@@ -66,7 +76,7 @@ jobs:
 
       - name: Create app images
         run: |
-          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64 -Pversion=${{ env.VERSION }}
+          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 createAppImageForMac_x64 createAppImageForWindows_x64 -Pversion=${{ env.VERSION }} -PreleaseType=${{ env.RELEASE_TYPE }}
 
       # Need to tar the app image to preserve file permissions
       - name: Tar Linux x64
@@ -277,7 +287,7 @@ jobs:
           tar -xvf astroimagej-mac-arm.tar -p
 
       - name: Run jpackage (${{ matrix.gradleTask }})
-        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}"
+        run: ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}" -PcodeSignAndNotarize="${{ env.NOTARIZE_MAC }}"
         env:
           DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 
@@ -401,7 +411,7 @@ jobs:
         shell: bash
         run: |
           chmod +x ./gradlew
-          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets -Pversion=$VERSION --stacktrace
+          ./gradlew updateMetadata -PupdateMetadataFiles=release_assets -Pversion=$VERSION -PreleaseType=${{ env.RELEASE_TYPE }} --stacktrace
 
       - name: Update metadata
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}

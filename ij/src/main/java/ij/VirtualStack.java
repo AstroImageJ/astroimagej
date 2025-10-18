@@ -1,15 +1,20 @@
 package ij;
 
-import ij.astro.AstroImageJ;
-import ij.io.Opener;
-import ij.plugin.FolderOpener;
-import ij.process.*;
-import ij.util.Tools;
-
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.image.ColorModel;
 import java.io.File;
 import java.util.Properties;
+
+import ij.astro.AstroImageJ;
+import ij.io.Opener;
+import ij.plugin.FolderOpener;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+import ij.util.Tools;
 
 /** This class represents an array of disk-resident images. */
 public class VirtualStack extends ImageStack {
@@ -108,7 +113,58 @@ public class VirtualStack extends ImageStack {
 	public void addSlice(String sliceLabel, ImageProcessor ip, int n) {
 	}
 
-	/** Deletes the specified slice, where {@literal 1<=n<=nslices}. */
+    @AstroImageJ(reason = "Add method for moving sliced in a stack")
+    public void swapSlices(int o, int n) {
+        if (o<1 || o>nSlices || n<1 || n>nSlices)
+            throw new IllegalArgumentException("Argument out of range: "+o+" "+n);
+        if (o==n) return;
+
+        var no = names[o-1];
+        var lo = labels[o-1];
+
+        names[o-1] = names[n-1];
+        labels[o-1] = labels[n-1];
+        names[n-1] = no;
+        labels[n-1] = lo;
+
+        if (indexes != null) {
+            var io = indexes[o-1];
+            indexes[o-1] = indexes[n-1];
+            indexes[n-1] = io;
+        }
+    }
+
+    /**
+     * Sorts the stack based on provided indexes array.
+     *
+     * @param sortIndexes array of indexes defining new order
+     */
+    @AstroImageJ(reason = "Add method for sorting the stack")
+    public void sortByIndexes(int[] sortIndexes) {
+        if (sortIndexes == null || sortIndexes.length != nSlices) {
+            throw new IllegalArgumentException("Index array must match stack size");
+        }
+
+        var sortedNames = new String[nSlices];
+        var sortedLabels = new String[nSlices];
+        var sortedIndexes = indexes != null ? new int[nSlices] : null;
+
+        for (int i = 0; i < nSlices; i++) {
+            sortedNames[i] = names[sortIndexes[i]];
+            sortedLabels[i] = labels[sortIndexes[i]];
+            if (indexes != null) {
+                sortedIndexes[i] = indexes[sortIndexes[i]];
+            }
+        }
+
+        System.arraycopy(sortedNames, 0, names, 0, nSlices);
+        System.arraycopy(sortedLabels, 0, labels, 0, nSlices);
+        if (indexes != null) {
+            System.arraycopy(sortedIndexes, 0, indexes, 0, nSlices);
+        }
+    }
+
+    /** Deletes the specified slice, where {@literal 1<=n<=nslices}. */
 	public void deleteSlice(int n) {
 		if (nSlices==0)
 			return;

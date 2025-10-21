@@ -500,13 +500,15 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         prefsMenu = new JMenu("Preferences");
 
-        skyMapSettingsButton = new JMenuItem("Edit Aladin Settings");
+        skyMapSettingsButton = new JMenuItem("Edit Aladin  F.O.V. Settings...");
         skyMapSettingsButton.addActionListener($ -> SKY_MAP_OPTIONS.dialog(this));
         prefsMenu.add(skyMapSettingsButton);
 
-        var simbadSettingsButton = new JMenuItem("Edit SIMBAD Settings");
+        var simbadSettingsButton = new JMenuItem("Edit SIMBAD Settings...");
         simbadSettingsButton.addActionListener($ -> SIMBAD_OPTIONS.dialog(this));
         prefsMenu.add(simbadSettingsButton);
+
+        prefsMenu.addSeparator();
 
         showSexagesimalCB = new JCheckBoxMenuItem("Show coordinates in sexagesimal format", showSexagesimal);
         showSexagesimalCB.addItemListener(this);
@@ -538,7 +540,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         useCustomObservatoryListCB.addItemListener(this);
         prefsMenu.add(useCustomObservatoryListCB);
 
-        var editObservatories = new JMenuItem("Edit Observatories");
+        var editObservatories = new JMenuItem("Edit Custom Observatories List");
         editObservatories.addActionListener($ -> this.editObservatories());
         prefsMenu.add(editObservatories);
 

@@ -1,24 +1,79 @@
 package ij.plugin.frame;
 
-import ij.*;
+import java.awt.Button;
+import java.awt.CheckboxMenuItem;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.MenuShortcut;
+import java.awt.Panel;
+import java.awt.PrintGraphics;
+import java.awt.PrintJob;
+import java.awt.TextArea;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.CharArrayReader;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Properties;
+
+import ij.Executer;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.gui.YesNoCancelDialog;
 import ij.io.SaveDialog;
-import ij.macro.*;
+import ij.macro.Debugger;
+import ij.macro.FunctionFinder;
+import ij.macro.Interpreter;
+import ij.macro.MacroConstants;
+import ij.macro.MacroRunner;
+import ij.macro.Program;
 import ij.plugin.JavaScriptEvaluator;
 import ij.plugin.MacroInstaller;
 import ij.plugin.Macro_Runner;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.datatransfer.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Properties;
 
 /** This is a simple TextArea based editor for editing and compiling plugins. */
 public class Editor extends PlugInFrame implements ActionListener, ItemListener,
@@ -128,6 +183,8 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 	private String rejectMacrosMsg;
 	private Button runButton, installButton;
 	private Choice language;
+    @AstroImageJ(reason = "Add save listener")
+    private final Collection<Runnable> saveListeners = new ArrayList<>();
 	
 	public Editor() {
 		this(24, 80, 0, MENU_BAR);
@@ -447,6 +504,12 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		WindowManager.setWindow(this);
 	}
 
+    @AstroImageJ(reason = "Add save listener")
+    public void addSaveListener(Runnable r) {
+        saveListeners.add(r);
+    }
+
+    @AstroImageJ(reason = "Add save listener", modified = true)
 	void save() {
 		if (path==null) {
 			saveAs(); 
@@ -472,6 +535,8 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 			bw.close();
 			IJ.showStatus(text.length()+" chars saved to " + path);
 			changes = false;
+
+            saveListeners.forEach(Runnable::run);
 		} catch
 			(IOException e) {}
 	}

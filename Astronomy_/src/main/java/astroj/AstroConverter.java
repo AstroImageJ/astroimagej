@@ -536,7 +536,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         prefsMenu.addSeparator();
 
-        useCustomObservatoryListCB = new JCheckBoxMenuItem("Use custom observatory list (restart of AstroCC required)", useCustomObservatoryList);
+        useCustomObservatoryListCB = new JCheckBoxMenuItem("Use custom observatory list", useCustomObservatoryList);
         useCustomObservatoryListCB.addItemListener(this);
         prefsMenu.add(useCustomObservatoryListCB);
 
@@ -1994,6 +1994,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 showSexagesimal = true;
             } else if (source == useCustomObservatoryListCB) {
                 useCustomObservatoryList = true;
+                getObservatories();
             } else if (source == showToolTipsCB)
                 showToolTips = true;
             else if (source == useHarvardCB)
@@ -2037,6 +2038,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 showSexagesimal = false;
             } else if (source == useCustomObservatoryListCB) {
                 useCustomObservatoryList = false;
+                getObservatories();
             } else if (source == useHarvardCB)
                 useHarvard = false;
             else if (source == useOhioStateCB || source == useOhioStateCheckBox) {
@@ -3427,6 +3429,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         var filename = prefsDir + separator + "observatories.txt";
         var ed = new Editor(filename);
         ed.open(prefsDir + separator, "observatories.txt");
+        ed.addSaveListener(this::getObservatories);
     }
 
 

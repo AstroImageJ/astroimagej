@@ -932,6 +932,10 @@ tasks.register<GenerateMetadata>("updateMetadata") {
     files = layout.files(updaterFiles, signTask.map { it.signatureDirectory.asFileTree })
 }
 
+tasks.register<TriggerReleaseWorkflow>("triggerReleaseWorkflow") {
+
+}
+
 // Make Idea's hammer icon run copyBuiltJars
 tasks.named("classes").configure {
     finalizedBy("copyBuiltJars")

@@ -1,5 +1,40 @@
 package Astronomy;
 
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Panel;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+
 import astroj.MeasurementTable;
 import ij.IJ;
 import ij.ImagePlus;
@@ -9,25 +44,6 @@ import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.plugin.PlugIn;
 import ij.text.TextWindow;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Periodogram_ implements PlugIn {
     private static final Property<String> DATA_SOURCE = new Property<>("Synthetic", Periodogram_.class);
@@ -65,6 +81,10 @@ public class Periodogram_ implements PlugIn {
         // Use previous source
         if (dataSourceList.contains(DATA_SOURCE.get())) {
             defaultDataSource = DATA_SOURCE.get();
+        }
+
+        if ("Synthetic".equals(DATA_SOURCE.get()) && tableNames != null && tableNames.length > 0) {
+            defaultDataSource = tableNames[0];
         }
 
         GenericDialog gd = new GenericDialog("Periodogram");

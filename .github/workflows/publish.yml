@@ -312,6 +312,8 @@ jobs:
           github-artifact-id: '${{ steps.upload.outputs.artifact-id }}'
           wait-for-completion: true
           output-artifact-directory: 'signpath/output'
+          wait-for-completion-timeout-in-seconds: 900
+          service-unavailable-timeout-in-seconds: 900
 
       - name: Upload Signed Windows Installer
         if: runner.os == 'Windows' && github.event.inputs.windows_sign == 'true'

@@ -8,6 +8,7 @@ import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -543,6 +544,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         var editObservatories = new JMenuItem("Edit Custom Observatories List");
         editObservatories.addActionListener($ -> this.editObservatories());
         prefsMenu.add(editObservatories);
+
+        var openObersvatories = new JMenuItem("Open Custom Obersvatories Folder");
+        openObersvatories.addActionListener($ -> this.openObservatories());
+        prefsMenu.add(openObersvatories);
 
         prefsMenu.addSeparator();
 
@@ -3420,6 +3425,14 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         } catch (URISyntaxException e) {
             showMessage("Error copying internal observatory to prefs directory");
             getInternalObservatories(filename);
+        }
+    }
+
+    void openObservatories() {
+        try {
+            Desktop.getDesktop().open(new File(prefsDir));
+        } catch (IOException e) {
+            showMessage("Error opening observatory list");
         }
     }
 

@@ -7840,6 +7840,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         filemenu.add(createNEBReportMenuItem);
 
+        JMenuItem createPeriodogram = new JMenuItem("Create periodogram...");
+        createPeriodogram.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                IJ.runPlugIn("Astronomy.Periodogram_", "");
+            }
+        });
+        filemenu.add(createPeriodogram);
+
         JMenuItem createAAVSOReportMenuItem = new JMenuItem("Create AAVSO Exoplanet Database formatted data...");
         createAAVSOReportMenuItem.setToolTipText("<html>" + "Create AAVSO formatted data for submission to the AAVSO Exoplanet Database.</html>");
         createAAVSOReportMenuItem.addActionListener(new ActionListener() {

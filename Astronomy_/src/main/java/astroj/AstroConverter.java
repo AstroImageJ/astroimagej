@@ -67,6 +67,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -3425,6 +3426,16 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         } catch (URISyntaxException e) {
             showMessage("Error copying internal observatory to prefs directory");
             getInternalObservatories(filename);
+        }
+
+        if (observatoryIDComboBox != null) {
+            observatoryIDComboBox.setModel(new DefaultComboBoxModel<>(observatoryIDs));
+            observatoryIDComboBox.setSelectedIndex(selectedObservatory < observatoryIDs.length ? selectedObservatory : 0);
+            if (selectedObservatory > 0) {
+                if (selectedObservatory < observatoryLats.length) lat = observatoryLats[selectedObservatory];
+                if (selectedObservatory < observatoryLons.length) lon = observatoryLons[selectedObservatory];
+                if (selectedObservatory < observatoryAlts.length) alt = observatoryAlts[selectedObservatory];
+            }
         }
     }
 

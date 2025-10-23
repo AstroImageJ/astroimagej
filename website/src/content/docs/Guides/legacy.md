@@ -1,6 +1,6 @@
 ---
-title: AstroImageJ User Guide
-description: Learn more about my project in this docs site built with Starlight.
+title: Legacy User Guide
+description: Legacy user guide for AstroImageJ
 ---
 
 :::danger

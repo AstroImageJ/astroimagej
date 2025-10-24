@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 import markdoc from '@astrojs/markdoc';
+import remarkInlineImage from './src/remark/inline-image.mjs';
 
 export default defineConfig({
     site: 'https://astroimagej.com',
@@ -18,5 +19,11 @@ export default defineConfig({
         components: {
             SocialIcons: './src/components/StarlightSocialIcons.astro',
         },
+        customCss: ['./src/styles/inlineImage.css'],
     }), markdoc()],
+    markdown: {
+        remarkPlugins: [
+          remarkInlineImage
+        ],
+    },
 });

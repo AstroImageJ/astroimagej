@@ -1,0 +1,7 @@
+[classname~="inline-img"],
+ .inline-img {
+  display: inline-block !important; /* override Starlight's rule */
+  vertical-align: middle;
+  max-width: none;
+  height: auto;
+}

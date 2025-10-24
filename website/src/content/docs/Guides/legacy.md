@@ -199,7 +199,7 @@ Figure 1. AstroImageJ Toolbar with AstroImageJ tools on right-hand side
 
 ![](../../../assets/userGuide/image5.png)
 
-![](../../../assets/userGuide/image6.png) <u>Astro-Mode Icon</u> – this
+![#inline](../../../assets/userGuide/image6.png) <u>Astro-Mode Icon</u> – this
 button should normally be in the selected/pressed state for AIJ
 operation. When the button is in the deselected state, mouse, keyboard,
 and image display manipulation revert to standard ImageJ operation. This
@@ -211,7 +211,7 @@ ROI, remember to press the astro-mode icon to return to astro-mode.
 Pressing one of the following AIJ toolbar icons will not change the
 astro-mode state.
 
-![](../../../assets/userGuide/image7.png) <u>Data Processing Icon</u>
+![#inline](../../../assets/userGuide/image7.png) <u>Data Processing Icon</u>
 – opens the Data Processing (DP) module to perform image calibration
 (bias, dark, flat, linearity correction), and to optionally perform FITs
 header updates, plate solve to add WCS FITS headers (requires internet
@@ -222,7 +222,7 @@ post-processing mode by setting “Polling Interval” to zero, or works in
 non-zero value (5 seconds tends to work well). DP runs independent of,
 and in parallel with, any camera/telescope control software.
 
-![](../../../assets/userGuide/image1.png) <u>Multi-Aperture Icon</u> –
+![#inline](../../../assets/userGuide/image1.png) <u>Multi-Aperture Icon</u> –
 opens the Multi-Aperture (MA) photometry module to perform differential
 photometry on a series of (usually already calibrated) images. A series
 of images can be opened into an AIJ “Stack” by using the AIJ toolbar
@@ -232,7 +232,7 @@ part of a DP run, however it is often necessary to run MA on data that
 has already been calibrated. Multi-aperture outputs a table containing
 the photometry results.
 
-![](../../../assets/userGuide/image8.png) <u>Multi-Plot Icon</u> –
+![#inline](../../../assets/userGuide/image8.png) <u>Multi-Plot Icon</u> –
 opens the Multi-Plot (MP) module for plotting multiple curves on a
 single plot from the data table created by MA or any generic table
 opened from disk. A data file can be opened by dragging and dropping it
@@ -241,7 +241,7 @@ plot configuration will be automatically opened at the same time if a
 file with the same name, but with suffix .plotcfg, exists in the same
 folder as the dropped file.
 
-![](../../../assets/userGuide/image9.png) <u>Open Data Icon</u> –
+![#inline](../../../assets/userGuide/image9.png) <u>Open Data Icon</u> –
 opens a previously saved measurements table (or any generic tab, comma
 (.csv), space (.spc or .prn), or white space (.txt) delimited file) from
 disk for plotting with MP. Alternatively, a data file can be opened by
@@ -250,7 +250,7 @@ plot configuration will be automatically opened at the same time if a
 file with the same name, but with suffix .plotcfg, exists in the same
 folder as the dropped file.
 
-![](../../../assets/userGuide/image10.png) <u>Coordinate Converter
+![#inline](../../../assets/userGuide/image10.png) <u>Coordinate Converter
 Icon</u> – opens the astronomical coordinate and time converter module.
 This feature retrieves coordinates from SIMBAD and converts them to
 other standard astronomical coordinate systems. It converts time for
@@ -261,7 +261,7 @@ of the moon and of all major planets in the solar system are also
 provided. Archival sky images can be displayed via the SKY-MAP.org
 website.
 
-![](../../../assets/userGuide/image11.png) <u>Single Aperture
+![#inline](../../../assets/userGuide/image11.png) <u>Single Aperture
 Photometry Icon</u> – when selected, single aperture photometry will be
 performed by left-clicking the mouse at the desired location in an
 image. Single aperture photometry can also be performed, even if this
@@ -299,7 +299,7 @@ value within a circular aperture at the mouse cursor, however if enabled
 in Preferences menu, this label will read “Mean” and the value in the
 box is the mean within the aperture. The aperture characteristics can be
 set by clicking the “Set Aperture” Icon
-(![](../../../assets/userGuide/image13.png)) and the mouse aperture
+(![#inline](../../../assets/userGuide/image13.png)) and the mouse aperture
 display can be enabled/disabled under the Preferences menu. The “Int
 Cnts” value displays the sum of all the pixel values within the aperture
 (less the mean of the pixel values in the background annulus). The “Int
@@ -371,12 +371,12 @@ decreasing the width of the displayed range of pixel values.
 Alternatively, pressing the shift key while rolling the mouse wheel
 adjusts the image brightness and pressing the control key while rolling
 the mouse adjusts the contrast. To return to auto-scale setting, click
-on the ![](../../../assets/userGuide/image14.png) icon above the image.
+on the ![#inline](../../../assets/userGuide/image14.png) icon above the image.
 
 ## Image Negative
 
 AIJ can display an image as a “negative” by selecting the “display as
-image negative” icon ![](../../../assets/userGuide/image15.png) above the image. AIJ uses an
+image negative” icon ![#inline](../../../assets/userGuide/image15.png) above the image. AIJ uses an
 inverting lookup table to display the image rather than modifying the
 underlying image. In this mode, high pixel values are displayed as
 black, and low pixel values are displayed as white.
@@ -406,13 +406,13 @@ and out of the image. Place the mouse cursor at the point in the image
 where the zooming should take place and roll the wheel. If a mouse wheel
 is not available, click in the image at the desired zoom point and use
 the zoom buttons above the image
-![](../../../assets/userGuide/image16.png), or press "control" and left
+![#inline](../../../assets/userGuide/image16.png), or press "control" and left
 click to zoom in, or "control" and right click to zoom out. Press the
-“zoom-in fast” button ![](../../../assets/userGuide/image17.png) above the image or double
+“zoom-in fast” button ![#inline](../../../assets/userGuide/image17.png) above the image or double
 left-click in the image to zoom in “fast”. Double right-click to zoom
 out such that the image will fill the available area in the image
 display. Press the “zoom to fit” icon
-![](../../../assets/userGuide/image18.png) or triple right click to zoom
+![#inline](../../../assets/userGuide/image18.png) or triple right click to zoom
 out such that the full image is displayed on the screen (which may leave
 white space at top/ bottom or left/right of the image). The keyboard up
 arrow or plus key will zoom in at the last clicked location in an image,
@@ -425,7 +425,7 @@ the image and provides a peak pixel count in the aperture (or mean pixel
 count if selected in the Preferences menu) and a sky subtracted
 integrated count in the aperture. The photometer radius and inner and
 outer background radii can be set by clicking the “change aperture
-settings” icon ![](../../../assets/userGuide/image19.png) above the image. Display of
+settings” icon ![#inline](../../../assets/userGuide/image19.png) above the image. Display of
 the photometer can be disabled by deselecting the Preferences menu item
 “Show photometer regions at mouse cursor”. The photometer peak and
 integrated counts will be updated above the image, even if the
@@ -435,17 +435,17 @@ photometer annuli are not showing.
 
 Shift left-click on the mouse to run the single aperture photometer, or
 click the “Aperture Photometry Tool” icon
-![](../../../assets/userGuide/image20.png) on the AIJ toolbar. The
+![#inline](../../../assets/userGuide/image20.png) on the AIJ toolbar. The
 single aperture photometer results are listed in a measurements table
 and can be saved or plotted using Multi-Plot. The data values reported
 can be set by clicking the “change aperture settings” icon
-![](../../../assets/userGuide/image19.png) above the image, or by
+![#inline](../../../assets/userGuide/image19.png) above the image, or by
 selecting Edit-&gt;Aperture Settings in the menus above the image, or by
 double clicking on the “Aperture Photometry Tool” icon
-![](../../../assets/userGuide/image20.png) on the AIJ toolbar. See the
+![#inline](../../../assets/userGuide/image20.png) on the AIJ toolbar. See the
 Aperture Settings section for more details. Apertures displayed on an
 image can be removed by clicking the “clear apertures overlay” icon
-![](../../../assets/userGuide/image21.png) above the image.
+![#inline](../../../assets/userGuide/image21.png) above the image.
 
 ## Apertures Displayed in the Image
 
@@ -454,18 +454,18 @@ mouse curser (if enabled in Preferences), as a result of single aperture
 photometry, or multi-aperture photometry. Display of the background
 annulus of apertures from all three sources can be enabled or disabled
 by clicking the “display sky background regions” icon
-![](../../../assets/userGuide/image22.png) above the image. The “display
+![#inline](../../../assets/userGuide/image22.png) above the image. The “display
 source integrated counts” icon
-![](../../../assets/userGuide/image23.png) is applicable for both
+![#inline](../../../assets/userGuide/image23.png) is applicable for both
 single and multi-aperture photometry, while the “display source
-identification” icon ![](../../../assets/userGuide/image24.png) is applicable only to
+identification” icon ![#inline](../../../assets/userGuide/image24.png) is applicable only to
 multi-aperture photometry. The displayed source IDs indicate which
 aperture is related to similarly identified data in the measurements
 table. The “centroid aperture” icon
-![](../../../assets/userGuide/image25.png) enables or disables the
+![#inline](../../../assets/userGuide/image25.png) enables or disables the
 aperture centroid feature and is applicable to both single and
 multi-aperture photometry. Finally, the “clear aperture overlay” icon
-![](../../../assets/userGuide/image26.png) removes all apertures from
+![#inline](../../../assets/userGuide/image26.png) removes all apertures from
 the image.
 
 ## Measuring Arclength
@@ -474,7 +474,7 @@ A middle mouse button click and drag shows distance in arclength in the
 bottom right box at the top of the image when a pixel scale is set in
 the Preferences menu or WCS headers are available. Otherwise length is
 shown in pixels. Click the “clear apertures overlay” icon
-![](../../../assets/userGuide/image21.png) to remove the line that was
+![#inline](../../../assets/userGuide/image21.png) to remove the line that was
 drawn during the measurement. Two Preference menu options are available
 to enable image data to be written to a log file when the middle mouse
 button is clicked or dragged. The resulting log file can be saved if
@@ -493,11 +493,11 @@ dragged left and right to move through the images, or the left and right
 arrow buttons on either end can be used to move through the images one
 at a time. The keyboard left and right arrow keys will also move through
 the images one at a time. The play icon
-![](../../../assets/userGuide/image27.png) will display the stack as an
+![#inline](../../../assets/userGuide/image27.png) will display the stack as an
 animation. Right click the play icon to set the animation speed and
 other parameters. To delete the currently displayed image from a stack
 (i.e. the current slice), click the
-![](../../../assets/userGuide/image28.png) icon above the image. The
+![#inline](../../../assets/userGuide/image28.png) icon above the image. The
 image is only removed from the stack in AIJ memory, and is not deleted
 from the disk. The delete current image feature will not delete the last
 two images of a stack.
@@ -508,28 +508,28 @@ Figure 3. Stack Control Panel
 
 ## Other Stack Related Icons above the Image Display
 
-![](../../../assets/userGuide/image30.png) <u>Clear Table Icon</u> –
+![#inline](../../../assets/userGuide/image30.png) <u>Clear Table Icon</u> –
 clears all data in the measurements table that is created by Single- or
 Multi-Aperture. This button is useful when running back to back
 Multi-Aperture sessions and the user desires to quickly delete the data
 from the previous session. WARNING: there is no undo for this operation!
 
-![](../../../assets/userGuide/image31.png) <u>Multi-Aperture Icon</u> –
+![#inline](../../../assets/userGuide/image31.png) <u>Multi-Aperture Icon</u> –
 opens the Multi-Aperture (MA) photometry module to perform differential
 photometry on a series of (usually already calibrated) images.
 
-![](../../../assets/userGuide/image32.png) <u>Image Alignment Icon</u>
+![#inline](../../../assets/userGuide/image32.png) <u>Image Alignment Icon</u>
 – opens the AIJ Stack Aligner module. Stack Aligner allows the user to
 place apertures at one or more reference stars in a reference image of a
 stack. It then uses the centroids of those reference stars in each image
 to align to the reference image by translating the image in the x- and
 y-axes (image rotation is not supported).
 
-![](../../../assets/userGuide/image33.png) <u>Plate Solve Icon</u> –
+![#inline](../../../assets/userGuide/image33.png) <u>Plate Solve Icon</u> –
 opens the AIJ plate solve setup panel. Plate solving requires an
 internet link and a free user key from nova.astrometry.net.
 
-![](../../../assets/userGuide/image34.png) <u>FITS Header Editor
+![#inline](../../../assets/userGuide/image34.png) <u>FITS Header Editor
 Icon</u> – opens the AIJ FITS Header Editor module. This feature allows
 the user to view or edit the FITS header associated with an image. See
 FITS Header Viewing and Editing section for more details.
@@ -605,7 +605,7 @@ nonsymmetrical ROIs, it may be necessary to set the image orientation to
 simply redraw the ROI using the shortcuts described above. This issue
 will be resolved in a future AIJ release. ROIs can be cleared by
 clicking the “clear aperture overlay” icon
-![](../../../assets/userGuide/image35.png) above an image, or by using
+![#inline](../../../assets/userGuide/image35.png) above an image, or by using
 the View menu “Clear Overlay” selection.
 
 # Data Processor (DP) Module
@@ -853,7 +853,7 @@ This section provides the capability to add new keywords and values to
 the output file FITS header. When this feature is enabled, a DP
 “instance” of the Coordinate Converter (DPCC) module will be displayed
 as shown in Figure 5. The DPCC window can be alternately displayed or
-hidden by clicking the ![](../../../assets/userGuide/image37.png) icon in this section of the
+hidden by clicking the ![#inline](../../../assets/userGuide/image37.png) icon in this section of the
 DP GUI. DPCC will continue to operate as set up, even if the window is
 closed/hidden. The DPCC instance runs independent of an instance started
 by clicking the Coordinate Converter icon on the AIJ toolbar. Both
@@ -916,7 +916,7 @@ data into any field. If **FITS header target name** is selected as the
 target coordinate source, all science images being processed must
 contain a FITS header keyword as defined in the *FITS Header Settings*
 panel which can be opened by clicking the
-![](../../../assets/userGuide/image39.png) button. The panel is shown
+![#inline](../../../assets/userGuide/image39.png) button. The panel is shown
 in Figure 4. The keyword containing the target name (not the target
 name) should be entered in the field of the input settings section named
 “Target Name Keyword”. The keyword value from a science image is
@@ -987,7 +987,7 @@ enabled/disable in the settings panel.
 
 Figure 6. Data Processor FITS Header Settings
 
-![](../../../assets/userGuide/image40.png)
+![#inline](../../../assets/userGuide/image40.png)
 
 #### Save Calibrated Images
 
@@ -1027,7 +1027,7 @@ This section allows the user to select Multi-Aperture and Multi-plot to
 run after each image has been calibrated. The Multi-Aperture setup panel
 will only be presented after the first image has been calibrated after
 opening DP, or after pressing the
-![](../../../assets/userGuide/image41.png) button before or during a DP
+![#inline](../../../assets/userGuide/image41.png) button before or during a DP
 run. Two ImageJ macros can also be executed after each image has been
 processed. Enter the full path and file name, or navigate to the desired
 macro file using the blue and white folder button to the right of macro
@@ -1083,17 +1083,17 @@ directory scan and will not account for new images written into the
 science directory until all of the previously matching images have been
 processed and a new polling cycle begins.
 
-The *Set Aperture* button ![](../../../assets/userGuide/image42.png) provides direct access to
+The *Set Aperture* button ![#inline](../../../assets/userGuide/image42.png) provides direct access to
 the aperture settings panels. To force the Multi-Aperture settings panel
 to display after the next image has been calibrated, press the
-![](../../../assets/userGuide/image43.png) button. If a DP run is paused
+![#inline](../../../assets/userGuide/image43.png) button. If a DP run is paused
 and continued, or paused, reset, and restarted, the same multi-aperture
 settings and aperture locations will continue to be used unless the
-![](../../../assets/userGuide/image43.png) button has been pressed.
+![#inline](../../../assets/userGuide/image43.png) button has been pressed.
 When restarting a DP run, it may be desired to remove all of the
 previous data from the measurements table. To do so, either press the
 *Clear Measurements Table* button
-![](../../../assets/userGuide/image44.png) , or close the measurements
+![#inline](../../../assets/userGuide/image44.png) , or close the measurements
 table window.
 
 ## Sample Setup
@@ -1207,12 +1207,12 @@ not transferred across the network which limits network traffic and
 improves the solve time.
 
 Click the plate solve icon
-(![](../../../assets/userGuide/image45.png)) above an image or image
+(![#inline](../../../assets/userGuide/image45.png)) above an image or image
 stack to bring up the “Astrometry Settings” panel shown below.
 Astrometry can also be performed as part of a “Data Processor” run. To
 enable the feature in DP, enable “Plate Solve” in the “FITS Header
 Updates” section of the “DP CCD Data Processor” panel and Click
-![](../../../assets/userGuide/image46.png) to set the astrometry
+![#inline](../../../assets/userGuide/image46.png) to set the astrometry
 options.
 
 The first time the Astrometry module is used in AIJ, a free user key
@@ -1241,7 +1241,7 @@ you understand which keyword and value changes will comprise the
 integrity of the FITS image.
 
 The "display FITS header" icon
-![](../../../assets/userGuide/image48.png) above an image opens the
+![#inline](../../../assets/userGuide/image48.png) above an image opens the
 image’s FITS header into a table for viewing and editing as shown in
 Figure 4. To change keyword values, the user must deselect “Lock Keyword
 Values” below the table. To edit an item, double-click in the
@@ -1291,7 +1291,7 @@ the first aperture.
 The parameters of the photometer and the data recorded in the
 MeasurementsTable can be set up by double clicking the single aperture
 icon on the IJ toolbar. If an image is open, the settings can be
-accessed clicking the ![](../../../assets/userGuide/image50.png) icon above the image. There
+accessed clicking the ![#inline](../../../assets/userGuide/image50.png) icon above the image. There
 are many options available but figures 4 and 5 below show the
 recommended settings. Adjust the aperture sizes properly for the data
 being analyzed. Be sure to select “Show other configuration panel” at
@@ -1316,7 +1316,7 @@ half second and the help will appear on the screen. To keep the
 information on the screen longer than the default time, continue to
 slowly move the mouse over the control. If images have not already been
 calibrated, the Data Processor (DP) module
-(![](../../../assets/userGuide/image53.png)) on the AIJ toolbar provides
+(![#inline](../../../assets/userGuide/image53.png)) on the AIJ toolbar provides
 the capability to create master bias, dark, and flat-field images, and
 to calibrate raw images using those master calibration files. DP
 optionally operates in “real time” mode to calibrate data, perform
@@ -1399,30 +1399,30 @@ compatible WCS data has been found in the image header. Directions and
 distance scales can be set manually in the “WCS” menu and/or the overlay
 of this data on the image can be disabled in the "View" menu.
 
-\-![C:\Users\Karen\Desktop\iagcijgi.png](../../../assets/userGuide/image55.png) These icons control which
+\-![#inline C:\Users\Karen\Desktop\iagcijgi.png](../../../assets/userGuide/image55.png) These icons control which
 parts of apertures are displayed on the image.
 
-\-![C:\Users\Karen\Desktop\jaieejfd.png](../../../assets/userGuide/image56.png)When selected, apertures
+\-![#inline C:\Users\Karen\Desktop\jaieejfd.png](../../../assets/userGuide/image56.png)When selected, apertures
 will be placed at the centroid of the star near the mouse click. This
 button should normally always be selected. Centroid is either on or off
 for all apertures in versions 2.1.4 and below. In versions 2.1.5 and
 above, centroid can be controlled on a per aperture basis.
 
-\-![C:\Users\Karen\Desktop\fjcigjbj.png](../../../assets/userGuide/image57.png) These icons control image
+\-![#inline C:\Users\Karen\Desktop\fjcigjbj.png](../../../assets/userGuide/image57.png) These icons control image
 zoom. Or, shift-left-click to zoom in, shift-right-click to zoom out (or
 use the keyboard up and down arrows to zoom). If you have a mouse with a
 scroll wheel, roll it to zoom.
 
 -To pan the image, left-click and drag the image left/right/up/down.
 
-\-![C:\Users\Karen\Desktop\fggeeicg.png](../../../assets/userGuide/image58.png) Click this icon to return
+\-![#inline C:\Users\Karen\Desktop\fggeeicg.png](../../../assets/userGuide/image58.png) Click this icon to return
 to automatic contrast settings after black and white have been manually
 changed.
 
-\-![C:\Users\Karen\Desktop\dhgeaagi.png](../../../assets/userGuide/image59.png) Click to display and
+\-![#inline C:\Users\Karen\Desktop\dhgeaagi.png](../../../assets/userGuide/image59.png) Click to display and
 optionally edit the FITS header.
 
-\-![C:\Users\Karen\Desktop\ajbacbbf.png](../../../assets/userGuide/image60.png) The top right boxes above
+\-![#inline C:\Users\Karen\Desktop\ajbacbbf.png](../../../assets/userGuide/image60.png) The top right boxes above
 an image display the values from a "live" aperture that moves with the
 mouse. If the live aperture does not show at the mouse pointer, enable
 Preferences-&gt;Show photometer aperture at mouse cursor to see it. This
@@ -1443,8 +1443,8 @@ update if you used the virtual stack option.
 #### Set up Aperture Parameters
 
 Aperture settings can be accessed by clicking
-![](../../../assets/userGuide/image61.png) above an image, or by
-double-clicking ![](../../../assets/userGuide/image62.png) on the AIJ\_Toolbar. Most of
+![#inline](../../../assets/userGuide/image61.png) above an image, or by
+double-clicking ![#inline](../../../assets/userGuide/image62.png) on the AIJ\_Toolbar. Most of
 these settings rarely need to be changed, but there are a few that
 require some initial per user/per observatory changes.
 
@@ -1492,9 +1492,9 @@ Mouse the mouse cursor over the image and zoom in on a star of interest.
 If you do not see the live aperture displayed at the mouse cursor,
 enable Image\_Display-&gt;Preferences-&gt;”Show photometer aperture at
 mouse cursor”. Enable or disable the display of the background annulus
-as desired using the ![](../../../assets/userGuide/image63.png) icon above the image. Also
+as desired using the ![#inline](../../../assets/userGuide/image63.png) icon above the image. Also
 make sure the centroid icon
-![](../../../assets/userGuide/image64.png) is depressed (enabled). Now
+![#inline](../../../assets/userGuide/image64.png) is depressed (enabled). Now
 press and hold shift and left-click near a star. A red aperture will be
 placed at the centroid of the star on the image, and a measurements
 table will open. The image display should look like this if background
@@ -1504,9 +1504,9 @@ annulus display and integrated counts display are enabled:
 
 If the aperture does not encircle the portion of the stars PSF that you
 desire, open aperture settings
-(![](../../../assets/userGuide/image66.png)) and modify the radii as
-desired. Click ![](../../../assets/userGuide/image67.png) to clear the aperture image
-overlay, and click ![](../../../assets/userGuide/image68.png) to clear the old values from
+(![#inline](../../../assets/userGuide/image66.png)) and modify the radii as
+desired. Click ![#inline](../../../assets/userGuide/image67.png) to clear the aperture image
+overlay, and click ![#inline](../../../assets/userGuide/image68.png) to clear the old values from
 the table (as needed). Shift-left-click to place another aperture to
 make sure your aperture is sized to fit your needs. If not, repeat the
 above steps. A future version will provide the capability to modify the
@@ -1515,7 +1515,7 @@ aperture radii more conveniently.
 #### Run Multi-Aperture Differential Photometry
 
 Start "Multi-Aperture" (MA) setup by clicking the
-![C:\Users\Karen\Desktop\ebadiegc.png](../../../assets/userGuide/image69.png) icon above the image stack.
+![#inline C:\Users\Karen\Desktop\ebadiegc.png](../../../assets/userGuide/image69.png) icon above the image stack.
 The following window will open. Use the setting shown for a practice
 run, except keep the aperture radii settings that you selected in the
 previous step.
@@ -1580,7 +1580,7 @@ seem to work well.
 #### Load a Default Plot Configuration
 
 If the two “Multi-Plot” (MP) control windows are not open from the
-previous step, click ![](../../../assets/userGuide/image73.png) on the AIJ Toolbar to open
+previous step, click ![#inline](../../../assets/userGuide/image73.png) on the AIJ Toolbar to open
 them and automatically load the measurements table just created by
 Multi-Aperture. Now load the supplied plot configuration file using
 Multi-Plot\_Main-&gt;File-&gt;”Open plot configuration from file”.
@@ -1609,7 +1609,7 @@ selected.
 Finally, the “Detrend and Normalize Region Selection” section at the
 bottom of the “Multi-Plot Main” panel needs to be set to match your
 data. In this simple case, click the “Copy” icon
-![](../../../assets/userGuide/image74.png) to copy the V.Marker1 and
+![#inline](../../../assets/userGuide/image74.png) to copy the V.Marker1 and
 V.Marker2 values to the “Left” and “Right” boxes. The V.Marker lines are
 for display purposes only. The “Left” and “Right” values are used to
 segment the data for normalization and detrending purposes. The two sets
@@ -1629,16 +1629,16 @@ Notice that three different “Detrend Mode” settings are used to produce
 this plot (more are available but those are beyond the scope of this
 demonstration).
 
-![](../../../assets/userGuide/image75.png) - no
+![#inline](../../../assets/userGuide/image75.png) - no
 detrending/normalization is applied to the Y-dataset
 
-![](../../../assets/userGuide/image76.png) - detrending/normalization
+![#inline](../../../assets/userGuide/image76.png) - detrending/normalization
 is fitted to the Y-dataset values to the left of “Left” and to the right
 of “Right”. In other words, only the out-of-transit data are fitted.
 This setting is useful for transits or other light curves that show an
 eclipse.
 
-![](../../../assets/userGuide/image77.png) - all data in the Y-dataset
+![#inline](../../../assets/userGuide/image77.png) - all data in the Y-dataset
 are used to normalize and/or detrend. This setting is useful for
 comparison star plots. If airmass detrending is applied to a *good*
 comparison star, the resulting plot should be flat unless other
@@ -1744,7 +1744,7 @@ needed to submit to collaborators. To save these plotted values back to
 the table, the error calculation must first be enabled on the
 corresponding plot control row by selecting the “Auto Error” checkbox.
 Now click the “New Col” icon
-![](../../../assets/userGuide/image80.png) on the left side of the
+![#inline](../../../assets/userGuide/image80.png) on the left side of the
 Y-data panel that is on the plot control row corresponding to the
 desired data. The following panel will open.
 

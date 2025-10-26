@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight';
 
 import markdoc from '@astrojs/markdoc';
 import remarkInlineImage from './src/remark/inline-image.mjs';
+import remarkPathOverride from './src/remark/path-override.mjs';
 
 export default defineConfig({
     site: 'https://astroimagej.com',
@@ -23,7 +24,8 @@ export default defineConfig({
     }), markdoc()],
     markdown: {
         remarkPlugins: [
-          remarkInlineImage
+          remarkInlineImage,
+          remarkPathOverride,
         ],
     },
 });

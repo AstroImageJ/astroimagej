@@ -217,7 +217,7 @@ public class OtherInstance {
 
 	protected static Properties loadPrefs() {
 		Properties result = new Properties();
-		File file = new File(getPrefsDirectory(), "IJ_Prefs.txt");
+		File file = new File(getPrefsDirectory(), "AIJ_Prefs.txt");
 		try {
 			InputStream in = new BufferedInputStream(new FileInputStream(file));
 			result.load(in);

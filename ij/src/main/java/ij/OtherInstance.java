@@ -1,14 +1,22 @@
 package ij;
 
-import ij.io.OpenDialog;
-import ij.io.Opener;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
+
+import ij.astro.AstroImageJ;
+import ij.astro.ipc.IPCClient;
+import ij.astro.ipc.IPCServer;
+import ij.io.OpenDialog;
+import ij.io.Opener;
 
 /*
  * This class tries to contact another instance on the same machine, started
@@ -22,6 +30,8 @@ import java.util.Properties;
  */
 public class OtherInstance {
 	private static final String DELIMETER = "~!~"; // Separates macro name and argument
+    @AstroImageJ(reason = "Replace method of cross-instance communication", modified = true)
+    private static final ImageJInstance INSTANCE = new Implementation();
 
 	interface ImageJInstance extends Remote {
 		void sendArgument(String arg) throws RemoteException;
@@ -106,52 +116,55 @@ public class OtherInstance {
 		}
 	}
 
+    @AstroImageJ(reason = "Replace method of cross-instance communication", modified = true)
 	public static boolean sendArguments(String[] args) {
 		if (!isRMIEnabled())
 			return false;
-		String file = getStubPath();
-		try {
-			FileInputStream in = new FileInputStream(file);
-			ImageJInstance instance = (ImageJInstance) new ObjectInputStream(in).readObject();
-			in.close();
-			if (instance==null)
-				return false;
-			instance.sendArgument("user.dir "+System.getProperty("user.dir"));
-			int macros = 0;
-			for (int i=0; i<args.length; i++) {
-				String arg = args[i];
-				if (arg==null)
-					continue;
-				String cmd = null;
-				if (macros==0 && arg.endsWith(".ijm")) {
-					cmd = "macro " + arg;
-					macros++;
-				} else if (arg.startsWith("-macro") && i+1<args.length) {
-					String macroArg = i+2<args.length?DELIMETER+args[i+2]:"";
-					cmd = "macro " + args[i+1] + macroArg;
-					instance.sendArgument(cmd);
-					break;
-				} else if (arg.startsWith("-eval") && i+1<args.length) {
-					cmd = "eval " + args[i+1];
-					args[i+1] = null;
-				} else if (arg.startsWith("-run") && i+1<args.length) {
-					cmd = "run " + args[i+1];
-					args[i+1] = null;
-				} else if (arg.indexOf("ij.ImageJ")==-1 && !arg.startsWith("-"))
-					cmd = "open " + arg;
-				if (cmd!=null)
-					instance.sendArgument(cmd);
-			} // for
-			return true;
-		} catch (Exception e) {
-			if (IJ.debugMode) {
-				System.err.println("Client exception: " + e);
-				e.printStackTrace();
-			}
-			new File(file).delete();
-		}
-		if (!new File(file).exists())
-			startServer();
+
+        var stub = Path.of(getStubPath());
+
+        if (!Files.exists(stub)) {
+            startServer();
+            return false;
+        }
+
+        try (var client = new IPCClient(stub)) {
+            client.sendMessage("user.dir "+System.getProperty("user.dir"));
+            int macros = 0;
+            for (int i=0; i<args.length; i++) {
+                String arg = args[i];
+                if (arg==null) {
+                    continue;
+                }
+
+                String cmd = null;
+                if (macros==0 && arg.endsWith(".ijm")) {
+                    cmd = "macro " + arg;
+                    macros++;
+                } else if (arg.startsWith("-macro") && i+1<args.length) {
+                    String macroArg = i+2<args.length?DELIMETER+args[i+2]:"";
+                    cmd = "macro " + args[i+1] + macroArg;
+                    client.sendMessage(cmd);
+                    break;
+                } else if (arg.startsWith("-eval") && i+1<args.length) {
+                    cmd = "eval " + args[i+1];
+                    args[i+1] = null;
+                } else if (arg.startsWith("-run") && i+1<args.length) {
+                    cmd = "run " + args[i+1];
+                    args[i+1] = null;
+                } else if (!arg.contains("ij.ImageJ") && !arg.startsWith("-")) {
+                    cmd = "open " + arg;
+                }
+
+                if (cmd!=null) {
+                    client.sendMessage(cmd);
+                }
+            }
+
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 		//IJ.log("sendArguments: return false ");
 		return false;
 	}
@@ -159,28 +172,22 @@ public class OtherInstance {
 	static ImageJInstance stub;
 	static Implementation implementation;
 
+    @AstroImageJ(reason = "Replace method of cross-instance communication", modified = true)
 	public static void startServer() {
 		if (IJ.debugMode)
 			System.err.println("OtherInstance: starting server");
-		try {
-			implementation = new Implementation();
-			stub = (ImageJInstance)UnicastRemoteObject.exportObject(implementation, 0);
+        try {
+            var p = Path.of(getStubPath());
 
-			// Write serialized object
-			String path = getStubPath();
-			FileOutputStream out = new FileOutputStream(path);
-			makeFilePrivate(path);
-			new ObjectOutputStream(out).writeObject(stub);
-			out.close();
-
-			if (IJ.debugMode)
-				System.err.println("OtherInstance: server ready");
-		} catch (Exception e) {
-			if (IJ.debugMode) {
-				System.err.println("Server exception: " + e);
-				e.printStackTrace();
-			}
-		}
+            p.toFile().deleteOnExit();//todo FileLock?
+            new IPCServer(p, s -> {
+                try {
+                    INSTANCE.sendArgument(s);
+                } catch (RemoteException ignored) {}
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 
 	private static final String OPTIONS = "prefs.options";

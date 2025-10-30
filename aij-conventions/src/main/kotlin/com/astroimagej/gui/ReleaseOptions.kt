@@ -4,47 +4,7 @@ import com.astroimagej.updates.Type
 import java.awt.*
 import javax.swing.*
 
-data class ReleaseOptions(
-    val version: String,
-    val skipRelease: Boolean,
-    val notarize: Boolean,
-    val windowsSign: Boolean,
-    val crosspackage: Boolean,
-    val releaseType: Type,
-)
-
-fun showReleaseOptionsDialog(parent: Frame? = null, releaseType: Type, version: String): ReleaseOptions? {
-    val versionField = JTextField().apply {
-        columns = 20
-        toolTipText = "Release version (e.g. x.y.z.w)"
-        text = version
-    }
-
-    val skipReleaseCb = JCheckBox("Skip creating a GitHub release").apply {
-        isSelected = false
-        toolTipText = "Skip creating a GitHub release"
-    }
-
-    val notarizeCb = JCheckBox("Notarize Mac Package").apply {
-        isSelected = true
-        toolTipText = "Notarize Mac Package"
-    }
-
-    val windowsSignCb = JCheckBox("Sign Windows Package").apply {
-        isSelected = true
-        toolTipText = "Sign Windows Package"
-    }
-
-    val crosspackageCb = JCheckBox("Cross package applications").apply {
-        isSelected = true
-        toolTipText = "Should not be changed, if disabled use jpackage to create the app images"
-    }
-
-    val releaseTypeCombo = JComboBox(Type.entries.toTypedArray()).apply {
-        selectedItem = releaseType
-        toolTipText = "Release type"
-    }
-
+fun showReleaseOptionsDialog(parent: Frame? = null, releaseType: Type, version: String, options: Map<String, WorkflowInput>): Map<String, String> {
     // Build layout
     val panel = JPanel(GridBagLayout())
     val c = GridBagConstraints().apply {
@@ -52,34 +12,22 @@ fun showReleaseOptionsDialog(parent: Frame? = null, releaseType: Type, version: 
         anchor = GridBagConstraints.WEST
         weightx = 1.0
         insets = Insets(6, 6, 6, 6)
+        gridy = 0
     }
 
-    fun addLabelAnd(compLabel: String, component: JComponent, row: Int) {
-        val label = JLabel(compLabel)
-        c.gridx = 0
-        c.gridy = row
-        c.weightx = 0.0
-        panel.add(label, c)
-        c.gridx = 1
-        c.weightx = 1.0
-        panel.add(component, c)
+    val processed = mutableListOf<Option>()
+
+    options.forEach { (name, input) ->
+        if (input.type == InputType.BOOLEAN) {
+            c.gridwidth = 2
+        } else {
+            c.gridwidth = 1
+        }
+        val o = toComponent(name, input, version)
+        processed.add(o)
+        panel.add(o.comp, c)
+        c.gridy++
     }
-
-    var row = 0
-    addLabelAnd("Version:", versionField, row++)
-
-    c.gridx = 0
-    c.gridy = row++
-    c.gridwidth = 2
-    panel.add(skipReleaseCb, c)
-    c.gridy = row++
-    panel.add(notarizeCb, c)
-    c.gridy = row++
-    panel.add(windowsSignCb, c)
-    c.gridy = row++
-    panel.add(crosspackageCb, c)
-    c.gridwidth = 1
-    addLabelAnd("Release type:", releaseTypeCombo, row++)
 
     val okButton = JButton("OK")
     val cancelButton = JButton("Cancel")
@@ -95,48 +43,17 @@ fun showReleaseOptionsDialog(parent: Frame? = null, releaseType: Type, version: 
         pack()
     }
 
-    var result: ReleaseOptions? = null
+    var result: Map<String, String> = emptyMap()
 
     okButton.addActionListener {
-        val version = versionField.text.trim()
-        if (version.isEmpty()) {
-            JOptionPane.showMessageDialog(
-                dialog,
-                "Version is required and cannot be empty.",
-                "Validation error",
-                JOptionPane.ERROR_MESSAGE
-            )
-            versionField.requestFocusInWindow()
-            return@addActionListener
-        }
-
-        val r = Regex("\\d+\\.\\d+\\.\\d+\\.\\d+")
-        if (!r.matches(version)) {
-            JOptionPane.showMessageDialog(
-                dialog,
-                "Version must be in the format x.y.z.w where x, y, z, and w are non-negative integer numbers.",
-                "Validation error",
-                JOptionPane.ERROR_MESSAGE
-            )
-            versionField.requestFocusInWindow()
-            return@addActionListener
-        }
-
-        result = ReleaseOptions(
-            version = version,
-            skipRelease = skipReleaseCb.isSelected,
-            notarize = notarizeCb.isSelected,
-            windowsSign = windowsSignCb.isSelected,
-            crosspackage = crosspackageCb.isSelected,
-            releaseType = releaseTypeCombo.selectedItem as Type,
-        )
+        result = processed.associate { it.valueFunc() }
         dialog.dispose()
     }
 
     dialog.defaultCloseOperation = JDialog.DISPOSE_ON_CLOSE
 
     cancelButton.addActionListener {
-        result = null
+        result = emptyMap()
         dialog.dispose()
     }
 
@@ -147,3 +64,70 @@ fun showReleaseOptionsDialog(parent: Frame? = null, releaseType: Type, version: 
     return result
 }
 
+fun toComponent(name: String, input: WorkflowInput, version: String): Option {
+    if (name == "version") {
+        val comps = version.split(".")
+
+        val b = Box.createHorizontalBox()
+        val major = JSpinner(SpinnerNumberModel(comps[0].toInt(), 0, 999, 1))
+        val minor = JSpinner(SpinnerNumberModel(comps[1].toInt(), 0, 999, 1))
+        val patch = JSpinner(SpinnerNumberModel(comps[2].toInt(), 0, 999, 1))
+        val daily = JSpinner(SpinnerNumberModel(comps[3].toInt(), 0, 999, 1))
+
+        b.add(JLabel(input.description ?: name))
+        b.add(Box.createHorizontalStrut(10))
+        b.add(Box.createHorizontalGlue())
+        b.add(major)
+        b.add(minor)
+        b.add(patch)
+        b.add(daily)
+
+        return Option(name, b) {
+            Pair(name, "${major.value}.${minor.value}.${patch.value}.${daily.value.toString().padStart(2, '0')}")
+        }
+    }
+
+    return when (input.type) {
+        InputType.STRING -> {
+            val tf = JTextField().apply {
+                columns = 20
+                toolTipText = input.description
+                text = input.default
+            }
+
+            val b = Box.createHorizontalBox()
+            b.add(JLabel(input.description ?: name))
+            b.add(Box.createHorizontalStrut(10))
+            b.add(Box.createHorizontalGlue())
+            b.add(tf)
+            Option(name, b) { Pair(name, tf.text) }
+        }
+        InputType.BOOLEAN -> {
+            val b = input.default.toBoolean()
+            val cb = JCheckBox(input.description ?: name).apply {
+                isSelected = b
+                toolTipText = input.description
+            }
+            Option(name, cb) { Pair(name, cb.isSelected.toString()) }
+        }
+        InputType.CHOICE -> {
+            val combo = JComboBox(input.options!!.toTypedArray()).apply {
+                selectedItem = input.default ?: input.options.first()
+                toolTipText = input.description
+            }
+
+            val b = Box.createHorizontalBox()
+            b.add(JLabel(input.description ?: name))
+            b.add(Box.createHorizontalStrut(10))
+            b.add(Box.createHorizontalGlue())
+            b.add(combo)
+            Option(name, b) { Pair(name, combo.selectedItem as String) }
+        }
+    }
+}
+
+data class Option(
+    val name: String,
+    val comp: JComponent,
+    val valueFunc: () -> Pair<String, String>
+)

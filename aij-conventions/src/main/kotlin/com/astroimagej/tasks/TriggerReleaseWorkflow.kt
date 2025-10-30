@@ -17,6 +17,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import java.net.URI
+import java.net.URL
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -108,7 +109,7 @@ abstract class TriggerReleaseWorkflow
     }
 
     fun latestVersion(): Pair<String, List<String>> {
-        val versions = Json.decodeFromString<Versions>(providerFactory.fileContents(versionsFile).asText.get())
+        val versions = Json.decodeFromString<Versions>(URL("https://astroimagej.com/meta/versions.json").readText())
         val vs = versions.versions.map { it.version }
         val latest = vs.map { SemanticVersion(it) }.maxOf { it }
         return Pair(latest.toString(), vs)

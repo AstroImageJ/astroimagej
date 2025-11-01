@@ -753,7 +753,6 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                     project.property("codeSignAndNotarize").toString().toBoolean() &&
                     Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
             mustRunAfter(fixJPackageMetadataTask)
-            dependsOn(fixJPackageMetadataTask)
 
             inputs.dir(appImageDir)
 

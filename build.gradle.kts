@@ -637,7 +637,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         packageTask.map { it.outputDir.get() }
     }
 
-    tasks.register<FixJPackageMetadataTask>("fixJpackageMetadataFor$sysId") {
+    val fixJPackageMetadataTask = tasks.register<FixJPackageMetadataTask>("fixJpackageMetadataFor$sysId") {
         enabled = crossBuildAppImage.get()
 
         targetOs = sysInfo.os
@@ -667,7 +667,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 mustRunAfter(tasks.named("signFor$sysId"))
             }
         } else {
-            mustRunAfter(tasks.named("fixJpackageMetadataFor$sysId"))
+            dependsOn(fixJPackageMetadataTask)
+            mustRunAfter(fixJPackageMetadataTask)
             if (sysInfo.os == MAC) {
                 mustRunAfter(tasks.named("signFor$sysId"))
             }
@@ -751,8 +752,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             enabled = providers.environmentVariable("DeveloperId").isPresent &&
                     project.property("codeSignAndNotarize").toString().toBoolean() &&
                     Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
-            mustRunAfter(tasks.named("fixJpackageMetadataFor$sysId"))
-            dependsOn(tasks.named("fixJpackageMetadataFor$sysId"))
+            mustRunAfter(mustRunAfter(fixJPackageMetadataTask))
+            dependsOn(mustRunAfter(fixJPackageMetadataTask))
 
             inputs.dir(appImageDir)
 
@@ -806,6 +807,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         val bundleTask = tasks.register<Tar>(packageTaskName) {
             if (!crossBuildAppImage.get()) {
                 mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+            } else {
+                dependsOn(fixJPackageMetadataTask)
             }
 
             destinationDirectory = layout.buildDirectory.dir("distributions/$sysId")

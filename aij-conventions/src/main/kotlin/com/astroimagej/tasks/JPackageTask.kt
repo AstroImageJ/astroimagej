@@ -1,6 +1,5 @@
 package com.astroimagej.tasks
 
-import com.astroimagej.util.fixJpackageVersion
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -119,10 +118,6 @@ abstract class JPackageTask
                     "--app-image", inputDir.get().asFile.absolutePath,
                 )
             )
-
-            if (targetOs.get() != com.astroimagej.meta.jdk.OperatingSystem.MAC) {
-                fixJpackageVersion(inputDir.get(), launcher, targetOs)
-            }
         }
 
         // Append any additional args

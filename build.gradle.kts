@@ -752,8 +752,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             enabled = providers.environmentVariable("DeveloperId").isPresent &&
                     project.property("codeSignAndNotarize").toString().toBoolean() &&
                     Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
-            mustRunAfter(mustRunAfter(fixJPackageMetadataTask))
-            dependsOn(mustRunAfter(fixJPackageMetadataTask))
+            mustRunAfter(fixJPackageMetadataTask)
+            dependsOn(fixJPackageMetadataTask)
 
             inputs.dir(appImageDir)
 
@@ -797,7 +797,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
             if (downloadedAppImage.asFile.exists()) {
                 tasks.named(installerTaskName).configure {
-                    dependsOn("signFor$sysId")
+                    dependsOn(signAppImage)
                 }
             }
         }

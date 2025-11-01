@@ -291,9 +291,7 @@ jobs:
 
       - name: Run jpackage (${{ matrix.gradleTask }})
         run: |
-          ${{ matrix.wrapper }} ${{ matrix.gradleTask }} \
-            -Pversion="${{ env.VERSION }}" -PcodeSignAndNotarize="${{ env.NOTARIZE_MAC }}" \
-            -PcrossBuildAppImage=${{ env.CROSSBUILD_APP_IMAGE }}
+          ${{ matrix.wrapper }} ${{ matrix.gradleTask }} -Pversion="${{ env.VERSION }}" -PcodeSignAndNotarize="${{ env.NOTARIZE_MAC }}" -PcrossBuildAppImage=${{ env.CROSSBUILD_APP_IMAGE }}
         env:
           DeveloperId: ${{ secrets.APPLE_DEV_ID }}
 

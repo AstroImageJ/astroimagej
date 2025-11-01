@@ -829,64 +829,57 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             dependsOn(installerTask)
         }
     }
-}
 
-tasks.register<Copy>("copyBuiltJars") {
-    group = "AstroImageJ Development"
+    if (sysInfo.matchesCurrentSystem()) {
+        tasks.register<Copy>("copyAppImage") {
+            group = "AstroImageJ Development"
+            if (!crossbuildAppImage.get()) {
+                mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+            }
 
-    // Check that shippingAstro has only one file (Astronomy_.jar)
-    if (configurations.getByName("shippingAstro").files.size != 1) {
-        throw GradleException("shippingAstro configuration must contain exactly one file")
-    }
+            // cause copyAppImage to always run, even if no compile changes
+            doNotTrackState("Always copy app image to destination")
 
-    // cause copybuiltjars to always run, even if no compile changes
-    doNotTrackState("Always copy built jars to destination")
+            // Workaround for config cache by using provider outside of onlyIf
+            val predicate = providers.provider {
+                val p = when (sysInfo.os) {
+                    LINUX -> "lib/app/ij.jar"
+                    WINDOWS -> "app/ij.jar"
+                    MAC -> "Contents/app/ij.jar"
+                }
+                val properDirectory = layout.projectDirectory.file("appImageLocation.txt").asFile.exists() &&
+                        outputDestination().toPath().resolve(p).toFile().exists()
+                if (!properDirectory) {
+                    logger.error("[copyAppImage] Was not given the correct path! Must be the absolute path to the folder containing ij.jar!")
+                }
+                properDirectory
+            }
 
-    // Check that shippingIJ has only one file (ij.jar)
-    if (configurations.getByName("shippingIJ").files.size != 1) {
-        throw GradleException("shippingIJ configuration must contain exactly one file")
-    }
+            onlyIf {
+                predicate.get()
+            }
 
-    // Workaround for config cache by using provider outside of onlyIf
-    val predicate = providers.provider {
-        val properDirectory = layout.projectDirectory.file("jarLocation.txt").asFile.exists() &&
-                outputDestination().toPath().resolve("ij.jar").toFile().exists()
-        if (!properDirectory) {
-            logger.error("[copyBuiltJars] Was not given the correct path! Must be the absolute path to the folder containing ij.jar!")
+            val destination = outputDestination()
+            val appImageName = when (sysInfo.os) {
+                LINUX -> "astroimagej"
+                WINDOWS -> "AstroImageJ"
+                MAC -> "AstroImageJ.app"
+            }
+
+            from(appImageDir.map { it.dir(appImageName) }) {
+                into("")
+            }
+            into(destination)
+
+            doLast {
+                logger.quiet("[copyAppImage] Copied app image to destination...")
+            }
         }
-        properDirectory
-    }
-
-    onlyIf {
-        predicate.get()
-    }
-
-    val destination = outputDestination()
-
-    // Copy astronomy_.jar to correct place in distribution
-    from(configurations.getByName("shippingAstro")) {
-        rename { "Astronomy_.jar" }
-        into("plugins")
-    }
-
-    // Copy release notes
-    from(file("packageFiles/common/release_notes.html")) {
-        into("")
-    }
-
-    // Copy ij.jar to correct place in distribution
-    from(configurations.getByName("shippingIJ")) {
-        into("")
-    }
-    into(destination)
-
-    doLast {
-        logger.quiet("[copyBuiltJars] Copying jars to destination...")
     }
 }
 
 fun outputDestination(): File {
-    val locCfg = file("${projectDir}/jarLocation.txt")
+    val locCfg = file("${projectDir}/appImageLocation.txt")
     var destination = "${projectDir}/out"
 
     if (locCfg.exists()) {
@@ -936,7 +929,7 @@ tasks.register<TriggerReleaseWorkflow>("triggerReleaseWorkflow") {
 
 }
 
-// Make Idea's hammer icon run copyBuiltJars
+// Make Idea's hammer icon run copyAppImage
 tasks.named("classes").configure {
-    finalizedBy("copyBuiltJars")
+    finalizedBy("copyAppImage")
 }

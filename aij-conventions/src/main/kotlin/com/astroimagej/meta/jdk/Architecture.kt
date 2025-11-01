@@ -15,4 +15,15 @@ enum class Architecture {
             X86_64 -> "x64"
         }
     }
+
+    companion object {
+        fun getCurrentArch(): Architecture {
+            return when (System.getProperty("os.arch").lowercase()) {
+                "amd64", "x86_64", "x86-64", "x8664", "ia32e", "em64t", "x64" -> Architecture.X86_64
+                "aarch64", "arm" -> Architecture.ARM_64
+                "x86", "i386", "i486", "i586", "i686", "x8632", "ia32", "x32" -> throw UnsupportedOperationException("32-bit architecture is not supported")
+                else -> throw UnsupportedOperationException("Unknown architecture: " + System.getProperty("os.arch"))
+            }
+        }
+    }
 }

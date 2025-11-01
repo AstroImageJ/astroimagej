@@ -4,6 +4,7 @@ import com.astroimagej.meta.jdk.Architecture
 import com.astroimagej.meta.jdk.OperatingSystem
 import com.astroimagej.meta.jdk.RuntimeType
 import kotlinx.serialization.Serializable
+import org.apache.tools.ant.taskdefs.condition.Os
 
 @Serializable
 data class JavaRuntimeSystem(
@@ -20,4 +21,13 @@ data class JavaRuntimeSystem(
     var jmodUrl: String? = null,
     var jmodSha256: String? = null,
     var jmodSigUrl: String? = null,
-)
+) {
+
+    fun matchesCurrentSystem(): Boolean {
+        return when (os) {
+            OperatingSystem.MAC -> Os.isFamily(Os.FAMILY_MAC)
+            OperatingSystem.LINUX -> Os.isFamily(Os.FAMILY_UNIX)
+            OperatingSystem.WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
+        } && Architecture.getCurrentArch() == arch
+    }
+}

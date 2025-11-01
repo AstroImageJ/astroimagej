@@ -356,10 +356,9 @@ val packagingJdkToolchain = javaToolchains.launcherFor {
     vendor.set(JvmVendorSpec.ADOPTIUM)
 }
 
-val crossbuildAppImage = providers.provider {
-    val e = providers.environmentVariable("CROSSBUILD_APP_IMAGE")
-    e.isPresent && e.get().toBoolean()
-}
+val crossBuildAppImage = providers.gradleProperty("crossBuildAppImage")
+    .map { it.toBoolean() }
+    .orElse(true)
 
 javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val sysId = "${sysInfo.os.toString().uppercaseFirstChar()}_${sysInfo.arch}"
@@ -473,7 +472,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
     val downloadedAppImage = layout.projectDirectory.dir("images/$sysId")
 
-    val appImageDir: Provider<Directory> = if (crossbuildAppImage.get()) {
+    val appImageDir: Provider<Directory> = if (crossBuildAppImage.get()) {
         val packageTask = tasks.register<CreateAppImageTask>(createAppImageTaskName) {
             group = "distribution"
 
@@ -639,7 +638,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     }
 
     tasks.register<FixJPackageMetadataTask>("fixJpackageMetadataFor$sysId") {
-        enabled = crossbuildAppImage.get()
+        enabled = crossBuildAppImage.get()
 
         targetOs = sysInfo.os
 
@@ -662,7 +661,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     }
 
     val installerTask = tasks.register<JPackageTask>(installerTaskName) {
-        if (!crossbuildAppImage.get()) {
+        if (!crossBuildAppImage.get()) {
             mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
             if (sysInfo.os == MAC) {
                 mustRunAfter(tasks.named("signFor$sysId"))
@@ -786,7 +785,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             finalizedBy(notaryTask)
         }
 
-        if (!crossbuildAppImage.get()) {
+        if (!crossBuildAppImage.get()) {
             tasks.named("replaceLauncherFor$sysId") {
                 finalizedBy(signAppImage)
             }
@@ -805,7 +804,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
 
     if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo.os == LINUX) {
         val bundleTask = tasks.register<Tar>(packageTaskName) {
-            if (!crossbuildAppImage.get()) {
+            if (!crossBuildAppImage.get()) {
                 mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
             }
 
@@ -833,7 +832,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     if (sysInfo.matchesCurrentSystem()) {
         tasks.register<Copy>("copyAppImage") {
             group = "AstroImageJ Development"
-            if (!crossbuildAppImage.get()) {
+            if (!crossBuildAppImage.get()) {
                 mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
             }
 

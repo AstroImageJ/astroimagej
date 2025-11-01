@@ -51,6 +51,10 @@ abstract class TriggerReleaseWorkflow
     @get:Optional
     abstract val dryRun: Property<Boolean>
 
+    @get:Input
+    @get:Optional
+    abstract val windowsSigningUrl: Property<String>
+
     init {
         //version.convention(providerFactory.gradleProperty("version"))
         releaseType.convention(providerFactory.gradleProperty("releaseType"))
@@ -58,6 +62,7 @@ abstract class TriggerReleaseWorkflow
         workflowFile.convention(project.layout.projectDirectory.file(".github/workflows/publish.yml"))
         versionsFile.convention(project.layout.projectDirectory.file("website/public/meta/versions.json"))
         token.convention(providerFactory.environmentVariable("GITHUB_TOKEN"))
+        windowsSigningUrl.convention(providerFactory.environmentVariable("WINDOWS_SIGNING_URL"))
         dryRun.convention(false)
     }
 
@@ -67,6 +72,7 @@ abstract class TriggerReleaseWorkflow
             ?: throw IllegalStateException("GITHUB_TOKEN environment variable is not set")
 
         val apiUrl = "https://api.github.com/repos/${owner.get()}/actions/workflows/${workflowFile.get().asFile.name}/dispatches"
+        var workflowRunId: Long? = null
 
         val inputs = createInputs()
 
@@ -101,7 +107,14 @@ abstract class TriggerReleaseWorkflow
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
         when (response.statusCode()) {
-            204 -> logger.lifecycle("Workflow dispatched successfully (HTTP 204).")
+            204 -> {
+                logger.lifecycle("Workflow dispatched successfully (HTTP 204).")
+                windowsSigningUrl.isPresent.let {
+                    if (it && inputs["windows_sign"].toBoolean()) {
+                        java.awt.Desktop.getDesktop().browse(URI(windowsSigningUrl.get()))
+                    }
+                }
+            }
             else -> throw IllegalStateException(
                 "Failed to dispatch workflow. HTTP ${response.statusCode()} - ${response.body()}"
             )

@@ -1,5 +1,43 @@
 package ij.plugin;
 
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.EXTNAME;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXIS1;
+import static nom.tam.fits.header.Standard.NAXIS2;
+import static nom.tam.fits.header.Standard.NAXISn;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipFile;
+
+import javax.swing.ProgressMonitor;
+import javax.swing.ProgressMonitorInputStream;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -20,28 +58,21 @@ import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
-import nom.tam.fits.*;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Data;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsDate;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.TableHDU;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.image.compression.hdu.CompressedTableHDU;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsFile;
-
-import javax.swing.*;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.*;
-import java.util.stream.IntStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipFile;
-
-import static nom.tam.fits.header.Standard.*;
 
 
 /** Opens and displays FITS images. The FITS format is 
@@ -613,7 +644,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (BasicHDU<?> basicHDU : hdus) {
 				if (basicHDU == tableHDU) continue;
 				if (basicHDU instanceof TableHDU<?> t) {
-					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadData.get() && t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
+					if ((skipDialog || MP_TABLE_LOAD_SETTINGS.loadData.get()) && t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
 						if (t instanceof CompressedTableHDU compressedTableHDU) {
 							t = compressedTableHDU.asBinaryTableHDU();
 						}

@@ -543,6 +543,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     private Plot stackPixelPlot = null;
     private PlotWindow stackPixelPlotWin = null;
     private static final Property<Point> stackPlotWindowLocation = new Property<>(new Point(), AstroStackWindow.class);
+    private static final Property<Boolean> SHOW_IN_ALADIN = new Property<>(true, AstroStackWindow.class);
 
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
@@ -7905,6 +7906,19 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             simbadSearchRadius = Prefs.get("Astronomy_Tool.simbadSearchRadius", simbadSearchRadius);
             IJU.showInSIMBAD(coords[0], coords[1], simbadSearchRadius);
         }
+        if (SHOW_IN_ALADIN.get() && goodWCS && !Double.isNaN(coords[0]) && !Double.isNaN(coords[1])) {
+            var fovWidth = wcs.getXScaleArcSec() * imageWidth;
+            var fovHeight = wcs.getYScaleArcSec() * imageHeight;
+
+            if (fovWidth >= 60) {
+                fovWidth /= 60;
+            }
+            if (fovHeight >= 60) {
+                fovHeight /= 60;
+            }
+
+            IJU.showInAladin(coords[0], coords[1], wcs.hasScale, fovWidth, fovHeight);
+        }
         if (rightClickAnnotate) {
             if (useSimbadSearch && goodWCS && !Double.isNaN(coords[0]) && !Double.isNaN(coords[1])) {
                 coordsText = hms(coords[0] / 15.0, 3) + ((coords[1] > 0.0) ? "+" : "") + hms(coords[1], 2);
@@ -8006,9 +8020,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             showAnnotateCrosshair = Prefs.get("Astronomy_Tool.showAnnotateCrosshair", showAnnotateCrosshair);
             simbadSearchRadius = Prefs.get("Astronomy_Tool.simbadSearchRadius", simbadSearchRadius);
             annotateCircleRadius = Prefs.get("Astronomy_Tool.annotateCircleRadius", annotateCircleRadius);
-            gd.addCheckboxGroup(2, 2, new String[]{"Search SIMBAD (next time)", "Show Circle", "Show in SIMBAD (next time)", "Show Crosshair"},
-                    new boolean[]{useSimbadSearch, showAnnotateCircle, showInSimbad, showAnnotateCrosshair});//addCheckbox("Show Circle", showAnnotateCircle);
-            //            gd.addCheckbox(, useSimbadSearch);
+            gd.addCheckboxGroup(3, 2, new String[]{"Search SIMBAD (next time)", "Show Circle", "Show in SIMBAD (next time)", "Show in Aladin (next time)", "Show Crosshair"},
+                    new boolean[]{useSimbadSearch, showAnnotateCircle, showInSimbad, SHOW_IN_ALADIN.get(), showAnnotateCrosshair});
 
             gd.addNumericField("Search Radius:", simbadSearchRadius, 3, 9, "(arcsec)");
             gd.addNumericField("Circle Radius:", annotateCircleRadius, 3, 9, "(pixels)");
@@ -8026,6 +8039,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             showInSimbad = gd.getNextBoolean();
             showInSimbadCB.setState(showInSimbad);
             Prefs.set("Astronomy_Tool.showInSimbad", showInSimbad);
+            SHOW_IN_ALADIN.set(gd.getNextBoolean());
             showAnnotateCrosshair = gd.getNextBoolean();
             Prefs.set("Astronomy_Tool.showAnnotateCrosshair", showAnnotateCrosshair);
             simbadSearchRadius = gd.getNextNumber();
@@ -8044,7 +8058,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             ac.repaint();
         }
     }
-
 
     void editAnnotateRoi(AnnotateRoi roi) {
         String coordsText = "";

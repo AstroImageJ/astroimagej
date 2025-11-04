@@ -2,10 +2,82 @@
 
 package astroj;
 
+import static astroj.util.SkyMapOptions.FOV_HEIGHT;
+import static astroj.util.SkyMapOptions.FOV_PA;
+import static astroj.util.SkyMapOptions.FOV_WIDTH;
+import static astroj.util.SkyMapOptions.GAIA_DIST_THRESH;
+import static astroj.util.SkyMapOptions.GAIA_MAG_THRESH;
+import static astroj.util.SkyMapOptions.SHOW_BLEND;
+import static astroj.util.SkyMapOptions.SHOW_EBs;
+import static astroj.util.SkyMapOptions.SHOW_FOV;
+import static astroj.util.SkyMapOptions.SHOW_GAIA;
+import static astroj.util.SkyMapOptions.SHOW_MISMATCHES;
+import static astroj.util.SkyMapOptions.SHOW_TIC;
+import static astroj.util.SkyMapOptions.SHOW_VARS;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.atan;
+import static java.lang.Math.cos;
+import static java.lang.Math.pow;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.tan;
+import static java.util.Map.entry;
+
+import java.awt.Color;
+import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.zip.GZIPOutputStream;
+
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import Astronomy.MultiAperture_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.ApFile;
 import Astronomy.multiaperture.io.AperturesFileCodec;
+import astroj.util.SkyMapOptions;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -20,30 +92,6 @@ import ij.process.ImageProcessor;
 import ij.util.Tools;
 import util.BrowserOpener;
 import util.LinearInterpolator;
-
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.List;
-import java.util.function.Function;
-import java.util.zip.GZIPOutputStream;
-
-import static java.lang.Math.*;
 
 /**
  * Various static utilities
@@ -829,6 +877,32 @@ public class IJU {
             IJ.showMessage("SIMBAD access error", "<html>" + "Could not open link to Simbad " + (useHarvard ? "at Harvard." : "in France.") + "<br>" +
                     "Check internet connection or" + "<br>" +
                     "try " + (useHarvard ? "France" : "Harvard") + " server (see Preferences menu in Coordinate Converter)." + "</html>");
+        }
+    }
+
+    public static void showInAladin(double ra, double dec, boolean overrideFov, double fovWidth, double fovHeight) {
+        try {
+            var uri = BrowserOpener.buildURL("https://astro.swarthmore.edu/transits/aladin.html", Map.ofEntries(
+                    entry("ra", ra),
+                    entry("dec", dec),
+                    entry("showBlends", SkyMapOptions.normalize(SHOW_BLEND)),
+                    entry("showGaia", SkyMapOptions.normalize(SHOW_GAIA)),
+                    entry("showTIC", SkyMapOptions.normalize(SHOW_TIC)),
+                    entry("showEBs", SkyMapOptions.normalize(SHOW_EBs)),
+                    entry("showVars", SkyMapOptions.normalize(SHOW_VARS)),
+                    entry("showMismatches", SkyMapOptions.normalize(SHOW_MISMATCHES)),
+                    entry("gaiaDistThresh", GAIA_DIST_THRESH.get()),
+                    entry("gaiaMagThresh", GAIA_MAG_THRESH.get()),
+                    entry("showFov", SkyMapOptions.normalize(SHOW_FOV)),
+                    entry("fovHeight", overrideFov ? fovHeight : FOV_HEIGHT.get()),
+                    entry("fovWidth", overrideFov ? fovWidth : FOV_WIDTH.get()),
+                    entry("fovPA", FOV_PA.get())
+            )).toURI();
+
+            BrowserOpener.openURL(uri.toString());
+        } catch (Exception e) {
+            IJ.showMessage("Aladin Access Error", "<html>" + "Could not open link to Aladín." + "<br>" +
+                    "Check internet connection." + "</html>");
         }
     }
 

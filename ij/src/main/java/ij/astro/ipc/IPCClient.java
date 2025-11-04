@@ -18,7 +18,7 @@ public class IPCClient implements AutoCloseable {
         socketChannel = setupChannel();
     }
 
-    private SocketChannel setupChannel() throws IOException {
+    private SocketChannel setupChannel() throws IllegalStateException {
         var address = UnixDomainSocketAddress.of(socketPath);
         SocketChannel channel;
 
@@ -33,7 +33,7 @@ public class IPCClient implements AutoCloseable {
             }
         }
 
-        throw new IOException("Failed to connect to socket");
+        throw new IllegalStateException("Failed to connect to socket");
     }
 
     public void sendMessage(String s) throws IOException {

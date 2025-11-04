@@ -164,6 +164,16 @@ public class OtherInstance {
             return true;
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (IllegalStateException e) {
+            // The file exists, but is left over from a bad shutdown
+            try {
+                if (Files.deleteIfExists(stub)) {
+                    startServer();
+                    return false;
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
 		//IJ.log("sendArguments: return false ");
 		return false;

@@ -1992,36 +1992,32 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 if (!rs.success()) {
                     showWarning("Failed to retrieve radii for %1$d/%2$d images.\nDo you wish to continue?".formatted(rs.count, lastSlice - firstSlice), true);
-                    for (int i = 0; i < shapedApertureRois.size(); i++) {
-                        var roi = shapedApertureRois.get(i);
-                        ocanvas.add(roi);
-                    }
-                } else {
-                    var roundness = Double.NaN;
-                    for (int i = 0; i < shapedApertureRois.size(); i++) {
-                        var roi = shapedApertureRois.get(i);
-
-                        if (i == 0 && SHAPED_VARIATION_LOCKED.get()) {
-                            roundness = roi.estimateRoundness();
-                        }
-
-                        if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
-                            roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
-                        }
-
-                        if (Double.isNaN(roundness)) {
-                            roundness = roi.estimateRoundness();
-                        }
-
-                        roi.adjustRadii(radius, rBack1, rBack2, roundness);
-                        setApertureName(roi.getName());
-                        measureAperture(hdr, roi);
-                        ocanvas.add(roi);
-                    }
-
-                    ocanvas.repaint();
-                    canvas.repaint();
                 }
+
+                var roundness = Double.NaN;
+                for (int i = 0; i < shapedApertureRois.size(); i++) {
+                    var roi = shapedApertureRois.get(i);
+
+                    if (i == 0 && SHAPED_VARIATION_LOCKED.get()) {
+                        roundness = roi.estimateRoundness();
+                    }
+
+                    if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                        roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                    }
+
+                    if (Double.isNaN(roundness)) {
+                        roundness = roi.estimateRoundness();
+                    }
+
+                    roi.adjustRadii(radius, rBack1, rBack2, roundness);
+                    setApertureName(roi.getName());
+                    measureAperture(hdr, roi);
+                    ocanvas.add(roi);
+                }
+
+                ocanvas.repaint();
+                canvas.repaint();
             }
 
             var apAdded = false;

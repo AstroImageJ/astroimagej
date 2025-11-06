@@ -22,12 +22,12 @@ public class SkyMapOptions {
 
     public void dialog(Frame owner) {
         var gd = new GenericSwingDialog("Sky Map Options", owner);
-        gd.addCheckbox("Show Blend", SHOW_BLEND);
-        gd.addCheckbox("Show GAIA", SHOW_GAIA);
+        gd.addCheckbox("Show Blends", SHOW_BLEND);
+        gd.addCheckbox("Show Gaia", SHOW_GAIA);
         gd.addCheckbox("Show TIC", SHOW_TIC);
-        gd.addCheckbox("Show EBs", SHOW_EBs);
-        gd.addCheckbox("Show Vars", SHOW_VARS);
-        gd.addCheckbox("Show Mismatches", SHOW_MISMATCHES);
+        gd.addCheckbox("Show Gaia EBs", SHOW_EBs);
+        gd.addCheckbox("Show Gaia Vars", SHOW_VARS);
+        gd.addCheckbox("Show Gaia DR2 vs DR3 Mismatches", SHOW_MISMATCHES);
         gd.addCheckbox("Show FOV", SHOW_FOV);
 
         gd.addBoundedNumericField("FOV Width", new GenericSwingDialog.Bounds(0, 360),
@@ -36,9 +36,9 @@ public class SkyMapOptions {
                 1D, 5, "Degrees", true, FOV_HEIGHT);
         gd.addBoundedNumericField("FOV PA", new GenericSwingDialog.Bounds(),
                 1D, 5, "Degrees", true, FOV_PA);
-        gd.addBoundedNumericField("GAIA Dist Thresh", new GenericSwingDialog.Bounds(),
+        gd.addBoundedNumericField("GAIA Mismatch Dist Thresh", new GenericSwingDialog.Bounds(),
                 1D, 5, "arcsec    ", true, GAIA_DIST_THRESH);
-        gd.addBoundedNumericField("GAIA Mag Thresh", new GenericSwingDialog.Bounds(0, 25),
+        gd.addBoundedNumericField("GAIA Mismatch Mag Thresh", new GenericSwingDialog.Bounds(0, 25),
                 1D, 5, "                ", true, GAIA_MAG_THRESH);
 
         gd.centerDialog(true);

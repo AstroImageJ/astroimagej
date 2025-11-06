@@ -5251,7 +5251,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             if (table != null) table.setLock(false);
                             return;
                         } else {
-                            centroidFailed = true;
+                            IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
+                            IJ.log("********: Measurements are referenced to the non-centroided aperture location");
                         }
                     } else if (ap == 0) {
                         t1Centroid = center;

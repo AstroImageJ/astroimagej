@@ -8020,8 +8020,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             showAnnotateCrosshair = Prefs.get("Astronomy_Tool.showAnnotateCrosshair", showAnnotateCrosshair);
             simbadSearchRadius = Prefs.get("Astronomy_Tool.simbadSearchRadius", simbadSearchRadius);
             annotateCircleRadius = Prefs.get("Astronomy_Tool.annotateCircleRadius", annotateCircleRadius);
-            gd.addCheckboxGroup(3, 2, new String[]{"Search SIMBAD (next time)", "Show Circle", "Show in SIMBAD (next time)", "Show in Aladin (next time)", "Show Crosshair"},
-                    new boolean[]{useSimbadSearch, showAnnotateCircle, showInSimbad, SHOW_IN_ALADIN.get(), showAnnotateCrosshair});
+            gd.addCheckboxGroup(3, 2, new String[]{"Search SIMBAD (next time)", "Show Circle", "Show in SIMBAD (next time)", "Show Crosshair", "Show in Aladin (next time)"},
+                    new boolean[]{useSimbadSearch, showAnnotateCircle, showInSimbad, showAnnotateCrosshair, SHOW_IN_ALADIN.get()});
 
             gd.addNumericField("Search Radius:", simbadSearchRadius, 3, 9, "(arcsec)");
             gd.addNumericField("Circle Radius:", annotateCircleRadius, 3, 9, "(pixels)");
@@ -8040,9 +8040,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             showInSimbad = gd.getNextBoolean();
             showInSimbadCB.setState(showInSimbad);
             Prefs.set("Astronomy_Tool.showInSimbad", showInSimbad);
-            SHOW_IN_ALADIN.set(gd.getNextBoolean());
             showAnnotateCrosshair = gd.getNextBoolean();
             Prefs.set("Astronomy_Tool.showAnnotateCrosshair", showAnnotateCrosshair);
+            SHOW_IN_ALADIN.set(gd.getNextBoolean());
             simbadSearchRadius = gd.getNextNumber();
             Prefs.set("Astronomy_Tool.simbadSearchRadius", simbadSearchRadius);
             simbadSearchRadiusMenuItem.setLabel("Set SIMBAD search radius (currently " + simbadSearchRadius + " arcsec)...");

@@ -21,8 +21,11 @@ public class SkyMapOptions {
     public static Property<Double> GAIA_MAG_THRESH = new Property<>(0.5, SkyMapOptions.class);
 
     public void dialog(Frame owner) {
-        var gd = new GenericSwingDialog("Sky Map Options", owner);
-        gd.addCheckbox("Show Blends", SHOW_BLEND);
+        var gd = new GenericSwingDialog("Aladín FOV Options", owner);
+        gd.addCheckbox("Show Blends", SHOW_BLEND)
+                .setToolTipText("""
+                        Must enter transit depth on webpage to show.
+                        """);
         gd.addCheckbox("Show Gaia", SHOW_GAIA);
         gd.addCheckbox("Show TIC", SHOW_TIC);
         gd.addCheckbox("Show Gaia EBs", SHOW_EBs);

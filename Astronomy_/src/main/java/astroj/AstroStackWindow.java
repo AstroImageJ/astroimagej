@@ -8026,6 +8026,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             gd.addNumericField("Search Radius:", simbadSearchRadius, 3, 9, "(arcsec)");
             gd.addNumericField("Circle Radius:", annotateCircleRadius, 3, 9, "(pixels)");
             gd.addMessage("Change SIMBAD network parameters in Coordinate Converter");
+            gd.addMessage("SIMBAD and Aladín searches require WCS");
             gd.showDialog();
 
             if (gd.wasCanceled()) return;

@@ -1,10 +1,93 @@
 package Astronomy;// MultiAperture_.java
 
+import static ij.Prefs.KEY_PREFIX;
+import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpringLayout;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+import javax.swing.event.ChangeListener;
+
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformers;
-import astroj.*;
+import astroj.AnnotateRoi;
+import astroj.Aperture;
+import astroj.ApertureRoi;
+import astroj.AstroCanvas;
+import astroj.AstroStackWindow;
+import astroj.Centroid;
+import astroj.FitsJ;
+import astroj.FreeformPixelApertureRoi;
+import astroj.IJU;
+import astroj.MarkingRoi;
+import astroj.MeasurementTable;
+import astroj.OverlayCanvas;
+import astroj.ShapedApertureRoi;
+import astroj.SpringUtil;
+import astroj.StarFinder;
+import astroj.WCS;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -24,28 +107,6 @@ import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
 import ij.util.Tools;
-
-import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.*;
-import java.util.List;
-import java.util.Timer;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import static ij.Prefs.KEY_PREFIX;
-import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
 
 
 /**
@@ -1662,7 +1723,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ap.calculateCenter();
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
 
-                    if (previous && singleStep) {
+                    if (previous) {
                         if (i == 0) {
                             dx = xCenter - ap.getXpos();
                             dy = yCenter - ap.getYpos();
@@ -1756,7 +1817,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
                     ap.calculateCenter();
 
-                    if (previous && singleStep) {
+                    if (previous) {
                         if (i == 0) {
                             dx = xCenter - ap.getXpos();
                             dy = yCenter - ap.getYpos();

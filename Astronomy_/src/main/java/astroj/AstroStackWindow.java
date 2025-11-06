@@ -110,6 +110,7 @@ import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
+import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FitsCompressionUtil;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
@@ -5307,6 +5308,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     IJ.beep();
                     IJ.showMessage("Error reading RA/Dec file with drag and drop operation");
                 }
+            } else if (FileAssociationHandler.handleFile(files[0].getAbsolutePath(), Set.of())) {
+                return;
             } else if (FitsExtensionUtil.isFitsFile(files[0].getName()) ||
                     files[0].getName().toLowerCase().endsWith(".tif") ||
                     files[0].getName().toLowerCase().endsWith(".tiff") ||

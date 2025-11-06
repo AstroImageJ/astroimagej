@@ -55,6 +55,7 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -146,6 +147,7 @@ import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
+import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
@@ -16618,6 +16620,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             t.start();
             Thread.yield();
 
+        } else if (FileAssociationHandler.handleFile(files[0].getAbsolutePath(), Set.of())) {
+            return;
         }
     }
 

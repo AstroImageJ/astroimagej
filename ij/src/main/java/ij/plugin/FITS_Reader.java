@@ -1056,6 +1056,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		var noExtensionNames =
 				Arrays.stream(hdus).allMatch(basicHDU -> Objects.isNull(basicHDU.getHeader().getStringValue(EXTNAME)));
+        var noScienceImage =
+                Arrays.stream(hdus).noneMatch(basicHDU -> Objects.equals("SCI", basicHDU.getHeader().getStringValue(EXTNAME)));
+
+        if (!noExtensionNames && noScienceImage) {
+            AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
+        }
 
 		BasicHDU<?> hdu;
 		for (int i = 0; i < hdus.length; i++) {

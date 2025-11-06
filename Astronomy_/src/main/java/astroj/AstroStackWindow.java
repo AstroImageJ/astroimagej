@@ -7917,7 +7917,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 fovHeight /= 60;
             }
 
-            IJU.showInAladin(coords[0], coords[1], wcs.hasScale, fovWidth, fovHeight);
+            IJU.showInAladin(coords[0], coords[1], wcs.hasScale, fovWidth, fovHeight, wcs.hasPA, (360 + wcs.getNorthPA()) % 360);
         }
         if (rightClickAnnotate) {
             if (useSimbadSearch && goodWCS && !Double.isNaN(coords[0]) && !Double.isNaN(coords[1])) {

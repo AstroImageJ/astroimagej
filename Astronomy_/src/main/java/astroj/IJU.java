@@ -880,7 +880,7 @@ public class IJU {
         }
     }
 
-    public static void showInAladin(double ra, double dec, boolean overrideFov, double fovWidth, double fovHeight) {
+    public static void showInAladin(double ra, double dec, boolean overrideFov, double fovWidth, double fovHeight, boolean overridePa, double pa) {
         try {
             var uri = BrowserOpener.buildURL("https://astro.swarthmore.edu/transits/aladin.html", Map.ofEntries(
                     entry("ra", ra),
@@ -896,7 +896,7 @@ public class IJU {
                     entry("showFov", SkyMapOptions.normalize(SHOW_FOV)),
                     entry("fovHeight", overrideFov ? fovHeight : FOV_HEIGHT.get()),
                     entry("fovWidth", overrideFov ? fovWidth : FOV_WIDTH.get()),
-                    entry("fovPA", FOV_PA.get())
+                    entry("fovPA", overridePa ? pa : FOV_PA.get())
             )).toURI();
 
             BrowserOpener.openURL(uri.toString());

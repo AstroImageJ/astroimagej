@@ -1,20 +1,38 @@
 package astroj;
 
+import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
+import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
+import static Astronomy.MultiAperture_.SHAPED_AP_AREA_LOCKED;
+import static Astronomy.multiaperture.CompositeShape.ShapeCombination;
+
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Arc2D;
+import java.awt.geom.Area;
+import java.awt.geom.CubicCurve2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
+import java.awt.geom.QuadCurve2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
+import java.util.Objects;
+
 import Astronomy.multiaperture.CenterReferencingTransform;
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.TransformedShape;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 import util.ArrowShape;
-
-import java.awt.*;
-import java.awt.geom.*;
-import java.util.Objects;
-
-import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
-import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
-import static Astronomy.MultiAperture_.SHAPED_AP_AREA_LOCKED;
-import static Astronomy.multiaperture.CompositeShape.ShapeCombination;
 
 public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private Shape apertureShape;
@@ -438,8 +456,14 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
      */
     public void transform(boolean adjustShape, double roundness, boolean adjustRotation, double angle) {
         if (adjustShape && Double.isFinite(ellipticalBaseRadius) && apertureShape instanceof Ellipse2D ellipse2D) {
-            setApertureShape(createEllipse(xPos, yPos, ellipticalBaseRadius, roundness));
-            setBackgroundShape(backgroundShape, centerBackground);
+            if (!Double.isFinite(roundness)) {
+                roundness = estimateRoundness();
+            }
+
+            if (Double.isFinite(roundness)) {
+                setApertureShape(createEllipse(xPos, yPos, ellipticalBaseRadius, roundness));
+                setBackgroundShape(backgroundShape, centerBackground);
+            }
         }
 
         if (adjustRotation) {

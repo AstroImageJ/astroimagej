@@ -1723,7 +1723,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ap.calculateCenter();
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
 
-                    if (previous) {
+                    if ((apLoading.get().isPrevious() || previous)) {
                         if (i == 0) {
                             dx = xCenter - ap.getXpos();
                             dy = yCenter - ap.getYpos();
@@ -1817,7 +1817,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
                     ap.calculateCenter();
 
-                    if (previous) {
+                    if ((apLoading.get().isPrevious() || previous)) {
                         if (i == 0) {
                             dx = xCenter - ap.getXpos();
                             dy = yCenter - ap.getYpos();

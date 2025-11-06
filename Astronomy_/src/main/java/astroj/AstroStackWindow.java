@@ -8078,6 +8078,20 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         double[] coords = {Double.NaN, Double.NaN};
         if (goodWCS) coords = wcs.pixels2wcs(pixel);
 
+        if (SHOW_IN_ALADIN.get() && goodWCS && !Double.isNaN(coords[0]) && !Double.isNaN(coords[1])) {
+            var fovWidth = wcs.getXScaleArcSec() * imageWidth;
+            var fovHeight = wcs.getYScaleArcSec() * imageHeight;
+
+            if (fovWidth >= 60) {
+                fovWidth /= 60;
+            }
+            if (fovHeight >= 60) {
+                fovHeight /= 60;
+            }
+
+            IJU.showInAladin(coords[0], coords[1], wcs.hasScale, fovWidth, fovHeight, wcs.hasPA, (360 + wcs.getNorthPA()) % 360);
+        }
+
         if (showInSimbad && goodWCS && !Double.isNaN(coords[0]) && !Double.isNaN(coords[1])) {
             IJU.showInSIMBAD(coords[0], coords[1], simbadSearchRadius);
         }
@@ -8177,12 +8191,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         gd.addChoice("Selection:", names, names[0]);
         gd.addStringField("Custom Text:", label, 40);
-        gd.addCheckboxGroup(2, 2, new String[]{"Search SIMBAD (next time)", "Show Circle", "Show in SIMBAD (next time)", "Show Crosshair"},
-                new boolean[]{useSimbadSearch, showCircle, showInSimbad, showCrosshair});//addCheckbox("Show Circle", showAnnotateCircle);
+        gd.addCheckboxGroup(3, 2, new String[]{"Search SIMBAD (next time)", "Show Circle", "Show in SIMBAD (next time)", "Show in Aladin (next time)", "Show Crosshair"},
+                new boolean[]{useSimbadSearch, showCircle, showInSimbad, SHOW_IN_ALADIN.get(), showAnnotateCrosshair});
         gd.addNumericField("Search Radius:", simbadSearchRadius, 3, 9, "(arcsec)");
         gd.addNumericField("Circle Radius:", radius, 3, 9, "(pixels)");
         gd.addChoice("Annotation Color:", colors, IJU.colorNameOf(roi.getAnnotateColor()));
         gd.addMessage("Change SIMBAD network parameters in Coordinate Converter");
+        gd.addMessage("SIMBAD and Aladín searches require WCS");
         gd.showDialog();
 
         if (gd.wasCanceled()) return;
@@ -8194,6 +8209,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             showInSimbad = gd.getNextBoolean();
             showInSimbadCB.setState(showInSimbad);
             Prefs.set("Astronomy_Tool.showInSimbad", showInSimbad);
+            SHOW_IN_ALADIN.set(gd.getNextBoolean());
             showCrosshair = gd.getNextBoolean();
             simbadSearchRadius = gd.getNextNumber();
             Prefs.set("Astronomy_Tool.simbadSearchRadius", simbadSearchRadius);

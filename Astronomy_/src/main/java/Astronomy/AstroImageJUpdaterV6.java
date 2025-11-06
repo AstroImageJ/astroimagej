@@ -219,6 +219,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             return;
         }
 
+        Prefs.savePreferences();
+
         Files.write(inst, installerBytes);
 
         if (IJ.isWindows()) {

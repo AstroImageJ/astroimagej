@@ -5202,7 +5202,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 roi.setAMag(absMagStored[i]);
                 roi.setImage(imp);
                 roi.setPhantom(true);
-                shaped.add(ShapedApertureRoi.fromApertureRoi(roi));
+                ShapedApertureRoi shapedApertureRoi = ShapedApertureRoi.fromApertureRoi(roi);
+                shapedApertureRoi.setComparisonStar(isRef[i]);
+                shapedApertureRoi.setName(isRef[i] ? "C" + (i + 1) : "T" + (i + 1));
+                shaped.add(shapedApertureRoi);
                 ac.add(roi);
                 ac.paint(ac.getGraphics());
             }

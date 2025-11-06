@@ -67,6 +67,7 @@ public class OtherInstance {
 		}
 	}
 
+    @AstroImageJ(reason = "Replace method of cross-instance communication", modified = true)
 	public static String getStubPath() {
 		String display = System.getenv("DISPLAY");
 		if (display!=null) {
@@ -75,7 +76,7 @@ public class OtherInstance {
 		}
 		String tmpDir = System.getProperty("java.io.tmpdir");
 		tmpDir = IJ.addSeparator(tmpDir);
-		return tmpDir + "ImageJ-"
+		return tmpDir + "AstroImageJ-"
 			+ System.getProperty("user.name") + "-"
 			+ (display == null ? "" : display + "-")
 			+ ImageJ.getPort() + ".stub";

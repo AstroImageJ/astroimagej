@@ -422,13 +422,6 @@ jobs:
             -PcrossBuildAppImage=${{ env.CROSSBUILD_APP_IMAGE }}\
             --stacktrace
 
-      - name: Update metadata
-        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Update version metadata
-          file_pattern: '*.json'
-
       - name: Upload assets & metadata (no release)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true' }}
         uses: actions/upload-artifact@v4
@@ -438,3 +431,10 @@ jobs:
             release_assets/**
             release_notes.md
             website/public/meta/**/*.json
+
+      - name: Update metadata
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update version metadata
+          file_pattern: '*.json'

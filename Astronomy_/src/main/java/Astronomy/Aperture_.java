@@ -1,7 +1,29 @@
 package Astronomy;// Aperture_.java
 
+import static Astronomy.MultiAperture_.PREFS_HALTONERROR;
+import static Astronomy.MultiAperture_.SHAPED_AP_ANGLE_LOCKED;
+import static Astronomy.MultiAperture_.SHAPED_AP_ECCENTRICITY_LOCKED;
+import static Astronomy.MultiAperture_.SHAPED_VARIATION_LOCKED;
+
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.util.Locale;
+
 import Astronomy.multiplot.table.MeasurementsWindow;
-import astroj.*;
+import astroj.Aperture;
+import astroj.ApertureRoi;
+import astroj.AstroStackWindow;
+import astroj.Centroid;
+import astroj.FitsJ;
+import astroj.FreeformPixelApertureRoi;
+import astroj.GFormat;
+import astroj.IJU;
+import astroj.MeasurementTable;
+import astroj.OverlayCanvas;
+import astroj.Photometer;
+import astroj.ShapedApertureRoi;
+import astroj.StringRoi;
+import astroj.WCS;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -12,11 +34,6 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-
-import java.awt.*;
-import java.util.Locale;
-
-import static Astronomy.MultiAperture_.*;
 
 /**
  * Simple circular aperture tool using a circular background annulus.
@@ -684,7 +701,7 @@ public class Aperture_ implements PlugInFilter {
 
         var x = adjustAperture(imp, roi);
         center = x.center;
-        if (roi.getIsCentroid()) {
+        if (roi.getIsCentroid() && x.centroidFound) {
             roi.moveTo(center.x(), center.y(), true);
         }
 

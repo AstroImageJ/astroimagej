@@ -77,6 +77,8 @@ function presentOs(os) {
 function versionToUrl(version) {
   return "/releases/" + version.replace(/\./g, "");
 }
+
+Astro.response.headers.set('Cache-Control', 'no-cache');
 ---
 <!doctype html>
 <html lang="en">

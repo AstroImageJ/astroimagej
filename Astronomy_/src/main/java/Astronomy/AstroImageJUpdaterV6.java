@@ -68,7 +68,8 @@ import util.BrowserOpener;
 
 public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
-    private final URI metaUrl = new URI("https://astroimagej.com/meta/versions.json");
+    private final URI metaUrl = Optional.ofNullable(System.getProperty("aij.meta.url")).map(URI::create)
+            .orElse(new URI("https://astroimagej.com/meta/versions.json"));
     private static final HttpClient HTTP_CLIENT;
     public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master";
     private MetaVersion meta;
@@ -493,6 +494,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var d = new JDialog(IJ.getInstance(), "AstroImageJ Updater");
 
         var b = Box.createVerticalBox();
+
+        if (!metaUrl.getHost().equals("astroimagej.com")) {
+            b.add(new MultiLineLabel("Reading metadata from: " + metaUrl));
+        }
 
         MultiLineLabel msg;
         if (hasUpdateAvailable()) {

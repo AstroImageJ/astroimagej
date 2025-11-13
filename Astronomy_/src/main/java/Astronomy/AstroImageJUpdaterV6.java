@@ -74,7 +74,9 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     public static final String CERTIFICATE_IDENTITY = "https://github.com/AstroImageJ/astroimagej/.github/workflows/publish.yml@refs/heads/master";
     private MetaVersion meta;
     private static final Property<Boolean> ENABLE_PRERELEASES = new Property<>(false, AstroImageJUpdaterV6.class);
-    private static final Property<Boolean> ENABLE_DAILY_BUILDS = new Property<>(false, AstroImageJUpdaterV6.class);
+    private static final Property<Boolean> ENABLE_DAILY_BUILDS = new Property<>(true, AstroImageJUpdaterV6.class);
+    private static final Property<Boolean> ENABLE_BETAS = new Property<>(false, AstroImageJUpdaterV6.class);
+    private static final Property<Boolean> ENABLE_ALPHAS = new Property<>(false, AstroImageJUpdaterV6.class);
 
     static {
         HTTP_CLIENT = HttpClient.newBuilder()
@@ -493,6 +495,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             filterType.add(MetaVersion.ReleaseType.PRERELEASE);
         }
 
+        if (ENABLE_ALPHAS.get()) {
+            filterType.add(MetaVersion.ReleaseType.ALPHA);
+        }
+
+        if (ENABLE_BETAS.get()) {
+            filterType.add(MetaVersion.ReleaseType.BETA);
+        }
+
         var filteredVersions = versions.stream().filter(v -> filterType.contains(v.releaseType())).toList();
 
         var d = new JDialog(IJ.getInstance(), "AstroImageJ Updater");
@@ -530,11 +540,17 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
         b.add(msg);
 
+        var enableDailyBuilds = new JCheckBox("Show Daily Builds", ENABLE_DAILY_BUILDS.get());
+        b.add(enableDailyBuilds);
+
         var enablePrereleases = new JCheckBox("Show Prereleases", ENABLE_PRERELEASES.get());
         b.add(enablePrereleases);
 
-        var enableDailyBuilds = new JCheckBox("Show Daily Builds", ENABLE_DAILY_BUILDS.get());
-        b.add(enableDailyBuilds);
+        var enableBetaBuilds = new JCheckBox("Show Beta Builds", ENABLE_BETAS.get());
+        b.add(enableBetaBuilds);
+
+        var enableAlphaBuilds = new JCheckBox("Show Alpha Builds", ENABLE_ALPHAS.get());
+        b.add(enableAlphaBuilds);
 
         var updateCheckOnStartup = new JCheckBox("Perform Update Check on startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
         b.add(updateCheckOnStartup);
@@ -550,6 +566,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         enableDailyBuilds.addActionListener($ -> ENABLE_DAILY_BUILDS.set(enableDailyBuilds.isSelected()));
         enablePrereleases.addActionListener($ -> ENABLE_PRERELEASES.set(enablePrereleases.isSelected()));
+        enableBetaBuilds.addActionListener($ -> ENABLE_BETAS.set(enableBetaBuilds.isSelected()));
+        enableAlphaBuilds.addActionListener($ -> ENABLE_ALPHAS.set(enableAlphaBuilds.isSelected()));
 
         ENABLE_DAILY_BUILDS.addListener(((key, newValue) -> {
             var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
@@ -560,6 +578,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             if (ENABLE_PRERELEASES.get()) {
                 filter.add(MetaVersion.ReleaseType.PRERELEASE);
+            }
+
+            if (ENABLE_ALPHAS.get()) {
+                filter.add(MetaVersion.ReleaseType.ALPHA);
+            }
+
+            if (ENABLE_BETAS.get()) {
+                filter.add(MetaVersion.ReleaseType.BETA);
             }
 
             var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
@@ -577,6 +603,64 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             if (ENABLE_DAILY_BUILDS.get()) {
                 filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
+            }
+
+            if (ENABLE_ALPHAS.get()) {
+                filter.add(MetaVersion.ReleaseType.ALPHA);
+            }
+
+            if (ENABLE_BETAS.get()) {
+                filter.add(MetaVersion.ReleaseType.BETA);
+            }
+
+            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
+
+            selector.removeAllItems();
+            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
+        }));
+
+        ENABLE_ALPHAS.addListener(((key, newValue) -> {
+            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
+
+            if (newValue) {
+                filter.add(MetaVersion.ReleaseType.ALPHA);
+            }
+
+            if (ENABLE_DAILY_BUILDS.get()) {
+                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
+            }
+
+            if (ENABLE_PRERELEASES.get()) {
+                filter.add(MetaVersion.ReleaseType.PRERELEASE);
+            }
+
+            if (ENABLE_BETAS.get()) {
+                filter.add(MetaVersion.ReleaseType.BETA);
+            }
+
+            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
+
+            selector.removeAllItems();
+            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
+        }));
+
+        ENABLE_BETAS.addListener(((key, newValue) -> {
+            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
+
+            if (newValue) {
+                filter.add(MetaVersion.ReleaseType.BETA);
+            }
+
+            if (ENABLE_DAILY_BUILDS.get()) {
+                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
+            }
+
+            if (ENABLE_ALPHAS.get()) {
+                filter.add(MetaVersion.ReleaseType.ALPHA);
+            }
+
+            if (ENABLE_PRERELEASES.get()) {
+                filter.add(MetaVersion.ReleaseType.PRERELEASE);
             }
 
             var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();

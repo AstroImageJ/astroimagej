@@ -14,3 +14,4 @@
 # Github Signing
 See [github documentation](https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications#creating-secrets-for-your-certificate-and-provisioning-profile).
 
+With PKG, both Installer and Application are required for signing.

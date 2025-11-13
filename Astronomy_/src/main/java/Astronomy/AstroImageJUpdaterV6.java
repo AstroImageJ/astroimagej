@@ -100,7 +100,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             try {
                 u = new AstroImageJUpdaterV6();
             } catch (URISyntaxException e) {
-                if (!metaUrl.getHost().equals("astroimagej.com")) {
+                if (!"astroimagej.com".equals(metaUrl.getHost())) {
                     IJ.error("Failed to connect to custom AstroImageJ meta: " + metaUrl);
                 } else {
                     IJ.error("Failed to connect AstroImageJ meta");
@@ -499,7 +499,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         var b = Box.createVerticalBox();
 
-        if (!metaUrl.getHost().equals("astroimagej.com")) {
+        if (!"astroimagej.com".equals(metaUrl.getHost())) {
             b.add(new MultiLineLabel("Reading metadata from: " + metaUrl));
         }
 

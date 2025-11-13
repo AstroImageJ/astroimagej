@@ -26,7 +26,7 @@ data class JavaRuntimeSystem(
     fun matchesCurrentSystem(): Boolean {
         return when (os) {
             OperatingSystem.MAC -> Os.isFamily(Os.FAMILY_MAC)
-            OperatingSystem.LINUX -> Os.isFamily(Os.FAMILY_UNIX)
+            OperatingSystem.LINUX -> Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)
             OperatingSystem.WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
         } && Architecture.getCurrentArch() == arch
     }

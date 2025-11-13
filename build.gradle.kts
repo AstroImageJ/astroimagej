@@ -524,7 +524,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             enabled = when (sysInfo.os) {
                 MAC -> Os.isFamily(Os.FAMILY_MAC)
                 WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
-                LINUX -> Os.isFamily(Os.FAMILY_UNIX)
+                LINUX -> Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)
             } && version.toString()
                 .matches(Regex("^(?<major>0|[1-9]\\d*)\\.(?<minor>0|[1-9]\\d*)\\.(?<patch>0|[1-9]\\d*)\\.(00)"))
 
@@ -802,7 +802,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         }
     }
 
-    if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo.os == LINUX) {
+    if (Os.isFamily(Os.FAMILY_UNIX) && sysInfo.os == LINUX && !Os.isFamily(Os.FAMILY_MAC)) {
         val bundleTask = tasks.register<Tar>(packageTaskName) {
             if (!crossBuildAppImage.get()) {
                 mustRunAfter(tasks.named("replaceLauncherFor$sysId"))

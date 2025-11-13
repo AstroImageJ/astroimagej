@@ -10,7 +10,7 @@
       ]
     },
     {
-      "artifact": "AstroImageJ-$VERSION-mac-x64.dmg",
+      "artifact": "AstroImageJ-$VERSION-mac-x64.pkg",
       "arch": [
         "AMD64"
       ],
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "artifact": "AstroImageJ-$VERSION-mac-aarch64.dmg",
+      "artifact": "AstroImageJ-$VERSION-mac-aarch64.pkg",
       "arch": [
         "ARM64"
       ],

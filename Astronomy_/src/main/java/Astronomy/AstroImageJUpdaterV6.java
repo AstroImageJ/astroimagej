@@ -202,7 +202,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         if (IJ.isLinux()) {
             ext = ".tgz";
         } else if (IJ.isMacOSX()) {
-            ext = ".dmg";
+            ext = ".pkg";
         }
 
         var inst = tmpFolder.resolve("installer" + ext);

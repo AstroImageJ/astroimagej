@@ -152,14 +152,14 @@ jobs:
           - runner: macos-latest
             osName: mac-aarch64
             gradleTask: packageAijForMac_aarch64
-            artifactExt: dmg
+            artifactExt: pkg
             wrapper: ./gradlew
             appImageName: appimage-mac-aarch64
             sysId: MAC_AARCH64
           - runner: macos-latest
             osName: mac-x64
             gradleTask: packageAijForMac_x64
-            artifactExt: dmg
+            artifactExt: pkg
             wrapper: ./gradlew
             appImageName: appimage-mac-x64
             sysId: MAC_X64
@@ -381,8 +381,8 @@ jobs:
           mkdir -p release_assets
 
           mv Linux_x64/*.tgz release_assets/AstroImageJ-${VERSION}-linux-x64.tgz
-          mv Mac_aarch64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-aarch64.dmg
-          mv Mac_x64/*.dmg release_assets/AstroImageJ-${VERSION}-mac-x64.dmg
+          mv Mac_aarch64/*.pkg release_assets/AstroImageJ-${VERSION}-mac-aarch64.pkg
+          mv Mac_x64/*.pkg release_assets/AstroImageJ-${VERSION}-mac-x64.pkg
           mv Windows_x64/*.msi release_assets/AstroImageJ-${VERSION}-windows-x64.msi
 
       - name: Render release notes

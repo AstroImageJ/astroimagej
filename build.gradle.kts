@@ -695,7 +695,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 extraArgs(buildList {
                     addAll(
                         listOf(
-                            "--type", "dmg",
+                            "--type", "pkg",
                             "--mac-package-identifier", "com.astroimagej.AstroImageJ",
                             "--about-url", "https://astroimagej.com",
                             "--license-file", layout.projectDirectory.file("LICENSE").asFile.absolutePath,
@@ -763,12 +763,6 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             inheritEntitlementsFile = layout.projectDirectory.file("packageFiles/assets/${sysInfo.os}/inheritEntitlements.plist")
         }
 
-        val renameVolTask = tasks.register<RenameDmgVolume>("renameVolFor$sysId") {
-            enabled = sysInfo.os == MAC
-            inputDir.set(installerTask.map { it.outputDir.get() })
-            volume = "AstroImageJ $version"
-        }
-
         val notaryTask = tasks.register<MacNotaryTask>(notaryTaskName) {
             enabled = System.getenv("DeveloperId") != null &&
                     project.property("codeSignAndNotarize").toString().toBoolean() &&
@@ -778,10 +772,6 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         }
 
         installerTask {
-            finalizedBy(renameVolTask)
-        }
-
-        renameVolTask {
             finalizedBy(notaryTask)
         }
 

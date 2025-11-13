@@ -100,7 +100,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             try {
                 u = new AstroImageJUpdaterV6();
             } catch (URISyntaxException e) {
-                IJ.error("Failed to connect AstroImageJ meta");
+                if (!metaUrl.getHost().equals("astroimagej.com")) {
+                    IJ.error("Failed to connect to custom AstroImageJ meta: " + metaUrl);
+                } else {
+                    IJ.error("Failed to connect AstroImageJ meta");
+                }
                 return;
             }
             u.dialog();

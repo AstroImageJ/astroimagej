@@ -11,7 +11,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import ij.IJ;
-import ij.astro.logging.AIJLogger;
 
 public class ConfigHandler {
     private ConfigHandler() {}
@@ -19,7 +18,6 @@ public class ConfigHandler {
     public static List<Line> readOptions() {
         var p = configFilePath();
         ensureOverlayConfigExists(p);
-        AIJLogger.log(p);
 
         if (!Files.exists(p)) {
             IJ.error("Config Editor", "Failed to find 'AstroImageJ.cfg'");

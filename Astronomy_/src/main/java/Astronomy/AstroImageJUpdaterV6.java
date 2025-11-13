@@ -198,12 +198,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         // Copy script to location for execution
         Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), elevator, StandardCopyOption.REPLACE_EXISTING);
 
-        var ext = ".msi";
-        if (IJ.isLinux()) {
-            ext = ".tgz";
-        } else if (IJ.isMacOSX()) {
-            ext = ".pkg";
-        }
+        var ext = fileEntry.name().substring(fileEntry.name().lastIndexOf('.'));
 
         var inst = tmpFolder.resolve("installer" + ext);
         Files.deleteIfExists(inst);

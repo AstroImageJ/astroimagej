@@ -1,0 +1,57 @@
+{
+    "version": "6.0.1.00",
+    "artifacts": [
+        {
+            "name": "AstroImageJ-6.0.1.00-linux-x64.tgz",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/6.0.1.00/AstroImageJ-6.0.1.00-linux-x64.tgz",
+            "sha256": "aad5dff309d00cacf19bd677ef9a17bf3d5cdd8ff8168cb21671a66702406f89",
+            "os": [
+                "LINUX"
+            ],
+            "arch": [
+                "AMD64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/6.0.1.00/AstroImageJ-6.0.1.00-linux-x64.tgz.sigstore.json",
+            "signatureSha256": "ec8021f36c55d68c6a7c90ecff79f7ae88ffb9ad82a24f655177e451cbb0ff39"
+        },
+        {
+            "name": "AstroImageJ-6.0.1.00-mac-x64.pkg",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/6.0.1.00/AstroImageJ-6.0.1.00-mac-x64.pkg",
+            "sha256": "22e00b2a615bf4b99604b089d86dcf056c2892a6aa46ecd930a1eeb5ee1438f4",
+            "os": [
+                "MAC"
+            ],
+            "arch": [
+                "AMD64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/6.0.1.00/AstroImageJ-6.0.1.00-mac-x64.pkg.sigstore.json",
+            "signatureSha256": "f3d7d42cfae086820c9ba7dcea0392c06359c1579474edcf484b0f422e6da378"
+        },
+        {
+            "name": "AstroImageJ-6.0.1.00-mac-aarch64.pkg",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/6.0.1.00/AstroImageJ-6.0.1.00-mac-aarch64.pkg",
+            "sha256": "3567dc54876247a113122cf7640795b7b8e82a650aa144e5bbf675885e8214e1",
+            "os": [
+                "MAC"
+            ],
+            "arch": [
+                "ARM64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/6.0.1.00/AstroImageJ-6.0.1.00-mac-aarch64.pkg.sigstore.json",
+            "signatureSha256": "613e7dcb05a3315d285c14e7ae4931207f7bfd31168289a7f85138b4e793f959"
+        },
+        {
+            "name": "AstroImageJ-6.0.1.00-windows-x64.msi",
+            "url": "https://github.com/AstroImageJ/astroimagej/releases/download/6.0.1.00/AstroImageJ-6.0.1.00-windows-x64.msi",
+            "sha256": "5abe6c2fbb6e713d681408b13a2dc66f5e39cc360df7c6d28e6f74cfac1ba8a2",
+            "os": [
+                "WINDOWS"
+            ],
+            "arch": [
+                "AMD64"
+            ],
+            "signatureUrl": "https://astroimagej.com/meta/signatures/6.0.1.00/AstroImageJ-6.0.1.00-windows-x64.msi.sigstore.json",
+            "signatureSha256": "f6623c6e558f70b538095dad88106032706644ce32c7f896cd91b1340e5ac686"
+        }
+    ]
+}

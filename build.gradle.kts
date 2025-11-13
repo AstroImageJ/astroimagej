@@ -767,6 +767,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             enabled = System.getenv("DeveloperId") != null &&
                     project.property("codeSignAndNotarize").toString().toBoolean() &&
                     Os.isFamily(Os.FAMILY_MAC) && sysInfo.os == MAC
+            mustRunAfter(installerTask)
             inputDir.set(installerTask.map { it.outputDir.get() })
             keychainProfile = "AC_PASSWORD"
         }

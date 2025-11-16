@@ -27,4 +27,8 @@ dependencies {
     implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
 
     implementation("dev.sigstore:sigstore-java:2.0.0-rc2")
+
+    implementation("net.java.dev.jna:jna:5.18.1")
+    implementation("net.java.dev.jna:jna-platform:5.18.1")
+    implementation("com.github.frimtec:jpse:1.4.0")
 }

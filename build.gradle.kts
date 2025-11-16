@@ -828,6 +828,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             if (!crossBuildAppImage.get()) {
                 mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
             }
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                finalizedBy("changeRegistryVersion")
+            }
 
             // cause copyAppImage to always run, even if no compile changes
             doNotTrackState("Always copy app image to destination")
@@ -919,6 +922,10 @@ tasks.register<GenerateMetadata>("updateMetadata") {
 
 tasks.register<TriggerReleaseWorkflow>("triggerReleaseWorkflow") {
 
+}
+
+tasks.register<ModifyWindowsRegistry>("changeRegistryVersion") {
+    enabled = Os.isFamily(Os.FAMILY_WINDOWS)
 }
 
 // Make Idea's hammer icon run copyAppImage

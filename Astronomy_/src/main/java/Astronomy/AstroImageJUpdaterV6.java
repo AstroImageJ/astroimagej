@@ -167,11 +167,13 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         if (IJ.isMacOSX()) {
             if (Files.exists(Path.of("/Volumes/AstroImageJ"))) {
-                IJ.showMessageWithCancel("Updater", """
+                if (!IJ.showMessageWithCancel("Updater", """
                         Detected mounted volume named 'AstroImageJ,'
                         which may be a previously mounted update.
                         Please eject it first to proceed, or the update may not succeed.
-                        """);
+                        """)) {
+                    return;
+                }
             }
         }
 

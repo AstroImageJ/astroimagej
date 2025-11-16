@@ -7,19 +7,19 @@ Merged project of Dr. Karen Collins' AstroImageJ.
 ### General Use
 
 Clone the repo locally, then run `gradlew packageAij[For<Your-OS-Here>]` (leave off what is in square brackets to
-generate all of them) in the repo's folder. The built zip(s) will appear in your-project-root/build/distributions. To
+generate all of them) in the repo's folder. The built installation pages will appear in your-project-root/build/distributions. To
 build only ij.jar or astronomy_.jar, run `gradlew :ij:build` or `gradlew :Astronomy_:build`, respectively.
 
 To run AIJ, use `gradlew aijRun`. The generated directory, `AIJ-Run`, will contain the generated version of AIJ.
 
 #### Special Options
-The tasks `copyBuiltJars` and `runAij` are configured through text files in the project root, `jarLocation.txt` and
+The tasks `copyAppImage` and `runAij` are configured through text files in the project root, `appImageLocation.txt` and
 `devLaunchOptions.txt`, respectively. Both files are ignored by git and will not be commited to the repo. 
 ***Spelling and case sensitive.***
 
-`jarLocation.txt` contains the absolute path to an AIJ distribution, so that development builds can be tested on a 
+`appImageLocation.txt` contains the absolute path to an AIJ distribution, so that development builds can be tested on a 
 medium-term basis without using Gradle or and IDE to update it each time. When developing in Intellij Idea, if this file
-is present, the `copyBuiltJars` task will be run automatically when the hammer icon is clicked.
+is present, the `copyAppImage` task will be run automatically when the hammer icon is clicked.
 
 `devLaunchOptions.txt` contains the Java launch arguments, eg. `-Xmx5000m -Xms256m`, the same as the config file `AstroImageJ.cfg` does for 
 normal installations of AIJ. If present, these options are used in place of the defaults for `runAij`.
@@ -40,6 +40,23 @@ run the project. To build the project, double-click on any of the `packageAij` t
 your-project-root/build/distributions. To build only ij.jar or astronomy_.jar, navigate to the build commands under
 their respective modules (instead of Tasks > ..., it will be ij > ... or Astronomy_ > ...). The built jar will be in
 your-project-root/<ij or Astronomy_>/build/libs.
+
+# Website development
+The website is built using [Astro](https://astro.build/), with the majority of the content being written in Markdown.
+It lives in the `website` folder of this repository. Documentation uses [Astro Starlight](https://starlight.astro.build/),
+with the pages in the `website/srs/content/docs` folder.
+
+
+## Build Instructions
+Setup requirements:
+- [Node.js](https://nodejs.org/en/)
+
+Run `npm install` in the `website` folder to install the required dependencies.
+
+Run `npm run build` to build the production website.
+
+Run `npm run dev` to start a development server, which will automatically rebuild the website when changes are made.
+
 
 # Code Signing Policy
 <table>

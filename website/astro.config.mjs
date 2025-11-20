@@ -9,6 +9,7 @@ export default defineConfig({
     site: 'https://astroimagej.com',
     integrations: [starlight({
         title: 'AstroImageJ Docs',
+        tableOfContents: { minHeadingLevel: 1, maxHeadingLevel: 4 },
         social: [
             { icon: 'github', label: 'GitHub', href: 'https://github.com/AstroImageJ/astroimagej' },
             { icon: 'comment', label: 'Github Discussions', href: 'https://github.com/AstroImageJ/astroimagej/discussions' },

@@ -5392,6 +5392,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             super(parent, title, true);
             setLayout(new BorderLayout());
             if (message == null) message = "";
+            setIconImage(createImageIcon("images/coordinate_converter.png", "CC_Icon").getImage());
             label = new MultiLineLabel(message);
             if (!isLinux) label.setFont(new Font("SansSerif", Font.PLAIN, 14));
             Panel panel = new Panel();
@@ -5462,6 +5463,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         public HTMLDialog(String title, String message) {
             super(dialogFrame, title, true);
+            setIconImage(createImageIcon("images/coordinate_converter.png", "CC_Icon").getImage());
 //        try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
 //        catch (Exception e) { }
             Container container = getContentPane();

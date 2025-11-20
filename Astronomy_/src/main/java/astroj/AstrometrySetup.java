@@ -295,6 +295,20 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         SpringUtil.makeCompactGrid (keyPanel, 1,1, 2,4,2,4);
         astrometrySetupPanel.add (keyPanel);
 
+        var boxBorder = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),"Poll Rate (sec):", TitledBorder.CENTER, TitledBorder.TOP, p11);
+        var customBox = Box.createHorizontalBox();
+        customBox.setBorder(boxBorder);
+        customPollSpinner = new JSpinner(new SpinnerNumberModel(Astrometry.CUSTOM_POLLING.get().intValue(), 1, 10, 1));
+        customPollSpinner.setFont(p12);
+        //customPollSpinner.setPreferredSize(new Dimension(50, 20));
+        customPollSpinner.setToolTipText("<html>The polling rate (in seconds) for the plate solve server. " +
+                "Increase if the server is responding with code 429 (too many requests)</html>");
+        customPollSpinner.addChangeListener(this);
+        SpringUtil.makeCompactGrid(customBox, 1,1, 0,0,0,0);
+
+        customBox.add(customPollSpinner);
+        astrometrySetupPanel.add(customBox);
+
         keyLabel3 = new JLabel ("<html><b>(Get key from: </html>");
         keyLabel3.setPreferredSize(col3Size);
         keyLabel3.setHorizontalAlignment(JLabel.RIGHT);
@@ -302,11 +316,11 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         
         keyLabel4 = new JLabel ("<html><b>nova.astrometry.net</b>)</html>");
         keyLabel4.setPreferredSize(col4Size);
-		astrometrySetupPanel.add (keyLabel4);  
+		astrometrySetupPanel.add (keyLabel4);
         
         JLabel keyLabel5 = new JLabel ("");
         keyLabel5.setPreferredSize(col5Size);
-		astrometrySetupPanel.add (keyLabel5);          
+		//astrometrySetupPanel.add (keyLabel5);
 
 //-------------------------------------------------------------------
 
@@ -324,39 +338,24 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
         useAlternateAstrometryServerCB.addItemListener (this);
         astrometrySetupPanel.add(useAlternateAstrometryServerCB);
-        
+
+        JLabel serverLabel4 = new JLabel ("");
+        astrometrySetupPanel.add (serverLabel4);
+
         JPanel astronomyServerPanel = new JPanel(new SpringLayout());
 		alternateAstrometryUrlBaseTF = new JTextField (useAlternateAstrometryServer?alternateAstrometryUrlBase:defaultAstrometryUrlBase);
         alternateAstrometryUrlBaseTF.setMargin(fitsMargin);
         alternateAstrometryUrlBaseTF.setFont(p12);
         alternateAstrometryUrlBaseTF.setEnabled(useAlternateAstrometryServer);
-		alternateAstrometryUrlBaseTF.setPreferredSize(col2Size);
+		alternateAstrometryUrlBaseTF.setPreferredSize(new Dimension(180, 25));
 		alternateAstrometryUrlBaseTF.setHorizontalAlignment(JTextField.LEFT);
         alternateAstrometryUrlBaseTF.setToolTipText("<html>"+"Enter custom/local astrometry.net URL base address."+"<br>"+
                                                     "Example: <b>http://127.0.0.1:8080</b>"+"</html>");
         alternateAstrometryUrlBaseTF.getDocument().addDocumentListener(new AstrometrySetup.thisDocumentListener());
         astronomyServerPanel.add(alternateAstrometryUrlBaseTF);
 
-        var customBox = Box.createHorizontalBox();
-        var customPollLabel = new JLabel("Poll Rate (sec):");
-        customPollLabel.setFont(p12);
-        customPollLabel.setHorizontalAlignment(JTextField.RIGHT);
-        customPollSpinner = new JSpinner(new SpinnerNumberModel(Astrometry.CUSTOM_POLLING.get().intValue(), 1, 10, 1));
-        customPollSpinner.setFont(p12);
-        customPollSpinner.setToolTipText("<html>The polling rate (in seconds) for the plate solve server. " +
-                "Increase if the server is responding with code 429 (too many requests)</html>");
-        customPollSpinner.addChangeListener(this);
-
-        customBox.add(Box.createHorizontalStrut(30));
-        customBox.add(customPollLabel);
-        customBox.add(customPollSpinner);
-        astronomyServerPanel.add(customBox);
-
-        SpringUtil.makeCompactGrid (astronomyServerPanel, 1,2, 2,4,2,4);
-        astrometrySetupPanel.add (astronomyServerPanel);        
-
-        JLabel serverLabel4 = new JLabel ("");
-        astrometrySetupPanel.add (serverLabel4);  
+        SpringUtil.makeCompactGrid (astronomyServerPanel, 1,1, 2,4,2,4);
+        astrometrySetupPanel.add (astronomyServerPanel);
 
         JLabel serverLabel5 = new JLabel ("");
         astrometrySetupPanel.add (serverLabel5);                    

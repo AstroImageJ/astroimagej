@@ -136,7 +136,7 @@ public class Astrometry { //implements KeyListener
     private final Color sourceColor = new Color(33, 120, 181);
     private boolean compress = false, fpack = false;
     public static final Property<Integer> ASTRO_NET_POLLING = new Property<>(2, Astrometry.class);
-    public static final Property<Integer> CUSTOM_POLLING = new Property<>(2, Astrometry.class);
+    public static final Property<Integer> CUSTOM_POLLING = new Property<>(1, Astrometry.class);
 
     public Astrometry() {
         Locale.setDefault(IJU.locale);

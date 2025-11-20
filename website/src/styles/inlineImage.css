@@ -6,3 +6,7 @@
   height: auto;
   margin: 0;
 }
+
+[data-theme='dark'] .inline-img { background-color: beige; }
+
+[data-theme='light'] .inline-img { background-color: white; }

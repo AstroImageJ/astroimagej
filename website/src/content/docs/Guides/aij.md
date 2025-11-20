@@ -8,7 +8,7 @@ description: User guide for AstroImageJ
 
 # Introduction
 
-### How to Think About AstroImageJ
+### Overview of AstroImageJ
 
 AstroImageJ (AIJ) is software designed for extracting photometry from astronomical images, as well as everything in between: from image calibration to exporting a light curve. It eliminates the need for any other software to perform these tasks. AIJ was created primarily for precise work with ground-based photometric observations of exoplanet transits. For exoplanet transit work, AIJ not only produces precise light curves but also allows fitting transit models to them. However, AIJ does not, for example, return uncertainties of the fitted transit parameters.
 

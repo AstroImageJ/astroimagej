@@ -339,15 +339,12 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         useAlternateAstrometryServerCB.addItemListener (this);
         astrometrySetupPanel.add(useAlternateAstrometryServerCB);
 
-        JLabel serverLabel4 = new JLabel ("");
-        astrometrySetupPanel.add (serverLabel4);
-
         JPanel astronomyServerPanel = new JPanel(new SpringLayout());
 		alternateAstrometryUrlBaseTF = new JTextField (useAlternateAstrometryServer?alternateAstrometryUrlBase:defaultAstrometryUrlBase);
         alternateAstrometryUrlBaseTF.setMargin(fitsMargin);
         alternateAstrometryUrlBaseTF.setFont(p12);
         alternateAstrometryUrlBaseTF.setEnabled(useAlternateAstrometryServer);
-		alternateAstrometryUrlBaseTF.setPreferredSize(new Dimension(180, 25));
+		alternateAstrometryUrlBaseTF.setPreferredSize(col2Size);
 		alternateAstrometryUrlBaseTF.setHorizontalAlignment(JTextField.LEFT);
         alternateAstrometryUrlBaseTF.setToolTipText("<html>"+"Enter custom/local astrometry.net URL base address."+"<br>"+
                                                     "Example: <b>http://127.0.0.1:8080</b>"+"</html>");
@@ -356,6 +353,9 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
         SpringUtil.makeCompactGrid (astronomyServerPanel, 1,1, 2,4,2,4);
         astrometrySetupPanel.add (astronomyServerPanel);
+
+        JLabel serverLabel4 = new JLabel ("");
+        astrometrySetupPanel.add (serverLabel4);
 
         JLabel serverLabel5 = new JLabel ("");
         astrometrySetupPanel.add (serverLabel5);                    

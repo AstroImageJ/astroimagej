@@ -1,18 +1,14 @@
 package astroj;
 
-import astroj.json.simple.JSONObject;
-import astroj.json.simple.parser.JSONParser;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.astro.util.FitsExtensionUtil;
-import ij.gui.Roi;
-import ij.process.ByteProcessor;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
+import static astroj.json.simple.JSONValue.toJSONString;
 
-import java.awt.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -23,9 +19,25 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Vector;
 
-import static astroj.json.simple.JSONValue.toJSONString;
+import astroj.json.simple.JSONObject;
+import astroj.json.simple.parser.JSONParser;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.io.prefs.Property;
+import ij.astro.util.FitsExtensionUtil;
+import ij.gui.Roi;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 
 
 /**
@@ -123,6 +135,8 @@ public class Astrometry { //implements KeyListener
     private final Color colorWCS = new Color(255, 190, 0);//(226,105,11);
     private final Color sourceColor = new Color(33, 120, 181);
     private boolean compress = false, fpack = false;
+    public static final Property<Integer> ASTRO_NET_POLLING = new Property<>(2, Astrometry.class);
+    public static final Property<Integer> CUSTOM_POLLING = new Property<>(2, Astrometry.class);
 
     public Astrometry() {
         Locale.setDefault(IJU.locale);
@@ -441,7 +455,7 @@ public class Astrometry { //implements KeyListener
                             IJ.showStatus(status);
                             still_processing = true;
                             n_failed_attempts++;
-                            IJ.wait(1000);
+                            IJ.wait(getPollingTimeout());
                         } else {
 //                            IJ.log("job_id_list="+job_id_list.toString());
                             still_processing = false;
@@ -449,11 +463,11 @@ public class Astrometry { //implements KeyListener
                     } catch (IOException ioe) {
                         log("Astrometry submission " + subid_int.toString() + " doesn't exist yet for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
                         n_failed_attempts++;
-                        IJ.wait(1000);
+                        IJ.wait(getPollingTimeout());
                     } catch (astroj.json.simple.parser.ParseException pe) {
                         log("JSON Parse Exception during astrometry check for submission " + subid_int.toString() + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + pe);
                         n_failed_attempts++;
-                        IJ.wait(1000);
+                        IJ.wait(getPollingTimeout());
                     }
                 }
 
@@ -523,7 +537,7 @@ public class Astrometry { //implements KeyListener
                             //log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Waiting.");
                             gotProcessingResponse = true;
                             n_failed_attempts++;
-                            IJ.wait(1000);
+                            IJ.wait(getPollingTimeout());
                         } else {
                             String status = "Astrometry job " + jobID + " " + jobStatus;
 //                            log("Astrometry status: "+jobStatus);
@@ -532,7 +546,7 @@ public class Astrometry { //implements KeyListener
                             }
                             IJ.showStatus(status);
                             n_failed_attempts++;
-                            IJ.wait(1000);
+                            IJ.wait(getPollingTimeout());
                         }
                     } catch (IOException ioe) {
                         log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " check error for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
@@ -926,7 +940,7 @@ public class Astrometry { //implements KeyListener
                 }
             } else if (annotate && (slice != endSlice || !notDP)) {
                 if (canceled) return CANCELED;
-                IJ.wait(1000);
+                IJ.wait(getPollingTimeout());
             }
         }
 
@@ -1314,6 +1328,13 @@ public class Astrometry { //implements KeyListener
         return setupActive;
     }
 
+    private int getPollingTimeout() {
+        if (useAlternateAstrometryServer) {
+            return CUSTOM_POLLING.get() * 1000;
+        }
+
+        return ASTRO_NET_POLLING.get() * 1000;
+    }
 
     public boolean getAstrometryCanceled() {
         return canceled;

@@ -2,18 +2,53 @@
 
 package astroj;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.text.DecimalFormat;
+import java.util.Locale;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerListModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpringLayout;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.util.UIHelper;
 import ij.util.Tools;
-
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.text.DecimalFormat;
-import java.util.Locale;
 
 
 
@@ -163,6 +198,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     Rectangle defaultScreenBounds;
     GraphicsDevice defaultScreen;
     private boolean fpack = false, compress = false;
+    private JSpinner customPollSpinner;
 
 
     public AstrometrySetup ()
@@ -283,7 +319,8 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
         useAlternateAstrometryServerCB = new JCheckBox("Enable",useAlternateAstrometryServer);
         useAlternateAstrometryServerCB.setFont(p12);
-        useAlternateAstrometryServerCB.setToolTipText("<html>Enable the use of a custom/local Astrometry.net server.</html>");
+        useAlternateAstrometryServerCB.setToolTipText("<html>Enable the use of a custom/local Astrometry.net server.<br>" +
+                "Windows users may install a free local server from https://adgsoftware.com/ansvr/</html>");
 
         useAlternateAstrometryServerCB.addItemListener (this);
         astrometrySetupPanel.add(useAlternateAstrometryServerCB);
@@ -299,7 +336,23 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                                                     "Example: <b>http://127.0.0.1:8080</b>"+"</html>");
         alternateAstrometryUrlBaseTF.getDocument().addDocumentListener(new AstrometrySetup.thisDocumentListener());
         astronomyServerPanel.add(alternateAstrometryUrlBaseTF);
-        SpringUtil.makeCompactGrid (astronomyServerPanel, 1,1, 2,4,2,4);
+
+        var customBox = Box.createHorizontalBox();
+        var customPollLabel = new JLabel("Poll Rate (sec):");
+        customPollLabel.setFont(p12);
+        customPollLabel.setHorizontalAlignment(JTextField.RIGHT);
+        customPollSpinner = new JSpinner(new SpinnerNumberModel(Astrometry.CUSTOM_POLLING.get().intValue(), 1, 10, 1));
+        customPollSpinner.setFont(p12);
+        customPollSpinner.setToolTipText("<html>The polling rate (in seconds) for the plate solve server. " +
+                "Increase if the server is responding with code 429 (too many requests)</html>");
+        customPollSpinner.addChangeListener(this);
+
+        customBox.add(Box.createHorizontalStrut(30));
+        customBox.add(customPollLabel);
+        customBox.add(customPollSpinner);
+        astronomyServerPanel.add(customBox);
+
+        SpringUtil.makeCompactGrid (astronomyServerPanel, 1,2, 2,4,2,4);
         astrometrySetupPanel.add (astronomyServerPanel);        
 
         JLabel serverLabel4 = new JLabel ("");
@@ -1485,6 +1538,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             useAlternateAstrometryServer = selected;
             alternateAstrometryUrlBaseTF.setText(useAlternateAstrometryServer?alternateAstrometryUrlBase:defaultAstrometryUrlBase);
             alternateAstrometryUrlBaseTF.setEnabled(useAlternateAstrometryServer);
+            customPollSpinner.setValue(selected ? Astrometry.CUSTOM_POLLING.get() : Astrometry.ASTRO_NET_POLLING.get());
             }            
         else if (source.equals(skipIfHasWCSCB))
             {
@@ -1653,7 +1707,14 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             distortionOrder = (Integer) distortionOrderSpinner.getValue();
             if (distortionOrder < minOrder) distortionOrder = minOrder;
             if (distortionOrder > maxOrder) distortionOrder = maxOrder;
-            }          
+            }
+        else if (ev.getSource().equals(customPollSpinner)) {
+            if (useAlternateAstrometryServer) {
+                Astrometry.CUSTOM_POLLING.set((Integer) customPollSpinner.getValue());
+            } else {
+                Astrometry.ASTRO_NET_POLLING.set((Integer) customPollSpinner.getValue());
+            }
+        }
         
         }
     

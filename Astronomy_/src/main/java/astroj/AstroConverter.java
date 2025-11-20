@@ -351,7 +351,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     Color leapGreen = new Color(225, 255, 225);
     Color leapGray = new Color(240, 240, 240);
     Calendar utc, amutc, pmutc, local;
-    String prefsDir = System.getProperty("user.dir");
+    String prefsDir = Prefs.getPrefsDir();
     String homeDir;
     String fontName = "Dialog";
     Font p12 = new Font(fontName, Font.PLAIN, 12);

@@ -29,32 +29,32 @@ When AIJ is launched, the AIJ toolbar appears, as shown in **Figure 1**. On the 
   <figcaption><strong>Figure 1.</strong> AstroImageJ Toolbar</figcaption>
 </figure>
 
-The toolbar functions similarly to that of generic ImageJ (IJ), but for most AIJ operations, you will want the ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_astromode.png) icon selected, as shown. The corresponding mode is referred to as `Astro-Mode` throughout this guide. AIJ starts in this mode by default.
+The toolbar functions similarly to that of generic ImageJ (IJ), but for most AIJ operations, you will want the ![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_astromode.png) icon selected, as shown. The corresponding mode is referred to as `Astro-Mode` throughout this guide. AIJ starts in this mode by default.
 
 A brief overview of each toolbar icon is provided below.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_astromode.png) **Astro-Mode Icon** — this button should typically stay selected (pressed) during normal AIJ use. If it is deselected, the mouse, keyboard, and image display revert to standard ImageJ behavior. The button can deselect automatically if you use a base ImageJ toolbar icon to draw a Region of Interest (ROI), such as a square or circle. ROIs are not usually required for AIJ tasks, but they can be useful for custom measurements. After drawing an ROI, be sure to reselect the astro-mode icon to return to astro-mode. Clicking other AIJ-specific toolbar icons does not change the astro-mode state.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_astromode.png) **Astro-Mode Icon** — this button should typically stay selected (pressed) during normal AIJ use. If it is deselected, the mouse, keyboard, and image display revert to standard ImageJ behavior. The button can deselect automatically if you use a base ImageJ toolbar icon to draw a Region of Interest (ROI), such as a square or circle. ROIs are not usually required for AIJ tasks, but they can be useful for custom measurements. After drawing an ROI, be sure to reselect the astro-mode icon to return to astro-mode. Clicking other AIJ-specific toolbar icons does not change the astro-mode state.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_singleaperturephotometry.png) **Single Aperture Photometry Icon** — when selected, this tool enables single-aperture photometry by simply left-clicking on the desired location within an image. If the centroid feature is enabled, the aperture will automatically snap to the nearest centroid. The resulting photometry data is output to a measurements table, which can then be plotted or saved to disk. Single-aperture photometry can also be performed—even if this icon is not active—by holding the `Shift` key while left-clicking on the image.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_singleaperturephotometry.png) **Single Aperture Photometry Icon** — when selected, this tool enables single-aperture photometry by simply left-clicking on the desired location within an image. If the centroid feature is enabled, the aperture will automatically snap to the nearest centroid. The resulting photometry data is output to a measurements table, which can then be plotted or saved to disk. Single-aperture photometry can also be performed—even if this icon is not active—by holding the `Shift` key while left-clicking on the image.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_multiaperturephotometry.png) **Multi-Aperture Photometry Icon** — opens the `Multi-Aperture` photometry module, which is used to perform differential photometry on a series of images—typically ones that have already been calibrated. The `Multi-Aperture` tool generates a table containing photometry results. This tool is also accessible from the toolbar above image display in the `Image Display` window.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_multiaperturephotometry.png) **Multi-Aperture Photometry Icon** — opens the `Multi-Aperture` photometry module, which is used to perform differential photometry on a series of images—typically ones that have already been calibrated. The `Multi-Aperture` tool generates a table containing photometry results. This tool is also accessible from the toolbar above image display in the `Image Display` window.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_clearoverlay.png) **Clear Overlay Icon** — removes all annotations and apertures from the image overlay.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_clearoverlay.png) **Clear Overlay Icon** — removes all annotations and apertures from the image overlay.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_multiplot.png) **Multi-Plot Icon** — opens the `Multi-Plot` module, which allows you to plot multiple curves on a single graph using data from the table generated by `Multi-Aperture` or any other compatible table loaded from disk.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_multiplot.png) **Multi-Plot Icon** — opens the `Multi-Plot` module, which allows you to plot multiple curves on a single graph using data from the table generated by `Multi-Aperture` or any other compatible table loaded from disk.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_measurementtable.png) **Measurement Table Icon** — opens a previously saved measurements table, or any generic file that is tab-, comma-, space-, or whitespace-delimited, from disk. Alternatively, a data file can be opened by dragging and dropping it onto either of the two `Multi-Plot` control panels.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_measurementtable.png) **Measurement Table Icon** — opens a previously saved measurements table, or any generic file that is tab-, comma-, space-, or whitespace-delimited, from disk. Alternatively, a data file can be opened by dragging and dropping it onto either of the two `Multi-Plot` control panels.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_dataprocessor.png) **Data Processor Icon** — opens the `Data Processor` (DP) module, which can:
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_dataprocessor.png) **Data Processor Icon** — opens the `Data Processor` (DP) module, which can:
 - perform image calibration, including bias, dark, flat, and linearity correction;
 - update FITS headers with additional data;
 - perform plate-solving to add WCS data to FITS headers (requires internet access and a free user key from [nova.astrometry.net](https://nova.astrometry.net));
 - run the `Multi-Aperture` and `Multi-Plot` tools after each image is calibrated;
 - operate in real-time mode during observations.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_coordinateconverter.png) **Coordinate Converter Icon** — opens the Astronomical Coordinate and Time Converter module, which converts time for specified sky coordinates and an observing location to and from various time systems, including UTC, local time, Local Sidereal Time (LST), Julian Date (JD), Heliocentric JD (HJD), and Barycentric JD (BJD TBD). The module also provides information on the lunar phase, as well as the angular proximity of the Moon and all major planets in the solar system.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_coordinateconverter.png) **Coordinate Converter Icon** — opens the Astronomical Coordinate and Time Converter module, which converts time for specified sky coordinates and an observing location to and from various time systems, including UTC, local time, Local Sidereal Time (LST), Julian Date (JD), Heliocentric JD (HJD), and Barycentric JD (BJD TBD). The module also provides information on the lunar phase, as well as the angular proximity of the Moon and all major planets in the solar system.
 
-![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_moretools.png) **More Tools Icon** — this option allows the user to modify the toolset available on the AIJ Toolbar.
+![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_moretools.png) **More Tools Icon** — this option allows the user to modify the toolset available on the AIJ Toolbar.
 
 ## Importing Images into AstroImageJ
 To open a single image in AstroImageJ, either double-click the file in your operating system (if AIJ is set as the default application for opening FITS and/or other image files), select `File` → `Open` from the AIJ toolbar, or drag and drop the image directly onto the toolbar.
@@ -79,9 +79,9 @@ The `Matched files` line shows how many images meet the selection criteria, and 
 
 If images are opened as a stack, they will be displayed in a single window as shown in Figure 3, with an additional stack control bar inserted between the image and the histogram display (see Figure 3).
 
-The stack slider can be dragged left or right to move through the images. You can also use the left and right arrow buttons to step through the images one at a time. Similarly, the left and right arrow keys on your keyboard will move through the stack. To play the stack as an animation, click the `play` button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_play.png). Right-clicking the `play` icon opens a menu where you can adjust animation speed and other playback settings.
+The stack slider can be dragged left or right to move through the images. You can also use the left and right arrow buttons to step through the images one at a time. Similarly, the left and right arrow keys on your keyboard will move through the stack. To play the stack as an animation, click the `play` button ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_play.png). Right-clicking the `play` icon opens a menu where you can adjust animation speed and other playback settings.
 
-To delete the currently displayed image from the stack (i.e., the current slice), click the `delete currently displayed slice from stack` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_deleteslice.png) above the image. This removes the image only from AIJ memory—it is not deleted from the disk. Note that this feature will not remove the last two images in a stack.
+To delete the currently displayed image from the stack (i.e., the current slice), click the `delete currently displayed slice from stack` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_deleteslice.png) above the image. This removes the image only from AIJ memory—it is not deleted from the disk. Note that this feature will not remove the last two images in a stack.
 
 # AstroImageJ Image Display Interface
 When a FITS image or any other supported image type is opened, the image will be displayed in a window as shown in **Figure 3**.
@@ -96,9 +96,9 @@ When a FITS image or any other supported image type is opened, the image will be
 ### Panning & Zooming
 To pan the image, left-click and drag the mouse. A middle mouse click will center the image on the clicked location (if this option is enabled in the `Preferences` menu in the `Image Display` window).
 
-If your mouse has a scroll wheel, you can use it to zoom in and out of the image. Place the cursor at the point where you want to zoom, and scroll the wheel to zoom in or out. If no mouse wheel is available, click on the image at the desired location and use the `zoom in` ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_viewmag+.png) and `zoom out` ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_viewmag-.png) buttons above the image. You can also hold the `Ctrl` key and left-click to zoom in, or `Ctrl` and right-click to zoom out. To zoom quickly, press the `zoom-in fast` button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_viewmag++.png) above the image or double left-click to zoom in rapidly. To zoom out quickly, right-click twice on the image. This will fit the image view to the current window.
+If your mouse has a scroll wheel, you can use it to zoom in and out of the image. Place the cursor at the point where you want to zoom, and scroll the wheel to zoom in or out. If no mouse wheel is available, click on the image at the desired location and use the `zoom in` ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_viewmag+.png) and `zoom out` ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_viewmag-.png) buttons above the image. You can also hold the `Ctrl` key and left-click to zoom in, or `Ctrl` and right-click to zoom out. To zoom quickly, press the `zoom-in fast` button ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_viewmag++.png) above the image or double left-click to zoom in rapidly. To zoom out quickly, right-click twice on the image. This will fit the image view to the current window.
 
-To fit the entire image to the display window, use the `zoom to fit image to window` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_viewmagfit.png) above the image. Triple right-clicking will also zoom out to show the full image, though this may result in blank space at the edges of the display.
+To fit the entire image to the display window, use the `zoom to fit image to window` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_viewmagfit.png) above the image. Triple right-clicking will also zoom out to show the full image, though this may result in blank space at the edges of the display.
 
 Keyboard shortcuts are also available: pressing the up arrow or `+` key zooms in, while the down arrow or `-` key zooms out.
 
@@ -107,7 +107,7 @@ Keyboard shortcuts are also available: pressing the up arrow or `+` key zooms in
 ### Contrast/Brightness Adjustment
 AIJ offers several ways to adjust image brightness and contrast, depending on your preferences and analysis needs.
 
-The easiest method is to use the `Auto brightness & contrast` button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_autoscale.png) located above the image. This default setting automatically scales the image display based on a constant factor multiplied by the standard deviation of the pixel values. If the default result is not ideal, you can adjust the scaling factors using the `Set auto brightness & contrast parameters` option in the `Contrast` menu, or automatically apply the current histogram settings using `Grab auto brightness & contrast from histogram`.
+The easiest method is to use the `Auto brightness & contrast` button ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_autoscale.png) located above the image. This default setting automatically scales the image display based on a constant factor multiplied by the standard deviation of the pixel values. If the default result is not ideal, you can adjust the scaling factors using the `Set auto brightness & contrast parameters` option in the `Contrast` menu, or automatically apply the current histogram settings using `Grab auto brightness & contrast from histogram`.
 
 You can manually adjust the display using the histogram located below the image. The blue region of the histogram represents the currently displayed range of pixel values. You can drag the edges of this region to modify brightness and contrast. The pixel value corresponding to black appears in the “black” box, and the value for white appears in the “white” box. These values can also be entered manually by clicking on the number, typing a new value, and pressing `Enter`.
 
@@ -128,7 +128,7 @@ To return to the default auto-scaling behavior at any time, choose `Reset auto b
 ---
 
 ### Image Negative
-AIJ can display an image as a negative by selecting the `display as image negative` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_negative.png) located above the image display. This mode uses an inverting lookup table to alter the display without changing the actual image data. In this mode, high pixel values are shown as black, and low pixel values are shown as white.
+AIJ can display an image as a negative by selecting the `display as image negative` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_negative.png) located above the image display. This mode uses an inverting lookup table to alter the display without changing the actual image data. In this mode, high pixel values are shown as black, and low pixel values are shown as white.
 
 ---
 
@@ -163,7 +163,7 @@ In the right part of the interface:
 - The `Peak` field shows the highest pixel value within a circular aperture centered at the cursor. If the mean value option is enabled in the `Preferences` menu, this label changes to `Mean`, and the field displays the average pixel value within the aperture.
 - The `Int Cnts` (Integrated Counts) field displays the sum of pixel values within the aperture, minus the mean of the pixel values in the background annulus.
 
-The live photometer's aperture radius as well as the inner and outer background annuli, can be configured using the `change aperture settings` button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_setaperture.png) above the image display, or by navigating to `Edit` menu → `Aperture Settings`. You can also double-click the `Single Aperture Photometry` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_singleaperturephotometry.png) on the toolbar to open the `Aperture Photometry Settings` window. The display of the photometer can be disabled by unchecking the `Show photometer aperture at mouse cursor` option in the `Preferences` menu.
+The live photometer's aperture radius as well as the inner and outer background annuli, can be configured using the `change aperture settings` button ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_setaperture.png) above the image display, or by navigating to `Edit` menu → `Aperture Settings`. You can also double-click the `Single Aperture Photometry` icon ![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_singleaperturephotometry.png) on the toolbar to open the `Aperture Photometry Settings` window. The display of the photometer can be disabled by unchecking the `Show photometer aperture at mouse cursor` option in the `Preferences` menu.
 
 ---
 
@@ -176,7 +176,7 @@ To quickly locate a known object in a plate-solved image:
    Press `Enter` to confirm.
 4. A yellow circle will appear at the specified coordinates, marking the object’s position based on the WCS information in the FITS header.
 
-To remove the annotation after drawing, click the `clear apertures and annotations from overlay` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_broom.png).
+To remove the annotation after drawing, click the `clear apertures and annotations from overlay` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_broom.png).
 
 ---
 
@@ -201,23 +201,23 @@ If WCS information is available or a pixel scale has been set manually, the angu
 
 When the mouse button is released, the software automatically places (optionally centroided) apertures at both ends of the vector. The arclength (or pixel distance), position angle (or Y-axis angle), magnitude difference (Δmag), and flux ratio are then displayed along the line. The display of these quantities can be toggled in the `Measure` menu.
 
-You can also choose in the `Measure` menu whether these measurements are recorded in a data table. To remove the measurement overlay after drawing, click the `clear apertures and annotations from overlay` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_broom.png).
+You can also choose in the `Measure` menu whether these measurements are recorded in a data table. To remove the measurement overlay after drawing, click the `clear apertures and annotations from overlay` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_broom.png).
 
 ---
 
 ### Other Icons above the Image Display
-- ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_cleartable.png) **Clear Table Icon** — clears all data from the measurements table generated by single- or multi-aperture photometry. This is especially useful when running back-to-back Multi-Aperture sessions and you want to quickly remove data from the previous session. **WARNING:** This action cannot be undone.
-- ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_multiaperture.png) **Multi-Aperture Icon** — opens the `Multi-Aperture` photometry module, which is used to perform differential photometry on a series of (typically already calibrated) images.
-- ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_align.png) **Image Alignment Icon** — opens the AIJ `Stack Aligner` module (see the **Stack Aligner** subsection). Images in a stack can be aligned using one of the following methods:
+- ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_cleartable.png) **Clear Table Icon** — clears all data from the measurements table generated by single- or multi-aperture photometry. This is especially useful when running back-to-back Multi-Aperture sessions and you want to quickly remove data from the previous session. **WARNING:** This action cannot be undone.
+- ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_multiaperture.png) **Multi-Aperture Icon** — opens the `Multi-Aperture` photometry module, which is used to perform differential photometry on a series of (typically already calibrated) images.
+- ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_align.png) **Image Alignment Icon** — opens the AIJ `Stack Aligner` module (see the **Stack Aligner** subsection). Images in a stack can be aligned using one of the following methods:
   - Place apertures on one or more reference stars in a designated reference image. The centroids of those stars are then used to align all other images by translating them along the X and Y axes.
   - Use WCS data from the FITS headers (if available) to align each image to the reference automatically (recommended).
-- ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_astrometry.png) **Plate-Solve Icon** — opens the AIJ plate solve setup panel. Plate solving requires an internet connection and a free user key from [nova.astrometry.net](https://nova.astrometry.net).
-- ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_header.png) **FITS Header Icon** — opens the AIJ `FITS Header Editor` module. This tool allows you to view and edit the FITS header associated with an image. See the next subsection for details.
+- ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_astrometry.png) **Plate-Solve Icon** — opens the AIJ plate solve setup panel. Plate solving requires an internet connection and a free user key from [nova.astrometry.net](https://nova.astrometry.net).
+- ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_header.png) **FITS Header Icon** — opens the AIJ `FITS Header Editor` module. This tool allows you to view and edit the FITS header associated with an image. See the next subsection for details.
 
 ---
 
 ### FITS Header Editor
-Information contained in the header of a FITS image opened in AIJ can be displayed and optionally edited by clicking the `FITS Header Editor` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_header.png) above an image display. The `FITS Header Editor` panel shown in **Figure 4** opens. A FITS header consists of keywords with associated value and comment fields. FITS header keywords and values should not be edited unless the user fully understands the potential impact on downstream data interpretation.
+Information contained in the header of a FITS image opened in AIJ can be displayed and optionally edited by clicking the `FITS Header Editor` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_header.png) above an image display. The `FITS Header Editor` panel shown in **Figure 4** opens. A FITS header consists of keywords with associated value and comment fields. FITS header keywords and values should not be edited unless the user fully understands the potential impact on downstream data interpretation.
 
 <figure style="text-align:center">
   <img src="../../../../public/newUserGuide/figures/fits_header_editor.png" alt="<FIGURE>">
@@ -249,7 +249,7 @@ To undo recent header edits without saving, click `CANCEL` and reopen the FITS h
 
 ### Stack Aligner
 
-The images within a stack can be aligned using the **Image Alignment** icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_align.png) above an image stack. The `Stack Aligner` panel shown in **Figure 5** opens and provides two methods to align images. `Stack Aligner` supports only image translation for alignment; image rotation and scaling are not currently implemented.
+The images within a stack can be aligned using the **Image Alignment** icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_align.png) above an image stack. The `Stack Aligner` panel shown in **Figure 5** opens and provides two methods to align images. `Stack Aligner` supports only image translation for alignment; image rotation and scaling are not currently implemented.
 
 <figure style="text-align:center">
   <img src="../../../../public/newUserGuide/figures/stack_aligner.png" alt="<FIGURE>">
@@ -292,7 +292,7 @@ Keyboard shortcuts can be used to move or edit an existing ROI:
 - Hold `Tab`, then click and drag the ROI to move it.
 - To resize, hold `Tab` and hover over a selection point until the cursor changes to a hand, then click and drag to adjust the shape.
 
-ROIs can be cleared by clicking the `clear apertures and annotations from overlay` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_broom.png) above the image display or by clicking the `Clear Overlay Icon` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_clearoverlay.png) on the AIJ toolbar.
+ROIs can be cleared by clicking the `clear apertures and annotations from overlay` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_broom.png) above the image display or by clicking the `Clear Overlay Icon` icon ![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_clearoverlay.png) on the AIJ toolbar.
 
 # Data Processor Module
 
@@ -309,7 +309,7 @@ In practice, DP converts raw frames into calibrated images whose pixel values re
 
 ## Overview of Operation
 
-To start a data processing session, click the DP icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/toolbar_dataprocessor.png) on the AIJ toolbar, or in the `Image Display` window use the menu selection `Process` → `Data reduction facility`. The Data Processor (DP) functions like a script, running selected calibration and science images through a predefined sequence.
+To start a data processing session, click the DP icon ![#inline #width=20](../../../assets/newUserGuide/icons/toolbar_dataprocessor.png) on the AIJ toolbar, or in the `Image Display` window use the menu selection `Process` → `Data reduction facility`. The Data Processor (DP) functions like a script, running selected calibration and science images through a predefined sequence.
 
 You can define directory paths and filename patterns for the data to be processed. Checkboxes allow you to enable or disable various processing tasks. Each field or option in the DP window includes a “tooltip” that appears when the mouse hovers over it for about a second. The tooltip disappears after 3–4 seconds, but if needed, you can slowly move the mouse over the item again to keep the text visible longer—useful for reading longer descriptions.
 
@@ -332,7 +332,7 @@ The control checkboxes allow each processing step to be individually enabled or 
 The options checkboxes provide additional configuration settings for each processing step.
 
 ### Directory
-The directory boxes specify the folder location for each category of image files. The blue folder icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_folderopenblue.png) next to each box can be used to browse and select a directory. Alternatively, the directory path can be typed manually, or it will be populated automatically when a filename pattern is selected (see below).
+The directory boxes specify the folder location for each category of image files. The blue folder icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_folderopenblue.png) next to each box can be used to browse and select a directory. Alternatively, the directory path can be typed manually, or it will be populated automatically when a filename pattern is selected (see below).
 
 Raw and master calibration file directories can either follow the science image directory or operate independently, depending on the `Preferences` settings in the DP panel. If a directory box is left empty, it will default to the same directory as the science images.
 
@@ -342,7 +342,7 @@ Unix/Linux/DOS-style notation can be used for relative paths. For example:
 - `../../cals` refers to a directory named `cals` located two levels up.
 
 ### Filename/Pattern
-The filename pattern boxes define which files in the directory should be processed. Use Unix-style wildcard characters such as `*` and `?` to specify patterns. The blue and white folder icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_fileopenblue.png) on the right side of each box can be used to select a sample file. When selected, the directory and filename pattern will update accordingly.
+The filename pattern boxes define which files in the directory should be processed. Use Unix-style wildcard characters such as `*` and `?` to specify patterns. The blue and white folder icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_fileopenblue.png) on the right side of each box can be used to select a sample file. When selected, the directory and filename pattern will update accordingly.
 
 By default, AIJ automatically inserts a `*` wildcard between the last underscore and the final dot in the filename. This behavior can be turned off in the `Preferences` menu at the top of the DP panel.
 
@@ -439,9 +439,9 @@ The user can enable these with the checkboxes in the sub-panel:
 - `Plate Solve` — enables plate solving and WCS header updates for images.
 
 The three small buttons to the right open the related setup panels:
-- **Rightmost icon:** ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_astrometry.png) `Astrometry Settings` — astrometry.net plate-solve configuration. See the **Plate Solving using Astrometry.net** subsection.
-- **Middle icon:** ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_fitsheadertool.png) `General FITS Header Settings` — opens the panel for selecting input and output keyword names.
-- **Leftmost icon:** ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_coordinateconverter.png) `Coordinate Converter` — opens the `Coordinate Converter` (CC) used for time/coordinate calculations. This panel is discussed in the **Coordinate Converter** section (that comes after this section on DP).
+- **Rightmost icon:** ![#inline #width=20](../../../assets/newUserGuide/icons/dp_astrometry.png) `Astrometry Settings` — astrometry.net plate-solve configuration. See the **Plate Solving using Astrometry.net** subsection.
+- **Middle icon:** ![#inline #width=20](../../../assets/newUserGuide/icons/dp_fitsheadertool.png) `General FITS Header Settings` — opens the panel for selecting input and output keyword names.
+- **Leftmost icon:** ![#inline #width=20](../../../assets/newUserGuide/icons/dp_coordinateconverter.png) `Coordinate Converter` — opens the `Coordinate Converter` (CC) used for time/coordinate calculations. This panel is discussed in the **Coordinate Converter** section (that comes after this section on DP).
 
 ---
 
@@ -451,8 +451,8 @@ AIJ can perform astrometric plate solving using an internet connection to the As
 Unlike typical uploads to Astrometry.net, AIJ only sends the x,y coordinates of detected stars (up to the number specified in `Max Num Stars`) rather than the full image, which speeds up solving and reduces network load.
 
 To open the `Astrometry Settings` panel:
-- Enable `Plate Solve` in the `FITS Header Updates` section of the `Data Processor` (DP) panel and click the icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_astrometry.png). **Figure 7** shows the `DP Astrometry Settings` panel.
-- Alternatively, click the `Plate Solve` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/imagedisplay_astrometry.png) above an image or image stack.
+- Enable `Plate Solve` in the `FITS Header Updates` section of the `Data Processor` (DP) panel and click the icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_astrometry.png). **Figure 7** shows the `DP Astrometry Settings` panel.
+- Alternatively, click the `Plate Solve` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_astrometry.png) above an image or image stack.
 
 The first time you use this feature, obtain a free user key from [nova.astrometry.net](https://nova.astrometry.net) and enter it in the `User Key` field.
 
@@ -501,7 +501,7 @@ Once configured, click `SAVE AND EXIT` to save your settings or `SAVE` to save w
 ---
 
 ### General FITS Header Settings
-DP provides the option to calculate new astronomical data and add it to the FITS header of a calibrated image. The option is enabled by selecting the `General` check box in the `FITS Header Updates` sub-panel of DP. A setup panel is accessed by clicking the `General FITS Header Settings` icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_fitsheadertool.png). The `General FITS Header Settings` panel opens (see **Figure 8**).
+DP provides the option to calculate new astronomical data and add it to the FITS header of a calibrated image. The option is enabled by selecting the `General` check box in the `FITS Header Updates` sub-panel of DP. A setup panel is accessed by clicking the `General FITS Header Settings` icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_fitsheadertool.png). The `General FITS Header Settings` panel opens (see **Figure 8**).
 
 <figure style="text-align:center">
   <img src="../../../../public/newUserGuide/figures/general_fits_header_settings.png" alt="<FIGURE>">
@@ -533,7 +533,7 @@ If both date and time are not found in a single keyword, DP searches separately:
 - For the date: `DATE-OBS`, `DATEOBS`, `DATE_OBS`, `UT_DATE`.
 - For the time: `TIME-OBS`, `TIMEOBS`, `TIME_OBS`, `TM-START`, `TM_START`, `UT`, `UTC`, `UTSTART`, `UT-START`, `UT_START`, `UT_TIME`.
 
-These keywords are fixed and not configurable in the `General FITS Header Settings` panel ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_fitsheadertool.png).
+These keywords are fixed and not configurable in the `General FITS Header Settings` panel ![#inline #width=20](../../../assets/newUserGuide/icons/dp_fitsheadertool.png).
 
 **Exposure time** is required to calculate mid-exposure-based time standards. DP searches for exposure time in the following order:
 - Primary keywords: `EXPTIME`, `EXPOSURE`.
@@ -561,9 +561,9 @@ Select `FPACK` to compress output files using FITS tile-compression (with header
 
 ## Post Processing
 This section provides options to run additional tasks after each image has been calibrated:
-- `Multi-Aperture`: Enables automatic photometric measurements after calibration. The `Multi-Aperture` setup panel will appear only after the first calibration, or if manually opened by clicking the icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_changeapertures.png) before or during a DP run.
+- `Multi-Aperture`: Enables automatic photometric measurements after calibration. The `Multi-Aperture` setup panel will appear only after the first calibration, or if manually opened by clicking the icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_changeapertures.png) before or during a DP run.
 - `Multi-Plot`: Automatically plots photometric results from `Multi-Aperture` if enabled.
-- **ImageJ Macros:** Two ImageJ macros can be executed sequentially after each processed image. You can enter the full path manually or use the folder button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_fileopenblue.png) to navigate to the macro file. The `Totals` column displays `0` if the file is not found or `1` if it is found.
+- **ImageJ Macros:** Two ImageJ macros can be executed sequentially after each processed image. You can enter the full path manually or use the folder button ![#inline #width=20](../../../assets/newUserGuide/icons/dp_fileopenblue.png) to navigate to the macro file. The `Totals` column displays `0` if the file is not found or `1` if it is found.
 
 The processing order is as follows: **Macro 1** → **Macro 2** → `Multi-Aperture` → `Multi-Plot`.
 
@@ -590,9 +590,9 @@ The `Control Panel` provides options to start, pause, stop, and reset DP runs, a
 This cycle continues until `PAUSE` is pressed. In real-time mode, each image will be calibrated, and optionally, the `Multi-Aperture` and `Multi-Plot` modules can be triggered to perform photometry and plot light curves in real time as new images are acquired. The `Totals` fields display how many files have been processed and how many remain. Note that the `Remaining` count is updated after each polling cycle and does not reflect newly added files until the current cycle completes.
 
 Additional DP controls include quick access to other options:
-- The `Set Aperture` button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_setaperture.png) opens the aperture settings panel.
-- If DP is paused and then resumed (or paused, reset, and restarted), the same `Multi-Aperture` settings and aperture locations will be reused unless the settings icon ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_changeapertures.png) is pressed.
-- To clear the measurements table when restarting a DP run, press the `Clear Measurements Table` button ![#inline #width=20 NormalAltText](../../../assets/newUserGuide/icons/dp_cleartable.png) or close the measurements table window manually.
+- The `Set Aperture` button ![#inline #width=20](../../../assets/newUserGuide/icons/dp_setaperture.png) opens the aperture settings panel.
+- If DP is paused and then resumed (or paused, reset, and restarted), the same `Multi-Aperture` settings and aperture locations will be reused unless the settings icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_changeapertures.png) is pressed.
+- To clear the measurements table when restarting a DP run, press the `Clear Measurements Table` button ![#inline #width=20](../../../assets/newUserGuide/icons/dp_cleartable.png) or close the measurements table window manually.
 
 # Coordinate Converter
 The `Coordinate Converter` (CC) module converts coordinates and times among multiple systems, using the observatory location and target coordinates.

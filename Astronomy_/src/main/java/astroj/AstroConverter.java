@@ -3559,6 +3559,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         } catch (IOException ee) {
             showMessage("ERROR: could not create observatories.txt file for user customization");
+            ee.printStackTrace();
         }
     }
 

@@ -298,7 +298,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var boxBorder = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),"Poll Rate (sec):", TitledBorder.CENTER, TitledBorder.TOP, p11);
         var customBox = Box.createHorizontalBox();
         customBox.setBorder(boxBorder);
-        customPollSpinner = new JSpinner(new SpinnerNumberModel(Astrometry.CUSTOM_POLLING.get().intValue(), 1, 10, 1));
+        customPollSpinner = new JSpinner(new SpinnerNumberModel(useAlternateAstrometryServer ? Astrometry.CUSTOM_POLLING.get().intValue() : Astrometry.ASTRO_NET_POLLING.get().intValue(), 1, 10, 1));
         customPollSpinner.setFont(p12);
         //customPollSpinner.setPreferredSize(new Dimension(50, 20));
         customPollSpinner.setToolTipText("<html>The polling rate (in seconds) for the plate solve server. " +

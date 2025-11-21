@@ -9,10 +9,10 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/markdoc": "^0.15.8",
-    "@astrojs/starlight": "^0.36.1",
-    "@astrojs/starlight-markdoc": "^0.5.0",
-    "astro": "^5.15.1",
+    "@astrojs/markdoc": "^0.15.9",
+    "@astrojs/starlight": "^0.36.2",
+    "@astrojs/starlight-markdoc": "^0.5.1",
+    "astro": "^5.16.0",
     "astro-swiper": "^1.1.0",
     "parse5": "^8.0.0",
     "sharp": "^0.34.4"
@@ -21,5 +21,5 @@
     "sass-embedded": "^1.93.2",
     "unist-util-visit": "^5.0.0"
   },
-  "packageManager": "pnpm@10.12.3"
+  "packageManager": "pnpm@10.23.0"
 }

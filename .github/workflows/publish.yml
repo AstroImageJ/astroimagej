@@ -402,16 +402,6 @@ jobs:
             packageFiles/assets/github/tmpl_release_notes.md \
             > release_notes.md
 
-      - name: Create release
-        # https://cli.github.com/manual/gh_release_create
-        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
-        shell: bash
-        run: |
-            for f in release_assets/*; do FILES+=" $f"; done
-            gh release create ${{ env.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -435,6 +425,26 @@ jobs:
             release_assets/**
             release_notes.md
             website/public/meta/**/*.json
+
+      - name: Upload metadata (release)
+        # Upload metadata as artifact in case release creation fails
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: metadata
+          path: |
+            release_notes.md
+            website/public/meta/**/*.json
+
+      - name: Create release
+        # https://cli.github.com/manual/gh_release_create
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
+        shell: bash
+        run: |
+          for f in release_assets/*; do FILES+=" $f"; done
+          gh release create ${{ env.VERSION }} $FILES --fail-on-no-commits --notes-file release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update metadata
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}

@@ -24,7 +24,7 @@ By default, AIJ notifies you at startup when a new version is available. To upda
 # AstroImageJ Toolbar
 When AIJ is launched, the AIJ toolbar appears, as shown in **Figure 1**. On the right side of the toolbar, you will find eight AIJ-specific icons, starting with the icon shown in the pressed (depressed) state below. Above the icons are the menus: `File`, `Edit`, `Image`, `Process`, `Analyze`, `Plugins`, `Window`, and `Help`. However, for typical AIJ use, only the `File` menu is generally useful, as it provides options for opening images. Image opening in AIJ is discussed in the next section.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/toolbar.png" alt="<FIGURE>">
   <figcaption><strong>Figure 1.</strong> AstroImageJ Toolbar</figcaption>
 </figure>
@@ -61,7 +61,7 @@ To open a single image in AstroImageJ, either double-click the file in your oper
 
 Image sequences can be opened as an AIJ *stack* using the toolbar menu option `File` → `Import` → `Image Sequence`. The `Import Image Sequence` dialog that opens (**Figure 2**) defines how a series of image files in a folder will be loaded as a single stack in AIJ.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/import_image_sequence.png" alt="<FIGURE>">
   <figcaption><strong>Figure 2.</strong> Import Image Sequence window</figcaption>
 </figure>
@@ -86,7 +86,7 @@ To delete the currently displayed image from the stack (i.e., the current slice)
 # AstroImageJ Image Display Interface
 When a FITS image or any other supported image type is opened, the image will be displayed in a window as shown in **Figure 3**.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/image_display.png" alt="<FIGURE>">
   <figcaption><strong>Figure 3.</strong> AstroImageJ Image Display interface</figcaption>
 </figure>
@@ -219,7 +219,7 @@ You can also choose in the `Measure` menu whether these measurements are recorde
 ### FITS Header Editor
 Information contained in the header of a FITS image opened in AIJ can be displayed and optionally edited by clicking the `FITS Header Editor` icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_header.png) above an image display. The `FITS Header Editor` panel shown in **Figure 4** opens. A FITS header consists of keywords with associated value and comment fields. FITS header keywords and values should not be edited unless the user fully understands the potential impact on downstream data interpretation.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/fits_header_editor.png" alt="<FIGURE>">
   <figcaption><strong>Figure 4.</strong> FITS Header Editor interface</figcaption>
 </figure>
@@ -251,7 +251,7 @@ To undo recent header edits without saving, click `CANCEL` and reopen the FITS h
 
 The images within a stack can be aligned using the **Image Alignment** icon ![#inline #width=20](../../../assets/newUserGuide/icons/imagedisplay_align.png) above an image stack. The `Stack Aligner` panel shown in **Figure 5** opens and provides two methods to align images. `Stack Aligner` supports only image translation for alignment; image rotation and scaling are not currently implemented.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/stack_aligner.png" alt="<FIGURE>">
   <figcaption><strong>Figure 5.</strong> Stack Aligner interface</figcaption>
 </figure>
@@ -317,7 +317,7 @@ The DP module supports input and output in any format supported by generic Image
 
 The `Data Processor` interface is shown in **Figure 6**.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/data_processor.png" alt="<FIGURE>">
   <figcaption><strong>Figure 6.</strong> Data Processor interface</figcaption>
 </figure>
@@ -456,7 +456,7 @@ To open the `Astrometry Settings` panel:
 
 The first time you use this feature, obtain a free user key from [nova.astrometry.net](https://nova.astrometry.net) and enter it in the `User Key` field.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/astrometry_settings.png" alt="<FIGURE>">
   <figcaption><strong>Figure 7.</strong> Astrometry Settings interface (its DP version)</figcaption>
 </figure>
@@ -503,7 +503,7 @@ Once configured, click `SAVE AND EXIT` to save your settings or `SAVE` to save w
 ### General FITS Header Settings
 DP provides the option to calculate new astronomical data and add it to the FITS header of a calibrated image. The option is enabled by selecting the `General` check box in the `FITS Header Updates` sub-panel of DP. A setup panel is accessed by clicking the `General FITS Header Settings` icon ![#inline #width=20](../../../assets/newUserGuide/icons/dp_fitsheadertool.png). The `General FITS Header Settings` panel opens (see **Figure 8**).
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/general_fits_header_settings.png" alt="<FIGURE>">
   <figcaption><strong>Figure 8.</strong> General FITS Header Settings panel</figcaption>
 </figure>
@@ -603,7 +603,7 @@ The `Coordinate Converter` has two modes of operation:
   
 The CC user interface is shown in **Figure 9** (DPCC in this case). The top row shows the current date and time in UTC, local time, Julian Date, and local sidereal time (LST) formats. These and other items with a gray background cannot be modified by the user. Tooltips are provided for each item to describe its use and syntax. Tooltips can be disabled under the `Preferences` menu.
 
-<figure style="text-align:center">
+<figure>
   <img src="../../../../public/newUserGuide/figures/coordinate_converter.png" alt="<FIGURE>">
   <figcaption><strong>Figure 9.</strong> Coordinate Converter window (DPCC in this case)</figcaption>
 </figure>

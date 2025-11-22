@@ -21,7 +21,7 @@ export default defineConfig({
         components: {
             SocialIcons: './src/components/StarlightSocialIcons.astro',
         },
-        customCss: ['./src/styles/inlineImage.css'],
+        customCss: ['./src/styles/docs.scss'],
     }), markdoc()],
     markdown: {
         remarkPlugins: [

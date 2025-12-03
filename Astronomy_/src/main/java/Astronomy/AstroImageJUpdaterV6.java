@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Vector;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
@@ -59,6 +60,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
 import ij.astro.gui.ToolTipRenderer;
+import ij.astro.io.ConfigHandler;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
@@ -146,14 +148,26 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         var appFolder = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
         Path baseDir;
-        if (IJ.isWindows()) {
-            baseDir = appFolder.getParent();
-        } else if (IJ.isMacOSX()) {
-            baseDir = appFolder.getParent().getParent();
-        } else if (IJ.isLinux()) {
-            baseDir = appFolder.getParent().getParent();
+        if (!isLegacyMigration()) {
+            if (IJ.isWindows()) {
+                baseDir = appFolder.getParent();
+            } else if (IJ.isMacOSX()) {
+                baseDir = appFolder.getParent().getParent();
+            } else if (IJ.isLinux()) {
+                baseDir = appFolder.getParent().getParent();
+            } else {
+                throw new IllegalStateException("Unknown OS - could not find installation directory");
+            }
         } else {
-            throw new IllegalStateException("Unknown OS - could not find installation directory");
+            if (IJ.isWindows()) {
+                baseDir = appFolder;
+            } else if (IJ.isMacOSX()) {
+                baseDir = appFolder.getParent().getParent();
+            } else if (IJ.isLinux()) {
+                baseDir = appFolder;
+            } else {
+                throw new IllegalStateException("Unknown OS - could not find installation directory");
+            }
         }
 
         if (!Files.exists(baseDir)) {
@@ -161,8 +175,21 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             return;
         }
 
-        if (!ManifestVerifier.check(baseDir, appFolder.resolve("manifest.json"), 50)) {
-            return;
+        if (!isLegacyMigration()) {
+            if (!ManifestVerifier.check(baseDir, appFolder.resolve("manifest.json"), 50)) {
+                return;
+            }
+        } else {
+            if (!IJ.showMessageWithCancel("Updater", """
+                   Migrating to AstroImageJ 6.
+                   AstroImageJ 6 has a new installation directory structure.
+                   AstroImageJ update will OVERWRITE or REMOVE the files in its install directory.
+                   Please make sure AIJ has a dedicated install directory, not shared with other software.
+                   \s
+                   Install directory: %s
+                   """.formatted(baseDir.toAbsolutePath()))) {
+                return;
+            }
         }
 
         if (IJ.isMacOSX()) {
@@ -226,6 +253,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         Prefs.savePreferences();
 
         Files.write(inst, installerBytes);
+
+        if (isLegacyMigration()) {
+            var s = Files.readString(appFolder.resolve("AstroImageJ.cfg"));
+            var m = Pattern.compile("(-Xmx[\\w\\d]+)").matcher(s);
+            if (m.matches()) {
+                ConfigHandler.setOption(ConfigHandler.readOptions(), "JavaOptions", "java-options=-Xmx", "java-options=-Xmx" + m.group(1));
+            }
+        }
 
         if (IJ.isWindows()) {
             ProcessBuilder pb = new ProcessBuilder(
@@ -744,11 +779,18 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         update();
     }
 
-    private record Download(byte[] bytes) {}
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean isLegacyMigration() {
+        return new SemanticVersion(IJ.getAstroVersion()).compareTo(new SemanticVersion("6.0.0.00")) < 0;
+    }
 
     private static String getScriptPath() {
         if (IJ.isWindows()) {
-            return "Astronomy/updater/windows.bat";
+            if (isLegacyMigration()) {
+                return "Astronomy/updater/windowsMigration.bat";
+            } else {
+                return "Astronomy/updater/windows.bat";
+            }
         }
 
         if (IJ.isLinux()) {

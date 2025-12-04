@@ -62,6 +62,7 @@ import ij.Prefs;
 import ij.astro.gui.ToolTipRenderer;
 import ij.astro.io.ConfigHandler;
 import ij.astro.io.prefs.Property;
+import ij.astro.logging.AIJLogger;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
@@ -259,6 +260,22 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             var m = Pattern.compile("(-Xmx[\\w\\d]+)").matcher(s);
             if (m.matches()) {
                 ConfigHandler.setOption(ConfigHandler.readOptions(), "JavaOptions", "java-options=-Xmx", "java-options=-Xmx" + m.group(1));
+            }
+
+            var observatories = appFolder.resolve("observatories.txt");
+            var newObs = Path.of(Prefs.getPrefsDir()).resolve("observatories.txt");
+            if (IJ.isMacOSX()) {
+                observatories = Path.of(System.getProperty("user.home")).resolve("Library/Preferences/observatories.txt");
+            } else if (IJ.isLinux()) {
+                observatories = Path.of(System.getProperty("user.home")).resolve(".astrocc/observatories.txt");
+            }
+
+            if (Files.exists(observatories) && Files.notExists(newObs)) {
+                try {
+                    Files.copy(observatories, newObs);
+                } catch (IOException e) {
+                    AIJLogger.log("Failed to migrate observatories.txt");
+                }
             }
         }
 

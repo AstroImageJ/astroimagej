@@ -1,20 +1,43 @@
 package ij;
 
+import java.applet.Applet;
+import java.awt.CheckboxMenuItem;
+import java.awt.Dialog;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.MenuShortcut;
+import java.awt.PopupMenu;
+import java.awt.Window;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.image.IndexColorModel;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import ij.astro.AstroImageJ;
 import ij.gui.ImageWindow;
 import ij.plugin.MacroInstaller;
 import ij.process.ImageProcessor;
 import ij.util.StringSorter;
-
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.image.IndexColorModel;
-import java.io.*;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
 This class installs and updates ImageJ's menus. Note that menu labels,
@@ -251,7 +274,7 @@ public class Menus {
 		addPlugInItem(examplesMenu, "Open as Panel", "ij.plugin.SimpleCommands(\"opencp\")", 0, false);
 		help.add(examplesMenu);
 		help.addSeparator();
-		addPlugInItem(help, "Update AstroImageJ...", "Astronomy.AstroImageJ_Updater", 0, false);
+		addPlugInItem(help, "Update AstroImageJ...", "Astronomy.AstroImageJUpdaterV6", 0, false);
 		addPlugInItem(help, "Release Notes...", "ij.plugin.BrowserLauncher(\"https://wsr.imagej.net/notes.html\")", 0, false);
 		addPlugInItem(help, "Refresh Menus", "ij.plugin.ImageJ_Updater(\"menus\")", 0, false);
 		help.addSeparator();

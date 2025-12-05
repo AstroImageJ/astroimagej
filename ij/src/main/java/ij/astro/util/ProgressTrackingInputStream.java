@@ -1,9 +1,9 @@
 package ij.astro.util;
 
-import ij.IJ;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import ij.IJ;
 
 public class ProgressTrackingInputStream extends InputStream {
     private final InputStream in;
@@ -17,6 +17,16 @@ public class ProgressTrackingInputStream extends InputStream {
             totalSizeInBytes = in.available();
         } catch (IOException ignored) {
         }
+    }
+
+    public ProgressTrackingInputStream(SizedInputStream stream) {
+        in = stream.inputStream();
+        try {
+            totalSizeInBytes = Math.max(stream.size(), in.available());
+        } catch (IOException ignored) {
+            totalSizeInBytes = stream.size();
+        }
+        IJ.showProgress(0);
     }
 
     public long getInputByteCount() {
@@ -116,4 +126,6 @@ public class ProgressTrackingInputStream extends InputStream {
             IJ.showProgress(inputByteCount / (double) totalSizeInBytes);
         }
     }
+
+    public record SizedInputStream(InputStream inputStream, long size) {}
 }

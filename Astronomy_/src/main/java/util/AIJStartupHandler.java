@@ -1,11 +1,26 @@
 package util;
 
-import Astronomy.AstroImageJ_Updater;
+import static Astronomy.MultiPlot_.useMacroSubtitle;
+import static Astronomy.MultiPlot_.useMacroTitle;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
+
+import Astronomy.AstroImageJUpdaterV6;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
-import astroj.*;
+import astroj.Aperture;
+import astroj.AstroCanvas;
+import astroj.FreeformPixelApertureRoi;
+import astroj.IJU;
+import astroj.MeasurementTable;
+import astroj.ShapedApertureRoi;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.io.prefs.Property;
@@ -16,16 +31,6 @@ import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.concurrent.Executors;
-
-import static Astronomy.MultiPlot_.useMacroSubtitle;
-import static Astronomy.MultiPlot_.useMacroTitle;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -245,8 +250,18 @@ public class AIJStartupHandler implements PlugIn {
         ObjectShare.putIfAbsent("multiapertureCircularKeys", MultiAperture_.getCircularApertureKeys());
         ObjectShare.putIfAbsent("customApertureKey", FreeformPixelApertureHandler.APS.getPropertyKey());
         ensureConfigFileExists();
+
+        IJ.showMessage("Notification", """
+                This version of AstroImageJ serves only as a bridge to AstroImageJ 6.
+                AstroImageJ is moving its webhosting and update process to GitHub and astroimagej.com,
+                with a new update strategy which will result in a different update experience.
+                At some point in the future, V5 updating will no longer function.
+                It is recommended to run another update as soon as possible
+                which will migrate this installation to AstroImageJ 6.
+                """);
+
         Executors.newSingleThreadExecutor()
-                .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));
+                .execute(() -> IJ.runPlugIn(AstroImageJUpdaterV6.class.getCanonicalName(), "check"));
     }
 
     private void ensureConfigFileExists() {

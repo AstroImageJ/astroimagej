@@ -304,6 +304,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             perms.add(PosixFilePermission.GROUP_EXECUTE);
             perms.add(PosixFilePermission.OTHERS_EXECUTE);
             Files.setPosixFilePermissions(elevator, perms);
+
+            // Attempt to allow elevator to run
+            try {
+                Path.of("jre/lib/jspawnhelper").toFile().setExecutable(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             ProcessBuilder pb = new ProcessBuilder(
                     elevator.toAbsolutePath().toString(),
                     Long.toString(pid),
@@ -812,7 +820,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
 
         if (IJ.isLinux()) {
-            return "Astronomy/updater/linux.sh";
+            if (isLegacyMigration()) {
+                return "Astronomy/updater/linuxMigration.sh";
+            } else {
+                return "Astronomy/updater/linux.sh";
+            }
         }
 
         if (IJ.isMacOSX()) {

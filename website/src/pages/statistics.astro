@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Download Statistics</title>
+        <script
+            type="text/javascript"
+            src="https://www.gstatic.com/charts/loader.js"></script>
+    </head>
+    <body>
+        <header
+            style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                background-color: aliceblue;
+                padding: 10px 16px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            ">
+            <nav>
+                <a href="#stats-h">Total Downloads per Version</a>
+                <a href="#global-version-chart-h">Total Downloads per Version</a>
+                <a href="#os-arch-container-h">Version Distribution per Platform (OS-Arch)</a>
+                <a href="#charts-container-h">Platform Distribution per Version</a>
+            </nav>
+        </header>
+
+        <main style="padding-top:30px">
+            <h1 id="stats-h">Download Statistics</h1>
+
+            <div id="stats"></div>
+
+            <h2 id="stacked-bar-h">Platform × Version Distribution</h2>
+            <div id="stacked-bar" class="chart-wrapper" style="width: 1000px; height: 500px;"></div>
+
+            <h2 id="global-version-chart-h">Total Downloads per Version</h2>
+            <div id="global-version-chart" style="width: 900px; height: 500px;">
+            </div>
+
+            <h2 id="os-arch-container-h">Version Distribution per Platform (OS-Arch)</h2>
+            <div id="os-arch-container"></div>
+
+            <h2 id="charts-container-h">Platform Distribution per Version</h2>
+            <div id="charts-container"></div>
+        </main>
+
+        <script>
+            import { getReleaseStatistics } from "../scripts/downloadStatistics";
+
+            google.charts.load("current", { packages: ["corechart"] });
+            google.charts.setOnLoadCallback(drawCharts);
+
+            async function drawCharts() {
+                try {
+                    const releases = await getReleaseStatistics();
+
+                    drawStats(releases);
+
+                    // Global Version Distribution
+                    drawGlobalVersionChart(releases);
+
+                    // OS-Arch Version Distribution
+                    drawOsArchVersionCharts(releases);
+
+                    // Platform Distribution per Version
+                    drawPerVersionCharts(releases);
+
+                    drawStackedBar(releases);
+                } catch (error) {
+                    console.error("Error loading statistics:", error);
+                    const container =
+                        document.getElementById("charts-container");
+                    if (container) container.innerText = "Error loading data.";
+                }
+            }
+
+            function drawStats(releases: any[]) {
+                const container = document.getElementById("stats");
+                if (!container) return;
+
+                const totalDownloads = releases.reduce((s: number, a: any) => s + (a.total_downloads || 0), 0);
+                const total = document.createElement("h3");
+                total.innerText = `Total Downloads: ${totalDownloads}`;
+                container.appendChild(total);
+
+                const maxDownloads = releases.reduce((s: number, a: any) => Math.max(a.total_downloads, s), -Infinity);
+                const max = document.createElement("h3");
+                max.innerText = `Max Downloads of a version: ${maxDownloads}`;
+                container.appendChild(max);
+            }
+
+            function drawGlobalVersionChart(releases: any[]) {
+                const dataArray: (string | number)[][] = [
+                    ["Version", "Downloads"],
+                ];
+                releases.forEach((r: any) => {
+                    dataArray.push([r.name, r.total_downloads]);
+                });
+
+                const container = document.getElementById(
+                    "global-version-chart",
+                );
+
+                if (container) {
+                    const data =
+                        google.visualization.arrayToDataTable(dataArray);
+                    const options = {
+                        title: "Total Downloads per Version",
+                    };
+                    const chart = new google.visualization.PieChart(container);
+                    chart.draw(data, options);
+                }
+            }
+
+            function drawOsArchVersionCharts(releases: any[]) {
+                const osArchMap: Record<string, Record<string, number>> = {};
+                releases.forEach((r: any) => {
+                    r.assets.forEach((a: any) => {
+                        const target = a.target;
+                        if (target && !target.includes("undefined")) {
+                            if (!osArchMap[target]) osArchMap[target] = {};
+                            osArchMap[target][r.name] =
+                                (osArchMap[target][r.name] || 0) +
+                                a.download_count;
+                        }
+                    });
+                });
+
+                const container = document.getElementById("os-arch-container");
+                if (!container) return;
+
+                for (const [target, versions] of Object.entries(osArchMap)) {
+                    const dataArray: (string | number)[][] = [
+                        ["Version", "Downloads"],
+                    ];
+                    for (const [ver, count] of Object.entries(versions)) {
+                        dataArray.push([ver, count]);
+                    }
+
+                    const wrapper = document.createElement("div");
+                    wrapper.style.marginBottom = "50px";
+
+                    const title = document.createElement("h3");
+                    title.innerText = `Platform: ${target}`;
+                    wrapper.appendChild(title);
+
+                    const chartDiv = document.createElement("div");
+                    chartDiv.style.width = "900px";
+                    chartDiv.style.height = "500px";
+                    wrapper.appendChild(chartDiv);
+
+                    container.appendChild(wrapper);
+
+                    const data =
+                        google.visualization.arrayToDataTable(dataArray);
+                    const options = {
+                        title: `Version Usage on ${target}`,
+                    };
+                    const chart = new google.visualization.PieChart(chartDiv);
+                    chart.draw(data, options);
+                }
+            }
+
+            function drawPerVersionCharts(releases: any[]) {
+                const container = document.getElementById("charts-container");
+                if (!container) return;
+
+                releases.forEach((release: any, index: number) => {
+                    // Aggregate data by target (OS-Arch)
+                    const distribution: Record<string, number> = {};
+                    let hasData = false;
+
+                    release.assets.forEach((asset: any) => {
+                        const target = asset.target;
+                        if (target && !target.includes("undefined")) {
+                            distribution[target] =
+                                (distribution[target] || 0) +
+                                asset.download_count;
+                            hasData = true;
+                        }
+                    });
+
+                    if (hasData) {
+                        const dataArray: (string | number)[][] = [
+                            ["OS-Arch", "Downloads"],
+                        ];
+                        for (const [key, value] of Object.entries(
+                            distribution,
+                        )) {
+                            dataArray.push([key, value]);
+                        }
+
+                        const chartWrapper = document.createElement("div");
+                        chartWrapper.style.marginBottom = "50px";
+
+                        const title = document.createElement("h3");
+                        title.innerText = `${release.name} (Total: ${release.total_downloads})`;
+                        chartWrapper.appendChild(title);
+
+                        const chartDiv = document.createElement("div");
+                        chartDiv.id = `piechart_${index}`;
+                        chartDiv.style.width = "900px";
+                        chartDiv.style.height = "500px";
+                        chartWrapper.appendChild(chartDiv);
+
+                        container.appendChild(chartWrapper);
+
+                        const data =
+                            google.visualization.arrayToDataTable(dataArray);
+
+                        const options = {
+                            title: `Platform Distribution for ${release.name}`,
+                        };
+
+                        const chart = new google.visualization.PieChart(
+                            chartDiv,
+                        );
+                        chart.draw(data, options);
+                    }
+                });
+            }
+
+            function drawStackedBar(releases) {
+                const container = document.getElementById("stacked-bar");
+                if (!container) return;
+                container.innerHTML = "";
+
+                const targetsSet = new Set();
+                releases.forEach((r) => {
+                    (r.assets || []).forEach(a => {
+                        if (a.target && !a.target.includes("undefined")) targetsSet.add(a.target);
+                    });
+                });
+                const targets = Array.from(targetsSet).sort().reverse();
+
+                if (targets.length === 0 || releases.length === 0) {
+                    container.innerText = "No data available for stacked bar.";
+                    return;
+                }
+
+                const dataArray = [["Version", ...targets, { role: "annotation" }]];
+                releases.reverse().forEach((r) => {
+                    const row = [r.name];
+                    const countsByTarget = {};
+                    (r.assets || []).forEach(a => {
+                        if (a.target && !a.target.includes("undefined")) {
+                            countsByTarget[a.target] = (countsByTarget[a.target] || 0) + (a.download_count || 0);
+                        }
+                    });
+                    targets.forEach(t => row.push(countsByTarget[t] || 0));
+                    row.push(r.total_downloads || 0);
+                    dataArray.push(row);
+                });
+
+                const data = google.visualization.arrayToDataTable(dataArray);
+                const options = {
+                    title: "OS-Arch distribution per version",
+                    isStacked: true,
+                    legend: { position: "right", maxLines: 10 },
+                    hAxis: { title: "Version", minValue: 0 },
+                    vAxis: { title: "Downloads" },
+                    chartArea: { width: '70%', height: '70%' },
+                };
+
+                const chart = new google.visualization.ColumnChart(container);
+                chart.draw(data, options);
+            }
+        </script>
+    </body>
+</html>

@@ -4,11 +4,7 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -328,11 +324,18 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             System.exit(0);
         } else if (IJ.isMacOSX()) {
-            // Mac sandbox prevents running extracted scripts, and the update requires a manual step anyways,
-            // so just do everyting manually.
+            var perms = Files.getPosixFilePermissions(elevator);
+            perms.add(PosixFilePermission.OWNER_EXECUTE);
+            perms.add(PosixFilePermission.GROUP_EXECUTE);
+            perms.add(PosixFilePermission.OTHERS_EXECUTE);
+            Files.setPosixFilePermissions(elevator, perms);
+
             ProcessBuilder pb = new ProcessBuilder(
-                    "open",
-                    inst.toAbsolutePath().toString()
+                    elevator.toAbsolutePath().toString(),
+                    Long.toString(pid),
+                    inst.toAbsolutePath().toString(),
+                    baseDir.toAbsolutePath().toString(),
+                    (new SemanticVersion(IJ.getAstroVersion()).compareTo(entry.version()) >= 0 ? "true" : "false")
             );
             try {
                 Process p = pb.start();
@@ -753,6 +756,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     try {
                         downloadSpecificVersion((MetaVersion.VersionEntry) selector.getSelectedItem());
                     } catch (Exception e) {
+                        IJ.showMessage(e.getMessage());
                         e.printStackTrace();
                     }
                 });

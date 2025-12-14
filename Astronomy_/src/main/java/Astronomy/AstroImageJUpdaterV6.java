@@ -335,7 +335,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     Long.toString(pid),
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString(),
-                    (new SemanticVersion(IJ.getAstroVersion()).compareTo(entry.version()) >= 0 ? "true" : "false")
+                    (isLegacyMigration() ? "true" : "false")
             );
             try {
                 Process p = pb.start();

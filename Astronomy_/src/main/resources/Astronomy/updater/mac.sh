@@ -7,19 +7,18 @@ set -euo pipefail
 PID_TO_WAIT="$1"
 DMG="$2"
 DEST="$3"
-DOWNGRADE="$4"
+MIGRATION="$4"
 
-# Downgrade handling: if $DEST exists and this is a downgrade,
+# Migration handling: if $DEST exists and this is a migration,
 # user must remove app manually otherwise the installer silently fails
-if [[ "$DOWNGRADE" == "true" ]]; then
+if [[ "$MIGRATION" == "true" ]]; then
   while [[ -d "$DEST" ]]; do
     if ! osascript >/dev/null <<EOF
       set theDest to "$(printf '%s' "$DEST" | sed 's/"/\\"/g')"
       display dialog "
-      You are attempting to downgrade AstroImageJ.
-      Apple does not natively allow app downgrades.
+      You have selected to update AstroImageJ version 5 to version 6.
 
-      If you would like to continue:
+      To continue this update:
       1) Keep this panel open
       2) In Finder, go to: " & theDest & "
       3) Move the AstroImageJ app to the Trash

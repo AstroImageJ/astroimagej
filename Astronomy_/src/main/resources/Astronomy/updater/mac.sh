@@ -2,7 +2,11 @@
 set -euo pipefail
 
 # Log this script to file
-#exec &> ~/Desktop/int.log
+LOG="$HOME/Library/Logs/AstroImageJ/elevator.log"
+rm -f "$LOG"
+exec &> "$LOG"
+
+echo "Starting AIJ elevator"
 
 PID_TO_WAIT="$1"
 DMG="$2"
@@ -13,6 +17,7 @@ MIGRATION="$4"
 # user must remove app manually otherwise the installer silently fails
 if [[ "$MIGRATION" == "true" ]]; then
   while [[ -d "$DEST" ]]; do
+    echo "Waiting for old AIJ to be removed..."
     if ! osascript >/dev/null <<EOF
       set theDest to "$(printf '%s' "$DEST" | sed 's/"/\\"/g')"
       display dialog "
@@ -34,4 +39,5 @@ EOF
   done
 fi
 
+echo "Launching installer..."
 open "$DMG"

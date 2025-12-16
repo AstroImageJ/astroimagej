@@ -302,11 +302,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             Files.setPosixFilePermissions(elevator, perms);
 
             // Attempt to allow elevator to run
-            try {
-                Path.of("jre/lib/jspawnhelper").toFile().setExecutable(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            var executor = Path.of(System.getProperty("java.home"), "lib/jspawnhelper");
+            handleJspawnHelperPerms(baseDir, executor);
 
             ProcessBuilder pb = new ProcessBuilder(
                     elevator.toAbsolutePath().toString(),
@@ -349,6 +346,49 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
 
         throw new IllegalStateException("Unknown OS: Could not handle update");
+    }
+
+    private static void handleJspawnHelperPerms(Path baseDir, Path executor) {
+        executor = executor.toAbsolutePath();
+        var bundledMsg = """
+                You can grant permission by running the following command in a terminal:
+                chmod +x %s
+                """.formatted(executor);
+        var customMsg = """
+                You are using a custom Java Runtime, please try using the bundled runtime or
+                grant permission by running the following command in a terminal:
+                chmod +x %s
+                """.formatted(executor);
+        if (Files.exists(executor)) {
+            var isBundledRuntime = executor.startsWith(baseDir.toAbsolutePath());
+            var exFile = executor.toFile();
+
+            if (exFile.canExecute()) {
+                return;
+            }
+
+            if (!exFile.setExecutable(true)) {
+                IJ.showMessage("Updater", """
+                        AstroImageJ requires an elevator script to perform the update,
+                        but the Java Runtime in use does not have permission to launch it.
+                        
+                        %s
+                        """.formatted(isBundledRuntime ? bundledMsg : customMsg));
+            } else {
+                if (!exFile.canExecute()) {
+                    IJ.showMessage("Updater", """
+                        AstroImageJ requires an elevator script to perform the update,
+                        but the Java Runtime in use does not have permission to launch it.
+                        
+                        Automatic granting of permissions has failed.
+                        
+                        %s
+                        """.formatted(isBundledRuntime ? bundledMsg : customMsg));
+                }
+            }
+        } else {
+            AIJLogger.log("Failed to find jspawnhelper at " + executor);
+        }
     }
 
     public byte[] downloadAndComputeHash(SpecificVersion.FileEntry fileEntry, int maxRetries) throws Exception {

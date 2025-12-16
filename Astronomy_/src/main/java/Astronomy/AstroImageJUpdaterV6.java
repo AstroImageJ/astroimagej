@@ -4,7 +4,11 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -251,9 +255,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         Files.write(inst, installerBytes);
 
-        if (isLegacyMigration()) {
-            //todo memory is not copied?
-            var s = Files.readString(appFolder.resolve("AstroImageJ.cfg"));
+        if (isLegacyMigration() && Files.exists(appFolder.resolve("AstroImageJ.l4j.ini"))) {
+            var s = Files.readString(appFolder.resolve("AstroImageJ.l4j.ini"));
             var m = Pattern.compile("(-Xmx[\\w\\d]+)").matcher(s);
             if (m.matches()) {
                 ConfigHandler.setOption(ConfigHandler.readOptions(), "JavaOptions", "java-options=-Xmx", "java-options=-Xmx" + m.group(1));

@@ -732,6 +732,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                     "--win-dir-chooser",
                     "--win-help-url", "https://github.com/AstroImageJ/astroimagej/discussions",
                     "--win-shortcut",
+                    "--win-menu",
                     "--win-shortcut-prompt",
                     "--win-update-url", "https://astroimagej.com",
                     "--about-url", "https://astroimagej.com",

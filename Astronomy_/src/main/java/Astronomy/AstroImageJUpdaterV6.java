@@ -247,6 +247,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
 
         if (IJ.isAijDev()) {
+            AIJLogger.log("Running in development mode, skipping installation");
             IJ.showMessage("Updater", "Running in development mode, skipping installation");
             return;
         }
@@ -254,8 +255,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         Prefs.savePreferences();
 
         Files.write(inst, installerBytes);
+        System.out.println("Saving installer: " + inst.toAbsolutePath());
 
         if (isLegacyMigration() && Files.exists(appFolder.resolve("AstroImageJ.l4j.ini"))) {
+            System.out.println("Migrating memory option...");
             var s = Files.readString(appFolder.resolve("AstroImageJ.l4j.ini"));
             var m = Pattern.compile("(-Xmx[\\w\\d]+)").matcher(s);
             if (m.matches()) {
@@ -271,15 +274,19 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             }
 
             if (Files.exists(observatories) && Files.notExists(newObs)) {
+                System.out.println("Migrating observatories.txt...");
                 try {
                     Files.copy(observatories, newObs);
                 } catch (IOException e) {
-                    AIJLogger.log("Failed to migrate observatories.txt");
+                    System.out.println("Failed to migrate observatories.txt");
                 }
+                System.out.println("Migrated observatories.txt.");
             }
+            System.out.println("Migrated memory option.");
         }
 
         if (IJ.isWindows()) {
+            System.out.println("Beginning windows update");
             ProcessBuilder pb = new ProcessBuilder(
                     "cmd", "/c",
                     "start", "\"\"", "/b",
@@ -290,6 +297,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             );
             try {
                 Process p = pb.start();
+                if (!p.isAlive()) {
+                    IJ.showMessage("Updater", "Failed to run elevator.");
+                    return;
+                }
             } catch (Exception e) {
                 IJ.error("Updater", "Failed to run elevator: " + e.getMessage());
                 e.printStackTrace();
@@ -298,6 +309,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             System.exit(0);
         } else if (IJ.isLinux()) {
+            System.out.println("Beginning linux update");
             var perms = Files.getPosixFilePermissions(elevator);
             perms.add(PosixFilePermission.OWNER_EXECUTE);
             perms.add(PosixFilePermission.GROUP_EXECUTE);
@@ -308,6 +320,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             var executor = Path.of(System.getProperty("java.home"), "lib/jspawnhelper");
             handleJspawnHelperPerms(baseDir, executor);
 
+            System.out.println("Working folder: " + tmpFolder.toAbsolutePath());
+
             ProcessBuilder pb = new ProcessBuilder(
                     elevator.toAbsolutePath().toString(),
                     Long.toString(pid),
@@ -316,6 +330,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             );
             try {
                 Process p = pb.start();
+                if (!p.isAlive()) {
+                    IJ.showMessage("Updater", "Failed to run elevator.");
+                    return;
+                }
             } catch (Exception e) {
                 IJ.error("Updater", "Failed to run elevator: " + e.getMessage());
                 e.printStackTrace();
@@ -324,6 +342,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             System.exit(0);
         } else if (IJ.isMacOSX()) {
+            System.out.println("Beginning mac update");
             var perms = Files.getPosixFilePermissions(elevator);
             perms.add(PosixFilePermission.OWNER_EXECUTE);
             perms.add(PosixFilePermission.GROUP_EXECUTE);
@@ -339,6 +358,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             );
             try {
                 Process p = pb.start();
+                if (!p.isAlive()) {
+                    IJ.showMessage("Updater", "Failed to run elevator.");
+                    return;
+                }
             } catch (Exception e) {
                 IJ.error("Updater", "Failed to run elevator: " + e.getMessage());
                 e.printStackTrace();

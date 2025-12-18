@@ -44,6 +44,11 @@ mkdir -p "$DEST"
 echo "Unpacking AIJ..."
 tar --strip-components=1 -xzf "$TGZ" -C "$DEST"
 
+if [[ -f "$DEST/AstroImageJ" ]]; then
+  echo "Creating symlink..."
+  ln -s "$DEST/bin/AstroImageJ" "$DEST"
+fi
+
 # Rerun AIJ
 echo "Relaunching AIJ..."
 $DEST/bin/AstroImageJ

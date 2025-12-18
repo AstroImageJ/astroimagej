@@ -180,7 +180,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             if (!ManifestVerifier.check(baseDir, appFolder.resolve("manifest.json"), 50)) {
                 return;
             }
-        } else {
+        } else if (!IJ.isMacOSX()) {
             if (!IJ.showMessageWithCancel("Updater", """
                    Migrating to AstroImageJ 6.
                    AstroImageJ 6 has a new installation directory structure.

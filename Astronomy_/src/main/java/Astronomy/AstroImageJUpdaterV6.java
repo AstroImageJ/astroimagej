@@ -17,10 +17,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.DigestInputStream;
@@ -238,7 +241,35 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var ext = fileEntry.name().substring(fileEntry.name().lastIndexOf('.'));
 
         var inst = tmpFolder.resolve("installer" + ext);
-        Files.deleteIfExists(inst);
+        if (Files.isDirectory(inst)) {
+            try {
+                Files.walkFileTree(inst, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        Files.delete(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException e)
+                            throws IOException {
+                        if (e == null) {
+                            Files.delete(dir);
+                            return FileVisitResult.CONTINUE;
+                        } else {
+                            // directory iteration failed
+                            throw e;
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                IJ.error("Unable to delete installer directory.");
+            }
+        } else {
+            Files.deleteIfExists(inst);
+        }
 
         var installerBytes = downloadAndComputeHash(fileEntry, 5);
         if (installerBytes == null) {

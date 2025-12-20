@@ -59,6 +59,8 @@ fun showReleaseOptionsDialog(parent: Frame? = null, releaseType: Type, version: 
 
     dialog.setLocationRelativeTo(parent)
     dialog.setIconImage(ImageIcon("icons/aij.png").image)
+    dialog.isAlwaysOnTop = true
+    dialog.toFront()
     dialog.isVisible = true
     dialog.requestFocus()
     return result

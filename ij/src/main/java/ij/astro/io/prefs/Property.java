@@ -1,21 +1,31 @@
 package ij.astro.io.prefs;
 
-import ij.IJ;
-import ij.Prefs;
-import ij.astro.gui.nstate.NState;
-import ij.astro.util.UIHelper;
-
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Point;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import ij.IJ;
+import ij.Prefs;
+import ij.astro.gui.nstate.NState;
+import ij.astro.util.UIHelper;
 
 /**
  * {@link Enum} values are stored and loaded based on the value of {@link Enum#name()},
@@ -41,7 +51,8 @@ public class Property<T> {
     private final Supplier<String> keySuffix;
     private final Supplier<String> keyPrefix;
     private final Class<T> type;
-    final Set<PropertyChangeListener<T>> listeners = Collections.synchronizedSet(new HashSet<>());
+    final Set<PropertyChangeListener<T>> listeners = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+    final Map<Object, PropertyChangeListener<T>> weakListener = Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<String, Property<T>> variants = new HashMap<>();
     private static final HashSet<WeakReference<Property<?>>> propertyCache = new HashSet<>();
     private static final boolean FORCE_SERIALIZATION = false;
@@ -112,6 +123,10 @@ public class Property<T> {
         for (@SuppressWarnings("unchecked") PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
             l.valueChanged(value, value);
         }
+
+        for (@SuppressWarnings("unchecked") PropertyChangeListener<T> l : weakListener.values().toArray(PropertyChangeListener[]::new)) {
+            l.valueChanged(value, value);
+        }
     }
 
     public T get() {
@@ -141,6 +156,10 @@ public class Property<T> {
         this.value = value;
         if (doNotify && valueChanged) {
             for (PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
+                l.valueChanged(oldVal, value);
+            }
+
+            for (@SuppressWarnings("unchecked") PropertyChangeListener<T> l : weakListener.values().toArray(PropertyChangeListener[]::new)) {
                 l.valueChanged(oldVal, value);
             }
         }
@@ -190,6 +209,14 @@ public class Property<T> {
      */
     public void addListener(PropertyChangeListener<T> listener) {
         listeners.add(listener);
+    }
+
+    /**
+     * Add weak listener. This allows the owner to be garbage collected even though we have a reference to it.
+     * @param listener (key, newValue) -> {}
+     */
+    public void addListener(Object owner, PropertyChangeListener<T> listener) {
+        weakListener.put(owner, listener);
     }
 
     public void locationSavingWindow(Frame window) {
@@ -244,6 +271,7 @@ public class Property<T> {
 
     public void clearListeners() {
         listeners.clear();
+        weakListener.clear();
     }
 
     /**
@@ -304,6 +332,13 @@ public class Property<T> {
 
             hasLoaded = true;
         }
+    }
+
+    public ItemListener toItemListener() {
+        if (type != Boolean.TYPE && type != Boolean.class) {
+            throw new IllegalArgumentException("Only boolean properties can be converted to ItemListeners");
+        }
+        return (e) -> set((T)(Boolean)(e.getStateChange() == ItemEvent.SELECTED));
     }
 
     private String getOrCreatePropertyKey() {

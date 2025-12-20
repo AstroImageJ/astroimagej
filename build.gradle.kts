@@ -325,8 +325,12 @@ tasks.register<JavaExec>("aijRun") {
 
     enableAssertions = true
 
-    classpath = files(file("${projectDir}/AIJ-Run/ij.jar"))
     // Don't specify main class so gradle reads from the manifest which also reads the native access enabler
+    classpath = files(file("${projectDir}/AIJ-Run/ij.jar"))
+
+    openFileInAij()?.let {
+        args(it.absolutePath)
+    }
 }
 
 fun readConfigFile(): List<String> {
@@ -888,6 +892,22 @@ fun outputDestination(): File {
     }
 
     return file(destination)
+}
+
+fun openFileInAij(): File? {
+    val locCfg = file("${projectDir}/openImage.txt")
+    var destination: String? = null
+
+    if (locCfg.exists()) {
+        locCfg.readLines().forEach {
+            if (it.startsWith("#")) { // Comments
+                return@forEach
+            }
+            destination = it
+        }
+    }
+
+    return destination?.let { file(it) }
 }
 
 // We don't have reproducible build fully working,

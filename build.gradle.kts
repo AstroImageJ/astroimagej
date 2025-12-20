@@ -314,7 +314,7 @@ tasks.register<JavaExec>("aijRun") {
     inputs.dir(runFolder)
     workingDir(runFolder)
 
-    allJvmArgs = readConfigFile()
+    jvmArgs = readConfigFile()
 
     // Force it to use the toolchain java version
     javaLauncher.set(javaToolchains.launcherFor {

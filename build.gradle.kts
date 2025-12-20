@@ -58,16 +58,14 @@ val shippingJava = (properties["javaShippingVersion"] as String).toInt()
 // Minimum Java version binaries should be compatible with
 val targetJava = (properties["minJava"] as String).toInt()
 
-configurations {
-    create("shippingIJ") {
-        isCanBeConsumed = false
-        isCanBeResolved = true
-    }
+val shippingIJ: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
 
-    create("shippingAstro") {
-        isCanBeConsumed = false
-        isCanBeResolved = true
-    }
+val shippingAstro: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
 }
 
 dependencies {
@@ -249,17 +247,17 @@ javaRuntimeSystemsProperty.convention(providers.provider {
 // Define what files belong to all distributions and their location
 val commonDist = project.copySpec {
     // Ensure `shippingAstro` contains exactly one file (Astronomy_.jar)
-    if (configurations.getByName("shippingAstro").files.size != 1) {
+    if (shippingAstro.files.size != 1) {
         throw GradleException("shippingAstro configuration must contain exactly one file")
     }
 
     // Ensure `shippingIJ` contains exactly one file (ij.jar)
-    if (configurations.getByName("shippingIJ").files.size != 1) {
+    if (shippingIJ.files.size != 1) {
         throw GradleException("shippingIJ configuration must contain exactly one file")
     }
 
     // Copy Astronomy_.jar to correct place in distribution
-    from(configurations.getByName("shippingAstro")) {
+    from(shippingAstro) {
         rename { "Astronomy_.jar" }
         into("plugins")
     }
@@ -273,7 +271,7 @@ val commonDist = project.copySpec {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(configurations.getByName("shippingIJ")) {
+    from(shippingIJ) {
         into("")
     }
 }

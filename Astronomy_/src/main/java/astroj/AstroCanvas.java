@@ -1,5 +1,26 @@
 package astroj;
 
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.event.MouseEvent;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferStrategy;
+import java.awt.image.MemoryImageSource;
+import java.text.DecimalFormat;
+import java.util.Locale;
+
+import javax.swing.SwingUtilities;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -8,15 +29,6 @@ import ij.gui.ImageWindow;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.plugin.tool.PlugInTool;
-
-import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.font.FontRenderContext;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferStrategy;
-import java.awt.image.MemoryImageSource;
-import java.text.DecimalFormat;
-import java.util.Locale;
 
 public class AstroCanvas extends OverlayCanvas {
 
@@ -118,6 +130,20 @@ public class AstroCanvas extends OverlayCanvas {
         buildRedCrossHairCursor();
         buildClearCursor();
 
+        AstrometrySetup.EXCLUDE_BORDERS.addListener(this, (_, _) -> updateDisplay());
+        AstrometrySetup.BORDER_EXCLUSION_TOP.addListener(this, (_, _) -> updateDisplay());
+        AstrometrySetup.BORDER_EXCLUSION_BOTTOM.addListener(this, (_, _) -> updateDisplay());
+        AstrometrySetup.BORDER_EXCLUSION_LEFT.addListener(this, (_, _) -> updateDisplay());
+        AstrometrySetup.BORDER_EXCLUSION_RIGHT.addListener(this, (_, _) -> updateDisplay());
+
+    }
+
+    private void updateDisplay() {
+        if (SwingUtilities.isEventDispatchThread()) {
+            repaint();
+        } else {
+            SwingUtilities.invokeLater(this::repaint);
+        }
     }
 
     void buildRedCrossHairCursor() {
@@ -612,6 +638,12 @@ public class AstroCanvas extends OverlayCanvas {
         if (showPhotometerCursor && mouseInImage && astronomyMode && !customPixelMode) updatePhotometerOverlay(drawingGraphics);
         OverlayCanvas oc = getOverlayCanvas(imp);
         if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
+
+        //todo check for plate solving/settings running, if so draw, otherwise hide
+        if (AstrometrySetup.EXCLUDE_BORDERS.get()) {
+            drawExcludedRegions((Graphics2D) drawingGraphics);
+        }
+        
         transEnabled = false;
 
         //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
@@ -621,6 +653,42 @@ public class AstroCanvas extends OverlayCanvas {
         transEnabled = true;
         drawZoomIndicator(drawingGraphics);
         if (IJ.debugMode) showFrameRate(drawingGraphics);
+    }
+    
+    private void drawExcludedRegions(Graphics2D g2) {
+        var left = AstrometrySetup.BORDER_EXCLUSION_LEFT.get();
+        var right = AstrometrySetup.BORDER_EXCLUSION_RIGHT.get();
+        var top = AstrometrySetup.BORDER_EXCLUSION_TOP.get();
+        var bottom = AstrometrySetup.BORDER_EXCLUSION_BOTTOM.get();
+
+        g2.setTransform(invCanvTrans);
+
+        g2.setColor(Color.RED);
+        var comp = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
+
+        // Draw left region
+        if (left > 0) {
+            g2.fillRect(screenX(0), screenY(0), screenX(left) - screenX(0), screenY(imp.getHeight()) - screenY(0));
+        }
+        g2.setColor(Color.YELLOW);
+        // Draw right region
+        if (right > 0) {
+            g2.fillRect(screenX(imp.getWidth() - right), screenY(0), screenX(imp.getWidth()) - screenX(imp.getWidth() - right), screenY(imp.getHeight()) - screenY(0));
+        }
+        g2.setColor(Color.BLUE);
+        // Draw top region
+        if (top > 0) {
+            g2.fillRect(screenX(0), screenY(0), screenX(imp.getWidth()) - screenX(0), screenY(top) - screenY(0));
+        }
+        g2.setColor(Color.GREEN);
+        // Draw bottom region
+        if (bottom > 0) {
+            g2.fillRect(screenX(0), screenY(imp.getHeight() - bottom), screenX(imp.getWidth()) - screenX(0), screenY(imp.getHeight()) - screenY(imp.getHeight() - bottom));
+        }
+
+        g2.setComposite(comp);
+        g2.setTransform(canvTrans);
     }
 
     @Override

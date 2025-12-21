@@ -157,6 +157,11 @@ public class Astrometry { //implements KeyListener
         width = impOriginal.getWidth();
         height = impOriginal.getHeight();
 
+        if (AstrometrySetup.EXCLUDE_BORDERS.get()) {
+            width -= AstrometrySetup.BORDER_EXCLUSION_LEFT.get() + AstrometrySetup.BORDER_EXCLUSION_RIGHT.get();
+            height -= AstrometrySetup.BORDER_EXCLUSION_TOP.get() + AstrometrySetup.BORDER_EXCLUSION_BOTTOM.get();
+        }
+
         setupCanceled = false;
         setupActive = false;
         if (runSetup) {
@@ -966,8 +971,16 @@ public class Astrometry { //implements KeyListener
 
     public void findMaxima(double tolerance) {
         ImageProcessor ip = imp.getProcessor();
+        //todo set ROI to restricted region
         if (dirOffset == null) makeDirectionOffsets(ip);
         Rectangle roi = ip.getRoi();
+        if (AstrometrySetup.EXCLUDE_BORDERS.get()) {
+            roi.grow(-(AstrometrySetup.BORDER_EXCLUSION_LEFT.get() + AstrometrySetup.BORDER_EXCLUSION_RIGHT.get()),
+                    -(AstrometrySetup.BORDER_EXCLUSION_TOP.get() + AstrometrySetup.BORDER_EXCLUSION_BOTTOM.get()));
+            roi.translate(AstrometrySetup.BORDER_EXCLUSION_LEFT.get(), AstrometrySetup.BORDER_EXCLUSION_TOP.get());
+        }
+        roi.setLocation(roi.x + dirOffset[0], roi.y + dirOffset[1]);
+        ip.setRoi(roi);
         byte[] mask = ip.getMaskArray();
         ByteProcessor typeP = new ByteProcessor(width, height);     //will be a notepad for pixel types
         byte[] types = (byte[]) typeP.getPixels();
@@ -1096,7 +1109,7 @@ public class Astrometry { //implements KeyListener
             if ((types[offset0] & PROCESSED) != 0)      //this maximum has been reached from another one, skip it
                 continue;
             //we create a list of connected points and start the list at the current maximum
-            int x0 = offset0 % width;
+            int x0 = offset0 % width;//todo mark
             int y0 = offset0 / width;
             float v0 = ip.getPixelValue(x0, y0);
             boolean sortingError;
@@ -1106,7 +1119,7 @@ public class Astrometry { //implements KeyListener
                 types[offset0] |= (EQUAL | LISTED);   //mark first point as equal height (to itself) and listed
                 int listLen = 1;                    //number of elements in the list
                 int listI = 0;                      //index of current element in the list
-                boolean isEdgeMaximum = (x0 == 0 || x0 == width - 1 || y0 == 0 || y0 == height - 1);
+                boolean isEdgeMaximum = (x0 == 0 || x0 == width - 1 || y0 == 0 || y0 == height - 1);//todo mark
                 sortingError = false;       //if sorting was inaccurate: a higher maximum was not handled so far
                 boolean maxPossible = true;         //it may be a true maximum
                 double xEqual = x0;                 //for creating a single point: determine average over the
@@ -1261,7 +1274,7 @@ public class Astrometry { //implements KeyListener
             shift++;
             mult *= 2;
         }
-        while (mult < width);
+        while (mult < width);//todo mark
 //            intEncodeXMask = mult-1;
 //            intEncodeYMask = ~intEncodeXMask;
 //            intEncodeShift = shift;
@@ -1282,7 +1295,7 @@ public class Astrometry { //implements KeyListener
      * @param direction the direction from the pixel towards the neighbor (see makeDirectionOffsets)
      * @return true if the neighbor is within the image (provided that x, y is within)
      */
-    boolean isWithin(int x, int y, int direction) {
+    boolean isWithin(int x, int y, int direction) {//todo mark
         int xmax = width - 1;
         int ymax = height - 1;
         switch (direction) {

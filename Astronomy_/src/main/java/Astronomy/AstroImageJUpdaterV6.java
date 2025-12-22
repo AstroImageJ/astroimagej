@@ -149,6 +149,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     public void downloadSpecificVersion(MetaVersion.VersionEntry entry) throws Exception {
         var version = SpecificVersion.readJson(new URI(entry.url()));
 
+        if (version == null) {
+            IJ.error("Failed to fetch version from " + entry.url());
+        }
+
         if (version.message() != null && !version.message().isBlank()) {
             if (!IJ.showMessageWithCancel("Updater", version.message())) {
                 return;

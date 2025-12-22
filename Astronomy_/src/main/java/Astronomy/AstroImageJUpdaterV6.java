@@ -95,12 +95,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         if (meta == null) {
             meta = MetaVersion.readJson(metaUrl);
             if (meta == null) {
-                IJ.error("""
-                        Failed to fetch versions from %s.
-                        Please check your internet connection.
-                        If you are using a proxy, please ensure the settings in `Edit > Options > Proxy Settings` are correct.
-                        """
-                        .formatted(metaUrl));
+                SwingUtilities.invokeLater(() -> IJ.error("""
+                    Failed to fetch versions from %s.
+                    Please check your internet connection.
+                    If you are using a proxy, please ensure the settings in `Edit > Options > Proxy Settings` are correct.
+                    """.formatted(metaUrl)));
             }
         }
 
@@ -488,6 +487,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         );
 
         if (response.statusCode() != 200) {
+            SwingUtilities.invokeLater(() -> IJ.error("Updater", """
+                    Failed to access file at %s.
+                    Please check your internet connection.
+                    If you are using a proxy, please ensure the settings in `Edit > Options > Proxy Settings` are correct.
+                    """.formatted(uri)));
             throw new IllegalStateException("Failed to access file");
         }
 
@@ -512,6 +516,11 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         );
 
         if (response.statusCode() != 200) {
+            SwingUtilities.invokeLater(() -> IJ.error("Updater", """
+                    Failed to access file at %s.
+                    Please check your internet connection.
+                    If you are using a proxy, please ensure the settings in `Edit > Options > Proxy Settings` are correct.
+                    """.formatted(uri)));
             throw new IllegalStateException("Failed to access file");
         }
 

@@ -151,6 +151,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         if (version == null) {
             IJ.error("Failed to fetch version from " + entry.url());
+            return;
         }
 
         if (version.message() != null && !version.message().isBlank()) {

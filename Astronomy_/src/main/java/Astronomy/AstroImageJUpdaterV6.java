@@ -4,7 +4,11 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -90,6 +94,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
     MetaVersion fetchVersions() {
         if (meta == null) {
             meta = MetaVersion.readJson(metaUrl);
+            if (meta == null) {
+                IJ.error("""
+                        Failed to fetch versions from %s.
+                        Please check your internet connection.
+                        If you are using a proxy, please ensure the settings in `Edit > Options > Proxy Settings` are correct.
+                        """
+                        .formatted(metaUrl));
+            }
         }
 
         return meta;

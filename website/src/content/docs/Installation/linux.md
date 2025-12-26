@@ -98,7 +98,7 @@ Then enable `Use custom observatory list`, and select `Edit Custom Observatories
 Then add any custom obersvatories to the file.
 ![](../../../assets/docs/installation/linux/ccObservTxt.png)
 
-Observatories are written in a tab-delinated format, which one observatory per line. Lines that being with a `#` will
+Observatories are written in a tab-delinated format, with one observatory per line. Lines that begin with a `#` will
 be ignored. The order in which the observatories appear in the file is how they will appear in the selection dialog.
 
 > **Name**`<tab>`**Latitude**`<tab>`**Longitude**`<tab>`**Altitude**

@@ -1,11 +1,12 @@
 ---
 title: Linux Installation Guide
 description: How to install AstroImageJ on Linux
-draft: true
 ---
 
 This page will help with installing the latest Version 6 of AstroImageJ on Linux operating systems, 
-or upgrading from a previous Version 5 installation. These instructions should work on any Linux distribution. 
+or upgrading from a previous Version 5 installation. Upgrading from a previous version is reccomended, 
+as it will automatically migrate the memory setting and custom observatories. Other preferences will be
+migrated even if using a new installation. These instructions should work on any Linux distribution. 
 They have been tested most recently with OpenSUSE Tumbleweed.
 
 ### New Installations
@@ -66,9 +67,8 @@ delete the AstroImageJ directory and follow the instructions for a new installat
 ### Known Linux Issues
 
 The upgrade process may fail to complete if the network connectivity to GitHub is slow or has latency in communication. 
-In that case, take the easy route, make a coffee, and start a manual download.  Also, check [our website](https://astroimagej.com/) for 
-mirror locations that may provide a faster service. Using Linux you have full control on where you want to
-put the software and how you start it.
+In that case, take the easy route, make a coffee, and start a manual download. Using Linux you have full control on 
+where you want to put the software and how you start it.
 
 ### Using AstoImageJ
 
@@ -78,8 +78,47 @@ look at the preferences menu to see what you can customize
 ![](../../../assets/docs/installation/linux/image2.png)
 
 If you have other users on this computer, consider installing a separate instance for them rather than a common 
-core of software.  This will keep their work distinct from yours.  AIJ will multitask and make efficient use of 
+core of software. This will keep their work distinct from yours.  AIJ will multitask and make efficient use of 
 your computer’s resources on your behalf.
+
+#### Setting Memory
+
+By default, AIJ will be configured to use at most 75% of the system's total memory. This can be adjusted in the settings:
+![](../../../assets/docs/installation/linux/memoryPath.png)
+![](../../../assets/docs/installation/linux/memoryEdit.png)
+
+#### Setting Custom Observatory Locations
+
+To optionally add custom observatories, open the Coordinate Converter.
+![](../../../assets/docs/installation/linux/ccLocation.png)
+
+Then enable `Use custom observatory list`, and select `Edit Custom Observatories List`.
+![](../../../assets/docs/installation/linux/ccOptions.png)
+
+Then add any custom obersvatories to the file.
+![](../../../assets/docs/installation/linux/ccObservTxt.png)
+
+Observatories are written in a tab-delinated format, which one observatory per line. Lines that being with a `#` will
+be ignored. The order in which the observatories appear in the file is how they will appear in the selection dialog.
+
+> **Name**`<tab>`**Latitude**`<tab>`**Longitude**`<tab>`**Altitude**
+
+| Entry     | Description                                                                                            |
+|-----------|--------------------------------------------------------------------------------------------------------|
+| Name      | The observatory name. A string of characters (spaces are OK). This is what will show in the selection. |
+| Latitude  | Decimal degrees (positive North)                                                                       |
+| Longitude | Decimal degrees (positive East)                                                                        |
+| Altitude  | Decimal meters above mean sea level                                                                    |
+
+
+Example:
+```tsv
+# Custom Obersvatories
+The Sphinx  29.975413 31.137979 20
+LCO CTIO (lsc)	-30.165	-70.815	2215
+```
+
+---
 
 Have questions or want to contribute? Reach out to us\!
 

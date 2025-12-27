@@ -38,8 +38,8 @@ bin directory. You can add this directory to your search PATH, or in a directory
 create a link to the executable.  For example, if you have a `bin` in your home directory
 
 ```bash
-cd \~/bin
-ln \-s \~/local/AstroImageJ/bin/AstroImageJ aij
+cd ~/bin
+ln -s ~/local/AstroImageJ/bin/AstroImageJ aij
 ```
 
 will create a softlink that points to the executable.  By entering `aij` in a console or terminal you will start 
@@ -72,7 +72,7 @@ where you want to put the software and how you start it.
 
 ### Using AstoImageJ
 
-That's it\! AIJ should now start up normally for you.  If you are new to AstroImageJ, 
+That's it! AIJ should now start up normally for you.  If you are new to AstroImageJ, 
 look at the preferences menu to see what you can customize
 
 ![](../../../assets/docs/installation/linux/image2.png)
@@ -120,7 +120,7 @@ LCO CTIO (lsc)	-30.165	-70.815	2215
 
 ---
 
-Have questions or want to contribute? Reach out to us\!
+Have questions or want to contribute? Reach out to us!
 
 AstroImageJ User Technical Support: [Nabble User Forum](http://astroimagej.170.s1.nabble.com/)
 

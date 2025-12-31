@@ -968,6 +968,12 @@ public class Astrometry { //implements KeyListener
         ImageProcessor ip = imp.getProcessor();
         if (dirOffset == null) makeDirectionOffsets(ip);
         Rectangle roi = ip.getRoi();
+        if (AstrometrySetup.EXCLUDE_BORDERS.get()) {
+            roi.width -= (AstrometrySetup.BORDER_EXCLUSION_LEFT.get() + AstrometrySetup.BORDER_EXCLUSION_RIGHT.get());
+            roi.height -= (AstrometrySetup.BORDER_EXCLUSION_TOP.get() + AstrometrySetup.BORDER_EXCLUSION_BOTTOM.get());
+            roi.translate(AstrometrySetup.BORDER_EXCLUSION_LEFT.get(), AstrometrySetup.BORDER_EXCLUSION_TOP.get());
+        }
+        ip.setRoi(roi);
         byte[] mask = ip.getMaskArray();
         ByteProcessor typeP = new ByteProcessor(width, height);     //will be a notepad for pixel types
         byte[] types = (byte[]) typeP.getPixels();

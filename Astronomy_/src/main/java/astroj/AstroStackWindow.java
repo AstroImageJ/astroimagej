@@ -2185,6 +2185,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ImageIcon headerIcon = createImageIcon("images/header.png", "Header");
         ImageIcon negativeIcon = createImageIcon("images/negative.png", "Negative");
         ImageIcon negativeIconSelected = createImageIcon("images/negativeselected.png", "Negative (selected)");
+        ImageIcon regExclusionIcon = createImageIcon("images/regExclusion.png", "Region Exclusion");
+        ImageIcon regExclusionIconSelected = createImageIcon("images/regExclusionSelected.png", "Region Exclusion (Selected)");
         ImageIcon autoscaleIcon = createImageIcon("images/autoscale.png", "Autoscale");
         ImageIcon broomIcon = createImageIcon("images/broom.png", "Clear Aperture Overlay");
         ImageIcon showAllIcon = createImageIcon("images/showallaps.png", "Show All Apertures in Overlay");
@@ -2235,6 +2237,17 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         buttonNegative.setMargin(buttonMargin);
         buttonNegative.addActionListener(this);
         topPanelA.add(buttonNegative);
+
+        var regExclusion = new JToggleButton(regExclusionIcon, useInvertingLut);
+        regExclusion.setToolTipText("Display region exclusion");
+        regExclusion.setSelectedIcon(regExclusionIconSelected);
+        regExclusion.setPreferredSize(iconDimension);
+        regExclusion.setMargin(buttonMargin);
+        regExclusion.addActionListener(_ -> AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.set(regExclusion.isSelected()));
+        AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.addListener(regExclusion, (_, n) -> {
+            regExclusion.setSelected(n);
+        });
+        topPanelA.add(regExclusion);
 
         buttonShowAnnotations = new JToggleButton(showAnnotationIcon, ac.showAnnotations);
         buttonShowAnnotations.setToolTipText("<html>left-click: toggle display of annotations<br>" +

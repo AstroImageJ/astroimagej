@@ -2238,7 +2238,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         buttonNegative.addActionListener(this);
         topPanelA.add(buttonNegative);
 
-        var regExclusion = new JToggleButton(regExclusionIcon, useInvertingLut);
+        var regExclusion = new JToggleButton(regExclusionIcon, AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.get());
         regExclusion.setToolTipText("Display region exclusion");
         regExclusion.setSelectedIcon(regExclusionIconSelected);
         regExclusion.setPreferredSize(iconDimension);

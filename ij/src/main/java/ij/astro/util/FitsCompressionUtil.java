@@ -1,5 +1,11 @@
 package ij.astro.util;
 
+import java.util.Arrays;
+
+import javax.swing.Icon;
+import javax.swing.JComboBox;
+import javax.swing.JSpinner;
+
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.RadioEnum;
 import ij.astro.gui.nstate.NState;
@@ -8,9 +14,6 @@ import nom.tam.fits.FitsException;
 import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
-
-import javax.swing.*;
-import java.util.Arrays;
 
 public class FitsCompressionUtil {
     private static final Property<CompressionState> INTEGER_COMPRESSION = new Property<>(CompressionState.RICE_1, FitsCompressionUtil.class);
@@ -68,7 +71,7 @@ public class FitsCompressionUtil {
             }
         });
 
-        floatCompBox.addActionListener($ -> {
+        floatCompBox.addActionListener(_ -> {
             if (PRESET.get() != Presets.CUSTOM) {
                 if (floatCompBox.getSelectedItem() != PRESET.get().def.comp) {
                     ((JComboBox<String>) presetBox.c2()).setSelectedItem(Presets.CUSTOM.getOption());
@@ -76,7 +79,7 @@ public class FitsCompressionUtil {
             }
         });
 
-        floatDitherBox.addActionListener($ -> {
+        floatDitherBox.addActionListener(_ -> {
             if (PRESET.get() != Presets.CUSTOM) {
                 if (floatDitherBox.getSelectedItem() != PRESET.get().def.dither) {
                     ((JComboBox<String>) presetBox.c2()).setSelectedItem(Presets.CUSTOM.getOption());
@@ -84,7 +87,7 @@ public class FitsCompressionUtil {
             }
         });
 
-        ((JSpinner) floatQBox.c1()).addChangeListener($ -> {
+        ((JSpinner) floatQBox.c1()).addChangeListener(_ -> {
             if (PRESET.get() != Presets.CUSTOM) {
                 if (((Number) ((JSpinner) floatQBox.c1()).getValue()).doubleValue() != PRESET.get().def.q) {
                     ((JComboBox<String>) presetBox.c2()).setSelectedItem(Presets.CUSTOM.getOption());

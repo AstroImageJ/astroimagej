@@ -1,17 +1,21 @@
 package Astronomy.multiplot.table.util;
 
-import Astronomy.multiplot.table.MeasurementsWindow;
-import ij.astro.util.UIHelper;
-
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.util.Objects;
 import java.util.TreeSet;
 
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import Astronomy.multiplot.table.MeasurementsWindow;
+import ij.astro.util.UIHelper;
+
 public class FindHandler extends FilterHandler {
     private TreeSet<Coordinate> matches = new TreeSet<>();
-    //private final TableModelListener listener = $ -> buildMatchingCells(null, window.getJTable());
+    //private final TableModelListener listener = _ -> buildMatchingCells(null, window.getJTable());
     private JTextField count;
 
     public FindHandler(MeasurementsWindow window) {
@@ -38,7 +42,7 @@ public class FindHandler extends FilterHandler {
         count.setHorizontalAlignment(JTextField.RIGHT);
         count.setColumns(8);
         var input = new JTextField(30);
-        input.addActionListener($ -> {
+        input.addActionListener(_ -> {
             var next = matches.lower(new Coordinate(window.getJTable().getSelectedRow(), window.getJTable().getSelectedColumn()));
             if (next != null) {
                 window.getJTable().changeSelection(next.row, next.col, false, false);
@@ -66,7 +70,7 @@ public class FindHandler extends FilterHandler {
         panel.add(input);
 
         var up = new JButton("˄");
-        up.addActionListener($ -> {
+        up.addActionListener(_ -> {
             var next = matches.higher(new Coordinate(window.getJTable().getSelectedRow(), window.getJTable().getSelectedColumn()));
             if (next != null) {
                 window.getJTable().changeSelection(next.row, next.col, false, false);
@@ -78,7 +82,7 @@ public class FindHandler extends FilterHandler {
         panel.add(up);
 
         var down = new JButton("˅");
-        down.addActionListener($ -> {
+        down.addActionListener(_ -> {
             var next = matches.lower(new Coordinate(window.getJTable().getSelectedRow(), window.getJTable().getSelectedColumn()));
             if (next != null) {
                 window.getJTable().changeSelection(next.row, next.col, false, false);

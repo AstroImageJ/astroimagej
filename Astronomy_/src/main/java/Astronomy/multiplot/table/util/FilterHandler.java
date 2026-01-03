@@ -1,17 +1,30 @@
 package Astronomy.multiplot.table.util;
 
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionListener;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.regex.Pattern;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.RowFilter;
+import javax.swing.ScrollPaneConstants;
+
 import Astronomy.multiplot.table.MeasurementsWindow;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.regex.Pattern;
 
 public class FilterHandler extends JDialog {
     /**
@@ -71,7 +84,7 @@ public class FilterHandler extends JDialog {
         l.setFont(p.getFont());
         p.add(l, c);
         var rowInput = new JTextField(30);
-        rowInput.addActionListener($ -> {
+        rowInput.addActionListener(_ -> {
             try {
                 window.getRowSorter().setRowFilter(buildRowFilterFromInput(rowInput.getText()));
             } catch (Exception e) {
@@ -86,7 +99,7 @@ public class FilterHandler extends JDialog {
         p.add(l, c);
         c.gridx++;
         var columnInput = new JTextField(30);
-        ActionListener cFilterL = $ -> {
+        ActionListener cFilterL = _ -> {
             if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
                 if (columnInput.getText().isBlank()) {
                     cm.restoreColumns();
@@ -118,11 +131,11 @@ public class FilterHandler extends JDialog {
         c.gridy++;
 
         var b = new JButton(UIHelper.createImageIcon(FilterHandler.class, "astroj/images/help.png", "Help_Icon"));
-        b.addActionListener($ -> showHelpWindow());
+        b.addActionListener(_ -> showHelpWindow());
         p.add(b, c);
         c.gridx++;
         var b2 = new JButton("Clear");
-        b2.addActionListener($ -> reset());
+        b2.addActionListener(_ -> reset());
         p.add(b2, c);
         c.gridx++;
         var debug = new JCheckBox("Debug");
@@ -132,7 +145,7 @@ public class FilterHandler extends JDialog {
         });
         p.add(debug, c);
 
-        //input.getDocument().addDocumentListener($ -> {});
+        //input.getDocument().addDocumentListener(_ -> {});
         add(p);
     }
 

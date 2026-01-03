@@ -196,13 +196,13 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
                     var popup = new JPopupMenu();
                     var pItem = new JMenuItem("Insert Row Above");
-                    pItem.addActionListener($ -> {
+                    pItem.addActionListener(_ -> {
                         table.insertRow(rowIndex);
                     });
                     popup.add(pItem);
 
                     pItem = new JMenuItem("Insert Row Below");
-                    pItem.addActionListener($ -> {
+                    pItem.addActionListener(_ -> {
                         table.insertRow(rowIndex+1);
                     });
                     popup.add(pItem);
@@ -261,7 +261,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
                     var item = new JMenuItem("Sort table based on column values");
                     item.setToolTipText("Run again to flip order");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         if (((String) c.getIdentifier()).equals("Label")) {
                             IJ.error("Cannot sort on Label column");
                             return;
@@ -274,7 +274,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
                     item = new JMenuItem("Remove all rows containing non-finite values in this column");
                     item.setToolTipText("See Filter for more filtering options");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         if (((String) c.getIdentifier()).equals("Label")) {
                             IJ.error("Cannot filter on Label column");
                             return;
@@ -305,7 +305,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     popup.add(item);
 
                     item = new JMenuItem("Apply mathematical operation to this column");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         if (((String) c.getIdentifier()).equals("Label")) {
                             IJ.error("Cannot perform operations on Labels");
                             return;
@@ -316,14 +316,14 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     popup.add(item);
 
                     item = new JMenuItem("Select Column");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         jTable.setColumnSelectionInterval(i, i);
                         jTable.setRowSelectionInterval(0, jTable.getRowCount()-1);
                     });
                     popup.add(item);
 
                     item = new JMenuItem("Delete column");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         if (IJ.showMessageWithCancel("Column Deletion", "Delete column '%s'?"
                                 .formatted(c.getIdentifier()))) {
                             table.setLock(true);
@@ -334,7 +334,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     popup.add(item);
 
                     item = new JMenuItem("Add column");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         var d = new GenericSwingDialog("Add Column", MeasurementsWindow.this);
                         var t = new JTextField(10);
                         d.setOverridePosition(true);
@@ -364,7 +364,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     popup.add(item);
 
                     item = new JMenuItem("Rename column");
-                    item.addActionListener($ -> {
+                    item.addActionListener(_ -> {
                         var d = new GenericSwingDialog("Rename Column", MeasurementsWindow.this);
                         var t = new JTextField((String) c.getIdentifier(), 10);
                         d.addGenericComponent(t);
@@ -730,13 +730,13 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
         Menu m = new Menu("File");
         var i = new MenuItem("Save As...", new MenuShortcut(KeyEvent.VK_S));
-        i.addActionListener($ -> table.save(null));
+        i.addActionListener(_ -> table.save(null));
         m.add(i);
         i = new MenuItem("Save As Fits...", new MenuShortcut(KeyEvent.VK_S, true));
-        i.addActionListener($ -> FITS_Writer.saveMPTable(table, false, false, null, ".fits.fz"));
+        i.addActionListener(_ -> FITS_Writer.saveMPTable(table, false, false, null, ".fits.fz"));
         m.add(i);
         i = new MenuItem("Rename...");
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             GenericDialog gd = new GenericDialog("Rename", this);
             gd.addStringField("Title:", table.shortTitle(), 40);
             gd.showDialog();
@@ -746,7 +746,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         });
         m.add(i);
         i = new MenuItem("Duplicate...");
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             var n = table.clone();
             String title2 = IJ.getString("Title:", getTitle()+"_2");
             if (!title2.isEmpty()) {
@@ -760,7 +760,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
         m = new Menu("Edit");
         i = new MenuItem("Copy", new MenuShortcut(KeyEvent.VK_C));
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             Action copyAction = jTable.getActionMap().get("copy");
             if (copyAction != null) {
                 copyAction.actionPerformed(new ActionEvent(jTable, 0, "copy"));
@@ -768,7 +768,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         });
         m.add(i);
         i = new MenuItem("Clear");
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             // Entire row selected
             if (jTable.getSelectedColumns().length == jTable.getColumnCount()) {
                 var idx = jTable.getSelectedRows();
@@ -786,15 +786,15 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         });
         m.add(i);
         i = new MenuItem("Select All", new MenuShortcut(KeyEvent.VK_A));
-        i.addActionListener($ -> jTable.selectAll());
+        i.addActionListener(_ -> jTable.selectAll());
         m.add(i);
         m.addSeparator();
         i = new MenuItem("Clear All");
-        i.addActionListener($ -> table.clearTable());
+        i.addActionListener(_ -> table.clearTable());
         m.add(i);
         m.addSeparator();
         i = new MenuItem("Find...", new MenuShortcut(KeyEvent.VK_F));
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             if (findWindow == null) {
                 findWindow = new FindHandler(this);
             }
@@ -803,20 +803,20 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         m.add(i);
         //todo this shows as (and works with) Ctrl+F3, while F3 on its own is sufficient (and preferred)
         i = new MenuItem("Goto...", new MenuShortcut(KeyEvent.VK_F3));
-        i.addActionListener($ -> handleGotoEvent());
+        i.addActionListener(_ -> handleGotoEvent());
         m.add(i);
         mb.add(m);
 
         m = new Menu("Font");
         i = new MenuItem("Make Text Smaller");
-        i.addActionListener($ -> zoomTable(-2));
+        i.addActionListener(_ -> zoomTable(-2));
         m.add(i);
         i = new MenuItem("Make Text Larger");
-        i.addActionListener($ -> zoomTable(2));
+        i.addActionListener(_ -> zoomTable(2));
         m.add(i);
         m.addSeparator();
         final var monospaced1 = new CheckboxMenuItem("Monospaced", monospaced.get());
-        monospaced1.addItemListener($ -> {
+        monospaced1.addItemListener(_ -> {
             if (monospaced1.getState()) {
                 monospaced.set(true);
                 jTable.setFont(new Font("Monospaced", Font.PLAIN, fontSize.get().intValue()));
@@ -828,7 +828,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         });
         m.add(monospaced1);
         final var antialiasing = new CheckboxMenuItem("Antialiasing", antialiased.get());
-        antialiasing.addItemListener($ -> {
+        antialiasing.addItemListener(_ -> {
             antialiased.set(antialiasing.getState());
             Java2.setAntialiasedText(getGraphics(), antialiased.get());
             jTable.repaint();
@@ -836,7 +836,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         m.add(antialiasing);
         m.addSeparator();
         i = new MenuItem("Default Settings");
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             monospaced.set(false);
             monospaced1.setState(false);
             fontSize.set(14f);
@@ -851,35 +851,35 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
         m = new Menu("Results");
         i = new MenuItem("Summarize");
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             Analyzer analyzer = new Analyzer(null, table);
             analyzer.summarize();
         });
         m.add(i);
         i = new MenuItem("Distribution...");
-        i.addActionListener($ -> new Distribution().run(table));
+        i.addActionListener(_ -> new Distribution().run(table));
         m.add(i);
         i = new MenuItem("Create Periodogram...");
-        i.addActionListener($ -> IJ.runPlugIn("Astronomy.Periodogram_", ""));
+        i.addActionListener(_ -> IJ.runPlugIn("Astronomy.Periodogram_", ""));
         m.add(i);
         i = new MenuItem("Set Measurements...");
-        i.addActionListener($ -> IJ.runPlugIn("Astronomy.Set_Aperture", ""));
+        i.addActionListener(_ -> IJ.runPlugIn("Astronomy.Set_Aperture", ""));
         m.add(i);
         i = new MenuItem("Apply Macro...");
-        i.addActionListener($ -> new ResultsTableMacros(table));
+        i.addActionListener(_ -> new ResultsTableMacros(table));
         m.add(i);
         i = new MenuItem("Plot...");
-        i.addActionListener($ -> new PlotContentsDialog(getTitle(), table).showDialog(getParent() instanceof Frame ? (Frame)getParent() : null));
+        i.addActionListener(_ -> new PlotContentsDialog(getTitle(), table).showDialog(getParent() instanceof Frame ? (Frame)getParent() : null));
         m.add(i);
         i = new MenuItem("Fit Curve...");
-        i.addActionListener($ -> CurveFitterHandler.fitCurve(MeasurementsWindow.this));
+        i.addActionListener(_ -> CurveFitterHandler.fitCurve(MeasurementsWindow.this));
         m.add(i);
         i = new MenuItem("Options...");
-        i.addActionListener($ -> IJ.doCommand("Input/Output..."));
+        i.addActionListener(_ -> IJ.doCommand("Input/Output..."));
         m.add(i);
         var cbi = new CheckboxMenuItem("Show saturation warning", showSatWarning.get());
         CheckboxMenuItem finalCbi2 = cbi;
-        cbi.addItemListener($ -> {
+        cbi.addItemListener(_ -> {
             showSatWarning.set(finalCbi2.getState());
             jTable.repaint();
         });
@@ -888,7 +888,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
         m = new Menu("Filter");
         i = new MenuItem("Filter...", new MenuShortcut(KeyEvent.VK_G));
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             if (filterWindow == null) {
                 filterWindow = new FilterHandler(this);
             }
@@ -897,7 +897,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         m.add(i);
         cbi = new CheckboxMenuItem("Show only rows with linearity warning");
         CheckboxMenuItem finalCbi3 = cbi;
-        cbi.addItemListener($ -> {
+        cbi.addItemListener(_ -> {
             if (finalCbi3.getState()) {
                 // Find Peak_AP columns
                 var cols = IntStream.range(0, table.getLastColumn())
@@ -914,7 +914,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         });
         m.add(cbi);
         i = new MenuItem("Clear Filters");
-        i.addActionListener($ -> {
+        i.addActionListener(_ -> {
             if (filterWindow == null) {
                 filterWindow = new FilterHandler(this);
             }

@@ -7915,7 +7915,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         filemenu.add(restoreDefaultAIJPrefsMenuItem);
 
         var openAijPrefsFolder = new JMenuItem("Open AIJ preferences folder...");
-        openAijPrefsFolder.addActionListener($ -> {
+        openAijPrefsFolder.addActionListener(_ -> {
             try {
                 Desktop.getDesktop().open(new File(Prefs.getPrefsDir()));
             } catch (IOException e) {
@@ -8296,7 +8296,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var display = new JMenu("Style");
         var size = new JMenuItem("Symbol size");
-        size.addActionListener($ -> changeDisplaySettings());
+        size.addActionListener(_ -> changeDisplaySettings());
         display.add(size);
         mainmenubar.add(display);
 
@@ -8733,7 +8733,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         var titleMacroHelpButton = new JButton(createImageIcon("astroj/images/help.png", "Multi-plot Help"));
-        titleMacroHelpButton.addActionListener($ -> PlotNameResolver.showHelpWindow());
+        titleMacroHelpButton.addActionListener(_ -> PlotNameResolver.showHelpWindow());
         titleradiopanelgroup.add(titleMacroHelpButton);
         SpringUtil.makeCompactGrid(titleradiopanelgroup, 1, 4, 0, 0, 0, 0);
         titlegroup.add(titleradiopanelgroup);
@@ -8875,7 +8875,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         titleMacroHelpButton = new JButton(createImageIcon("astroj/images/help.png", "Multi-plot Help"));
-        titleMacroHelpButton.addActionListener($ -> PlotNameResolver.showHelpWindow());
+        titleMacroHelpButton.addActionListener(_ -> PlotNameResolver.showHelpWindow());
         subtitleradiopanelgroup.add(titleMacroHelpButton);
         SpringUtil.makeCompactGrid(subtitleradiopanelgroup, 1, 4, 0, 0, 0, 0);
         subtitlegroup.add(subtitleradiopanelgroup);
@@ -11805,7 +11805,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             };
         });*/
         usesmoothbox.setSkippableStates(TriState.ALT_ENABLED);
-        usesmoothbox.addActionListener($ -> {
+        usesmoothbox.addActionListener(_ -> {
             smooth[c] = usesmoothbox.getState().isOn();
             switch (usesmoothbox.getState()) {
                 case DISABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.RAW_DATA);
@@ -12383,7 +12383,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
         displayBinningPanel[c].add(Box.createHorizontalStrut(0));
         var binCB = new NStateButton<TriState>(binDisplay[c]);
-        binCB.addActionListener($ -> {
+        binCB.addActionListener(_ -> {
             binDisplay[c] = binCB.getState();
             updatePlot(c);
         });
@@ -12396,7 +12396,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         displayBinningPanel[c].add(binCB);
         var binErrCB = new NStateButton<BiState>(drawBinErrBarsBase.getOrCreateVariant(c).get());
-        binErrCB.addActionListener($ -> {
+        binErrCB.addActionListener(_ -> {
             drawBinErrBarsBase.getOrCreateVariant(c).set(binErrCB.getState());
             updatePlot(c);
         });
@@ -12409,7 +12409,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             binSpin.setValue(minutes.get(c).first());
             minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
         }
-        binSpin.addChangeListener($ -> {
+        binSpin.addChangeListener(_ -> {
             minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
             updatePlot(c);
         });
@@ -14197,7 +14197,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         modelPanel.add(modelDummyLabel);
 
         var logCheckBox = new JCheckBox("Log Optimization", FitOptimization.showOptLog);
-        logCheckBox.addActionListener($ -> FitOptimization.showOptLog = logCheckBox.isSelected());
+        logCheckBox.addActionListener(_ -> FitOptimization.showOptLog = logCheckBox.isSelected());
         logCheckBox.setToolTipText("Display a log of optimization actions.");
         modelPanel.add(logCheckBox);
 
@@ -17194,7 +17194,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         String finalSavePath = savePath;
         var wasNo = new AtomicBoolean(false);
-        gd.getNo().addActionListener($ -> {
+        gd.getNo().addActionListener(_ -> {
             ConstantColSubset.dialog(finalSavePath);
             wasNo.set(true);
         });
@@ -18125,7 +18125,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var label = new JLabel("Unbinned dot size");
         var control = new JSpinner(new SpinnerNumberModel(dotSize.get().intValue(), 1, 15, 1));
-        control.addChangeListener($ -> {
+        control.addChangeListener(_ -> {
             dotSize.set(((Integer) control.getValue()));
             updatePlot();
         });
@@ -18136,7 +18136,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         label = new JLabel("Binned dot size");
         var control2 = new JSpinner(new SpinnerNumberModel(binnedDotSize.get().intValue(), 1, 15, 1));
-        control2.addChangeListener($ -> {
+        control2.addChangeListener(_ -> {
             binnedDotSize.set(((Integer) control2.getValue()));
             updatePlot();
         });
@@ -18147,7 +18147,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         label = new JLabel("Bolded dot size");
         var control3 = new JSpinner(new SpinnerNumberModel(boldedDotSize.get().intValue(), 1, 15, 1));
-        control3.addChangeListener($ -> {
+        control3.addChangeListener(_ -> {
             boldedDotSize.set(((Integer) control3.getValue()));
             updatePlot();
         });
@@ -18158,7 +18158,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         c.gridy++;
 
         var control4 = new JCheckBox("Add AIJ version to plot", drawAijVersion.get());
-        control4.addChangeListener($ -> {
+        control4.addChangeListener(_ -> {
             drawAijVersion.set(control4.isSelected());
             updatePlot();
         });
@@ -18167,7 +18167,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         c.gridy++;
 
         var control5 = new JCheckBox("Show number of removed points", showCleanedCount.get());
-        control5.addChangeListener($ -> {
+        control5.addChangeListener(_ -> {
             showCleanedCount.set(control5.isSelected());
             updatePlot();
         });

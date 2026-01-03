@@ -3703,7 +3703,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (hasProceed) {
             gd.enableYesNoCancel("Cancel", "Proceed");
-            gd.getNo().addActionListener($ -> {
+            gd.getNo().addActionListener(_ -> {
                 gd.dispose();
             });
         } else {
@@ -3712,7 +3712,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.setOKLabel("Cancel");
 
-        gd.getOkay().addActionListener($ -> {
+        gd.getOkay().addActionListener(_ -> {
             cancelled = true;
             cancel();
             shutDown();
@@ -6543,18 +6543,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
         JSpinner minPeakSpin = (JSpinner) minPeak.c1();
-        maxPeakSpin.getModel().addChangeListener($ -> {
+        maxPeakSpin.getModel().addChangeListener(_ -> {
             if (maxPeakSpin.getValue() instanceof Double d) {
                 if (d.compareTo(minPeakValue) <= 0) maxPeakSpin.setValue(GenericSwingDialog.nextUp(minPeakValue));
             }
         });
-        minPeakSpin.getModel().addChangeListener($ -> {
+        minPeakSpin.getModel().addChangeListener(_ -> {
             if (minPeakSpin.getValue() instanceof Double d) {
                 if (d.compareTo(maxPeakValue) >= 0) minPeakSpin.setValue(GenericSwingDialog.nextDown(maxPeakValue));
             }
         });
 
-        autoPeaks.addActionListener($ -> {
+        autoPeaks.addActionListener(_ -> {
             var minP1 = liveStats.mean + (1 * liveStats.stdDev);
             var maxP1 = liveStats.max * 0.9;
             minPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
@@ -6632,11 +6632,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             ratioBox.setValue(newValue);
         });
-        ratioSlider.addChangeListener($ -> {
+        ratioSlider.addChangeListener(_ -> {
             brightness2DistanceWeight = ratioSlider.getValue();
             ratioBox.setValue(brightness2DistanceWeight);
         });
-        ratioBox.addChangeListener($ -> {
+        ratioBox.addChangeListener(_ -> {
             brightness2DistanceWeight = ((Number) ratioBox.getValue()).intValue();
             ratioSlider.setValue((int) brightness2DistanceWeight);
         });

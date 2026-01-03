@@ -1096,7 +1096,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsMenuItem.addActionListener(this);
 
         var sliceSaveNC = new MenuItem("No compression");
-        sliceSaveNC.addActionListener($ ->
+        sliceSaveNC.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null, imp.getCurrentSlice());
@@ -1105,7 +1105,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsMenuItem.add(sliceSaveNC);
 
         var sliceSaveFz = new MenuItem("FPACK");
-        sliceSaveFz.addActionListener($ ->
+        sliceSaveFz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null, imp.getCurrentSlice(), ".fits.fz");
@@ -1114,7 +1114,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsMenuItem.add(sliceSaveFz);
 
         var sliceSaveGz = new MenuItem("GZip");
-        sliceSaveGz.addActionListener($ ->
+        sliceSaveGz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null, imp.getCurrentSlice(), ".fits.gz");
@@ -1123,7 +1123,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsMenuItem.add(sliceSaveGz);
 
         var sliceSaveFzGz = new MenuItem("FPACK and GZip");
-        sliceSaveFzGz.addActionListener($ ->
+        sliceSaveFzGz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null, imp.getCurrentSlice(), ".fits.fz.gz");//todo this is doubled
@@ -1137,7 +1137,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStack3DMenuItem.addActionListener(this);
 
         var stackSave3DNC = new MenuItem("No compression");
-        stackSave3DNC.addActionListener($ ->
+        stackSave3DNC.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null);
@@ -1146,7 +1146,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStack3DMenuItem.add(stackSave3DNC);
 
         var stackSave3DFz = new MenuItem("FPACK");
-        stackSave3DFz.addActionListener($ ->
+        stackSave3DFz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null,".fits.fz");
@@ -1155,7 +1155,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStack3DMenuItem.add(stackSave3DFz);
 
         var stackSave3DGz = new MenuItem("GZip");
-        stackSave3DGz.addActionListener($ ->
+        stackSave3DGz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null, ".fits.gz");
@@ -1164,7 +1164,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStack3DMenuItem.add(stackSave3DGz);
 
         var stackSave3DFzGz = new MenuItem("FPACK and GZip");
-        stackSave3DFzGz.addActionListener($ ->
+        stackSave3DFzGz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveImage(imp, null, ".fits.fz.gz");
@@ -1178,7 +1178,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         // Stack Folder Saving
         var stackSaveNC = new MenuItem("No compression");
-        stackSaveNC.addActionListener($ ->
+        stackSaveNC.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveFolder(imp, null, ".fits");
@@ -1187,7 +1187,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStackMenuItem.add(stackSaveNC);
 
         var stackSaveFz = new MenuItem("FPACK");
-        stackSaveFz.addActionListener($ ->
+        stackSaveFz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveFolder(imp, null,".fits.fz");
@@ -1196,7 +1196,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStackMenuItem.add(stackSaveFz);
 
         var stackSaveGz = new MenuItem("GZip");
-        stackSaveGz.addActionListener($ ->
+        stackSaveGz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveFolder(imp, null, ".fits.gz");
@@ -1205,7 +1205,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStackMenuItem.add(stackSaveGz);
 
         var stackSaveFzGz = new MenuItem("FPACK and GZip");
-        stackSaveFzGz.addActionListener($ ->
+        stackSaveFzGz.addActionListener(_ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
                     FITS_Writer.saveFolder(imp, null, ".fits.fz.gz");
@@ -1215,7 +1215,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         fitsMenu.add(saveFitsStackMenuItem);
 
         var fpackSettings = new MenuItem("Fits Compression (FPACK) Settings");
-        fpackSettings.addActionListener($ -> FitsCompressionUtil.dialog());
+        fpackSettings.addActionListener(_ -> FitsCompressionUtil.dialog());
         fitsMenu.add(fpackSettings);
 
         saveTiffMenuItem = new MenuItem("Save image/stack as TIFF...");
@@ -1337,7 +1337,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         preferencesMenu.addSeparator();
 
         fpackSettings = new MenuItem("Fits Compression (FPACK) Settings");
-        fpackSettings.addActionListener($ -> FitsCompressionUtil.dialog());
+        fpackSettings.addActionListener(_ -> FitsCompressionUtil.dialog());
         preferencesMenu.add(fpackSettings);
 
         preferencesMenu.addSeparator();

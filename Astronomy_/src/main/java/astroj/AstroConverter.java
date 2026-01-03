@@ -515,11 +515,11 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         prefsMenu = new JMenu("Preferences");
 
         skyMapSettingsButton = new JMenuItem("Edit Aladin  F.O.V. Settings...");
-        skyMapSettingsButton.addActionListener($ -> SkyMapOptions.showDialog(AstroConverter.this.frame));
+        skyMapSettingsButton.addActionListener(_ -> SkyMapOptions.showDialog(AstroConverter.this.frame));
         prefsMenu.add(skyMapSettingsButton);
 
         var simbadSettingsButton = new JMenuItem("Edit SIMBAD Settings...");
-        simbadSettingsButton.addActionListener($ -> SIMBAD_OPTIONS.dialog(this));
+        simbadSettingsButton.addActionListener(_ -> SIMBAD_OPTIONS.dialog(this));
         prefsMenu.add(simbadSettingsButton);
 
         prefsMenu.addSeparator();
@@ -555,11 +555,11 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         prefsMenu.add(useCustomObservatoryListCB);
 
         var editObservatories = new JMenuItem("Edit Custom Observatories List");
-        editObservatories.addActionListener($ -> this.editObservatories());
+        editObservatories.addActionListener(_ -> this.editObservatories());
         prefsMenu.add(editObservatories);
 
         var openObersvatories = new JMenuItem("Open Custom Obersvatories Folder");
-        openObersvatories.addActionListener($ -> this.openObservatories());
+        openObersvatories.addActionListener(_ -> this.openObservatories());
         prefsMenu.add(openObersvatories);
 
         prefsMenu.addSeparator();

@@ -1,5 +1,76 @@
 package Astronomy;
 
+import static Astronomy.MultiPlot_.excludedHeadSamples;
+import static Astronomy.MultiPlot_.fitDetrendComboBox;
+import static Astronomy.MultiPlot_.inputAverageOverSize;
+import static Astronomy.MultiPlot_.isRefStar;
+import static Astronomy.MultiPlot_.mainpanel;
+import static Astronomy.MultiPlot_.measurementsWindow;
+import static Astronomy.MultiPlot_.nn;
+import static Astronomy.MultiPlot_.numAps;
+import static Astronomy.MultiPlot_.p12;
+import static Astronomy.MultiPlot_.plotY;
+import static Astronomy.MultiPlot_.residual;
+import static Astronomy.MultiPlot_.selectedRowEnd;
+import static Astronomy.MultiPlot_.selectedRowStart;
+import static Astronomy.MultiPlot_.setNewStars;
+import static Astronomy.MultiPlot_.table;
+import static Astronomy.MultiPlot_.tableName;
+import static Astronomy.MultiPlot_.updateOneFit;
+import static Astronomy.MultiPlot_.updatePlot;
+import static Astronomy.MultiPlot_.updatePlotRunning;
+import static Astronomy.MultiPlot_.useDMarker1;
+import static Astronomy.MultiPlot_.useDMarker4;
+import static Astronomy.MultiPlot_.useTransitFit;
+import static Astronomy.MultiPlot_.y;
+import static Astronomy.MultiPlot_.yerr;
+
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.TreeSet;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.regex.Pattern;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpringLayout;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.border.TitledBorder;
+
 import Astronomy.multiplot.optimization.BicFitting;
 import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
@@ -17,19 +88,6 @@ import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
 import ij.util.ArrayUtil;
 import ij.util.FontUtil;
-
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-import java.awt.*;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.BiFunction;
-import java.util.regex.Pattern;
-
-import static Astronomy.MultiPlot_.*;
 
 public class FitOptimization implements AutoCloseable {
     protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
@@ -159,7 +217,7 @@ public class FitOptimization implements AutoCloseable {
         outlierRemoval.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Outlier Removal", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
         var undoButton = new JButton(UNDO_ICON);
         var undoFont = undoButton.getFont();
-        undoButton.addActionListener($ -> undoOutlierClean());
+        undoButton.addActionListener(_ -> undoOutlierClean());
         undoButton.setToolTipText("<html>Undo clean<br>(up to 10 levels)</html>");
         outlierRemoval.add(undoButton);
 
@@ -174,7 +232,7 @@ public class FitOptimization implements AutoCloseable {
         cleanModeSelection.setRenderer(new ToolTipRenderer());
         outlierRemoval.add(cleanModeSelection);
         var cleanButton = new JButton("Clean");
-        cleanButton.addActionListener($ ->
+        cleanButton.addActionListener(_ ->
                 cleanOutliers((CleanMode) cleanModeSelection.getSelectedItem(), FitOptimization.this, FitOptimization.this.curve));
         outlierRemoval.add(cleanButton);
         outlierRemoval.add(Box.createHorizontalGlue());
@@ -188,7 +246,7 @@ public class FitOptimization implements AutoCloseable {
 
         var cleanSpin = new JSpinner(new SpinnerNumberModel(CLEAN_MODE.get().n.get().doubleValue(), 1d, 100, 0.1));
         addMouseListener(cleanSpin);
-        cleanSpin.addChangeListener($ -> CLEAN_MODE.get().n.set(((Number) cleanSpin.getValue()).doubleValue()));
+        cleanSpin.addChangeListener(_ -> CLEAN_MODE.get().n.set(((Number) cleanSpin.getValue()).doubleValue()));
         cleanModeSelection.addActionListener(e -> {
             var cl = (CleanMode) cleanModeSelection.getSelectedItem();
             if (cl != null) {
@@ -245,7 +303,7 @@ public class FitOptimization implements AutoCloseable {
             case QUICK -> compOptimizationSelection.setSelectedItem(simpleQuickOpti);
         }
 
-        compOptiButtonStart.addActionListener($ -> {
+        compOptiButtonStart.addActionListener(_ -> {
             CardLayout cl = (CardLayout) compOptiCards.getLayout();
             cl.next(compOptiCards);
             if (Objects.equals(compOptimizationSelection.getSelectedItem(), compTest)) {
@@ -263,7 +321,7 @@ public class FitOptimization implements AutoCloseable {
             }
         });
 
-        compOptiButtonCancel.addActionListener($ -> {
+        compOptiButtonCancel.addActionListener(_ -> {
             CardLayout cl = (CardLayout) compOptiCards.getLayout();
             cl.next(compOptiCards);
             pool.shutdownNow();
@@ -301,7 +359,7 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(pLabel);
 
         detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 99, 1));//todo we only need at most 3 digits
-        detrendParamCount.addChangeListener($ -> maxDetrend = ((Number) detrendParamCount.getValue()).intValue());
+        detrendParamCount.addChangeListener(_ -> maxDetrend = ((Number) detrendParamCount.getValue()).intValue());
         addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(detrendParamCount);
@@ -321,7 +379,7 @@ public class FitOptimization implements AutoCloseable {
         detOptiCards.add(detOptiButtonStart);
         detOptiCards.add(detOptiButtonCancel);
 
-        detOptiButtonStart.addActionListener($ -> {
+        detOptiButtonStart.addActionListener(_ -> {
             CardLayout cl = (CardLayout) detOptiCards.getLayout();
             cl.next(detOptiCards);
             if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendTest)) {
@@ -332,7 +390,7 @@ public class FitOptimization implements AutoCloseable {
             }
         });
 
-        detOptiButtonCancel.addActionListener($ -> {
+        detOptiButtonCancel.addActionListener(_ -> {
             CardLayout cl = (CardLayout) detOptiCards.getLayout();
             cl.next(detOptiCards);
             pool.shutdownNow();
@@ -352,7 +410,7 @@ public class FitOptimization implements AutoCloseable {
 
         detrendEpsilon = new JSpinner(new SpinnerNumberModel(bict, 0D, 99, 1));
         addMouseListener(detrendEpsilon);
-        detrendEpsilon.addChangeListener($ -> bict = ((Number) detrendEpsilon.getValue()).doubleValue());
+        detrendEpsilon.addChangeListener(_ -> bict = ((Number) detrendEpsilon.getValue()).doubleValue());
         detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(detrendEpsilon);
 
@@ -375,7 +433,7 @@ public class FitOptimization implements AutoCloseable {
         var t = new JLabel("Log");
         logOptPanel.add(t);
         var logCheckBox = new JCheckBox("", showOptLog);
-        logCheckBox.addActionListener($ -> showOptLog = logCheckBox.isSelected());
+        logCheckBox.addActionListener(_ -> showOptLog = logCheckBox.isSelected());
         logCheckBox.setToolTipText("Display a log of optimization actions.");
         logOptPanel.add(logCheckBox);
 

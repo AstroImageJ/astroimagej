@@ -1,6 +1,24 @@
 package ij.plugin;
 
-import ij.*;
+import java.awt.Color;
+import java.awt.GraphicsEnvironment;
+import java.awt.Label;
+import java.awt.TextField;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.awt.image.ColorModel;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Properties;
+import java.util.Vector;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Prefs;
+import ij.VirtualStack;
 import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
@@ -17,16 +35,6 @@ import ij.process.ImageProcessor;
 import ij.util.DicomTools;
 import ij.util.StringSorter;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.event.TextEvent;
-import java.awt.event.TextListener;
-import java.awt.image.ColorModel;
-import java.io.File;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.util.Vector;
 
 /** Implements the File/Import/Image Sequence command, which
 	opens a folder of images as a stack. */
@@ -687,7 +695,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		var filterSizeDisplay = (Label) gd.getComponent(gd.getComponentCount() - 1);
 
 		for (Object stringField : gd.getStringFields()) {
-			((TextField) stringField).addTextListener($ -> {
+			((TextField) stringField).addTextListener(_ -> {
 				filterCountDisplay.setText("Matched files: " + 0);
 				filterSizeDisplay.setText("Estimated stack size: " + 0 + " MB");
 				var x = getFileCount(gd);

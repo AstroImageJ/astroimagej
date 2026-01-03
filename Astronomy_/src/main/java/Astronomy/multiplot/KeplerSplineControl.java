@@ -1,5 +1,44 @@
 package Astronomy.multiplot;
 
+import static Astronomy.MultiPlot_.createImageIcon;
+import static Astronomy.MultiPlot_.darkGreen;
+import static Astronomy.MultiPlot_.mainFrame;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JSeparator;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+
 import Astronomy.MultiPlot_;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import astroj.IJU;
@@ -9,19 +48,6 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static Astronomy.MultiPlot_.*;
 
 public class KeplerSplineControl {
     private final int curve;
@@ -135,7 +161,7 @@ public class KeplerSplineControl {
         var doMask = new JCheckBox("Mask transit data in spline fit");
         doMask.setToolTipText("");
         doMask.setSelected(settings.maskTransit.get());
-        doMask.addActionListener($ -> {
+        doMask.addActionListener(_ -> {
             settings.maskTransit.set(doMask.isSelected());
             updatePlot();
         });
@@ -149,7 +175,7 @@ public class KeplerSplineControl {
         var doMaskData = new JCheckBox("Mask trimmed data in spline fit");
         doMaskData.setToolTipText("");
         doMaskData.setSelected(settings.maskTrimmedData.get());
-        doMaskData.addActionListener($ -> {
+        doMaskData.addActionListener(_ -> {
             settings.maskTrimmedData.set(doMaskData.isSelected());
             updatePlot();
         });
@@ -181,7 +207,7 @@ public class KeplerSplineControl {
                     radio.setSelected(true);
                 }
             });
-            radio.addActionListener($ -> {
+            radio.addActionListener(_ -> {
                 settings.displayType.set(displayType);
                 if (displayType == KeplerSplineSettings.DisplayType.RAW_DATA) {
                     bkSpaceDisplay.setText("N/A");
@@ -209,7 +235,7 @@ public class KeplerSplineControl {
         var densityGroup = new ButtonGroup();
         var radioFixedKnot = new JRadioButton("KeplerSpline fixed knot spacing:");
         densityGroup.add(radioFixedKnot);
-        radioFixedKnot.addActionListener($ -> {
+        radioFixedKnot.addActionListener(_ -> {
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.FIXED);
             updatePlot();
         });
@@ -219,7 +245,7 @@ public class KeplerSplineControl {
         var controlBox = Box.createHorizontalBox();
         var control = new JSpinner(new SpinnerNumberModel(settings.fixedKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         settings.fixedKnotDensity.addListener(($, d) -> control.setValue(d));
-        control.addChangeListener($ -> {
+        control.addChangeListener(_ -> {
             settings.fixedKnotDensity.set(((Double) control.getValue()));
             if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED) {
                 updatePlot();
@@ -237,7 +263,7 @@ public class KeplerSplineControl {
         c.gridy++;
         var radio = new JRadioButton("KeplerSpline auto knot spacing");
         densityGroup.add(radio);
-        radio.addActionListener($ -> {
+        radio.addActionListener(_ -> {
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.AUTO);
             updatePlot();
         });
@@ -249,7 +275,7 @@ public class KeplerSplineControl {
         controlBox = Box.createHorizontalBox();
         var control1 = new JSpinner(new SpinnerNumberModel(settings.minKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control1.setToolTipText("The minimum spline knot spacing considered for the fit.");
-        control1.addChangeListener($ -> {
+        control1.addChangeListener(_ -> {
             settings.minKnotDensity.set(((Double) control1.getValue()));
             if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO) {
                 updatePlot();
@@ -265,7 +291,7 @@ public class KeplerSplineControl {
         controlBox = Box.createHorizontalBox();
         var control2 = new JSpinner(new SpinnerNumberModel(settings.maxKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control2.setToolTipText("The maximum spline knot spacing considered for the fit.");
-        control2.addChangeListener($ -> {
+        control2.addChangeListener(_ -> {
             settings.maxKnotDensity.set(((Double) control2.getValue()));
             if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO) {
                 updatePlot();
@@ -283,7 +309,7 @@ public class KeplerSplineControl {
         controlBox = Box.createHorizontalBox();
         var control3 = new JSpinner(new SpinnerNumberModel(settings.knotDensitySteps.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control3.setToolTipText("The number of knot spacings between min and max that are considered when finding the best spline fit.");
-        control3.addChangeListener($ -> {
+        control3.addChangeListener(_ -> {
             settings.knotDensitySteps.set(((Integer) control3.getValue()));
             if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO) {
                 updatePlot();
@@ -309,7 +335,7 @@ public class KeplerSplineControl {
         bkSpaceDisplay.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
         var copyButton = new JButton(UIHelper.createImageIcon("Astronomy/images/icons/multiplot/copyKnotSpacing.png", -1, 18));
         copyButton.setMargin(new Insets(0, 3, 0, 3));
-        copyButton.addActionListener($ -> {
+        copyButton.addActionListener(_ -> {
             settings.fixedKnotDensity.set(Double.valueOf(bkSpaceDisplay.getText()));
             radioFixedKnot.setSelected(true);
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.FIXED);
@@ -346,7 +372,7 @@ public class KeplerSplineControl {
         controlBox.setToolTipText("<html>KeplerSpline chops the light curve into multiple segments if there<br>are breaks in the data (e.g. gaps between TESS sectors). " +
                 "<br>This value sets the minimum gap width that is considered a break in the data. <br>The default is 0.2 days</html>");
         var control4 = new JSpinner(new SpinnerNumberModel(settings.minGapWidth.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
-        control4.addChangeListener($ -> {
+        control4.addChangeListener(_ -> {
             settings.minGapWidth.set(((Double) control4.getValue()));
             updatePlot();
         });
@@ -375,7 +401,7 @@ public class KeplerSplineControl {
         c.gridx = GridBagConstraints.RELATIVE;
         controlBox = Box.createHorizontalBox();
         var control5 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningCoeff.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
-        control5.addChangeListener($ -> {
+        control5.addChangeListener(_ -> {
             settings.dataCleaningCoeff.set(((Double) control5.getValue()));
             updatePlot();
         });
@@ -396,7 +422,7 @@ public class KeplerSplineControl {
         c.gridx = GridBagConstraints.RELATIVE;
         controlBox = Box.createHorizontalBox();
         var control6 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningTries.get().intValue(), 1, Integer.MAX_VALUE, 1));
-        control6.addChangeListener($ -> {
+        control6.addChangeListener(_ -> {
             settings.dataCleaningTries.set(((Number) control6.getValue()).intValue());
             updatePlot();
         });
@@ -410,14 +436,14 @@ public class KeplerSplineControl {
 
         c.gridx = 0;
         var button = new JButton("Apply current spline settings to all curves");
-        button.addActionListener($ -> duplicateSettings(settings));
+        button.addActionListener(_ -> duplicateSettings(settings));
         c.gridwidth = 2;
         panel.add(button, c);
 
         c.gridx++;
         c.anchor = GridBagConstraints.CENTER;
         var button1 = new JButton("Ok");
-        button1.addActionListener($ -> window.setVisible(false));
+        button1.addActionListener(_ -> window.setVisible(false));
         panel.add(button1, c);
 
         //var border = new BevelBorder(BevelBorder.LOWERED, MultiPlot_.color[curve], MultiPlot_.color[curve]);
@@ -577,12 +603,12 @@ public class KeplerSplineControl {
     private void clampingSpinners(JSpinner min, JSpinner max) {
         var maxModel = getModel(max);
         var minModel = getModel(min);
-        min.addChangeListener($ -> {
+        min.addChangeListener(_ -> {
             if (minModel.getNumber().doubleValue() >= maxModel.getNumber().doubleValue()) {
                 minModel.setValue(minModel.getPreviousValue());
             }
         });
-        max.addChangeListener($ -> {
+        max.addChangeListener(_ -> {
             if (minModel.getNumber().doubleValue() >= maxModel.getNumber().doubleValue()) {
                 maxModel.setValue(maxModel.getNextValue());
             }

@@ -1,17 +1,32 @@
 package ij.gui;
 
-import ij.*;
+import java.awt.Event;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.datatransfer.Clipboard;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+
+import javax.swing.JButton;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.TransferablePlot;
 import ij.astro.util.PdfPlotOutput;
 import ij.io.SaveDialog;
 import ij.plugin.GifWriter;
 import ij.plugin.frame.SyncWindows;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.event.*;
 
 /** This class is an extended ImageWindow that displays stacks and hyperstacks. */
 public class StackWindow extends ImageWindow implements Runnable, AdjustmentListener, ActionListener, MouseWheelListener {
@@ -127,7 +142,7 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		pdf.addActionListener(listener);
 		stackPdf.addActionListener(listener);
 		gif.addActionListener(listener);
-		copy.addActionListener($ -> {
+		copy.addActionListener(_ -> {
 			if (imp.getStack() instanceof PlotVirtualStack plotVirtualStack) {
 				Clipboard systemClipboard = null;
 				try {systemClipboard = getToolkit().getSystemClipboard();} catch (Exception e) {systemClipboard = null; }

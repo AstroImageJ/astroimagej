@@ -1,15 +1,15 @@
 package Astronomy.multiplot.macro.title.parser;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import astroj.AstroStackWindow;
 import astroj.FitsJ;
 import astroj.MeasurementTable;
 import ij.ImagePlus;
 import ij.VirtualStack;
 import ij.WindowManager;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 public class ResolverContext {
     MeasurementTable table;
@@ -49,7 +49,7 @@ public class ResolverContext {
             return null;
         }
         if (getImp() != null) {
-            headerCache.computeIfAbsent(imp, $ -> new HashMap<>());
+            headerCache.computeIfAbsent(imp, _ -> new HashMap<>());
             headerCache.get(imp).computeIfAbsent(slice, this::getHeaderForSlice);
             return headerCache.get(imp).get(slice);
         }

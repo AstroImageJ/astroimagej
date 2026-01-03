@@ -1,9 +1,64 @@
 package Astronomy.multiaperture;
 
+import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
+import static Astronomy.Aperture_.AP_PREFS_CLEAROVERLAY;
+import static Astronomy.Aperture_.AP_PREFS_NAMEOVERLAY;
+import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
+import static Astronomy.Aperture_.AP_PREFS_SKYOVERLAY;
+import static Astronomy.Aperture_.AP_PREFS_STAROVERLAY;
+import static Astronomy.Aperture_.AP_PREFS_TEMPOVERLAY;
+import static Astronomy.Aperture_.AP_PREFS_VALUEOVERLAY;
+import static java.awt.Component.LEFT_ALIGNMENT;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.IntConsumer;
+
+import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextArea;
+import javax.swing.JToggleButton;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpringLayout;
+import javax.swing.WindowConstants;
+
 import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformers;
-import astroj.*;
+import astroj.Aperture;
+import astroj.ApertureRoi;
+import astroj.AstroStackWindow;
+import astroj.Centroid;
+import astroj.FreeformPixelApertureRoi;
+import astroj.OverlayCanvas;
+import astroj.SpringUtil;
+import astroj.WCS;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -13,19 +68,6 @@ import ij.astro.util.SwingConstantUtil;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.gui.ImageCanvas;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.List;
-import java.util.*;
-import java.util.function.*;
-
-import static Astronomy.Aperture_.*;
-import static java.awt.Component.LEFT_ALIGNMENT;
 
 public class FreeformPixelApertureHandler {
     private final List<FreeformPixelApertureRoi> freeformPixelApertureRois = new ArrayList<>();
@@ -408,7 +450,7 @@ public class FreeformPixelApertureHandler {
             updateHelp.run();
         });
 
-        apSelector.addChangeListener($ -> {
+        apSelector.addChangeListener(_ -> {
             selectedAperture = ((Number) apSelector.getValue()).intValue();
             compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
             useAnnulus.setSelected(currentAperture().hasAnnulus());
@@ -423,7 +465,7 @@ public class FreeformPixelApertureHandler {
             updateHelp.run();
         });
 
-        deleteAp.addActionListener($ -> {
+        deleteAp.addActionListener(_ -> {
             if (apCount() == 1) {
                 removeAperture(freeformPixelApertureRois.remove(0));
                 freeformPixelApertureRois.add(createNewAperture(compButton.isSelected()));
@@ -460,7 +502,7 @@ public class FreeformPixelApertureHandler {
             updateHelp.run();
         });
 
-        addAp.addActionListener($ -> {
+        addAp.addActionListener(_ -> {
             if (addApertureCallback != null && !addApertureCallback.getAsBoolean()) {
                 freeformPixelApertureRois.add(selectedAperture, createNewAperture(compButton.isSelected()));
                 selectorModel.setMaximum(freeformPixelApertureRois.size());
@@ -477,20 +519,20 @@ public class FreeformPixelApertureHandler {
             updateHelp.run();
         });
 
-        copyR1AsCentroidRadius.addActionListener($ -> {
+        copyR1AsCentroidRadius.addActionListener(_ -> {
             var d = currentAperture().getRadius();
             if (d >= 0.5) {
                 centroidRadius.setter().accept(d);
             }
         });
 
-        beginButton.addActionListener($ -> playCallback.run());
+        beginButton.addActionListener(_ -> playCallback.run());
 
         copyBackground.addItemListener(l -> {
             this.copyBackground = l.getStateChange() == ItemEvent.SELECTED;
         });
 
-        backgroundFinder.addActionListener($ -> {
+        backgroundFinder.addActionListener(_ -> {
             try {
                 this.findBackground();
                 if (selectedAperture == 1) {
@@ -501,44 +543,44 @@ public class FreeformPixelApertureHandler {
             }
         });
 
-        showEstimatedCircularAperture.addActionListener($ -> {
+        showEstimatedCircularAperture.addActionListener(_ -> {
             SHOW_ESTIMATED_CIRCULAR_APERTURE.set(showEstimatedCircularAperture.isSelected());
             updateDisplay(false);
         });
 
-        showCentroidRadius.addActionListener($ -> {
+        showCentroidRadius.addActionListener(_ -> {
             SHOW_CENTROID_RADIUS.set(showCentroidRadius.isSelected());
             updateDisplay(false);
         });
 
-        alwaysOnTop.addActionListener($ -> {
+        alwaysOnTop.addActionListener(_ -> {
             ALWAYS_ON_TOP.set(alwaysOnTop.isSelected());
             frame.setAlwaysOnTop(ALWAYS_ON_TOP.get());
         });
 
-        copyShape.addActionListener($ -> {
+        copyShape.addActionListener(_ -> {
             COPY_T1.set(copyShape.isSelected());
         });
 
-        centroidShape.addActionListener($ -> {
+        centroidShape.addActionListener(_ -> {
             CENTROID_ON_COPY.set(centroidShape.isSelected());
         });
 
-        copyT1Background.addActionListener($ -> {
+        copyT1Background.addActionListener(_ -> {
             COPY_T1_BACKGROUND.set(copyT1Background.isSelected());
         });
 
-        centroidBackground.addActionListener($ -> {
+        centroidBackground.addActionListener(_ -> {
             CENTROID_BACKGROUND.set(centroidBackground.isSelected());
         });
 
-        centroidPhotometry.addActionListener($ -> {
+        centroidPhotometry.addActionListener(_ -> {
             currentAperture().setIsCentroid(centroidPhotometry.isSelected());
             currentAperture().update();
             updateDisplay();
         });
 
-        useAnnulus.addActionListener($ -> {
+        useAnnulus.addActionListener(_ -> {
             currentAperture().setHasAnnulus(useAnnulus.isSelected());
             currentAperture().setBack1(back1Radius.getter().getAsDouble());
             currentAperture().setBack2(back2Radius.getter().getAsDouble());
@@ -860,13 +902,13 @@ public class FreeformPixelApertureHandler {
             spinner.setValue(newValue);
         });
 
-        slider.addAdjustmentListener($ -> {
+        slider.addAdjustmentListener(_ -> {
             var d = slider.getValue() / scale;
             pref.accept(d);
             spinner.setValue(d);
         });
 
-        spinner.addChangeListener($ -> {
+        spinner.addChangeListener(_ -> {
             var i = (int) (((Number) spinner.getValue()).doubleValue() * scale);
             pref.accept(((Number) spinner.getValue()).doubleValue());
             slider.setValue(i);

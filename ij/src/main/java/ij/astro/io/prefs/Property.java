@@ -58,7 +58,7 @@ public class Property<T> {
     private static final boolean FORCE_SERIALIZATION = false;
 
     public Property(T defaultValue, Object owner) {
-        this(defaultValue, "", "", null, $ -> null, owner);
+        this(defaultValue, "", "", null, _ -> null, owner);
     }
 
     public Property(T defaultValue, Function<T, String> serializer, Function<String, T> deserializer, Object owner) {
@@ -66,11 +66,11 @@ public class Property<T> {
     }
 
     public Property(T defaultValue, String keyPrefix, String keySuffix, Object owner) {
-        this(defaultValue, keyPrefix, keySuffix, null, $ -> null, owner);
+        this(defaultValue, keyPrefix, keySuffix, null, _ -> null, owner);
     }
 
     public Property(T defaultValue, Supplier<String> keyPrefix, Supplier<String> keySuffix, Object owner) {
-        this(defaultValue, keyPrefix, keySuffix, null, $ -> null, owner);
+        this(defaultValue, keyPrefix, keySuffix, null, _ -> null, owner);
     }
 
     public Property(T defaultValue, String keyPrefix, String keySuffix, Function<T, String> serializer, Function<String, T> deserializer, Object owner) {

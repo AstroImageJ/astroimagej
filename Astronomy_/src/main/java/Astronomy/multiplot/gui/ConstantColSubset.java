@@ -1,16 +1,19 @@
 package Astronomy.multiplot.gui;
 
-import Astronomy.MultiPlot_;
-import ij.astro.gui.GenericSwingDialog;
-import ij.astro.io.prefs.Property;
-
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+
+import javax.swing.Box;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import Astronomy.MultiPlot_;
+import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.prefs.Property;
 
 public class ConstantColSubset {
     private static final Property<ConstantCol> ENTRY_1 = new Property<>(new ConstantCol(), ConstantCol::serialize, ConstantCol::deserialize, ConstantColSubset.class);
@@ -87,7 +90,7 @@ public class ConstantColSubset {
         var tf = new JTextField(10);
         tf.setText(isName ? property.get().name : property.get().val);
 
-        tf.addActionListener($ -> {
+        tf.addActionListener(_ -> {
             if (isName) {
                 property.set(new ConstantCol(tf.getText(), property.get().val));
             } else {

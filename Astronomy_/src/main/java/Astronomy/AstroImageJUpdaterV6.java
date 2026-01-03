@@ -647,10 +647,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         b.add(selectorArea);
         b.add(Box.createVerticalStrut(10));
 
-        enableDailyBuilds.addActionListener($ -> ENABLE_DAILY_BUILDS.set(enableDailyBuilds.isSelected()));
-        enablePrereleases.addActionListener($ -> ENABLE_PRERELEASES.set(enablePrereleases.isSelected()));
-        enableBetaBuilds.addActionListener($ -> ENABLE_BETAS.set(enableBetaBuilds.isSelected()));
-        enableAlphaBuilds.addActionListener($ -> ENABLE_ALPHAS.set(enableAlphaBuilds.isSelected()));
+        enableDailyBuilds.addActionListener(_ -> ENABLE_DAILY_BUILDS.set(enableDailyBuilds.isSelected()));
+        enablePrereleases.addActionListener(_ -> ENABLE_PRERELEASES.set(enablePrereleases.isSelected()));
+        enableBetaBuilds.addActionListener(_ -> ENABLE_BETAS.set(enableBetaBuilds.isSelected()));
+        enableAlphaBuilds.addActionListener(_ -> ENABLE_ALPHAS.set(enableAlphaBuilds.isSelected()));
 
         ENABLE_DAILY_BUILDS.addListener(((key, newValue) -> {
             var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
@@ -752,7 +752,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
         }));
 
-        updateCheckOnStartup.addActionListener($ -> {
+        updateCheckOnStartup.addActionListener(_ -> {
             Prefs.set(DO_UPDATE_NOTIFICATION.substring(1), updateCheckOnStartup.isSelected());
         });
 
@@ -761,7 +761,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         var yes = new JButton("Ok");
         var cancel = new JButton("Cancel");
 
-        yes.addActionListener($ -> {
+        yes.addActionListener(_ -> {
             if (((MetaVersion.VersionEntry) selector.getSelectedItem()).version().equals(new SemanticVersion(IJ.getAstroVersion()))) {
                 IJ.error("You are already running the selected version of AstroImageJ.");
                 return;
@@ -782,13 +782,13 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             }
         });
 
-        cancel.addActionListener($ -> {
+        cancel.addActionListener(_ -> {
             d.dispose();
             System.out.println(selector.getSelectedItem());
         });
 
         var changes = new JButton("Changelog");
-        changes.addActionListener($ -> {
+        changes.addActionListener(_ -> {
             try {
                 BrowserOpener.openURL("https://astroimagej.com/releases");
             } catch (IOException e) {

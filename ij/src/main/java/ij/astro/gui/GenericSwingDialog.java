@@ -338,7 +338,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             buildRow((g, box) -> {
                 addMessage(optionText);
                 //box.add(Box.createHorizontalGlue());
-                selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> {
+                selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen(_ -> {
                     pack();
                     revalidate();
                     repaint();
@@ -346,7 +346,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             });
         } else {
             //todo which one, pack will resize window, revalidate won't which can cause scrollbars to appear
-            selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> {
+            selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen(_ -> {
                 pack();
                 revalidate();
                 repaint();
@@ -469,7 +469,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var b = Box.createHorizontalBox();
         final var box = new JCheckBox(label.replaceAll("_", " "));
         box.setSelected(initValue);
-        box.addActionListener($ -> consumer.accept(box.isSelected()));
+        box.addActionListener(_ -> consumer.accept(box.isSelected()));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
             c.insets.left = 10;
@@ -572,7 +572,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 var cb = new JCheckBox(label);
                 cb.setSelected(defaultValues[i1]);
                 final int finalI = i1;
-                cb.addActionListener($ -> {
+                cb.addActionListener(_ -> {
                     consumers.get(finalI).accept(cb.isSelected());
                 });
                 if (Recorder.record || macro) {
@@ -630,7 +630,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         //addLocal(fieldLabel, c);
         var thisChoice = new JComboBox<String>();
         thisChoice.addKeyListener(this);
-        thisChoice.addItemListener($ -> consumer.accept((String) thisChoice.getSelectedItem()));
+        thisChoice.addItemListener(_ -> consumer.accept((String) thisChoice.getSelectedItem()));
         for (String item : items) thisChoice.addItem(item);
         if (defaultItem != null) {
             thisChoice.setSelectedItem(defaultItem);
@@ -817,7 +817,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var f = modifySpinner(spinner, true);
         if (f != null) f.setColumns(columns);
 
-        spinner.addChangeListener($ -> {
+        spinner.addChangeListener(_ -> {
             consumer.accept((Double) spinner.getValue());
             s.setValue((int) ((Double) spinner.getValue() * scale));
         });
@@ -838,7 +838,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         });
 
         if (saveAndUseStepSize) {
-            spinner.addPropertyChangeListener($ ->
+            spinner.addPropertyChangeListener(_ ->
                     Prefs.set(id, ((SpinnerNumberModel) spinner.getModel()).getStepSize().doubleValue()));
         }
 
@@ -947,7 +947,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var tf = new JSpinner(new SpinnerNumberModel(defaultValue, bounds.min(), bounds.max(), Prefs.get(id, stepSize)));
         if (IJ.isLinux()) tf.setBackground(Color.white);
 
-        tf.addChangeListener($ -> {
+        tf.addChangeListener(_ -> {
             var v = (Double) tf.getValue();
             if (v.compareTo(bounds.boxedMin()) < 0) {
                 v = bounds.boxedMin();
@@ -967,7 +967,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         });
 
         if (saveAndUseStepSize) {
-            tf.addPropertyChangeListener($ ->
+            tf.addPropertyChangeListener(_ ->
                     Prefs.set(id, ((SpinnerNumberModel) tf.getModel()).getStepSize().doubleValue()));
         }
 
@@ -1071,7 +1071,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var c = getConstraints();
         var x = getXPos();
         var b = new NStateButton<T>(defaultState, swapButtons);
-        b.addActionListener($ -> consumer.accept(b.getState()));
+        b.addActionListener(_ -> consumer.accept(b.getState()));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
             c.insets.left = 10;
@@ -1111,7 +1111,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var b = new JComboBox<>(defaultState.values0());
         b.setRenderer(new ToolTipRenderer());
         b.setSelectedItem(defaultState);
-        b.addActionListener($ -> consumer.accept((T) b.getSelectedItem()));
+        b.addActionListener(_ -> consumer.accept((T) b.getSelectedItem()));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
             c.insets.left = 10;
@@ -1159,7 +1159,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             button.getModel().setGroup(group);
             button.setToolTipText(value.tooltip());
 
-            button.addActionListener($ -> {
+            button.addActionListener(_ -> {
                 if (button.isSelected()) {
                     consumer.accept(value);
                     val.set(value);
@@ -1202,7 +1202,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public static JRadioButton makeRadioButton(GenericSwingDialog gd, String text, Consumer<Boolean> listener, ButtonGroup group) {
         var r = new JRadioButton(text);
         if (group != null) r.getModel().setGroup(group);
-        r.addActionListener($ -> {
+        r.addActionListener(_ -> {
             listener.accept(r.isSelected());
             /*if (gd.recorderOn) {
                 gd.recordOption(text, );
@@ -1377,26 +1377,26 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         setLayout(new GridBagLayout());
         Panel buttons = new Panel();
         buttons.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        okay.addActionListener($ -> {
+        okay.addActionListener(_ -> {
             wasOKed = true;
             dispose();
         });
         okay.addKeyListener(this);
         if (!hideCancelButton) {
-            cancel.addActionListener($ -> {
+            cancel.addActionListener(_ -> {
                 wasCanceled = true;
                 dispose();
             });
             cancel.addKeyListener(this);
         }
         if (no != null) {
-            no.addActionListener($ -> dispose());
+            no.addActionListener(_ -> dispose());
             no.addKeyListener(this);
         }
         boolean addHelp = helpURL != null;
         if (addHelp) {
             help = new JButton(helpLabel);
-            help.addActionListener($ -> {
+            help.addActionListener(_ -> {
                 if (hideCancelButton && (helpURL == null || helpURL.isEmpty())) {
                     wasOKed = true;
                 }

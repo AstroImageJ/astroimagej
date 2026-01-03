@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -107,6 +108,7 @@ import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
 import ij.util.Tools;
+import util.prefs.RegionExclusion;
 
 
 /**
@@ -413,6 +415,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private static final Property<Boolean> IMP_SHAPED_AP_ANGLE_LOCKED = SHAPED_AP_ANGLE_LOCKED.getOrCreateVariant("IMP");
     private static final Property<Boolean> IMP_SHAPED_VARIATION_LOCKED = SHAPED_VARIATION_LOCKED.getOrCreateVariant("IMP");
     private static final Property<Double> IMP_SHAPED_AP_ANGLE = SHAPED_AP_ANGLE.getOrCreateVariant("IMP");
+    private static final Property<BorderRegionExclusion> REGION_EXLUSION_MODE = new Property<>(BorderRegionExclusion.NONE, MultiAperture_.class);
 
     public MultiAperture_() {
         freeformPixelApertureHandler.setExitCallback(() -> {
@@ -2852,7 +2855,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
         var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
 
-        var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
+        var searchRegion = switch (REGION_EXLUSION_MODE.get()) {
+            case NONE -> null;
+            case MANUAL -> RegionExclusion.restrict(imp);
+            case WCS -> throw new IllegalArgumentException("WCS region exclusion not supported");
+            case COMMON -> throw new IllegalArgumentException("Common region exclusion not supported");
+        };
+
+        var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius, searchRegion);
 
         if (maxima.coordinateMaximas().size() > 25000) {
             var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
@@ -6480,6 +6490,34 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.add(gauss.c2());
         suggestionComponents.add(gauss.c1());
 
+        gd.buildRow((g, b) -> {
+            g.addMessage("Restrict Search Area");
+            var regExclusion = gd.addNStateDropdown(REGION_EXLUSION_MODE.get(), REGION_EXLUSION_MODE::set);
+            gd.addToSameRow();
+            var manualRegionExclusion = new JButton("Edit Border Regions");
+            gd.addGenericComponent(manualRegionExclusion);
+
+            regExclusion.addItemListener(_ -> {
+                var needsManual = regExclusion.getSelectedItem() != BorderRegionExclusion.NONE &&
+                        regExclusion.getSelectedItem() != BorderRegionExclusion.WCS;
+                RegionExclusion.EXCLUDE_BORDERS.set(needsManual);
+                RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+            });
+            manualRegionExclusion.addActionListener(_ -> RegionExclusion.editSettings());
+
+            if (suggestCompStars) {
+                var needsManual = regExclusion.getSelectedItem() != BorderRegionExclusion.NONE &&
+                        regExclusion.getSelectedItem() != BorderRegionExclusion.WCS;
+                RegionExclusion.EXCLUDE_BORDERS.set(needsManual);
+                if (!RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get() && needsManual) {
+                    RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+                }
+            }
+
+            suggestionComponents.add(regExclusion);
+            suggestionComponents.add(manualRegionExclusion);
+        });
+
         var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
         gd.addToSameRow();
         var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
@@ -6534,7 +6572,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.add(minPeak.c2());
         suggestionComponents.add(maxPeak.c2());
 
-        ((JCheckBox) s.subComponents().getFirst()).addActionListener($ -> {
+        ((JCheckBox) s.subComponents().getFirst()).addActionListener(_ -> {
             toggleComponents(suggestionComponents, !suggestCompStars);
             var minP1 = liveStats.mean + (1 * liveStats.stdDev);
             var maxP1 = liveStats.max * 0.9;
@@ -6546,6 +6584,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             } else {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+            }
+            if (!suggestCompStars) {
+                var needsManual = REGION_EXLUSION_MODE.get() != BorderRegionExclusion.NONE &&
+                        REGION_EXLUSION_MODE.get() != BorderRegionExclusion.WCS;
+                RegionExclusion.EXCLUDE_BORDERS.set(needsManual);
+                if (!RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get() && needsManual) {
+                    RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+                }
             }
         });
 
@@ -7147,6 +7193,42 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         @Override
         public String getToolTip() {
             return tooltip;
+        }
+
+        @Override
+        public String toString() {
+            return optionText;
+        }
+    }
+
+    enum BorderRegionExclusion implements NState<BorderRegionExclusion>, ToolTipProvider {
+        NONE("Use full image", null),
+        MANUAL("Exclude manually specified borders", null),
+        WCS("Limit to maximum shared WCS region of stack", "Not Implemented"),
+        COMMON("Limit to maximum shared WCS region of stack and exclude manually specified borders",
+                "Not Implemented"),
+        ;
+
+        private final String optionText, tooltip;
+
+        BorderRegionExclusion(String optionText, String tooltip) {
+            this.optionText = optionText;
+            this.tooltip = tooltip;
+        }
+
+        @Override
+        public String getToolTip() {
+            return tooltip;
+        }
+
+        @Override
+        public boolean isOn() {
+            return false;
+        }
+
+        @Override
+        public BorderRegionExclusion[] values0() {
+            return BorderRegionExclusion.values();
         }
 
         @Override

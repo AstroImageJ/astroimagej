@@ -1,11 +1,14 @@
 package util.prefs;
 
+import java.awt.Rectangle;
 import java.util.List;
 
 import javax.swing.Box;
 
+import ij.ImagePlus;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
+import ij.process.ImageProcessor;
 
 public class RegionExclusion {
     public static final Property<Boolean> DISPLAY_EXCLUDED_BORDERS = new Property<>(true, RegionExclusion.class);
@@ -48,5 +51,23 @@ public class RegionExclusion {
 
         gd.centerDialog(true);
         gd.showDialog();
+    }
+
+    public static Rectangle restrict(ImagePlus imp) {
+        return restrict(imp.getProcessor());
+    }
+
+    public static Rectangle restrict(ImageProcessor ip) {
+        return restrict(ip.getRoi());
+    }
+
+    public static Rectangle restrict(Rectangle r) {
+        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+            r.width -= (RegionExclusion.BORDER_EXCLUSION_LEFT.get() + RegionExclusion.BORDER_EXCLUSION_RIGHT.get());
+            r.height -= (RegionExclusion.BORDER_EXCLUSION_TOP.get() + RegionExclusion.BORDER_EXCLUSION_BOTTOM.get());
+            r.translate(RegionExclusion.BORDER_EXCLUSION_LEFT.get(), RegionExclusion.BORDER_EXCLUSION_TOP.get());
+        }
+
+        return r;
     }
 }

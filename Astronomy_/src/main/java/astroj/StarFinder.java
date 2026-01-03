@@ -1,15 +1,16 @@
 package astroj;
 
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.astro.logging.AIJLogger;
 import ij.plugin.Duplicator;
 import ij.process.ImageProcessor;
-
-import java.awt.*;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class StarFinder {
     private static final int[] EDGE_DETECTION_KERNEL_1 = new int[]{1, 0, -1, 0, 0, 0, -1, 0, 1};
@@ -31,7 +32,7 @@ public class StarFinder {
 
         AIJLogger.multiLog(imp.getStatistics().stdDev * 0.1);
 
-        var maximaProcess = findLocalMaxima(imp, imp.getStatistics().stdDev * 0.1, Double.MAX_VALUE, 0, 1);//ImageProcessor.NO_THRESHOLD
+        var maximaProcess = findLocalMaxima(imp, imp.getStatistics().stdDev * 0.1, Double.MAX_VALUE, 0, 1, null);//ImageProcessor.NO_THRESHOLD
         var ip = maximaProcess.ip;
         var maxima = maximaProcess.coordinateMaximas.descendingSet();
 
@@ -82,7 +83,7 @@ public class StarFinder {
      */
     // Does not work on a ROI, but the whole image
     //todo make astrometry use this
-    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper, int border, double gaussRadius) {
+    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper, int border, double gaussRadius, Rectangle bounds) {
         var imp2 = (new Duplicator()).crop(imp);
 
         if (gaussRadius != 1) IJ.run(imp2, "Median...", "radius=" + gaussRadius);
@@ -95,14 +96,18 @@ public class StarFinder {
 
         ip.resetRoi();
 
-        for (int x = border; x < ip.getWidth() - border; x++) {
-            for (int y = border; y < ip.getHeight() - border; y++) {
+        if (bounds == null) {
+            bounds = ip.getRoi();
+        }
+
+        for (int x = bounds.x + border; x < (bounds.x + bounds.width) - border; x++) {
+            for (int y = bounds.y + border; y < (bounds.y + bounds.height) - border; y++) {
                 var v = ip.getValue(x, y);
                 if (Double.isNaN(v)) continue;
                 if (doLowerThresholdCheck && v < thresholdLower) continue;
                 if (doUpperThresholdCheck && v > thresholdUpper) continue;
                 if (v == ip.getMax()) coordinates.add(new CoordinateMaxima(v, x, y));
-                boolean isInner = (y != 0 && y != ip.getHeight() - 1) && (x != 0 && x != ip.getWidth() - 1);
+                boolean isInner = (y != bounds.y && y != (bounds.y + bounds.height) - 1) && (x != bounds.x && x != (bounds.x + bounds.width) - 1);
 
                 var isMax = true;
                 for (int d = 0; d < 8; d++) { // Compare with the 8 neighbor pixels
@@ -142,7 +147,7 @@ public class StarFinder {
      * @param direction the direction from the pixel towards the neighbor (see makeDirectionOffsets)
      * @return true if the neighbor is within the image (provided that x, y is within)
      */
-    private static boolean isWithin(ImageProcessor ip, int x, int y, int direction) {
+    private static boolean isWithin(ImageProcessor ip, int x, int y, int direction) {//todo modify?
         int xmax = ip.getWidth() - 1;
         int ymax = ip.getHeight() - 1;
         return switch (direction) {

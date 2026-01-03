@@ -34,6 +34,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -2245,6 +2246,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         regExclusion.setPreferredSize(iconDimension);
         regExclusion.setMargin(buttonMargin);
         regExclusion.addActionListener(_ -> RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(regExclusion.isSelected()));
+        regExclusion.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    RegionExclusion.editSettings();
+                }
+            }
+        });
         RegionExclusion.DISPLAY_EXCLUDED_BORDERS.addListener(regExclusion, (_, n) -> {
             regExclusion.setSelected(n);
         });

@@ -133,6 +133,7 @@ import ij.process.ImageStatistics;
 import ij.process.StackProcessor;
 import ij.util.Tools;
 import util.PdfRasterWriter;
+import util.prefs.RegionExclusion;
 
 
 /**
@@ -2238,13 +2239,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         buttonNegative.addActionListener(this);
         topPanelA.add(buttonNegative);
 
-        var regExclusion = new JToggleButton(regExclusionIcon, AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.get());
+        var regExclusion = new JToggleButton(regExclusionIcon, RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get());
         regExclusion.setToolTipText("Display region exclusion");
         regExclusion.setSelectedIcon(regExclusionIconSelected);
         regExclusion.setPreferredSize(iconDimension);
         regExclusion.setMargin(buttonMargin);
-        regExclusion.addActionListener(_ -> AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.set(regExclusion.isSelected()));
-        AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.addListener(regExclusion, (_, n) -> {
+        regExclusion.addActionListener(_ -> RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(regExclusion.isSelected()));
+        RegionExclusion.DISPLAY_EXCLUDED_BORDERS.addListener(regExclusion, (_, n) -> {
             regExclusion.setSelected(n);
         });
         topPanelA.add(regExclusion);

@@ -29,6 +29,7 @@ import ij.gui.ImageWindow;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.plugin.tool.PlugInTool;
+import util.prefs.RegionExclusion;
 
 public class AstroCanvas extends OverlayCanvas {
 
@@ -130,12 +131,12 @@ public class AstroCanvas extends OverlayCanvas {
         buildRedCrossHairCursor();
         buildClearCursor();
 
-        AstrometrySetup.EXCLUDE_BORDERS.addListener(this, (_, _) -> updateDisplay());
-        AstrometrySetup.BORDER_EXCLUSION_TOP.addListener(this, (_, _) -> updateDisplay());
-        AstrometrySetup.BORDER_EXCLUSION_BOTTOM.addListener(this, (_, _) -> updateDisplay());
-        AstrometrySetup.BORDER_EXCLUSION_LEFT.addListener(this, (_, _) -> updateDisplay());
-        AstrometrySetup.BORDER_EXCLUSION_RIGHT.addListener(this, (_, _) -> updateDisplay());
-        AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.EXCLUDE_BORDERS.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.BORDER_EXCLUSION_TOP.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.BORDER_EXCLUSION_BOTTOM.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.BORDER_EXCLUSION_LEFT.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.BORDER_EXCLUSION_RIGHT.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.DISPLAY_EXCLUDED_BORDERS.addListener(this, (_, _) -> updateDisplay());
     }
 
     private void updateDisplay() {
@@ -639,7 +640,7 @@ public class AstroCanvas extends OverlayCanvas {
         OverlayCanvas oc = getOverlayCanvas(imp);
         if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
 
-        if (AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.get()) {
+        if (RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get()) {
             drawExcludedRegions((Graphics2D) drawingGraphics);
         }
         
@@ -655,10 +656,10 @@ public class AstroCanvas extends OverlayCanvas {
     }
     
     private void drawExcludedRegions(Graphics2D g2) {
-        var left = AstrometrySetup.BORDER_EXCLUSION_LEFT.get();
-        var right = AstrometrySetup.BORDER_EXCLUSION_RIGHT.get();
-        var top = AstrometrySetup.BORDER_EXCLUSION_TOP.get();
-        var bottom = AstrometrySetup.BORDER_EXCLUSION_BOTTOM.get();
+        var left = RegionExclusion.BORDER_EXCLUSION_LEFT.get();
+        var right = RegionExclusion.BORDER_EXCLUSION_RIGHT.get();
+        var top = RegionExclusion.BORDER_EXCLUSION_TOP.get();
+        var bottom = RegionExclusion.BORDER_EXCLUSION_BOTTOM.get();
 
         g2.setTransform(invCanvTrans);
 

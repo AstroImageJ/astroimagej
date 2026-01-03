@@ -47,22 +47,12 @@ import javax.swing.event.PopupMenuListener;
 
 import ij.IJ;
 import ij.Prefs;
-import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 import ij.util.Tools;
+import util.prefs.RegionExclusion;
 
 
 public class AstrometrySetup implements ActionListener, ItemListener, ChangeListener, FocusListener, MouseWheelListener {
-    public static Property<Boolean> DISPLAY_EXCLUDED_BORDERS = new Property<>(false, AstrometrySetup.class);
-    public static Property<Boolean> EXCLUDE_BORDERS = new Property<>(false, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_LEFT = new Property<>(10, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_RIGHT = new Property<>(10, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_TOP = new Property<>(10, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_BOTTOM = new Property<>(10, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_LEFT_STEP = new Property<>(5, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_RIGHT_STEP = new Property<>(5, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_TOP_STEP = new Property<>(5, AstrometrySetup.class);
-    public static Property<Integer> BORDER_EXCLUSION_BOTTOM_STEP = new Property<>(5, AstrometrySetup.class);
     static int MIN_MAX_STARS = 10;
     public JFrame astrometrySetupFrame;
     DecimalFormat threeToLeft = new DecimalFormat("000", IJU.dfs);
@@ -842,17 +832,17 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         borderExclusionLabel.setHorizontalAlignment(JTextField.RIGHT);
         astrometrySetupPanel.add(borderExclusionLabel);
 
-        var excludeBorderCb = new JCheckBox("Enable", EXCLUDE_BORDERS.get());
+        var excludeBorderCb = new JCheckBox("Enable", RegionExclusion.EXCLUDE_BORDERS.get());
         excludeBorderCb.setFont(p12);
         excludeBorderCb.setToolTipText("<html>When enabled, allows excluding border regions from plate solving. In IJ Coordinates.</html>");
-        excludeBorderCb.addItemListener(EXCLUDE_BORDERS.toItemListener());
-        EXCLUDE_BORDERS.addListener((_, n) -> {
+        excludeBorderCb.addItemListener(RegionExclusion.EXCLUDE_BORDERS.toItemListener());
+        RegionExclusion.EXCLUDE_BORDERS.addListener((_, n) -> {
             if (n) {
-                AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.set(true);
+                RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
             }
         });
-        if (EXCLUDE_BORDERS.get()) {
-            AstrometrySetup.DISPLAY_EXCLUDED_BORDERS.set(true);
+        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+            RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
         }
         astrometrySetupPanel.add(excludeBorderCb);
 
@@ -861,28 +851,28 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var excludeLeftTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Left", TitledBorder.CENTER, TitledBorder.TOP, p11);
         excludeLeftPanel.setBorder(excludeLeftTitle);
 
-        var excludeLeftNumberModel = new SpinnerNumberModel(BORDER_EXCLUSION_LEFT.get(), 0, null, BORDER_EXCLUSION_LEFT_STEP.get());
+        var excludeLeftNumberModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_LEFT.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_LEFT_STEP.get());
         var excludeLeftSpinner = new JSpinner(excludeLeftNumberModel);
-        excludeLeftSpinner.setEnabled(EXCLUDE_BORDERS.get());
+        excludeLeftSpinner.setEnabled(RegionExclusion.EXCLUDE_BORDERS.get());
         excludeLeftSpinner.setFont(p11);
         excludeLeftSpinner.setEditor(new JSpinner.NumberEditor(excludeLeftSpinner, "########0"));
         excludeLeftSpinner.setToolTipText("<html>The number of pixels from the left border to exclude.</html>");
-        excludeLeftSpinner.addChangeListener(_ -> BORDER_EXCLUSION_LEFT.set((Integer) excludeLeftSpinner.getValue()));
+        excludeLeftSpinner.addChangeListener(_ -> RegionExclusion.BORDER_EXCLUSION_LEFT.set((Integer) excludeLeftSpinner.getValue()));
         excludeLeftSpinner.addMouseWheelListener(e -> {
-            var newValue = (Integer) excludeLeftSpinner.getValue() - e.getWheelRotation() * BORDER_EXCLUSION_LEFT_STEP.get();
+            var newValue = (Integer) excludeLeftSpinner.getValue() - e.getWheelRotation() * RegionExclusion.BORDER_EXCLUSION_LEFT_STEP.get();
             if (newValue < 0) newValue = 0;
             excludeLeftSpinner.setValue(newValue);
         });
 
         var excludeLeftPopup = new JPopupMenu();
         var excludeLeftStepPanel = new JPanel();
-        var excludeLeftStepModel = new SpinnerNumberModel(BORDER_EXCLUSION_LEFT_STEP.get(), 0, null, 1);
+        var excludeLeftStepModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_LEFT_STEP.get(), 0, null, 1);
         var excludeLeftStepSpinner = new JSpinner(excludeLeftStepModel);
-        excludeLeftStepSpinner.setValue(BORDER_EXCLUSION_LEFT_STEP.get());
+        excludeLeftStepSpinner.setValue(RegionExclusion.BORDER_EXCLUSION_LEFT_STEP.get());
         excludeLeftStepSpinner.addChangeListener(_ -> {
             var value = (int) excludeLeftStepSpinner.getValue();
-            BORDER_EXCLUSION_LEFT_STEP.set(value);
-            excludeLeftSpinner.setModel(new SpinnerNumberModel(BORDER_EXCLUSION_LEFT.get(), 0, null, BORDER_EXCLUSION_LEFT_STEP.get()));
+            RegionExclusion.BORDER_EXCLUSION_LEFT_STEP.set(value);
+            excludeLeftSpinner.setModel(new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_LEFT.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_LEFT_STEP.get()));
             excludeLeftSpinner.setEditor(new JSpinner.NumberEditor(excludeLeftSpinner, "########0"));
         });
 
@@ -916,28 +906,28 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var excludeTopTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Top", TitledBorder.CENTER, TitledBorder.TOP, p11);
         excludeTopPanel.setBorder(excludeTopTitle);
 
-        var excludeTopNumberModel = new SpinnerNumberModel(BORDER_EXCLUSION_TOP.get(), 0, null, BORDER_EXCLUSION_TOP_STEP.get());
+        var excludeTopNumberModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_TOP.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_TOP_STEP.get());
         var excludeTopSpinner = new JSpinner(excludeTopNumberModel);
-        excludeTopSpinner.setEnabled(EXCLUDE_BORDERS.get());
+        excludeTopSpinner.setEnabled(RegionExclusion.EXCLUDE_BORDERS.get());
         excludeTopSpinner.setFont(p11);
         excludeTopSpinner.setEditor(new JSpinner.NumberEditor(excludeTopSpinner, "########0"));
         excludeTopSpinner.setToolTipText("<html>The number of pixels from the top border to exclude.</html>");
-        excludeTopSpinner.addChangeListener(_ -> BORDER_EXCLUSION_TOP.set((Integer) excludeTopSpinner.getValue()));
+        excludeTopSpinner.addChangeListener(_ -> RegionExclusion.BORDER_EXCLUSION_TOP.set((Integer) excludeTopSpinner.getValue()));
         excludeTopSpinner.addMouseWheelListener(e -> {
-            var newValue = (Integer) excludeTopSpinner.getValue() - e.getWheelRotation() * BORDER_EXCLUSION_TOP_STEP.get();
+            var newValue = (Integer) excludeTopSpinner.getValue() - e.getWheelRotation() * RegionExclusion.BORDER_EXCLUSION_TOP_STEP.get();
             if (newValue < 0) newValue = 0;
             excludeTopSpinner.setValue(newValue);
         });
 
         var excludeTopPopup = new JPopupMenu();
         var excludeTopStepPanel = new JPanel();
-        var excludeTopStepModel = new SpinnerNumberModel(BORDER_EXCLUSION_TOP_STEP.get(), 0, null, 1);
+        var excludeTopStepModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_TOP_STEP.get(), 0, null, 1);
         var excludeTopStepSpinner = new JSpinner(excludeTopStepModel);
-        excludeTopStepSpinner.setValue(BORDER_EXCLUSION_TOP_STEP.get());
+        excludeTopStepSpinner.setValue(RegionExclusion.BORDER_EXCLUSION_TOP_STEP.get());
         excludeTopStepSpinner.addChangeListener(_ -> {
             var value = (int) excludeTopStepSpinner.getValue();
-            BORDER_EXCLUSION_TOP_STEP.set(value);
-            excludeTopSpinner.setModel(new SpinnerNumberModel(BORDER_EXCLUSION_TOP.get(), 0, null, BORDER_EXCLUSION_TOP_STEP.get()));
+            RegionExclusion.BORDER_EXCLUSION_TOP_STEP.set(value);
+            excludeTopSpinner.setModel(new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_TOP.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_TOP_STEP.get()));
             excludeTopSpinner.setEditor(new JSpinner.NumberEditor(excludeTopSpinner, "########0"));
         });
 
@@ -971,28 +961,28 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var excludeRightTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Right", TitledBorder.CENTER, TitledBorder.TOP, p11);
         excludeRightPanel.setBorder(excludeRightTitle);
 
-        var excludeRightNumberModel = new SpinnerNumberModel(BORDER_EXCLUSION_RIGHT.get(), 0, null, BORDER_EXCLUSION_RIGHT_STEP.get());
+        var excludeRightNumberModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_RIGHT.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_RIGHT_STEP.get());
         var excludeRightSpinner = new JSpinner(excludeRightNumberModel);
-        excludeRightSpinner.setEnabled(EXCLUDE_BORDERS.get());
+        excludeRightSpinner.setEnabled(RegionExclusion.EXCLUDE_BORDERS.get());
         excludeRightSpinner.setFont(p11);
         excludeRightSpinner.setEditor(new JSpinner.NumberEditor(excludeRightSpinner, "########0"));
         excludeRightSpinner.setToolTipText("<html>The number of pixels from the right border to exclude.</html>");
-        excludeRightSpinner.addChangeListener(_ -> BORDER_EXCLUSION_RIGHT.set((Integer) excludeRightSpinner.getValue()));
+        excludeRightSpinner.addChangeListener(_ -> RegionExclusion.BORDER_EXCLUSION_RIGHT.set((Integer) excludeRightSpinner.getValue()));
         excludeRightSpinner.addMouseWheelListener(e -> {
-            var newValue = (Integer) excludeRightSpinner.getValue() - e.getWheelRotation() * BORDER_EXCLUSION_RIGHT_STEP.get();
+            var newValue = (Integer) excludeRightSpinner.getValue() - e.getWheelRotation() * RegionExclusion.BORDER_EXCLUSION_RIGHT_STEP.get();
             if (newValue < 0) newValue = 0;
             excludeRightSpinner.setValue(newValue);
         });
 
         var excludeRightPopup = new JPopupMenu();
         var excludeRichStepPanel = new JPanel();
-        var excludeRightStepModel = new SpinnerNumberModel(BORDER_EXCLUSION_RIGHT_STEP.get(), 0, null, 1);
+        var excludeRightStepModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_RIGHT_STEP.get(), 0, null, 1);
         var excludeRightStepSpinner = new JSpinner(excludeRightStepModel);
-        excludeRightStepSpinner.setValue(BORDER_EXCLUSION_RIGHT_STEP.get());
+        excludeRightStepSpinner.setValue(RegionExclusion.BORDER_EXCLUSION_RIGHT_STEP.get());
         excludeRightStepSpinner.addChangeListener(_ -> {
             var value = (int) excludeRightStepSpinner.getValue();
-            BORDER_EXCLUSION_RIGHT_STEP.set(value);
-            excludeRightSpinner.setModel(new SpinnerNumberModel(BORDER_EXCLUSION_RIGHT.get(), 0, null, BORDER_EXCLUSION_RIGHT_STEP.get()));
+            RegionExclusion.BORDER_EXCLUSION_RIGHT_STEP.set(value);
+            excludeRightSpinner.setModel(new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_RIGHT.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_RIGHT_STEP.get()));
             excludeRightSpinner.setEditor(new JSpinner.NumberEditor(excludeRightSpinner, "########0"));
         });
 
@@ -1033,28 +1023,28 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var excludeBottomTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Bottom", TitledBorder.CENTER, TitledBorder.TOP, p11);
         excludeBottomPanel.setBorder(excludeBottomTitle);
 
-        var excludeBottomNumberModel = new SpinnerNumberModel(BORDER_EXCLUSION_BOTTOM.get(), 0, null, BORDER_EXCLUSION_BOTTOM_STEP.get());
+        var excludeBottomNumberModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_BOTTOM.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_BOTTOM_STEP.get());
         var excludeBottomSpinner = new JSpinner(excludeBottomNumberModel);
-        excludeBottomSpinner.setEnabled(EXCLUDE_BORDERS.get());
+        excludeBottomSpinner.setEnabled(RegionExclusion.EXCLUDE_BORDERS.get());
         excludeBottomSpinner.setFont(p11);
         excludeBottomSpinner.setEditor(new JSpinner.NumberEditor(excludeBottomSpinner, "########0"));
         excludeBottomSpinner.setToolTipText("<html>The number of pixels from the bottom border to exclude.</html>");
-        excludeBottomSpinner.addChangeListener(_ -> BORDER_EXCLUSION_BOTTOM.set((Integer) excludeBottomSpinner.getValue()));
+        excludeBottomSpinner.addChangeListener(_ -> RegionExclusion.BORDER_EXCLUSION_BOTTOM.set((Integer) excludeBottomSpinner.getValue()));
         excludeBottomSpinner.addMouseWheelListener(e -> {
-            var newValue = (Integer) excludeBottomSpinner.getValue() - e.getWheelRotation() * BORDER_EXCLUSION_BOTTOM_STEP.get();
+            var newValue = (Integer) excludeBottomSpinner.getValue() - e.getWheelRotation() * RegionExclusion.BORDER_EXCLUSION_BOTTOM_STEP.get();
             if (newValue < 0) newValue = 0;
             excludeBottomSpinner.setValue(newValue);
         });
 
         var excludeBottomPopup = new JPopupMenu();
         var excludeBottomStepPanel = new JPanel();
-        var excludeBottomStepModel = new SpinnerNumberModel(BORDER_EXCLUSION_BOTTOM_STEP.get(), 0, null, 1);
+        var excludeBottomStepModel = new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_BOTTOM_STEP.get(), 0, null, 1);
         var excludeBottomStepSpinner = new JSpinner(excludeBottomStepModel);
-        excludeBottomStepSpinner.setValue(BORDER_EXCLUSION_BOTTOM_STEP.get());
+        excludeBottomStepSpinner.setValue(RegionExclusion.BORDER_EXCLUSION_BOTTOM_STEP.get());
         excludeBottomStepSpinner.addChangeListener(_ -> {
             var value = (int) excludeBottomStepSpinner.getValue();
-            BORDER_EXCLUSION_BOTTOM_STEP.set(value);
-            excludeBottomSpinner.setModel(new SpinnerNumberModel(BORDER_EXCLUSION_BOTTOM.get(), 0, null, BORDER_EXCLUSION_BOTTOM_STEP.get()));
+            RegionExclusion.BORDER_EXCLUSION_BOTTOM_STEP.set(value);
+            excludeBottomSpinner.setModel(new SpinnerNumberModel(RegionExclusion.BORDER_EXCLUSION_BOTTOM.get(), 0, null, RegionExclusion.BORDER_EXCLUSION_BOTTOM_STEP.get()));
             excludeBottomSpinner.setEditor(new JSpinner.NumberEditor(excludeBottomSpinner, "########0"));
         });
 

@@ -38,6 +38,7 @@ import ij.gui.Roi;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import util.prefs.RegionExclusion;
 
 
 /**
@@ -968,10 +969,10 @@ public class Astrometry { //implements KeyListener
         ImageProcessor ip = imp.getProcessor();
         if (dirOffset == null) makeDirectionOffsets(ip);
         Rectangle roi = ip.getRoi();
-        if (AstrometrySetup.EXCLUDE_BORDERS.get()) {
-            roi.width -= (AstrometrySetup.BORDER_EXCLUSION_LEFT.get() + AstrometrySetup.BORDER_EXCLUSION_RIGHT.get());
-            roi.height -= (AstrometrySetup.BORDER_EXCLUSION_TOP.get() + AstrometrySetup.BORDER_EXCLUSION_BOTTOM.get());
-            roi.translate(AstrometrySetup.BORDER_EXCLUSION_LEFT.get(), AstrometrySetup.BORDER_EXCLUSION_TOP.get());
+        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+            roi.width -= (RegionExclusion.BORDER_EXCLUSION_LEFT.get() + RegionExclusion.BORDER_EXCLUSION_RIGHT.get());
+            roi.height -= (RegionExclusion.BORDER_EXCLUSION_TOP.get() + RegionExclusion.BORDER_EXCLUSION_BOTTOM.get());
+            roi.translate(RegionExclusion.BORDER_EXCLUSION_LEFT.get(), RegionExclusion.BORDER_EXCLUSION_TOP.get());
         }
         ip.setRoi(roi);
         byte[] mask = ip.getMaskArray();

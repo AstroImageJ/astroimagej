@@ -640,7 +640,7 @@ public class AstroCanvas extends OverlayCanvas {
         OverlayCanvas oc = getOverlayCanvas(imp);
         if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
 
-        if (RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get()) {
+        if (RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get() && RegionExclusion.EXCLUDE_BORDERS.get()) {
             drawExcludedRegions((Graphics2D) drawingGraphics);
         }
         

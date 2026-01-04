@@ -1,9 +1,8 @@
 package util.prefs;
 
+import java.awt.GridBagConstraints;
 import java.awt.Rectangle;
 import java.util.List;
-
-import javax.swing.Box;
 
 import ij.ImagePlus;
 import ij.astro.gui.GenericSwingDialog;
@@ -37,17 +36,19 @@ public class RegionExclusion {
 
         gd.addLineSeparator();
 
-        gd.addBoundedNumericField("Left", BOUNDS, BORDER_EXCLUSION_LEFT_STEP.get(), 4, "px", BORDER_EXCLUSION_LEFT);
-        gd.addToSameRow();
-        gd.addBoundedNumericField("Top", BOUNDS, BORDER_EXCLUSION_TOP_STEP.get(), 4, "px", BORDER_EXCLUSION_TOP);
-        gd.addToSameRow();
-        gd.addBoundedNumericField("Right", BOUNDS, BORDER_EXCLUSION_RIGHT_STEP.get(), 4, "px", BORDER_EXCLUSION_RIGHT);
+        gd.setOverridePosition(true);
+        gd.setNewPosition(GridBagConstraints.CENTER);
+        gd.addBoundedNumericField("Top", BOUNDS, BORDER_EXCLUSION_TOP_STEP.get(), 7, "px", BORDER_EXCLUSION_TOP);
+        gd.setOverridePosition(false);
 
-        gd.addGenericComponent(Box.createHorizontalStrut(0));
+        gd.addBoundedNumericField("Left", BOUNDS, BORDER_EXCLUSION_LEFT_STEP.get(), 7, "px", BORDER_EXCLUSION_LEFT);
         gd.addToSameRow();
-        gd.addBoundedNumericField("Bottom", BOUNDS, BORDER_EXCLUSION_BOTTOM_STEP.get(), 4, "px", BORDER_EXCLUSION_BOTTOM);
-        gd.addToSameRow();
-        gd.addGenericComponent(Box.createHorizontalStrut(0));
+        gd.addBoundedNumericField("Right", BOUNDS, BORDER_EXCLUSION_RIGHT_STEP.get(), 7, "px", BORDER_EXCLUSION_RIGHT);
+
+        gd.setOverridePosition(true);
+        gd.setNewPosition(GridBagConstraints.CENTER);
+        gd.setWidth(2);
+        gd.addBoundedNumericField("Bottom", BOUNDS, BORDER_EXCLUSION_BOTTOM_STEP.get(), 7, "px", BORDER_EXCLUSION_BOTTOM);
 
         gd.centerDialog(true);
         gd.showDialog();

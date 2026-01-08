@@ -10,12 +10,12 @@ import ij.astro.io.prefs.Property;
 import ij.process.ImageProcessor;
 
 public class RegionExclusion {
-    public static final Property<Boolean> DISPLAY_EXCLUDED_BORDERS = new Property<>(true, RegionExclusion.class);
+    public static final Property<Boolean> DISPLAY_EXCLUDED_BORDERS = new Property<>(false, RegionExclusion.class);
     public static final Property<Boolean> EXCLUDE_BORDERS = new Property<>(false, RegionExclusion.class);
-    public static final Property<Integer> BORDER_EXCLUSION_LEFT = new Property<>(10, RegionExclusion.class);
-    public static final Property<Integer> BORDER_EXCLUSION_RIGHT = new Property<>(10, RegionExclusion.class);
-    public static final Property<Integer> BORDER_EXCLUSION_TOP = new Property<>(10, RegionExclusion.class);
-    public static final Property<Integer> BORDER_EXCLUSION_BOTTOM = new Property<>(10, RegionExclusion.class);
+    public static final Property<Integer> BORDER_EXCLUSION_LEFT = new Property<>(0, RegionExclusion.class);
+    public static final Property<Integer> BORDER_EXCLUSION_RIGHT = new Property<>(0, RegionExclusion.class);
+    public static final Property<Integer> BORDER_EXCLUSION_TOP = new Property<>(0, RegionExclusion.class);
+    public static final Property<Integer> BORDER_EXCLUSION_BOTTOM = new Property<>(0, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_LEFT_STEP = new Property<>(5, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_RIGHT_STEP = new Property<>(5, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_TOP_STEP = new Property<>(5, RegionExclusion.class);

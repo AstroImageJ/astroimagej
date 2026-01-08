@@ -669,22 +669,38 @@ public class AstroCanvas extends OverlayCanvas {
 
         // Draw left region
         if (left > 0) {
-            g2.fillRect(screenX(0), screenY(0), screenX(left) - screenX(0), screenY(imp.getHeight()) - screenY(0));
+            var x1 = screenX(0);
+            var x2 = screenX(left);
+            var y1 = screenY(0);
+            var y2 = screenY(imp.getHeight());
+            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
         }
 
         // Draw right region
         if (right > 0) {
-            g2.fillRect(screenX(imp.getWidth() - right), screenY(0), screenX(imp.getWidth()) - screenX(imp.getWidth() - right), screenY(imp.getHeight()) - screenY(0));
+            var x1 = screenX(imp.getWidth() - right);
+            var x2 = screenX(imp.getWidth());
+            var y1 = screenY(0);
+            var y2 = screenY(imp.getHeight());
+            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
         }
 
         // Draw top region
         if (top > 0) {
-            g2.fillRect(screenX(left), screenY(0), screenX(imp.getWidth() - right) - screenX(left), screenY(top) - screenY(0));
+            var x1 = screenX(left);
+            var x2 = screenX(imp.getWidth() - right);
+            var y1 = screenY(0);
+            var y2 = screenY(top);
+            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
         }
 
         // Draw bottom region
         if (bottom > 0) {
-            g2.fillRect(screenX(left), screenY(imp.getHeight() - bottom), screenX(imp.getWidth() - right) - screenX(left), screenY(imp.getHeight()) - screenY(imp.getHeight() - bottom));
+            var x1 = screenX(left);
+            var x2 = screenX(imp.getWidth() - right);
+            var y1 = screenY(imp.getHeight() - bottom);
+            var y2 = screenY(imp.getHeight());
+            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
         }
 
         g2.setComposite(comp);

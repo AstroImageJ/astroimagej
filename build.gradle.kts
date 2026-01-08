@@ -344,7 +344,7 @@ fun readConfigFile(): List<String> {
 
     devCfg.asText.get().lineSequence().forEach { line ->
         if (line.startsWith("#")) return@forEach
-        line.split(" ").forEach { arg -> args.add(arg) }
+        line.split(" ").filter { it.isNotBlank() }.forEach { arg -> args.add(arg) }
     }
     args.add("-Daij.dev") // Always show full version metadata when running via dev
 

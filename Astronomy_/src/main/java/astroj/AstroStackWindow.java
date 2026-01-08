@@ -4059,10 +4059,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             if (OverlayCanvas.hasOverlayCanvas(imp)) {
                 OverlayCanvas oc = OverlayCanvas.getOverlayCanvas(imp);
                 Roi[] rois = oc.getRois();
-                for (int i = 0; i < rois.length; i++) {
-                    if (rois[i] instanceof astroj.ApertureRoi) {
-                        astroj.ApertureRoi aroi = (astroj.ApertureRoi) rois[i];
-                        aroi.setShowSky(showSkyOverlay);
+                if (rois != null) {
+                    for (Roi points : rois) {
+                        if (points instanceof ApertureRoi aroi) {
+                            aroi.setShowSky(showSkyOverlay);
+                        }
                     }
                 }
             }

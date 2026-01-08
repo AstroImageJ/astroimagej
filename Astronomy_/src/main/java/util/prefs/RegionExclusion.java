@@ -50,6 +50,11 @@ public class RegionExclusion {
         gd.setWidth(2);
         gd.addBoundedNumericField("Bottom", BOUNDS, BORDER_EXCLUSION_BOTTOM_STEP.get(), 7, "px", BORDER_EXCLUSION_BOTTOM);
 
+        gd.setOverridePosition(false);
+        gd.addMessage("""
+                Options are in reference to IJ coordinates, eg. an unflipped image.
+                See X/Y axis display in top left of stack window.""");
+
         gd.centerDialog(true);
         gd.showDialog();
     }

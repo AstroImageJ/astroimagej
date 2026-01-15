@@ -6753,6 +6753,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private void restrictWcsRegion() {
+        switch (REGION_EXLUSION_MODE.get()) {
+            case NONE -> {
+                RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(false);
+                ac.setWcsShape(null);
+                return;
+            }
+            case MANUAL -> {
+                RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+                ac.setWcsShape(null);
+                return;
+            }
+            case WCS, COMMON -> {
+                RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+            }
+        }
         var region = WcsShape.createCommonRegion(imp, firstSlice, lastSlice);
         IO.println("done");
         if (imp.getCanvas() instanceof AstroCanvas a) {

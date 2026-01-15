@@ -22,6 +22,8 @@ import Header from "../components/Header.astro";
                 <div id="stacked-bar" class="chart-wrapper"></div>
 
                 <h2 id="downloads-over-time-h">Downloads Over Time</h2>
+                <div id="downloads-over-time-controls" class="controls-wrapper">
+                </div>
                 <div id="downloads-over-time" class="chart-wrapper"></div>
 
                 <h2 id="global-version-chart-h">Total Downloads per Version</h2>
@@ -145,6 +147,27 @@ import Header from "../components/Header.astro";
                 margin-bottom: 2rem;
                 padding: 1rem;
                 border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .controls-wrapper {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                margin-bottom: 1rem;
+                padding: 0.5rem;
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 8px;
+                font-size: 0.85rem;
+            }
+            .control-item {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                color: var(--muted);
+                cursor: pointer;
+                user-select: none;
+            }
+            .control-item input {
+                cursor: pointer;
             }
             .charts-grid {
                 display: grid;
@@ -674,6 +697,9 @@ import Header from "../components/Header.astro";
                 const container = document.getElementById(
                     "downloads-over-time",
                 );
+                const controlsContainer = document.getElementById(
+                    "downloads-over-time-controls",
+                );
                 if (!container) return;
 
                 const snapshots = getSnapshots();
@@ -778,6 +804,47 @@ import Header from "../components/Header.astro";
                     },
                 );
 
+                const downloadCurveDisplayLocalStorage = "downloadsOverTimeVisibilityV1";
+                // Track visibility state
+                const columnVisibility = JSON.parse(
+                    localStorage.getItem(downloadCurveDisplayLocalStorage) || "[]",
+                );
+
+                if (controlsContainer) {
+                    controlsContainer.innerHTML = "";
+                    for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
+                        const label = dataTable.getColumnLabel(i);
+                        const item = document.createElement("label");
+                        item.className = "control-item";
+
+                        const checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkbox.checked =
+                            columnVisibility.length > 0
+                                ? columnVisibility[i]
+                                : true;
+
+                        checkbox.addEventListener("change", () => {
+                            updateView();
+
+                            const newState: boolean[] = [];
+                            controlsContainer
+                                .querySelectorAll("input")
+                                .forEach((cb, idx) => {
+                                    newState[idx + 1] = cb.checked;
+                                });
+                            localStorage.setItem(
+                                downloadCurveDisplayLocalStorage,
+                                JSON.stringify(newState),
+                            );
+                        });
+
+                        item.appendChild(checkbox);
+                        item.appendChild(document.createTextNode(label));
+                        controlsContainer.appendChild(item);
+                    }
+                }
+
                 const options = {
                     ...CHART_OPTIONS,
                     title: "Downloads Over Time",
@@ -824,18 +891,35 @@ import Header from "../components/Header.astro";
                     focusTarget: "category", // Focus all datum in a row
                 };
 
-                // Draw
                 const chart = new google.visualization.LineChart(container);
-                chart.draw(dataTable, options);
+
+                function updateView() {
+                    const view = new google.visualization.DataView(dataTable);
+                    const visibleColumns = [0]; // Always show date
+                    const inputs = controlsContainer?.querySelectorAll("input");
+                    inputs?.forEach((input, index) => {
+                        if (input.checked) {
+                            visibleColumns.push(index + 1);
+                        }
+                    });
+
+                    if (visibleColumns.length > 1) {
+                        view.setColumns(visibleColumns);
+                        chart.draw(view, options);
+                    } else {
+                        view.setColumns([0]);
+                        chart.draw(view, options);
+                    }
+                }
+
+                // Initial draw
+                updateView();
 
                 // Optional: make chart redraw on resize so it stays crisp
                 let redrawTimeout: NodeJS.Timeout | null | undefined = null;
                 window.addEventListener("resize", () => {
                     if (redrawTimeout) clearTimeout(redrawTimeout);
-                    redrawTimeout = setTimeout(
-                        () => chart.draw(dataTable, options),
-                        200,
-                    );
+                    redrawTimeout = setTimeout(() => updateView(), 200);
                 });
             }
         </script>

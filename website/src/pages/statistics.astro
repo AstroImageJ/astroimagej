@@ -732,7 +732,7 @@ import Header from "../components/Header.astro";
                     );
 
                 // Aggregate totals across snapshots to pick top versions/targets
-                const versionSums: Record<string, number> = {};
+                const versionSums: Record<string, number[]> = {};
                 const targetSums: Record<string, number> = {};
 
                 snaps.forEach(
@@ -744,9 +744,8 @@ import Header from "../components/Header.astro";
                             | ArrayLike<unknown>
                             | { [s: string]: unknown };
                     }) => {
-                        Object.entries(s.totalsByVersion).forEach(([v, c]) => {
-                            versionSums[v] =
-                                (versionSums[v] || 0) + Number(c || 0);
+                        Object.entries(s.totalsByVersion).forEach(([v]) => {
+                            versionSums[v] = v.split('.').map(s => Number(s));
                         });
                         Object.entries(s.totalsByTarget).forEach(([t, c]) => {
                             targetSums[t] =
@@ -755,8 +754,19 @@ import Header from "../components/Header.astro";
                     },
                 );
 
+                function compareVersions([, aParts]: [string, number[]],
+                                         [, bParts]: [string, number[]]) {
+                  const len = Math.max(aParts.length, bParts.length);
+                  for (let i = 0; i < len; i++) {
+                    const aVal = aParts[i] || 0;
+                    const bVal = bParts[i] || 0;
+                    if (aVal !== bVal) return bVal - aVal;
+                  }
+                  return 0;
+                }
+
                 const topVersions = Object.entries(versionSums)
-                    .sort((a, b) => b[1] - a[1])
+                    .sort(compareVersions)
                     .slice(0, TOP_N_VERSIONS)
                     .map((e) => e[0]);
 

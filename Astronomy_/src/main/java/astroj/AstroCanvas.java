@@ -1194,7 +1194,9 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
     public void setWcsShape(WcsShape wcsShape) {
-        RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+        if (wcsShape != null) {
+            RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+        }
         this.wcsShape = wcsShape;
     }
 } // AstroCanvas class

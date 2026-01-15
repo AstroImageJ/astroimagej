@@ -4,7 +4,14 @@ import java.awt.GridBagConstraints;
 import java.awt.Rectangle;
 import java.util.List;
 
+import javax.swing.Box;
+import javax.swing.JButton;
+
+import Astronomy.shapes.WcsShape;
+import astroj.AstroCanvas;
+import ij.IJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.process.ImageProcessor;
@@ -54,6 +61,46 @@ public class RegionExclusion {
         gd.addMessage("""
                 Options are in reference to IJ coordinates, eg. an unflipped image.
                 See X/Y axis display in top left of stack window.""");
+
+        gd.addSingleSpaceLineSeparator();
+
+        var b = Box.createHorizontalBox();
+        var generate = new JButton("Generate Common WCS Region");
+        var clear = new JButton("Clear Common WCS Region");
+
+        generate.addActionListener(_ -> {
+            var imp = WindowManager.getCurrentImage();
+            if (imp == null) {
+                IJ.error("No image found!");
+                return;
+            }
+
+            var region = WcsShape.createCommonRegion(imp);
+
+            if (imp.getCanvas() instanceof AstroCanvas ac) {
+                ac.setPerformDraw(true);
+                ac.setWcsShape(region);
+                ac.repaint();
+            }
+        });
+
+        clear.addActionListener(_ -> {
+            var imp = WindowManager.getCurrentImage();
+            if (imp == null) {
+                IJ.error("No image found!");
+                return;
+            }
+
+            if (imp.getCanvas() instanceof AstroCanvas ac) {
+                ac.setPerformDraw(true);
+                ac.setWcsShape(null);
+                ac.repaint();
+            }
+        });
+
+        b.add(generate);
+        b.add(clear);
+        gd.addGenericComponent(b);
 
         gd.centerDialog(true);
         gd.showDialog();

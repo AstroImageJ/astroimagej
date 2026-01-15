@@ -4328,6 +4328,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     buttonAstrometry.setToolTipText("Stop plate solve process");
                     buttonAstrometry.setSelected(true);
                     astrometry = new Astrometry();
+                    ac.setWcsShape(null);
                     status = astrometry.solve(imp, showSetup, null, useSexagesimal, false, false, null, null);
                     //astrometry.solve(impIn, runSetup)
                     astrometryMenuItem.setLabel("Plate solve using Astrometry.net");

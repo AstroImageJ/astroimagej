@@ -1,7 +1,9 @@
 package astroj;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.geom.Area;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -75,6 +77,21 @@ public class StarFinder {
     }
 
     /**
+     * @param imp            the image to run on
+     * @param thresholdLower the threshold below which pixel values are skipped
+     * @param thresholdUpper the threshold above which pixel values are skipped
+     * @param border         the number of pixels from the edge to ignore
+     * @param gaussRadius
+     * @param bounds
+     * @return
+     */
+    // Does not work on a ROI, but the whole image
+    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper,
+                                                   int border, double gaussRadius, Rectangle bounds) {
+        return findLocalMaxima(imp, thresholdLower, thresholdUpper, border, gaussRadius, bounds, null);
+    }
+
+    /**
      * @param imp the image to run on
      * @param thresholdLower the threshold below which pixel values are skipped
      * @param thresholdUpper the threshold above which pixel values are skipped
@@ -83,7 +100,8 @@ public class StarFinder {
      */
     // Does not work on a ROI, but the whole image
     //todo make astrometry use this
-    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper, int border, double gaussRadius, Rectangle bounds) {
+    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper,
+                                                   int border, double gaussRadius, Rectangle bounds, Area restriction) {
         var imp2 = (new Duplicator()).crop(imp);
 
         if (gaussRadius != 1) IJ.run(imp2, "Median...", "radius=" + gaussRadius);
@@ -100,6 +118,12 @@ public class StarFinder {
             bounds = ip.getRoi();
         }
 
+        if (restriction != null) {
+            var s = new BasicStroke(2 * border, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER);
+            var stroked = new Area(s.createStrokedShape(restriction));
+            restriction.subtract(stroked);
+        }
+
         for (int x = bounds.x + border; x < (bounds.x + bounds.width) - border; x++) {
             for (int y = bounds.y + border; y < (bounds.y + bounds.height) - border; y++) {
                 var v = ip.getValue(x, y);
@@ -107,7 +131,14 @@ public class StarFinder {
                 if (doLowerThresholdCheck && v < thresholdLower) continue;
                 if (doUpperThresholdCheck && v > thresholdUpper) continue;
                 if (v == ip.getMax()) coordinates.add(new CoordinateMaxima(v, x, y));
-                boolean isInner = (y != bounds.y && y != (bounds.y + bounds.height) - 1) && (x != bounds.x && x != (bounds.x + bounds.width) - 1);
+                var inRestriction = restriction == null || restriction.contains(x, y, 1, 1);
+                boolean isInner = (y != bounds.y && y != (bounds.y + bounds.height) - 1) &&
+                        (x != bounds.x && x != (bounds.x + bounds.width) - 1) &&
+                        (inRestriction);
+
+                if (!inRestriction) {
+                    continue;
+                }
 
                 var isMax = true;
                 for (int d = 0; d < 8; d++) { // Compare with the 8 neighbor pixels

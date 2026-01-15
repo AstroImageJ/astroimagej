@@ -73,6 +73,7 @@ import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformers;
+import Astronomy.shapes.WcsShape;
 import astroj.AnnotateRoi;
 import astroj.Aperture;
 import astroj.ApertureRoi;
@@ -415,7 +416,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private static final Property<Boolean> IMP_SHAPED_AP_ANGLE_LOCKED = SHAPED_AP_ANGLE_LOCKED.getOrCreateVariant("IMP");
     private static final Property<Boolean> IMP_SHAPED_VARIATION_LOCKED = SHAPED_VARIATION_LOCKED.getOrCreateVariant("IMP");
     private static final Property<Double> IMP_SHAPED_AP_ANGLE = SHAPED_AP_ANGLE.getOrCreateVariant("IMP");
-    private static final Property<BorderRegionExclusion> REGION_EXLUSION_MODE = new Property<>(BorderRegionExclusion.NONE, MultiAperture_.class);
+    private static final Property<BorderRegionExclusion> REGION_EXLUSION_MODE = new Property<>(BorderRegionExclusion.COMMON, MultiAperture_.class);
 
     public MultiAperture_() {
         freeformPixelApertureHandler.setExitCallback(() -> {
@@ -2459,7 +2460,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         //do nothing unless automode or left mouse is clicked with no modifier keys pressed except "shift" or "alt"
         if (autoMode || simulatedLeftClick || (!mouseDrag &&
-                                                       (modis & InputEvent.BUTTON1_MASK) != 0 && (!e.isControlDown() || e.isShiftDown()) && !e.isMetaDown())) {
+                (modis & InputEvent.BUTTON1_MASK) != 0 && (!e.isControlDown() || e.isShiftDown()) && !e.isMetaDown())) {
             if (!autoMode && (apLoading.get().isPrevious() || previous) && !firstClick && !allStoredAperturesPlaced)  //ignore clicks while placing stored apertures
             {
                 return;
@@ -2856,13 +2857,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
 
         var searchRegion = switch (REGION_EXLUSION_MODE.get()) {
-            case NONE -> null;
-            case MANUAL -> RegionExclusion.restrict(imp);
-            case WCS -> throw new IllegalArgumentException("WCS region exclusion not supported");
-            case COMMON -> throw new IllegalArgumentException("Common region exclusion not supported");
+            case NONE, WCS -> null;
+            case MANUAL, COMMON -> RegionExclusion.restrict(imp);
         };
 
-        var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius, searchRegion);
+        var wcsRegion = switch (REGION_EXLUSION_MODE.get()) {
+            case NONE, MANUAL -> null;
+            case WCS, COMMON -> {
+                var wcsShape = WcsShape.createCommonRegion(imp, firstSlice, lastSlice);
+                ac.setWcsShape(wcsShape);
+                ac.repaint();
+                yield wcsShape.getArea(wcs);
+            }
+        };
+
+        var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius, searchRegion, wcsRegion);
 
         if (maxima.coordinateMaximas().size() > 25000) {
             var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
@@ -6497,6 +6506,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var manualRegionExclusion = new JButton("Edit Border Regions");
             gd.addGenericComponent(manualRegionExclusion);
 
+            var restrict = new JButton("Show Now");
+            gd.addGenericComponent(restrict);
+
             regExclusion.addItemListener(_ -> {
                 var needsManual = regExclusion.getSelectedItem() != BorderRegionExclusion.NONE &&
                         regExclusion.getSelectedItem() != BorderRegionExclusion.WCS;
@@ -6504,6 +6516,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
             });
             manualRegionExclusion.addActionListener(_ -> RegionExclusion.editSettings());
+
+            restrict.addActionListener(_ -> restrictWcsRegion());
 
             if (suggestCompStars) {
                 var needsManual = regExclusion.getSelectedItem() != BorderRegionExclusion.NONE &&
@@ -6736,6 +6750,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             }
         });
+    }
+
+    private void restrictWcsRegion() {
+        var region = WcsShape.createCommonRegion(imp, firstSlice, lastSlice);
+        IO.println("done");
+        if (imp.getCanvas() instanceof AstroCanvas a) {
+            a.setPerformDraw(true);
+        }
+        imp.setSlice(firstSlice);
+        asw.updateWCS();
+        imp.unlock();
+
+        ac.setWcsShape(region);
+        ac.repaint();
     }
 
     private void toggleComponents(Component[] components, int offset, boolean toggle) {
@@ -7204,9 +7232,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     enum BorderRegionExclusion implements NState<BorderRegionExclusion>, ToolTipProvider {
         NONE("Use full image", null),
         MANUAL("Exclude manually specified borders", null),
-        WCS("Limit to maximum shared WCS region of stack", "Not Implemented"),
-        COMMON("Limit to maximum shared WCS region of stack and exclude manually specified borders",
-                "Not Implemented"),
+        WCS("Limit to common WCS region of stack", """
+                <html>
+                Limits search area to the maximally sized WCS region common to all slices in the stack.
+                </html>
+                """),
+        COMMON("Limit to common WCS region of stack and exclude manually specified borders", """
+                <html>
+                Limits search area to the maximally sized WCS region common to all slices in the stack, and further \
+                exclude manually specified border regions.
+                </html>
+                """),
         ;
 
         private final String optionText, tooltip;

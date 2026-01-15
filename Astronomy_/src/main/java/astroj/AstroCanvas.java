@@ -1,6 +1,7 @@
 package astroj;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
@@ -9,11 +10,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.image.BufferStrategy;
 import java.awt.image.MemoryImageSource;
 import java.text.DecimalFormat;
@@ -21,6 +24,7 @@ import java.util.Locale;
 
 import javax.swing.SwingUtilities;
 
+import Astronomy.shapes.WcsShape;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -79,6 +83,7 @@ public class AstroCanvas extends OverlayCanvas {
     private boolean showSkyOverlay = true;
     private boolean astronomyMode;
     private WCS wcs = null;
+    private WcsShape wcsShape;
 
     //the internal states yielding proper orientation of a canvas given flipX, flipY, and rotation settings
     private boolean netRotate; // netRotate = rotate -90 degrees - other rotations are accomplished with netFlipX/Y
@@ -654,7 +659,7 @@ public class AstroCanvas extends OverlayCanvas {
         drawZoomIndicator(drawingGraphics);
         if (IJ.debugMode) showFrameRate(drawingGraphics);
     }
-    
+
     private void drawExcludedRegions(Graphics2D g2) {
         var left = RegionExclusion.BORDER_EXCLUSION_LEFT.get();
         var right = RegionExclusion.BORDER_EXCLUSION_RIGHT.get();
@@ -663,7 +668,7 @@ public class AstroCanvas extends OverlayCanvas {
 
         g2.setTransform(invCanvTrans);
 
-        g2.setColor(Color.RED);
+        g2.setColor(new Color(250, 142, 0));
         var comp = g2.getComposite();
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
 
@@ -701,6 +706,36 @@ public class AstroCanvas extends OverlayCanvas {
             var y1 = screenY(imp.getHeight() - bottom);
             var y2 = screenY(imp.getHeight());
             g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+        }
+
+        if (wcsShape != null && wcs != null) {
+            var aijTransform = new AffineTransform(canvTrans);
+            // Create transform to screenspace coordinates
+            var srcRect = getSrcRect();
+
+            var scaleTransform = AffineTransform.getScaleInstance(getMagnification(), getMagnification());
+            // Stay in IJ space so no 0.5 pixel offset to pixel center
+            var translateTransform = AffineTransform.getTranslateInstance(-srcRect.x, -srcRect.y);
+
+            aijTransform.concatenate(scaleTransform);
+            aijTransform.concatenate(translateTransform);
+
+            var commonArea = aijTransform.createTransformedShape(wcsShape.getArea(wcs));
+            var imageArea = new Area(aijTransform.createTransformedShape(new Rectangle(0, 0, imp.getWidth(), imp.getHeight())));
+            imageArea.subtract(new Area(commonArea));
+
+            g2.setColor(Color.RED);
+            g2.fill(imageArea);
+
+            // Debug draw of shrunk region for auto. comp. stars
+            if (false) {
+                g2.setColor(Color.CYAN);
+                var a = wcsShape.getArea(wcs);
+                var s = new BasicStroke(2 * (int) Math.ceil(2 * radius), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER);
+                var stroked = new Area(s.createStrokedShape(a));
+                a.subtract(stroked);
+                g2.fill(aijTransform.createTransformedShape(a));
+            }
         }
 
         g2.setComposite(comp);
@@ -1156,5 +1191,10 @@ public class AstroCanvas extends OverlayCanvas {
 
     public void setCustomPixelMode(boolean customPixelMode) {
         this.customPixelMode = customPixelMode;
+    }
+
+    public void setWcsShape(WcsShape wcsShape) {
+        RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+        this.wcsShape = wcsShape;
     }
 } // AstroCanvas class

@@ -21,6 +21,9 @@ import Header from "../components/Header.astro";
                 <h2 id="stacked-bar-h">Platform × Version Distribution</h2>
                 <div id="stacked-bar" class="chart-wrapper"></div>
 
+                <h2 id="downloads-over-time-h">Downloads Over Time</h2>
+                <div id="downloads-over-time" class="chart-wrapper"></div>
+
                 <h2 id="global-version-chart-h">Total Downloads per Version</h2>
                 <div id="global-version-chart" class="chart-wrapper"></div>
 
@@ -41,6 +44,7 @@ import Header from "../components/Header.astro";
                     <nav class="sidebar-nav">
                         <a href="#top">Overview</a>
                         <a href="#stacked-bar-h">Combined Distribution</a>
+                        <a href="#downloads-over-time-h">Time Series</a>
                         <a href="#global-version-chart-h">Total per Version</a>
                         <a href="#os-arch-container-h">By Platform</a>
                         <div
@@ -275,6 +279,15 @@ import Header from "../components/Header.astro";
                     drawPerVersionCharts(releases);
 
                     drawStackedBar(releases);
+
+                    try {
+                        saveSnapshotFromReleases(releases);
+                    } catch (e) {
+                        console.warn("Error saving snapshot:", e);
+                    }
+
+                    // Draw Downloads Over Time chart from stored snapshots
+                    drawDownloadsOverTimeChart();
                 } catch (error) {
                     console.error("Error loading statistics:", error);
                     const container =
@@ -547,6 +560,282 @@ import Header from "../components/Header.astro";
                                 : "rgba(0,0,0,0.1)",
                         },
                     },
+                });
+            }
+
+            const TOP_N_VERSIONS = 6;
+            const TOP_N_TARGETS = 6;
+
+            // localStorage key for snapshots
+            const SNAPSHOT_KEY = "downloadStatsSnapshots_v1";
+            const SNAPSHOT_MAX = 500; // cap snapshots to avoid filling storage
+            const SNAPSHOT_MIN_INTERVAL_MS = 1000 * 60 * 60 * 24; // 1 Day
+
+            function getSnapshots() {
+                try {
+                    const raw = localStorage.getItem(SNAPSHOT_KEY);
+                    if (!raw) return [];
+                    return JSON.parse(raw);
+                } catch (e) {
+                    console.warn("Failed to read snapshots:", e);
+                    return [];
+                }
+            }
+
+            function saveSnapshots(snapshots: any) {
+                try {
+                    localStorage.setItem(
+                        SNAPSHOT_KEY,
+                        JSON.stringify(snapshots),
+                    );
+                } catch (e) {
+                    console.warn("Failed to save snapshots:", e);
+                }
+            }
+
+            /**
+             * Build and save a snapshot derived from the releases used by the stacked bar.
+             * Snapshot shape:
+             *  {
+             *    ts: 1673779200000,
+             *    totalsByVersion: { "1.2.3": 1234, "1.2.4": 4321, ... },
+             *    totalsByTarget: { "linux-x64": 123, "windows-x86": 456, ... },
+             *    total: 5555
+             *  }
+             */
+            function saveSnapshotFromReleases(releases: any[]) {
+                if (!Array.isArray(releases) || releases.length === 0) return;
+
+                const totalsByVersion: Record<string, number> = {};
+                const totalsByTarget: Record<string, number> = {};
+                let total = 0;
+
+                releases.forEach((r) => {
+                    const vTotal = r.total_downloads || 0;
+                    totalsByVersion[r.name] = vTotal;
+                    total += vTotal;
+
+                    (r.assets || []).forEach(
+                        (a: { target: any; download_count: any }) => {
+                            const target = a && a.target;
+                            const count = Number(a && a.download_count) || 0;
+                            if (
+                                target &&
+                                !String(target).includes("undefined")
+                            ) {
+                                totalsByTarget[target] =
+                                    (totalsByTarget[target] || 0) + count;
+                            }
+                        },
+                    );
+                });
+
+                const snapshot = {
+                    ts: Date.now(),
+                    totalsByVersion,
+                    totalsByTarget,
+                    total,
+                };
+
+                const snaps = getSnapshots();
+
+                // If last snapshot exists and is identical (same totalsByVersion & totalsByTarget),
+                // only save if interval passed.
+                const last = snaps.length ? snaps[snaps.length - 1] : null;
+                const sameData =
+                    last &&
+                    JSON.stringify(last.totalsByVersion) ===
+                        JSON.stringify(snapshot.totalsByVersion) &&
+                    JSON.stringify(last.totalsByTarget) ===
+                        JSON.stringify(snapshot.totalsByTarget);
+
+                if (last) {
+                    const timeSinceLast = snapshot.ts - last.ts;
+                    if (sameData /*&& timeSinceLast < SNAPSHOT_MIN_INTERVAL_MS*/) {
+                        // skip duplicate rapid snapshots
+                        return;
+                    }
+                }
+
+                snaps.push(snapshot);
+
+                if (snaps.length > SNAPSHOT_MAX) {
+                    snaps.splice(0, snaps.length - SNAPSHOT_MAX);
+                }
+
+                saveSnapshots(snaps);
+            }
+
+            /**
+             * Draws the "Downloads Over Time" chart using snapshots stored in localStorage.
+             * Plots total downloads, top-N versions and top-N targets.
+             */
+            function drawDownloadsOverTimeChart() {
+                const container = document.getElementById(
+                    "downloads-over-time",
+                );
+                if (!container) return;
+
+                const snapshots = getSnapshots();
+                if (!snapshots || snapshots.length === 0) {
+                    container.innerHTML =
+                        "<p style='padding:1rem'>No stored snapshots yet.</p>";
+                    return;
+                }
+
+                // Normalize snapshots to ascending time order
+                const snaps = snapshots
+                    .map(
+                        (s: {
+                            ts: string;
+                            totalsByVersion: any;
+                            totalsByTarget: any;
+                            total: any;
+                        }) => ({
+                            ts:
+                                typeof s.ts === "string"
+                                    ? Date.parse(s.ts)
+                                    : s.ts,
+                            totalsByVersion: s.totalsByVersion || {},
+                            totalsByTarget: s.totalsByTarget || {},
+                            total: Number(s.total || 0),
+                        }),
+                    )
+                    .sort(
+                        (a: { ts: number }, b: { ts: number }) => a.ts - b.ts,
+                    );
+
+                // Aggregate totals across snapshots to pick top versions/targets
+                const versionSums: Record<string, number> = {};
+                const targetSums: Record<string, number> = {};
+
+                snaps.forEach(
+                    (s: {
+                        totalsByVersion:
+                            | ArrayLike<unknown>
+                            | { [s: string]: unknown };
+                        totalsByTarget:
+                            | ArrayLike<unknown>
+                            | { [s: string]: unknown };
+                    }) => {
+                        Object.entries(s.totalsByVersion).forEach(([v, c]) => {
+                            versionSums[v] =
+                                (versionSums[v] || 0) + Number(c || 0);
+                        });
+                        Object.entries(s.totalsByTarget).forEach(([t, c]) => {
+                            targetSums[t] =
+                                (targetSums[t] || 0) + Number(c || 0);
+                        });
+                    },
+                );
+
+                const topVersions = Object.entries(versionSums)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, TOP_N_VERSIONS)
+                    .map((e) => e[0]);
+
+                const topTargets = Object.entries(targetSums)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, TOP_N_TARGETS)
+                    .map((e) => e[0]);
+
+                // Build DataTable
+                const dataTable = new google.visualization.DataTable();
+                dataTable.addColumn("datetime", "Date");
+                dataTable.addColumn("number", "Total Downloads");
+
+                // Add columns for top versions and top targets
+                topVersions.forEach((v) =>
+                    dataTable.addColumn("number", `Version: ${v}`),
+                );
+                topTargets.forEach((t) =>
+                    dataTable.addColumn("number", `Target: ${t}`),
+                );
+
+                // Fill rows
+                snaps.forEach(
+                    (s: {
+                        ts: string | number | Date;
+                        total: any;
+                        totalsByVersion: { [x: string]: any };
+                        totalsByTarget: { [x: string]: any };
+                    }) => {
+                        const row = [];
+                        row.push(new Date(s.ts));
+                        row.push(Number(s.total || 0));
+
+                        // per-version values (for selected top versions)
+                        topVersions.forEach((v) =>
+                            row.push(Number(s.totalsByVersion[v] || 0)),
+                        );
+
+                        // per-target values (for selected top targets)
+                        topTargets.forEach((t) =>
+                            row.push(Number(s.totalsByTarget[t] || 0)),
+                        );
+
+                        dataTable.addRow(row);
+                    },
+                );
+
+                const options = {
+                    ...CHART_OPTIONS,
+                    title: "Downloads Over Time",
+                    hAxis: {
+                        ...CHART_OPTIONS.hAxis,
+                        format: "MMM dd, yyyy\nHH:mm",
+                        gridlines: {
+                            count: Math.min(10, snaps.length),
+                            color: isDarkMode()
+                                ? "rgba(255,255,255,0.1)"
+                                : "rgba(0,0,0,0.1)",
+                        },
+                        textStyle: {
+                            color: isDarkMode() ? "#9ca3af" : "#000000",
+                        },
+                        titleTextStyle: {
+                            color: isDarkMode() ? "#e5e7eb" : "#000000",
+                        },
+                    },
+                    vAxis: {
+                        ...CHART_OPTIONS.vAxis,
+                        minValue: 0,
+                        textStyle: {
+                            color: isDarkMode() ? "#9ca3af" : "#000000",
+                        },
+                        titleTextStyle: {
+                            color: isDarkMode() ? "#e5e7eb" : "#000000",
+                        },
+                        gridlines: {
+                            color: isDarkMode()
+                                ? "rgba(255,255,255,0.1)"
+                                : "rgba(0,0,0,0.1)",
+                        },
+                    },
+                    legend: {
+                        position: "right",
+                        maxLines: 20,
+                        textStyle: {
+                            color: isDarkMode() ? "#e5e7eb" : "#000000",
+                        },
+                    },
+                    series: {},
+                    interpolateNulls: true,
+                    focusTarget: "category", // Focus all datum in a row
+                };
+
+                // Draw
+                const chart = new google.visualization.LineChart(container);
+                chart.draw(dataTable, options);
+
+                // Optional: make chart redraw on resize so it stays crisp
+                let redrawTimeout: NodeJS.Timeout | null | undefined = null;
+                window.addEventListener("resize", () => {
+                    if (redrawTimeout) clearTimeout(redrawTimeout);
+                    redrawTimeout = setTimeout(
+                        () => chart.draw(dataTable, options),
+                        200,
+                    );
                 });
             }
         </script>

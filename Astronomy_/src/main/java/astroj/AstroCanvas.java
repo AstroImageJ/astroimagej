@@ -141,7 +141,7 @@ public class AstroCanvas extends OverlayCanvas {
         RegionExclusion.BORDER_EXCLUSION_BOTTOM.addListener(this, (_, _) -> updateDisplay());
         RegionExclusion.BORDER_EXCLUSION_LEFT.addListener(this, (_, _) -> updateDisplay());
         RegionExclusion.BORDER_EXCLUSION_RIGHT.addListener(this, (_, _) -> updateDisplay());
-        RegionExclusion.DISPLAY_EXCLUDED_BORDERS.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.DISPLAY_EXCLUDED_REGIONS.addListener(this, (_, _) -> updateDisplay());
     }
 
     private void updateDisplay() {
@@ -645,7 +645,7 @@ public class AstroCanvas extends OverlayCanvas {
         OverlayCanvas oc = getOverlayCanvas(imp);
         if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
 
-        if (RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get()) {
+        if (RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get()) {
             drawExcludedRegions((Graphics2D) drawingGraphics);
         }
         
@@ -661,51 +661,53 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
     private void drawExcludedRegions(Graphics2D g2) {
-        var left = RegionExclusion.BORDER_EXCLUSION_LEFT.get();
-        var right = RegionExclusion.BORDER_EXCLUSION_RIGHT.get();
-        var top = RegionExclusion.BORDER_EXCLUSION_TOP.get();
-        var bottom = RegionExclusion.BORDER_EXCLUSION_BOTTOM.get();
-
         g2.setTransform(invCanvTrans);
 
         g2.setColor(new Color(250, 142, 0));
         var comp = g2.getComposite();
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
 
-        // Draw left region
-        if (left > 0) {
-            var x1 = screenX(0);
-            var x2 = screenX(left);
-            var y1 = screenY(0);
-            var y2 = screenY(imp.getHeight());
-            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
-        }
+        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+            var left = RegionExclusion.BORDER_EXCLUSION_LEFT.get();
+            var right = RegionExclusion.BORDER_EXCLUSION_RIGHT.get();
+            var top = RegionExclusion.BORDER_EXCLUSION_TOP.get();
+            var bottom = RegionExclusion.BORDER_EXCLUSION_BOTTOM.get();
 
-        // Draw right region
-        if (right > 0) {
-            var x1 = screenX(imp.getWidth() - right);
-            var x2 = screenX(imp.getWidth());
-            var y1 = screenY(0);
-            var y2 = screenY(imp.getHeight());
-            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
-        }
+            // Draw left region
+            if (left > 0) {
+                var x1 = screenX(0);
+                var x2 = screenX(left);
+                var y1 = screenY(0);
+                var y2 = screenY(imp.getHeight());
+                g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+            }
 
-        // Draw top region
-        if (top > 0) {
-            var x1 = screenX(left);
-            var x2 = screenX(imp.getWidth() - right);
-            var y1 = screenY(0);
-            var y2 = screenY(top);
-            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
-        }
+            // Draw right region
+            if (right > 0) {
+                var x1 = screenX(imp.getWidth() - right);
+                var x2 = screenX(imp.getWidth());
+                var y1 = screenY(0);
+                var y2 = screenY(imp.getHeight());
+                g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+            }
 
-        // Draw bottom region
-        if (bottom > 0) {
-            var x1 = screenX(left);
-            var x2 = screenX(imp.getWidth() - right);
-            var y1 = screenY(imp.getHeight() - bottom);
-            var y2 = screenY(imp.getHeight());
-            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+            // Draw top region
+            if (top > 0) {
+                var x1 = screenX(left);
+                var x2 = screenX(imp.getWidth() - right);
+                var y1 = screenY(0);
+                var y2 = screenY(top);
+                g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+            }
+
+            // Draw bottom region
+            if (bottom > 0) {
+                var x1 = screenX(left);
+                var x2 = screenX(imp.getWidth() - right);
+                var y1 = screenY(imp.getHeight() - bottom);
+                var y2 = screenY(imp.getHeight());
+                g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+            }
         }
 
         if (wcsShape != null && wcs != null) {
@@ -1195,7 +1197,7 @@ public class AstroCanvas extends OverlayCanvas {
 
     public void setWcsShape(WcsShape wcsShape) {
         if (wcsShape != null) {
-            RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+            RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
         }
         this.wcsShape = wcsShape;
     }

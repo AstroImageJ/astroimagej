@@ -17,7 +17,7 @@ import ij.astro.io.prefs.Property;
 import ij.process.ImageProcessor;
 
 public class RegionExclusion {
-    public static final Property<Boolean> DISPLAY_EXCLUDED_BORDERS = new Property<>(false, RegionExclusion.class);
+    public static final Property<Boolean> DISPLAY_EXCLUDED_REGIONS = new Property<>(false, RegionExclusion.class);
     public static final Property<Boolean> EXCLUDE_BORDERS = new Property<>(false, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_LEFT = new Property<>(0, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_RIGHT = new Property<>(0, RegionExclusion.class);
@@ -33,13 +33,13 @@ public class RegionExclusion {
 
     public static void editSettings() {
         EXCLUDE_BORDERS.set(true);
-        DISPLAY_EXCLUDED_BORDERS.set(true);
+        DISPLAY_EXCLUDED_REGIONS.set(true);
 
         var gd = new GenericSwingDialog("Region Exclusion");
 
         gd.addCheckboxGroup(1, 2, new String[]{"Exclude Borders", "Display Excluded Borders"},
-                new boolean[]{EXCLUDE_BORDERS.get(), DISPLAY_EXCLUDED_BORDERS.get()},
-                List.of(EXCLUDE_BORDERS::set, DISPLAY_EXCLUDED_BORDERS::set));
+                new boolean[]{EXCLUDE_BORDERS.get(), DISPLAY_EXCLUDED_REGIONS.get()},
+                List.of(EXCLUDE_BORDERS::set, DISPLAY_EXCLUDED_REGIONS::set));
 
         gd.addLineSeparator();
 

@@ -2240,12 +2240,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         buttonNegative.addActionListener(this);
         topPanelA.add(buttonNegative);
 
-        var regExclusion = new JToggleButton(regExclusionIcon, RegionExclusion.DISPLAY_EXCLUDED_BORDERS.get());
+        var regExclusion = new JToggleButton(regExclusionIcon, RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get());
         regExclusion.setToolTipText("Display region exclusion");
         regExclusion.setSelectedIcon(regExclusionIconSelected);
         regExclusion.setPreferredSize(iconDimension);
         regExclusion.setMargin(buttonMargin);
-        regExclusion.addActionListener(_ -> RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(regExclusion.isSelected()));
+        regExclusion.addActionListener(_ -> RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(regExclusion.isSelected()));
         regExclusion.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -2254,7 +2254,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 }
             }
         });
-        RegionExclusion.DISPLAY_EXCLUDED_BORDERS.addListener(regExclusion, (_, n) -> {
+        RegionExclusion.DISPLAY_EXCLUDED_REGIONS.addListener(regExclusion, (_, n) -> {
             regExclusion.setSelected(n);
         });
         topPanelA.add(regExclusion);

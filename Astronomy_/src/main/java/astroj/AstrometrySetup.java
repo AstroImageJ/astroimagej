@@ -838,11 +838,11 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         excludeBorderCb.addItemListener(RegionExclusion.EXCLUDE_BORDERS.toItemListener());
         RegionExclusion.EXCLUDE_BORDERS.addListener((_, n) -> {
             if (n) {
-                RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+                RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
             }
         });
         if (RegionExclusion.EXCLUDE_BORDERS.get()) {
-            RegionExclusion.DISPLAY_EXCLUDED_BORDERS.set(true);
+            RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
         }
         astrometrySetupPanel.add(excludeBorderCb);
 

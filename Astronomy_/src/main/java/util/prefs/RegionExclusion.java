@@ -37,11 +37,9 @@ public class RegionExclusion {
 
         var gd = new GenericSwingDialog("Region Exclusion");
 
-        gd.addCheckboxGroup(1, 2, new String[]{"Exclude Borders", "Display Excluded Borders"},
-                new boolean[]{EXCLUDE_BORDERS.get(), DISPLAY_EXCLUDED_REGIONS.get()},
-                List.of(EXCLUDE_BORDERS::set, DISPLAY_EXCLUDED_REGIONS::set));
-
-        gd.addLineSeparator();
+        gd.addCheckboxGroup(1, 1, new String[]{"Exclude Borders"},
+                new boolean[]{EXCLUDE_BORDERS.get()},
+                List.of(EXCLUDE_BORDERS::set));
 
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.CENTER);

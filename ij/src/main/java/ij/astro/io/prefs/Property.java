@@ -23,6 +23,9 @@ import java.util.WeakHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
+
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.gui.nstate.NState;
@@ -340,6 +343,15 @@ public class Property<T> {
             throw new IllegalArgumentException("Only boolean properties can be converted to ItemListeners");
         }
         return (e) -> set((T)(Boolean)(e.getStateChange() == ItemEvent.SELECTED));
+    }
+
+    public void registerChangeListener(JSpinner spinner) {
+        if (spinner.getModel() instanceof SpinnerNumberModel spinnerNumberModel) {
+            if (!type.isInstance(spinnerNumberModel.getNumber())) {
+                throw new IllegalArgumentException("Only number properties can be converted to SpinnerNumberModel");
+            }
+            spinnerNumberModel.addChangeListener(_ -> set((T) spinnerNumberModel.getValue()));
+        }
     }
 
     private String getOrCreatePropertyKey() {

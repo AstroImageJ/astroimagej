@@ -109,6 +109,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.gui.PixelPatcherOptionsDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.FileAssociationHandler;
@@ -1090,6 +1091,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         // FITS saving
         var fitsMenu = new Menu("Save as FITS...");
         fileMenu.add(fitsMenu);
+
+        var pixelPatcher = new MenuItem("Set Pixel Patcher...");
+        pixelPatcher.addActionListener(_ -> PixelPatcherOptionsDialog.showDialog());
+        fileMenu.add(pixelPatcher);
 
         // Slice saving
         saveFitsMenuItem = new Menu("Save image/slice as FITS...");

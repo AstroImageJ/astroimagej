@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="ij.astro.gui.PixelPatcherOptionsDialog">
+  <grid id="27dc6" binding="rootPanel" layout-manager="GridBagLayout">
+    <constraints>
+      <xy x="20" y="20" width="661" height="133"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="44b8f" binding="radioPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="0.0" weighty="0.0"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="25870" class="javax.swing.JRadioButton" binding="averageFillRadioButton">
+            <constraints/>
+            <properties>
+              <selected value="true"/>
+              <text value="Average Fill"/>
+            </properties>
+          </component>
+          <component id="5981f" class="javax.swing.JRadioButton" binding="medianFillRadioButton">
+            <constraints/>
+            <properties>
+              <text value="Median Fill"/>
+            </properties>
+          </component>
+          <component id="95a8b" class="javax.swing.JRadioButton" binding="floodFillRadioButton" default-binding="true">
+            <constraints/>
+            <properties>
+              <text value="Flood Fill"/>
+            </properties>
+          </component>
+          <component id="621cc" class="javax.swing.JRadioButton" binding="nearestNeighborRadioButton" default-binding="true">
+            <constraints/>
+            <properties>
+              <text value="Nearest Neighbor"/>
+            </properties>
+          </component>
+          <component id="5b52a" class="javax.swing.JRadioButton" binding="fitPlaneRadioButton" default-binding="true">
+            <constraints/>
+            <properties>
+              <text value="Fit Plane"/>
+            </properties>
+          </component>
+          <component id="1ecaa" class="javax.swing.JRadioButton" binding="constantValueRadioButton" default-binding="true">
+            <constraints/>
+            <properties>
+              <text value="Constant Value"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="1223d" binding="optionPanel" layout-manager="CardLayout" hgap="0" vgap="0" show="f978b">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="0.0" weighty="0.0"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="b2981" binding="medianFillCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="medianFillCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="43401" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="2cc97" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="X Radius"/>
+                    </properties>
+                  </component>
+                  <component id="a6aaf" class="javax.swing.JSpinner" binding="medianXRadiusSpinner" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+              <grid id="aa9ed" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="95160" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Y Radius"/>
+                    </properties>
+                  </component>
+                  <component id="3d1ad" class="javax.swing.JSpinner" binding="medianYRadiusSpinner" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
+          <grid id="68a6f" binding="floodFillCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="floodFillCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="dd90b" class="javax.swing.JCheckBox" binding="floodFillUseMedianCheckbox">
+                <constraints/>
+                <properties>
+                  <text value="Use Median"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="6aa87" binding="nearestNeighborCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="nearestNeighborCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="c77ce" class="javax.swing.JLabel" default-binding="true">
+                <constraints/>
+                <properties>
+                  <text value="No options can be specified for the patch mode."/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="a9aa1" binding="fitPlaneCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="fitPlaneCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="779ef" class="javax.swing.JLabel" default-binding="true">
+                <constraints/>
+                <properties>
+                  <text value="No options can be specified for the patch mode."/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="54d03" binding="constantValueCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="constantValueCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="ddfbf" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="48d90" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Fill Value"/>
+                    </properties>
+                  </component>
+                  <component id="10365" class="javax.swing.JSpinner" binding="constantValueSpinner" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
+          <grid id="f978b" binding="averageFillCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="averageFillCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="58399" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="ba8e7" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="X Radius"/>
+                    </properties>
+                  </component>
+                  <component id="32b9b" class="javax.swing.JSpinner" binding="averageXRadiusSpinner" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+              <grid id="d7691" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="12033" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Y Radius"/>
+                    </properties>
+                  </component>
+                  <component id="b3e7e" class="javax.swing.JSpinner" binding="averageYRadiusSpinner" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <grid id="e18ea" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="2">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="0.0" weighty="0.0"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="af367" class="javax.swing.JButton" binding="okButton" default-binding="true">
+            <constraints/>
+            <properties>
+              <text value="Ok"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+  <buttonGroups>
+    <group name="patchGroup">
+      <member id="25870"/>
+      <member id="25870"/>
+      <member id="5981f"/>
+      <member id="95a8b"/>
+      <member id="621cc"/>
+      <member id="5b52a"/>
+      <member id="1ecaa"/>
+    </group>
+  </buttonGroups>
+</form>

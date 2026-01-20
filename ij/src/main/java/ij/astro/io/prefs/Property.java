@@ -3,6 +3,7 @@ package ij.astro.io.prefs;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
@@ -219,11 +220,11 @@ public class Property<T> {
         weakListener.put(owner, listener);
     }
 
-    public void locationSavingWindow(Frame window) {
+    public void locationSavingWindow(Window window) {
         locationSavingWindow(window, IJ.getInstance());
     }
 
-    public void locationSavingWindow(Frame window, Frame reference) {
+    public void locationSavingWindow(Window window, Frame reference) {
         if (type != Point.class) {
             return;
         }

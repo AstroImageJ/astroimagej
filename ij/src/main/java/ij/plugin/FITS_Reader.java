@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
@@ -50,6 +51,7 @@ import ij.astro.logging.Translation;
 import ij.astro.types.Pair;
 import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
+import ij.astro.util.PixelPatcher;
 import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
@@ -437,6 +439,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			if (filter != null && !filter.matchesFilter(hdu.getHeader())) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
+			processBadPixelMask(imageProcessor, hdus);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
 			if (FolderOpener.virtualIntended) {
 				AIJLogger.log("Cannot open 3D images as a virtual stack.", false);
@@ -450,6 +453,33 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			imageProcessor.flipVertical();
 			setProcessor(fileName, imageProcessor);
 		}
+	}
+
+	private void processBadPixelMask(ImageProcessor ip, BasicHDU<?>[] hdus) {
+		BasicHDU<?> mask = null;
+		for (BasicHDU<?> basicHDU : hdus) {
+			//todo check axes bounds
+			if ("BPM".equals(basicHDU.getHeader().getStringValue(EXTNAME))) {
+				mask = basicHDU;
+				break;
+			}
+		}
+
+        if (mask == null) {
+            return;
+        }
+
+		if (mask instanceof CompressedImageHDU compressedImageHDU) {
+			mask = compressedImageHDU.asImageHDU();
+		}
+
+		var maskIp = twoDimensionalImageData2Processor(mask.getKernel(), false);
+
+		//todo store loaded patcher in constant field
+		ServiceLoader.load(PixelPatcher.class).findFirst().ifPresent(pixelPatcher -> {
+			pixelPatcher.patch(ip, maskIp, PixelPatcher.TYPE.get().toPatchType());
+		});
+
 	}
 
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
@@ -1130,20 +1160,34 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	//
 	// Notice that again, the x index is the tighter loop.
 
-	/**
+    /**
+     * Convert 2D image data into an ImageProcessor, scale image data
+     * <p>
+     * Data is transposed to match {@link ImageProcessor} implementations
+     * (see {@link ImageProcessor#getPixelValue(int, int)})
+     *
+     * @param imageData
+     */
+    private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
+        return twoDimensionalImageData2Processor(imageData, true);
+    }
+
+    /**
 	 * Convert 2D image data into an ImageProcessor, scale image data
 	 * <p>
 	 * Data is transposed to match {@link ImageProcessor} implementations
 	 * (see {@link ImageProcessor#getPixelValue(int, int)})
 	 */
-	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
+	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData, boolean updateImp) {
 		ImageProcessor ip;
 		var type = ImageType.getType(imageData, bscale, bzero);
 
 		var imgtmp = type.makeProcessor(wi, he);
 		var pixels = type.processImageData(imageData, wi, he, bzero, bscale);
 		ip = conditionImageProcessor(pixels, imgtmp);
-		this.setProcessor(fileName, ip);
+        if (updateImp) {
+			this.setProcessor(fileName, ip);
+        }
 		return ip;
 	}
 

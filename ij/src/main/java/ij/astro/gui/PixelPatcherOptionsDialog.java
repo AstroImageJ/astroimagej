@@ -46,6 +46,8 @@ public class PixelPatcherOptionsDialog extends JDialog {
     private JCheckBox floodFillUseMedianCheckbox;
     private JSpinner constantValueSpinner;
     private JButton okButton;
+    private JPanel passThroughCard;
+    private JRadioButton passThroughRadioButton;
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), PixelPatcherOptionsDialog.class);
 
     static void main() {
@@ -121,6 +123,14 @@ public class PixelPatcherOptionsDialog extends JDialog {
                 }
             }
         });
+        passThroughRadioButton.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                if (optionPanel.getLayout() instanceof CardLayout cardLayout) {
+                    cardLayout.show(optionPanel, "passThroughCard");
+                    PixelPatcher.TYPE.set(PixelPatcher.PatchType.Type.PASS_THROUGH);
+                }
+            }
+        });
         switch (PixelPatcher.TYPE.get()) {
             case FIT_PLANE -> {
                 fitPlaneRadioButton.setSelected(true);
@@ -156,6 +166,12 @@ public class PixelPatcherOptionsDialog extends JDialog {
                 averageFillRadioButton.setSelected(true);
                 if (optionPanel.getLayout() instanceof CardLayout cardLayout) {
                     cardLayout.show(optionPanel, "averageFillCard");
+                }
+            }
+            case PASS_THROUGH -> {
+                passThroughRadioButton.setSelected(true);
+                if (optionPanel.getLayout() instanceof CardLayout cardLayout) {
+                    cardLayout.show(optionPanel, "passThroughCard");
                 }
             }
         }
@@ -205,6 +221,9 @@ public class PixelPatcherOptionsDialog extends JDialog {
         constantValueRadioButton = new JRadioButton();
         constantValueRadioButton.setText("Constant Value");
         radioPanel.add(constantValueRadioButton);
+        passThroughRadioButton = new JRadioButton();
+        passThroughRadioButton.setText("Pass Through");
+        radioPanel.add(passThroughRadioButton);
         optionPanel = new JPanel();
         optionPanel.setLayout(new CardLayout(0, 0));
         gbc = new GridBagConstraints();
@@ -274,6 +293,12 @@ public class PixelPatcherOptionsDialog extends JDialog {
         label7.setText("Y Radius");
         panel5.add(label7);
         panel5.add(averageYRadiusSpinner);
+        passThroughCard = new JPanel();
+        passThroughCard.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        optionPanel.add(passThroughCard, "passThroughCard");
+        final JLabel label8 = new JLabel();
+        label8.setText("No options can be specified for the patch mode.");
+        passThroughCard.add(label8);
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         gbc = new GridBagConstraints();
@@ -293,6 +318,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
         buttonGroup.add(nearestNeighborRadioButton);
         buttonGroup.add(fitPlaneRadioButton);
         buttonGroup.add(constantValueRadioButton);
+        buttonGroup.add(passThroughRadioButton);
     }
 
     /**

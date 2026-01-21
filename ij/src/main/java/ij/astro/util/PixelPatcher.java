@@ -12,6 +12,7 @@ public interface PixelPatcher {
         Property.PropertyLoadValidator<Integer> PIXEL_RANGE = (d) -> (d < 0) ? 0 : d;
         Property.PropertyChangeValidator<Integer> PIXEL_RANGE_CHANGE = (_, o, n) -> (n < 0) ? o : n;
 
+        record PassThrough() implements PatchType {}
         record FitPlane() implements PatchType {}
         record NearestNeighbor() implements PatchType {}
         record ConstantValue(double value) implements PatchType {
@@ -66,6 +67,7 @@ public interface PixelPatcher {
             FIT_PLANE,
             CONSTANT_VALUE,
             NEAREST_NEIGHBOR,
+            PASS_THROUGH,
             ;
 
             public PatchType toPatchType() {
@@ -76,6 +78,7 @@ public interface PixelPatcher {
                     case FIT_PLANE -> new FitPlane();
                     case CONSTANT_VALUE -> new ConstantValue();
                     case NEAREST_NEIGHBOR -> new NearestNeighbor();
+                    case PASS_THROUGH -> new PassThrough();
                 };
             }
         }

@@ -118,6 +118,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	private static HeaderCardFilter filter = null;
 	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
+	private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("No PixelPatcher implementation found"));
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -458,7 +461,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private void processBadPixelMask(ImageProcessor ip, BasicHDU<?>[] hdus) {
 		BasicHDU<?> mask = null;
 		for (BasicHDU<?> basicHDU : hdus) {
-			//todo check axes bounds
 			if ("BPM".equals(basicHDU.getHeader().getStringValue(EXTNAME))) {
 				mask = basicHDU;
 				break;
@@ -475,10 +477,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		var maskIp = twoDimensionalImageData2Processor(mask.getKernel(), false);
 
-		//todo store loaded patcher in constant field
-		ServiceLoader.load(PixelPatcher.class).findFirst().ifPresent(pixelPatcher -> {
-			pixelPatcher.patch(ip, maskIp, PixelPatcher.TYPE.get().toPatchType());
-		});
+		PIXEL_PATCHER.patch(ip, maskIp, PixelPatcher.TYPE.get().toPatchType());
 
 	}
 

@@ -9,13 +9,18 @@ import java.util.List;
 
 import astroj.FittedPlane;
 import com.google.auto.service.AutoService;
+import ij.astro.util.PixelPatcher;
 import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
 
-@AutoService(ij.astro.util.PixelPatcher.class)
-public class PixelPatcherImpl implements ij.astro.util.PixelPatcher {
+@AutoService(PixelPatcher.class)
+public class PixelPatcherImpl implements PixelPatcher {
     @Override
     public void patch(ImageProcessor ip, ImageProcessor mask, PatchType patchType) {
+        if (patchType instanceof PatchType.PassThrough) {
+            return;
+        }
+
         if (ip.getWidth() != mask.getWidth() || ip.getHeight() != mask.getHeight()) {
             throw new IllegalArgumentException("Mask must have same width and height!");
         }
@@ -33,6 +38,8 @@ public class PixelPatcherImpl implements ij.astro.util.PixelPatcher {
                 }
 
                 switch (patchType) {
+                    //noinspection DataFlowIssue
+                    case PatchType.PassThrough() -> {}
                     case PatchType.ConstantValue(var val) -> ip.setf(x, y, (float) val);
                     case PatchType.AverageFill(int xRadius, int yRadius) -> {
                         var average = ArrayUtil.average(collect(ip, mask, x, y, xRadius, yRadius));

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.ToIntFunction;
 
 import astroj.FittedPlane;
 import com.google.auto.service.AutoService;
@@ -96,7 +97,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             ip.setf(rp.x, rp.y, fv);
                         }
                     }
-                    case PatchType.NearestNeighbor() -> {
+                    case PatchType.NearestNeighbor(var mergeType) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
                         var borderPixels = region.borderPixels();
                         var badPixels = region.pixels();
@@ -106,12 +107,54 @@ public class PixelPatcherImpl implements PixelPatcher {
                             continue;
                         }
 
-                        for (Pixel badPixel : badPixels) {
-                            //todo take average/median of pixels if there are multiple equivalently near?
-                            //  would want to floor this to ints so diagonals get used
-                            borderPixels.stream().min(Comparator.comparingDouble(
-                                    bp -> Math.hypot(bp.x - badPixel.x, bp.y - badPixel.y)
-                            )).ifPresent(bp -> ip.setf(badPixel.x, badPixel.y, ip.getf(bp.x, bp.y)));
+                        for (var badPixel : badPixels) {
+                            if (mergeType == PatchType.NearestNeighbor.MergeType.NEAREST_NEIGHBOR) {
+                                borderPixels.stream().min(
+                                        Comparator.comparingDouble(
+                                                bp -> Math.hypot(bp.x - badPixel.x, bp.y - badPixel.y)
+                                        )
+                                ).ifPresent(
+                                        bp -> ip.setf(badPixel.x, badPixel.y, ip.getf(bp.x, bp.y))
+                                );
+                                return;
+                            }
+
+                            ToIntFunction<Pixel> distance = (bp) -> {
+                                var dx = bp.x - badPixel.x;
+                                var dy = bp.y - badPixel.y;
+                                return dx*dx + dy*dy;
+                            };
+
+                            var nearestRounded = borderPixels.stream()
+                                    .mapToInt(distance)
+                                    .min()
+                                    .orElseThrow();
+
+                            var nearestBorderValues = borderPixels.stream()
+                                    .filter(bp -> distance.applyAsInt(bp) == nearestRounded)
+                                    .mapToDouble(bp -> ip.getf(bp.x, bp.y))
+                                    .toArray();
+
+                            double fillValue;
+                            if (mergeType == PatchType.NearestNeighbor.MergeType.MEDIAN) {
+                                Arrays.sort(nearestBorderValues);
+                                int m = nearestBorderValues.length / 2;
+                                if ((nearestBorderValues.length & 1) == 1) {
+                                    fillValue = nearestBorderValues[m];
+                                } else {
+                                    fillValue = (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
+                                }
+                            } else {
+                                var sum = 0.0D;
+                                for (double v : nearestBorderValues) {
+                                    sum += v;
+                                }
+                                fillValue = sum / nearestBorderValues.length;
+                            }
+
+                            // Fill region
+                            var fv = (float) fillValue;
+                            ip.setf(badPixel.x, badPixel.y, fv);
                         }
                     }
                     case PatchType.FitPlane() -> {

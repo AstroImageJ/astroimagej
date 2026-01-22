@@ -133,11 +133,15 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="c77ce" class="javax.swing.JLabel" default-binding="true">
+              <component id="883b6" class="javax.swing.JLabel">
                 <constraints/>
                 <properties>
-                  <text value="No options can be specified for the patch mode."/>
+                  <text value="Pixel Source"/>
                 </properties>
+              </component>
+              <component id="f2b9d" class="javax.swing.JComboBox" binding="nearestNeighborPixelSource" custom-create="true">
+                <constraints/>
+                <properties/>
               </component>
             </children>
           </grid>

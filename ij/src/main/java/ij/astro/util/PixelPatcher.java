@@ -1,5 +1,6 @@
 package ij.astro.util;
 
+import ij.astro.gui.ToolTipProvider;
 import ij.astro.io.prefs.Property;
 import ij.process.ImageProcessor;
 
@@ -14,7 +15,26 @@ public interface PixelPatcher {
 
         record PassThrough() implements PatchType {}
         record FitPlane() implements PatchType {}
-        record NearestNeighbor() implements PatchType {}
+        record NearestNeighbor(MergeType mergeType) implements PatchType {
+            public static final Property<MergeType> MERGE_TYPE = new Property<>(MergeType.NEAREST_NEIGHBOR, NearestNeighbor.class);
+
+            public NearestNeighbor() {
+                this(MERGE_TYPE.get());
+            }
+
+            public enum MergeType implements ToolTipProvider {
+                NEAREST_NEIGHBOR,
+                MEDIAN,
+                AVERAGE,
+                ;
+
+
+                @Override
+                public String getToolTip() {
+                    return "test";
+                }
+            }
+        }
         record ConstantValue(double value) implements PatchType {
             public static final Property<Double> VALUE = new Property<>(Double.NaN, ConstantValue.class);
 
@@ -59,6 +79,8 @@ public interface PixelPatcher {
                 this(X_RADIUS.get(), Y_RADIUS.get());
             }
         }
+        //todo PSF option
+        //todo gaussian fit option
 
         enum Type {
             AVERAGE_FILL,

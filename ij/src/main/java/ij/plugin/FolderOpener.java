@@ -72,7 +72,7 @@ public class FolderOpener implements PlugIn, TextListener {
 	@AstroImageJ(reason = "Allow FITS reader to track virtual stack")
 	public static boolean virtualIntended;
 	@AstroImageJ(reason = "Setup automatic wcs shape generation")
-	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(true, FolderOpener.class);
+	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(false, FolderOpener.class);
 
 	
 	/** Opens the images in the specified directory as a stack. Displays

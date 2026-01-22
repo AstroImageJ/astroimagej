@@ -99,6 +99,9 @@ public record WcsShape(List<WCSCurve> curves) {
         Area area = null;
         WCS initial = null;
         for (int i = start; i < end; i++) {
+            if (imp.getImageStack().isVirtual()) {
+                imp.setSliceWithoutUpdate(i);
+            }
             var hdr = FitsJ.getHeader(imp, i);
             var wcs = new WCS(hdr);
 
@@ -123,6 +126,10 @@ public record WcsShape(List<WCSCurve> curves) {
             } else {
                 AIJLogger.log("Skipping unplatesolved slice: " + i);
             }
+        }
+
+        if (imp.getImageStack().isVirtual()) {
+            imp.setSliceWithoutUpdate(start);
         }
         
         if (area == null) {

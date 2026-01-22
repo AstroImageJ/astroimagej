@@ -164,21 +164,30 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         var fitter = new FittedPlane(bounds.width * bounds.height);
 
-                        for (int xi = bounds.x; xi < bounds.x + bounds.width; xi++) {
-                            for (int yi = bounds.y; yi < bounds.y + bounds.height; yi++) {
-                                if (!(mask.getf(x, y) > 0)) {
-                                    fitter.addPoint(xi, yi, ip.getf(x, y));
-                                }
+                        if (region.borderPixels.size() > 4) {
+                            for (Pixel borderPixel : region.borderPixels) {
+                                fitter.addPoint(borderPixel.x, borderPixel.y, ip.getf(borderPixel.x, borderPixel.y));
                             }
-                        }
 
-                        if (!fitter.fitPlane()) {
-                            //todo handle
-                            continue;
-                        }
+                            if (!fitter.fitPlane()) {
+                                //todo handle
+                                continue;
+                            }
 
-                        for (Pixel pixel : region.pixels) {
-                            ip.setf(pixel.x, pixel.y, (float) fitter.valueAt(pixel.x, pixel.y));
+                            for (Pixel pixel : region.pixels) {
+                                ip.setf(pixel.x, pixel.y, (float) fitter.valueAt(pixel.x, pixel.y));
+                            }
+                        } else {
+                            var avg = 0D;
+                            for (Pixel borderPixel : region.borderPixels) {
+                                avg += ip.getf(borderPixel.x, borderPixel.y);
+                            }
+
+                            avg /= region.borderPixels.size();
+
+                            for (Pixel pixel : region.pixels) {
+                                ip.setf(pixel.x, pixel.y, (float) avg);
+                            }
                         }
                     }
                 }
@@ -271,6 +280,10 @@ public class PixelPatcherImpl implements PixelPatcher {
 
         void addBorderPixel(Pixel p) {
             borderPixels.add(p);
+            bounds.width = Math.max(bounds.width, p.x - bounds.x);
+            bounds.height = Math.max(bounds.height, p.y - bounds.y);
+            bounds.x = Math.min(bounds.x, p.x);
+            bounds.y = Math.min(bounds.y, p.y);
         }
     }
 }

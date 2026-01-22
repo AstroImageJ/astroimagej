@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 
 import Astronomy.shapes.WcsShape;
 import astroj.AstroCanvas;
@@ -32,12 +33,11 @@ public class RegionExclusion {
     private RegionExclusion() {}
 
     public static void editSettings() {
-        EXCLUDE_BORDERS.set(true);
         DISPLAY_EXCLUDED_REGIONS.set(true);
 
         var gd = new GenericSwingDialog("Region Exclusion");
 
-        gd.addCheckboxGroup(1, 1, new String[]{"Exclude Borders"},
+        var cbs = gd.addCheckboxGroup(1, 1, new String[]{"Exclude Borders"},
                 new boolean[]{EXCLUDE_BORDERS.get()},
                 List.of(EXCLUDE_BORDERS::set));
 
@@ -54,6 +54,31 @@ public class RegionExclusion {
         gd.setNewPosition(GridBagConstraints.CENTER);
         gd.setWidth(2);
         gd.addBoundedNumericField("Bottom", BOUNDS, BORDER_EXCLUSION_BOTTOM_STEP.get(), 7, "px", BORDER_EXCLUSION_BOTTOM);
+
+        BORDER_EXCLUSION_TOP.addListener((_, _) -> {
+            if (cbs.subComponents().getFirst() instanceof JCheckBox cb) {
+                cb.setSelected(true);
+                EXCLUDE_BORDERS.set(true);
+            }
+        });
+        BORDER_EXCLUSION_RIGHT.addListener((_, _) -> {
+            if (cbs.subComponents().getFirst() instanceof JCheckBox cb) {
+                cb.setSelected(true);
+                EXCLUDE_BORDERS.set(true);
+            }
+        });
+        BORDER_EXCLUSION_LEFT.addListener((_, _) -> {
+            if (cbs.subComponents().getFirst() instanceof JCheckBox cb) {
+                cb.setSelected(true);
+                EXCLUDE_BORDERS.set(true);
+            }
+        });
+        BORDER_EXCLUSION_BOTTOM.addListener((_, _) -> {
+            if (cbs.subComponents().getFirst() instanceof JCheckBox cb) {
+                cb.setSelected(true);
+                EXCLUDE_BORDERS.set(true);
+            }
+        });
 
         gd.setOverridePosition(false);
         gd.addMessage("""

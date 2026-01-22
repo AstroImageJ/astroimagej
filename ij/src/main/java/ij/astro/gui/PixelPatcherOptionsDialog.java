@@ -10,6 +10,7 @@ import java.awt.event.ItemEvent;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -48,6 +49,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
     private JButton okButton;
     private JPanel passThroughCard;
     private JRadioButton passThroughRadioButton;
+    private JComboBox<PixelPatcher.PatchType.NearestNeighbor.MergeType> nearestNeighborPixelSource;
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), PixelPatcherOptionsDialog.class);
 
     static void main() {
@@ -181,6 +183,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
         PixelPatcher.PatchType.AverageFill.Y_RADIUS.registerChangeListener(averageYRadiusSpinner);
         PixelPatcher.PatchType.MedianFill.X_RADIUS.registerChangeListener(medianXRadiusSpinner);
         PixelPatcher.PatchType.MedianFill.Y_RADIUS.registerChangeListener(medianYRadiusSpinner);
+        nearestNeighborPixelSource.addItemListener(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.toItemListener());
     }
 
     /**
@@ -258,8 +261,9 @@ public class PixelPatcherOptionsDialog extends JDialog {
         nearestNeighborCard.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         optionPanel.add(nearestNeighborCard, "nearestNeighborCard");
         final JLabel label3 = new JLabel();
-        label3.setText("No options can be specified for the patch mode.");
+        label3.setText("Pixel Source");
         nearestNeighborCard.add(label3);
+        nearestNeighborCard.add(nearestNeighborPixelSource);
         fitPlaneCard = new JPanel();
         fitPlaneCard.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         optionPanel.add(fitPlaneCard, "fitPlaneCard");
@@ -346,5 +350,9 @@ public class PixelPatcherOptionsDialog extends JDialog {
                         PixelPatcher.PatchType.MedianFill.Y_RADIUS.get().intValue(),
                         0, Integer.MAX_VALUE, 1));
         constantValueSpinner = new JSpinner(new SpinnerNumberModel(Double.NaN, null, null, 1));
+
+        nearestNeighborPixelSource = new JComboBox<>(PixelPatcher.PatchType.NearestNeighbor.MergeType.values());
+        nearestNeighborPixelSource.setSelectedItem(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.get());
+        nearestNeighborPixelSource.setRenderer(new ToolTipRenderer());
     }
 }

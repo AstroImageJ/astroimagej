@@ -170,7 +170,16 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
 
                             if (!fitter.fitPlane()) {
-                                //todo handle
+                                var avg = 0D;
+                                for (Pixel borderPixel : region.borderPixels) {
+                                    avg += ip.getf(borderPixel.x, borderPixel.y);
+                                }
+
+                                avg /= region.borderPixels.size();
+
+                                for (Pixel pixel : region.pixels) {
+                                    ip.setf(pixel.x, pixel.y, (float) avg);
+                                }
                                 continue;
                             }
 

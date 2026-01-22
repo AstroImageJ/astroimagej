@@ -619,6 +619,11 @@ public class Astrometry { //implements KeyListener
                     else
                         return FAILED;
                 }
+
+                if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+                    FitsJ.setCard("CRPIX1", FitsJ.findDoubleValue("CRPIX1", wcsHeader) + dx, "", wcsHeader);
+                    FitsJ.setCard("CRPIX2", FitsJ.findDoubleValue("CRPIX2", wcsHeader) + dy, "", wcsHeader);
+                }
             } catch (IOException ioe) {
                 log("IO Exception during astrometry.net file download for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
                 return FAILED;

@@ -1,18 +1,21 @@
 package Astronomy;//Astronomy_Listener.java
 
+import java.awt.Frame;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import javax.swing.SwingUtilities;
+
+import Astronomy.shapes.WcsShape;
 import astroj.AstroCanvas;
 import astroj.AstroStackWindow;
 import ij.IJ;
 import ij.ImageListener;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.plugin.FolderOpener;
 import ij.plugin.PlugIn;
-
-import javax.swing.*;
-import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * @author K.A. Collins, University of Louisville
@@ -44,6 +47,9 @@ public class Astronomy_Listener implements PlugIn, ImageListener {
             if (!(openFrame instanceof astroj.AstroStackWindow)) {
                 var o = imp.getWindow();
                 AstroCanvas ac = new AstroCanvas(imp);
+                if (FolderOpener.AUTOMATIC_WCS_SHAPE_GENERATION.get()) {
+                    ac.setWcsShape(WcsShape.createCommonRegion(imp));
+                }
                 imp.setWindow(new AstroStackWindow(imp, ac, NEW, RESIZE));
                 if (o != null) {
                     o.close();

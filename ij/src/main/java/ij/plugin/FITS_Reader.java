@@ -459,6 +459,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private void processBadPixelMask(ImageProcessor ip, BasicHDU<?>[] hdus) {
+        if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH) {
+            return;
+        }
+
 		BasicHDU<?> mask = null;
 		for (BasicHDU<?> basicHDU : hdus) {
 			if ("BPM".equals(basicHDU.getHeader().getStringValue(EXTNAME))) {

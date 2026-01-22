@@ -1,5 +1,6 @@
 package Astronomy.shapes;
 
+import java.awt.Component;
 import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
@@ -8,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import javax.swing.ProgressMonitor;
 
 import astroj.FitsJ;
 import astroj.WCS;
@@ -92,13 +95,27 @@ public record WcsShape(List<WCSCurve> curves) {
     }
 
     public static WcsShape createCommonRegion(ImagePlus imp) {
-        return createCommonRegion(imp, 1, imp.getStackSize()+1);
+        return createCommonRegion(imp, IJ.getInstance());
+    }
+
+    public static WcsShape createCommonRegion(ImagePlus imp, Component ref) {
+        return createCommonRegion(imp, 1, imp.getStackSize()+1, ref);
     }
 
     public static WcsShape createCommonRegion(ImagePlus imp, int start, int end) {
+        return createCommonRegion(imp, start, end, IJ.getInstance());
+    }
+
+    public static WcsShape createCommonRegion(ImagePlus imp, int start, int end, Component ref) {
         Area area = null;
         WCS initial = null;
+
+        var monitor = new ProgressMonitor(ref, "Calculating WCS Common Region", "", 0, end-start);
         for (int i = start; i < end; i++) {
+            if (monitor.isCanceled()) {
+                return null;
+            }
+
             if (imp.getImageStack().isVirtual()) {
                 // Load WCS if not loaded
                 var hdr = FitsJ.getHeader(imp, i);
@@ -124,6 +141,7 @@ public record WcsShape(List<WCSCurve> curves) {
                 if (area.isEmpty()) {
                     AIJLogger.log("WCS intersection became empty at slice " + i);
                     IJ.showProgress(1);
+                    monitor.setProgress(end-start);
                     break;
                 }
 
@@ -131,6 +149,8 @@ public record WcsShape(List<WCSCurve> curves) {
             } else {
                 AIJLogger.log("Skipping unplatesolved slice: " + i);
             }
+
+            monitor.setProgress(i);
         }
 
         if (imp.getImageStack().isVirtual()) {

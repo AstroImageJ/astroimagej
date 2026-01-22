@@ -3,10 +3,13 @@ package util.prefs;
 import java.awt.GridBagConstraints;
 import java.awt.Rectangle;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.SwingUtilities;
 
 import Astronomy.shapes.WcsShape;
 import astroj.AstroCanvas;
@@ -29,6 +32,7 @@ public class RegionExclusion {
     public static final Property<Integer> BORDER_EXCLUSION_TOP_STEP = new Property<>(5, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_BOTTOM_STEP = new Property<>(5, RegionExclusion.class);
     private static final GenericSwingDialog.Bounds BOUNDS = new GenericSwingDialog.Bounds(0, Integer.MAX_VALUE);
+    public static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
     private RegionExclusion() {}
 
@@ -91,21 +95,23 @@ public class RegionExclusion {
         var generate = new JButton("Generate Common WCS Region");
         var clear = new JButton("Clear Common WCS Region");
 
-        generate.addActionListener(_ -> {
+        generate.addActionListener(_ -> EXECUTOR_SERVICE.execute(() -> {
             var imp = WindowManager.getCurrentImage();
             if (imp == null) {
                 IJ.error("No image found!");
                 return;
             }
 
-            var region = WcsShape.createCommonRegion(imp);
+            var region = WcsShape.createCommonRegion(imp, gd);
 
-            if (imp.getCanvas() instanceof AstroCanvas ac) {
-                ac.setPerformDraw(true);
-                ac.setWcsShape(region);
-                ac.repaint();
-            }
-        });
+            SwingUtilities.invokeLater(() -> {
+                if (imp.getCanvas() instanceof AstroCanvas ac) {
+                    ac.setPerformDraw(true);
+                    ac.setWcsShape(region);
+                    ac.repaint();
+                }
+            });
+        }));
 
         clear.addActionListener(_ -> {
             var imp = WindowManager.getCurrentImage();

@@ -339,10 +339,15 @@ public class Property<T> {
     }
 
     public ItemListener toItemListener() {
-        if (type != Boolean.TYPE && type != Boolean.class) {
-            throw new IllegalArgumentException("Only boolean properties can be converted to ItemListeners");
+        if (type == Boolean.TYPE || type == Boolean.class) {
+            return (e) -> set((T)(Boolean)(e.getStateChange() == ItemEvent.SELECTED));
         }
-        return (e) -> set((T)(Boolean)(e.getStateChange() == ItemEvent.SELECTED));
+
+        if (type.isEnum()) {
+            return (e) -> set((T)(e.getItem()));
+        }
+
+        throw new IllegalArgumentException("Only boolean or enum properties can be converted to ItemListeners");
     }
 
     public void registerChangeListener(JSpinner spinner) {

@@ -100,7 +100,12 @@ public record WcsShape(List<WCSCurve> curves) {
         WCS initial = null;
         for (int i = start; i < end; i++) {
             if (imp.getImageStack().isVirtual()) {
-                imp.setSliceWithoutUpdate(i);
+                // Load WCS if not loaded
+                var hdr = FitsJ.getHeader(imp, i);
+                var wcs = new WCS(hdr);
+                if (!wcs.hasWCS()) {
+                    imp.setSliceWithoutUpdate(i);
+                }
             }
             var hdr = FitsJ.getHeader(imp, i);
             var wcs = new WCS(hdr);

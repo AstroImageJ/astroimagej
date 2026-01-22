@@ -10,6 +10,7 @@ import java.util.function.ToIntFunction;
 
 import astroj.FittedPlane;
 import com.google.auto.service.AutoService;
+import ij.astro.logging.AIJLogger;
 import ij.astro.util.PixelPatcher;
 import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
@@ -170,6 +171,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
 
                             if (!fitter.fitPlane()) {
+                                AIJLogger.log("Fitting Plane failed for Pixel Patcher");
                                 var avg = 0D;
                                 for (Pixel borderPixel : region.borderPixels) {
                                     avg += ip.getf(borderPixel.x, borderPixel.y);

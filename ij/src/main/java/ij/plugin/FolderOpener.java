@@ -20,6 +20,7 @@ import ij.Macro;
 import ij.Prefs;
 import ij.VirtualStack;
 import ij.astro.AstroImageJ;
+import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.ZipOpenerUtil;
@@ -70,6 +71,8 @@ public class FolderOpener implements PlugIn, TextListener {
 	private TextField dirField, filterField, startField, countField, stepField;
 	@AstroImageJ(reason = "Allow FITS reader to track virtual stack")
 	public static boolean virtualIntended;
+	@AstroImageJ(reason = "Setup automatic wcs shape generation")
+	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(false, FolderOpener.class);
 
 	
 	/** Opens the images in the specified directory as a stack. Displays
@@ -683,6 +686,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addStringField("Value 2:", "");
 
 		gd.addCheckbox("Sort names numerically", sortFileNames);
+		gd.addCheckbox("Generate WCS Common Region", AUTOMATIC_WCS_SHAPE_GENERATION.get());
 		gd.addCheckbox("Use virtual stack", Prefs.get("folderopener.openAsVirtualStack", openAsVirtualStack));
 		gd.addCheckbox("Open as separate images", false);		
 		gd.addHelp(IJ.URL2+"/docs/menus/file.html#seq1");
@@ -733,6 +737,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		sortFileNames = gd.getNextBoolean();
 		if (!sortFileNames)
 			sortByMetaData = false;
+		AUTOMATIC_WCS_SHAPE_GENERATION.set(gd.getNextBoolean());
 		openAsVirtualStack = gd.getNextBoolean();
 		Prefs.set("folderopener.openAsVirtualStack", openAsVirtualStack);
 		if (openAsVirtualStack)

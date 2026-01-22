@@ -258,6 +258,14 @@ public class Astrometry { //implements KeyListener
         if (startSlice > impOriginal.getStackSize()) startSlice = impOriginal.getStackSize();
         if (endSlice > impOriginal.getStackSize()) endSlice = impOriginal.getStackSize();
         if (endSlice < startSlice) endSlice = startSlice;
+
+        var dx = -(RegionExclusion.BORDER_EXCLUSION_RIGHT.get() + RegionExclusion.BORDER_EXCLUSION_LEFT.get());
+        var dy = -(RegionExclusion.BORDER_EXCLUSION_RIGHT.get() + RegionExclusion.BORDER_EXCLUSION_LEFT.get());
+        if (!RegionExclusion.EXCLUDE_BORDERS.get()) {
+            dx = 0;
+            dy = 0;
+        }
+
         int previousSlice = -1;
         for (slice = startSlice; slice <= endSlice; slice++) {
             if (canceled) return CANCELED;
@@ -319,8 +327,8 @@ public class Astrometry { //implements KeyListener
             setupData.put("allow_commercial_use", "d");
             setupData.put("allow_modifications", "d");
             setupData.put("publicly_visible", "n");
-            setupData.put("image_width", width);
-            setupData.put("image_height", height);
+            setupData.put("image_width", width + dx);
+            setupData.put("image_height", height + dy);
             if (useScale) {
                 setupData.put("scale_units", "arcsecperpix");
                 setupData.put("scale_type", "ul"); //"ul" or "ev"

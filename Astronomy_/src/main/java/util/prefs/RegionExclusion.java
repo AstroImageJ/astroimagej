@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 
 import Astronomy.shapes.WcsShape;
@@ -31,6 +32,7 @@ public class RegionExclusion {
     public static final Property<Integer> BORDER_EXCLUSION_RIGHT_STEP = new Property<>(5, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_TOP_STEP = new Property<>(5, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_BOTTOM_STEP = new Property<>(5, RegionExclusion.class);
+    public static final Property<Boolean> LOCK_BORDERS_TO_TOP = new Property<>(false, RegionExclusion.class);
     private static final GenericSwingDialog.Bounds BOUNDS = new GenericSwingDialog.Bounds(0, Integer.MAX_VALUE);
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
@@ -45,24 +47,31 @@ public class RegionExclusion {
                 new boolean[]{EXCLUDE_BORDERS.get()},
                 List.of(EXCLUDE_BORDERS::set));
 
+        gd.addCheckbox("Lock all region values to Top", LOCK_BORDERS_TO_TOP);
+
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.CENTER);
-        gd.addBoundedNumericField("Top", BOUNDS, BORDER_EXCLUSION_TOP_STEP.get(), 7, "px", BORDER_EXCLUSION_TOP);
+        var top = gd.addBoundedNumericField("Top", BOUNDS, BORDER_EXCLUSION_TOP_STEP.get(), 7, "px", BORDER_EXCLUSION_TOP);
         gd.setOverridePosition(false);
 
-        gd.addBoundedNumericField("Left", BOUNDS, BORDER_EXCLUSION_LEFT_STEP.get(), 7, "px", BORDER_EXCLUSION_LEFT);
+        var left = gd.addBoundedNumericField("Left", BOUNDS, BORDER_EXCLUSION_LEFT_STEP.get(), 7, "px", BORDER_EXCLUSION_LEFT);
         gd.addToSameRow();
-        gd.addBoundedNumericField("Right", BOUNDS, BORDER_EXCLUSION_RIGHT_STEP.get(), 7, "px", BORDER_EXCLUSION_RIGHT);
+        var right = gd.addBoundedNumericField("Right", BOUNDS, BORDER_EXCLUSION_RIGHT_STEP.get(), 7, "px", BORDER_EXCLUSION_RIGHT);
 
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.CENTER);
         gd.setWidth(2);
-        gd.addBoundedNumericField("Bottom", BOUNDS, BORDER_EXCLUSION_BOTTOM_STEP.get(), 7, "px", BORDER_EXCLUSION_BOTTOM);
+        var bottom = gd.addBoundedNumericField("Bottom", BOUNDS, BORDER_EXCLUSION_BOTTOM_STEP.get(), 7, "px", BORDER_EXCLUSION_BOTTOM);
 
-        BORDER_EXCLUSION_TOP.addListener((_, _) -> {
+        BORDER_EXCLUSION_TOP.addListener((_, n) -> {
             if (cbs.subComponents().getFirst() instanceof JCheckBox cb) {
                 cb.setSelected(true);
                 EXCLUDE_BORDERS.set(true);
+            }
+            if (LOCK_BORDERS_TO_TOP.get()) {
+                ((JSpinner) left.c1()).setValue(n.doubleValue());
+                ((JSpinner) right.c1()).setValue(n.doubleValue());
+                ((JSpinner) bottom.c1()).setValue(n.doubleValue());
             }
         });
         BORDER_EXCLUSION_RIGHT.addListener((_, _) -> {
@@ -83,6 +92,22 @@ public class RegionExclusion {
                 EXCLUDE_BORDERS.set(true);
             }
         });
+        LOCK_BORDERS_TO_TOP.addListener((_, b) -> {
+            left.c1().setEnabled(!b);
+            right.c1().setEnabled(!b);
+            bottom.c1().setEnabled(!b);
+            if (b) {
+                ((JSpinner) left.c1()).setValue(BORDER_EXCLUSION_TOP.get().doubleValue());
+                ((JSpinner) right.c1()).setValue(BORDER_EXCLUSION_TOP.get().doubleValue());
+                ((JSpinner) bottom.c1()).setValue(BORDER_EXCLUSION_TOP.get().doubleValue());
+            }
+        });
+
+        if (LOCK_BORDERS_TO_TOP.get()) {
+            left.c1().setEnabled(false);
+            right.c1().setEnabled(false);
+            bottom.c1().setEnabled(false);
+        }
 
         gd.setOverridePosition(false);
         gd.addMessage("""

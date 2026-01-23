@@ -260,7 +260,7 @@ public class Astrometry { //implements KeyListener
         if (endSlice < startSlice) endSlice = startSlice;
 
         var dx = -(RegionExclusion.BORDER_EXCLUSION_RIGHT.get() + RegionExclusion.BORDER_EXCLUSION_LEFT.get());
-        var dy = -(RegionExclusion.BORDER_EXCLUSION_RIGHT.get() + RegionExclusion.BORDER_EXCLUSION_LEFT.get());
+        var dy = -(RegionExclusion.BORDER_EXCLUSION_TOP.get() + RegionExclusion.BORDER_EXCLUSION_BOTTOM.get());
         if (!RegionExclusion.EXCLUDE_BORDERS.get()) {
             dx = 0;
             dy = 0;
@@ -316,8 +316,17 @@ public class Astrometry { //implements KeyListener
 
             sourceLocations = "";
 
+            var pdx = -RegionExclusion.BORDER_EXCLUSION_LEFT.get();
+            var pdy = -RegionExclusion.BORDER_EXCLUSION_TOP.get();
+            if (!RegionExclusion.EXCLUDE_BORDERS.get()) {
+                pdx = 0;
+                pdy = 0;
+            }
             for (int i = 0; i < npoints; i++) {
-                sourceLocations += "" + (xdpoints[i]) + " \t " + (height - ydpoints[i]) + lineend;
+                var x = xdpoints[i] + pdx;
+                var y = ydpoints[i] + pdy;
+                y = (height + dy) - y;
+                sourceLocations += "" + x + " \t " + y + lineend;
             }
             sourceLocations += lineend;
 

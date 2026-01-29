@@ -20,7 +20,7 @@ import ij.astro.logging.AIJLogger;
 
 public record WcsShape(List<WCSCurve> curves) {
     public Area getArea(WCS wcs) {
-        if (wcs == null) {
+        if (wcs == null || !wcs.hasWCS()) {
             return new Area();
         }
 

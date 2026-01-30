@@ -44,6 +44,7 @@ import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.FitsReader;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
@@ -114,8 +115,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	@FunctionalInterface
 	private interface TableWrapper { double valueAt(int x, int y); }
 
-	private static HeaderCardFilter filter = null;
-	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
+	public static HeaderCardFilter filter = null;
+	public static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -128,7 +129,55 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		AIJLogger.setLogAutoCloses(Prefs.getBoolean(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE, true));
 
-		/*
+		if (true) {
+			try (var r = FitsReader.create(path)) {
+				if (r.size() <= 0) {
+					if (r.isMeasurementsTable()) {
+						// Read table
+						r.getHeaders();
+					}
+
+					return;
+				}
+
+				setFileInfo(r.decodeFileInfo());
+				var hdrs = r.getHeaders();
+				var ips = r.getProcessors();
+				setProperty("Info", hdrs[0]);
+
+				fileName = r.fileName;
+				fileType = r.fileType;
+				fileBase = r.fileBase;
+
+				if (r.size() == 1) {
+					setProcessor(fileName, ips[0]);
+					if (imagePlus == null) return;
+					var imageProcessor = imagePlus.getProcessor();
+					imageProcessor.flipVertical();
+					setProcessor(fileName, imageProcessor);
+				} else if (r.size() > 1) {
+					var stack = new ImageStack();
+					for (int i = 0; i < r.size(); i++) {
+						stack.addSlice(fileBase + "_" +
+								(r.size() < 10000 ? fourDigits.format(i + 1) : (i + 1)) +
+								(!fileType.isEmpty() ? "." + fileType : "") + "\n" + hdrs[i], ips[i]);
+					}
+
+					setStack(fileName, stack);
+				}
+				IJ.showStatus("");
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+
+			return;
+		}
+
+		//todo implement legacy fallback, remove old nom.tam code
+
+        /*
 		 * Extract array of HDU from FITS file using nom.tam.fits
 		 * This also uses the old style FITS decoder to create a FileInfo.
 		 */
@@ -551,7 +600,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return mt;
 	}
 
-	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU,
+	public static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU,
 														 Set<Opener.OpenOption> openOptions) throws FitsException {
 		var loadTable = true;
 		var skipDialog = openOptions.contains(Opener.OpenOption.SKIP_UI);
@@ -1021,7 +1070,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		var pm = makeMonitor(imageCount);
 		for (int i = 0; i < imageCount; i++) {
 			String header = "";
-			if (headers != null && headers.size() > 0) {
+			if (headers != null && !headers.isEmpty()) {
 				var headerIndex = headers.size() == 1 ? 0 : i;
 				if (headers.get(headerIndex).contains("AIJ_Q")) { // For TESScut, skip bad images
 					AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
@@ -1349,10 +1398,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		flipImages = flip;
 	}
 
-	private static class MPTableLoadSettings {
-		Property<Boolean> loadData = new Property<>(true, this);
-		Property<Boolean> loadApertures = new Property<>(true, this);
-		Property<Boolean> loadPlotcfg = new Property<>(true, this);
+	public static class MPTableLoadSettings {
+		public final Property<Boolean> loadData = new Property<>(true, this);
+		public final Property<Boolean> loadApertures = new Property<>(true, this);
+		public final Property<Boolean> loadPlotcfg = new Property<>(true, this);
 	}
 
 }

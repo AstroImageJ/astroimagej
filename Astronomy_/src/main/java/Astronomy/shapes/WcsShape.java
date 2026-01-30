@@ -158,7 +158,8 @@ public record WcsShape(List<WCSCurve> curves) {
         }
         
         if (area == null) {
-            IJ.error("WCS Intersection failed to find any paltesolved images");
+            AIJLogger.log("WCS Intersection failed to find any platesolved images");
+            return null;
         }
 
         return WcsShape.fromArea(initial, area);

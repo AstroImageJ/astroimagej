@@ -58,6 +58,7 @@ import ij.io.OpenDialog;
 import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
+import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Data;
@@ -116,7 +117,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private interface TableWrapper { double valueAt(int x, int y); }
 
 	public static HeaderCardFilter filter = null;
-	public static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
+	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
+    public static final ScopedValue<Boolean> HEADER_ONLY = ScopedValue.newInstance();
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -142,12 +144,22 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				setFileInfo(r.decodeFileInfo());
 				var hdrs = r.getHeaders();
-				var ips = r.getProcessors();
 				setProperty("Info", hdrs[0]);
 
 				fileName = r.fileName;
 				fileType = r.fileType;
 				fileBase = r.fileBase;
+
+				if (HEADER_ONLY.orElse(false)) {
+					// Needed for slice info to update
+					//todo find replacement for creating IP
+					setProcessor(fileName, new ByteProcessor(r.getWidth(), r.getHeight()));
+
+					IJ.showStatus("");
+					return;
+				}
+
+				var ips = r.getProcessors();
 
 				if (r.size() == 1) {
 					setProcessor(fileName, ips[0]);
@@ -1398,10 +1410,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		flipImages = flip;
 	}
 
-	public static class MPTableLoadSettings {
-		public final Property<Boolean> loadData = new Property<>(true, this);
-		public final Property<Boolean> loadApertures = new Property<>(true, this);
-		public final Property<Boolean> loadPlotcfg = new Property<>(true, this);
+	private static class MPTableLoadSettings {
+		Property<Boolean> loadData = new Property<>(true, this);
+		Property<Boolean> loadApertures = new Property<>(true, this);
+		Property<Boolean> loadPlotcfg = new Property<>(true, this);
 	}
 
 }

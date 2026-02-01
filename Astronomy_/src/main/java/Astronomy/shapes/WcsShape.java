@@ -17,6 +17,7 @@ import astroj.WCS;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.astro.logging.AIJLogger;
+import ij.plugin.FITS_Reader;
 
 public record WcsShape(List<WCSCurve> curves) {
     public Area getArea(WCS wcs) {
@@ -121,7 +122,9 @@ public record WcsShape(List<WCSCurve> curves) {
                 var hdr = FitsJ.getHeader(imp, i);
                 var wcs = new WCS(hdr);
                 if (!wcs.hasWCS()) {
-                    imp.setSliceWithoutUpdate(i);
+                    int finalI = i;
+                    ScopedValue.where(FITS_Reader.HEADER_ONLY, true)
+                            .run(() -> imp.setSliceWithoutUpdate(finalI));
                 }
             }
             var hdr = FitsJ.getHeader(imp, i);

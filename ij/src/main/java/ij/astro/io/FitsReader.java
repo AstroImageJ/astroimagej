@@ -816,6 +816,18 @@ public class FitsReader implements AutoCloseable {
         fits.close();
     }
 
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getDepth() {
+        return depth;
+    }
+
     private record ProcessedFits(List<ImageProcessor> processors, List<String> headers) {}
 
     record HDUDescriptor(Header original, Header decompressed, HDUType hduType) {

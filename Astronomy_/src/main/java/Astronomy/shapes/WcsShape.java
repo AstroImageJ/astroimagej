@@ -123,7 +123,7 @@ public record WcsShape(List<WCSCurve> curves) {
                 var wcs = new WCS(hdr);
                 if (!wcs.hasWCS()) {
                     int finalI = i;
-                    ScopedValue.where(FITS_Reader.HEADER_ONLY, true)
+                    ScopedValue.where(FITS_Reader.HEADER_ONLY, true).where(FITS_Reader.REF_SLICE, imp.getProcessor())
                             .run(() -> imp.setSliceWithoutUpdate(finalI));
                 }
             }

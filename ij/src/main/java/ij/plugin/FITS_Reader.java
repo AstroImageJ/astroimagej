@@ -119,6 +119,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	public static HeaderCardFilter filter = null;
 	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
     public static final ScopedValue<Boolean> HEADER_ONLY = ScopedValue.newInstance();
+    public static final ScopedValue<ImageProcessor> REF_SLICE = ScopedValue.newInstance();
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -152,8 +153,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				if (HEADER_ONLY.orElse(false)) {
 					// Needed for slice info to update
-					//todo find replacement for creating IP
-					setProcessor(fileName, new ByteProcessor(r.getWidth(), r.getHeight()));
+					setProcessor(fileName, REF_SLICE.orElse(new ByteProcessor(width, height)));
 
 					IJ.showStatus("");
 					return;

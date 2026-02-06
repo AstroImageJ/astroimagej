@@ -44,6 +44,7 @@ import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.FitsReader;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
@@ -57,6 +58,7 @@ import ij.io.OpenDialog;
 import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
+import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Data;
@@ -114,8 +116,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	@FunctionalInterface
 	private interface TableWrapper { double valueAt(int x, int y); }
 
-	private static HeaderCardFilter filter = null;
+	public static HeaderCardFilter filter = null;
 	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
+    public static final ScopedValue<Boolean> HEADER_ONLY = ScopedValue.newInstance();
+    public static final ScopedValue<ImageProcessor> REF_SLICE = ScopedValue.newInstance();
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -128,7 +132,64 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		AIJLogger.setLogAutoCloses(Prefs.getBoolean(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE, true));
 
-		/*
+		if (true) {
+			try (var r = FitsReader.create(path)) {
+				if (r.size() <= 0) {
+					if (r.isMeasurementsTable()) {
+						// Read table
+						r.getHeaders();
+					}
+
+					return;
+				}
+
+				setFileInfo(r.decodeFileInfo());
+				var hdrs = r.getHeaders();
+				setProperty("Info", hdrs[0]);
+
+				fileName = r.fileName;
+				fileType = r.fileType;
+				fileBase = r.fileBase;
+
+				if (HEADER_ONLY.orElse(false)) {
+					// Needed for slice info to update
+					setProcessor(fileName, REF_SLICE.orElse(new ByteProcessor(width, height)));
+
+					IJ.showStatus("");
+					return;
+				}
+
+				var ips = r.getProcessors();
+
+				if (r.size() == 1) {
+					setProcessor(fileName, ips[0]);
+					if (imagePlus == null) return;
+					var imageProcessor = imagePlus.getProcessor();
+					imageProcessor.flipVertical();
+					setProcessor(fileName, imageProcessor);
+				} else if (r.size() > 1) {
+					var stack = new ImageStack();
+					for (int i = 0; i < r.size(); i++) {
+						stack.addSlice(fileBase + "_" +
+								(r.size() < 10000 ? fourDigits.format(i + 1) : (i + 1)) +
+								(!fileType.isEmpty() ? "." + fileType : "") + "\n" + hdrs[i], ips[i]);
+					}
+
+					setStack(fileName, stack);
+				}
+				IJ.showStatus("");
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+
+			return;
+		}
+
+		//todo implement legacy fallback, remove old nom.tam code
+
+        /*
 		 * Extract array of HDU from FITS file using nom.tam.fits
 		 * This also uses the old style FITS decoder to create a FileInfo.
 		 */
@@ -164,8 +225,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					displayHdu = getCompressedImageData((CompressedImageHDU) hdus[firstImageIndex]);
 				} else {
 					displayHdu = hdus[firstImageIndex];
-					wi = displayHdu.getHeader().getIntValue("NAXIS1");
-					he = displayHdu.getHeader().getIntValue("NAXIS2");
+					wi = getHeader(displayHdu, true).getIntValue("NAXIS1");
+					he = getHeader(displayHdu, true).getIntValue("NAXIS2");
 					de = 1; // Use displaySingleImage
 				}
 			} catch (FitsException e) {
@@ -277,7 +338,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Returns a newline-delimited concatenation of the header lines.
 	 */
 	private String getHeaderInfo(BasicHDU<?> displayHdu) {
-		Header header = displayHdu.getHeader();
+		Header header = getHeader(displayHdu, true);
 
 		// Get the Header as a String
 		final var baos = new ByteArrayOutputStream();
@@ -294,7 +355,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Generate {@link FileInfo} for the FITS image for use in displaying it.
 	 */
 	private FileInfo decodeFileInfo(BasicHDU<?> displayHdu) throws FitsException {
-		Header header = displayHdu.getHeader();
+		Header header = getHeader(displayHdu, true);
 		FileInfo fi = new FileInfo();
 		fi.fileFormat = FileInfo.FITS;
 		fi.fileName = fileName.endsWith(".fz") ? fileName.substring(0, fileName.length() - 3) : fileName;
@@ -356,7 +417,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private int firstImageHDU(BasicHDU<?>[] basicHDUs) {
 		for (int i=0; i < basicHDUs.length; i++) {
-			if (basicHDUs[i].getHeader().getIntValue(NAXIS) > 1) {
+			if (getHeader(basicHDUs[i], false).getIntValue(NAXIS) > 1) {
 				return i;
 			}
 		}
@@ -367,7 +428,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Determine if the HDU at {@param imageIndex} is a compressed image.
 	 */
 	private boolean isCompressedFormat(BasicHDU<?>[] basicHDU, int imageIndex) {
-		return basicHDU[imageIndex].getHeader().getBooleanValue("ZIMAGE", false);
+		return getHeader(basicHDU[imageIndex], false).getBooleanValue("ZIMAGE", false);
 	}
 
 	/**
@@ -376,9 +437,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Updates {@link FITS_Reader#wi}, {@link FITS_Reader#he}, and {@link FITS_Reader#de}
 	 */
 	private ImageHDU getCompressedImageData(CompressedImageHDU hdu) throws FitsException {
-		wi = hdu.getHeader().getIntValue("ZNAXIS1");
-		he = hdu.getHeader().getIntValue("ZNAXIS2");
-		de = hdu.getHeader().getIntValue("ZNAXIS3", 1);
+		wi = getHeader(hdu, false).getIntValue("ZNAXIS1");
+		he = getHeader(hdu, false).getIntValue("ZNAXIS2");
+		de = getHeader(hdu, false).getIntValue("ZNAXIS3", 1);
 
 		return hdu.asImageHDU();
 	}
@@ -400,24 +461,24 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		generateTimings(hdu);
 
 		if (isTessTicaFfiFull(hdu)) {
-			if (hdu.getHeader().getIntValue("QUAL_BIT") != 0) {
+			if (getHeader(hdu, true).getIntValue("QUAL_BIT") != 0) {
 				IJ.error("Skipped TICA image as QUAL_BIT is nonzero.");
 				return;
 			}
 		}
 
 		if (isHyperSup(hdus[0])) {
-			var primaryH = hdus[0].getHeader();
-			hdu.getHeader().deleteKey("MJD-OBS");
-			hdu.getHeader().findCard("DATE-OBS")
+			var primaryH = getHeader(hdus[0], true);
+			getHeader(hdu, false).deleteKey("MJD-OBS");
+			getHeader(hdu, false).findCard("DATE-OBS")
 					.setValue(primaryH.getStringValue("DATE-OBS") + "T" + primaryH.getStringValue("UT-STR"));
-			hdu.getHeader().addLine(primaryH.findCard("EXPTIME"));
+			getHeader(hdu, false).addLine(primaryH.findCard("EXPTIME"));
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessSpocFfiCut(tableHDU) || isTessSpocPostageStamp(hdus) || isTessTicaFfiCut(tableHDU)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
-				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
+				var hdr = convertHeaderForFfi(getHeader(hdus[2], true), tableHDU);
 
 				if (de > 1 && FolderOpener.virtualIntended) {
 					AIJLogger.log("Cannot open 'table' images as a virtual stack.", false);
@@ -434,10 +495,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		} else if (isBasic3DImage(hdus)) {
 			imageProcessor = makeStackFromManyHDU(hdus);
-		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
-			if (filter != null && !filter.matchesFilter(hdu.getHeader())) return;
+		} else if (getHeader(hdu, true).getIntValue(NAXIS) == 2) {
+			if (filter != null && !filter.matchesFilter(getHeader(hdu, true))) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
-		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
+		} else if (getHeader(hdu, true).getIntValue(NAXIS) == 3) {
 			if (FolderOpener.virtualIntended) {
 				AIJLogger.log("Cannot open 3D images as a virtual stack.", false);
 			}
@@ -455,7 +516,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
 		// For compressed multiHDU files, the first HDU likely has no data as it
 		// was added to allow for compression.
-		var firstValidHdu = hdus[0].getHeader().getIntValue(NAXIS) == 0 ? 1 : 0;
+		var firstValidHdu = getHeader(hdus[0], true).getIntValue(NAXIS) == 0 ? 1 : 0;
 
 		var isImages = (hdus.length > 1 && !isLco(hdus)) &&
 				(Arrays.stream(hdus).skip(firstValidHdu)
@@ -464,7 +525,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 								hdu.getKernel() != null));
 
 		var imagesAreSameSize = Arrays.stream(hdus)
-				.skip(hdus[0].getHeader().getIntValue(NAXIS) == 0 ? 1 : 0)
+				.skip(getHeader(hdus[0], true).getIntValue(NAXIS) == 0 ? 1 : 0)
 				.allMatch(hdu -> {
 					try {
 						return Arrays.equals(hdus[firstValidHdu].getAxes(), hdu.getAxes());
@@ -551,7 +612,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return mt;
 	}
 
-	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU,
+	public static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU,
 														 Set<Opener.OpenOption> openOptions) throws FitsException {
 		var loadTable = true;
 		var skipDialog = openOptions.contains(Opener.OpenOption.SKIP_UI);
@@ -989,17 +1050,17 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
 		// Get the Header as a String
-		List<String> headers = new ArrayList<>(hdu.getHeader().getIntValue(NAXISn.n(3).key()));
+		List<String> headers = new ArrayList<>(getHeader(hdu, true).getIntValue(NAXISn.n(3).key()));
 		final var baos = new ByteArrayOutputStream();
 		final var utf8 = StandardCharsets.UTF_8.name();
 		try (PrintStream ps = new PrintStream(baos, true, utf8)) {
 			ps.println("AIJ-HEADER-MARKER");
-			hdu.getHeader().dumpHeader(ps);
+			getHeader(hdu, true).dumpHeader(ps);
 			headers.add(baos.toString(utf8));
 		} catch (Exception ignored) {}
 
 		return makeStackFrom3DData((Object[]) imgData.getKernel(),
-				hdu.getHeader().getIntValue(NAXISn.n(3).key()), headers);
+				getHeader(hdu, true).getIntValue(NAXISn.n(3).key()), headers);
 	}
 
 	/**
@@ -1021,7 +1082,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		var pm = makeMonitor(imageCount);
 		for (int i = 0; i < imageCount; i++) {
 			String header = "";
-			if (headers != null && headers.size() > 0) {
+			if (headers != null && !headers.isEmpty()) {
 				var headerIndex = headers.size() == 1 ? 0 : i;
 				if (headers.get(headerIndex).contains("AIJ_Q")) { // For TESScut, skip bad images
 					AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
@@ -1073,10 +1134,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				hdu = hdus[i];
 			}
 			// Skip null header
-			if (hdu.getHeader().getIntValue(NAXIS) == 0) continue;
+			if (getHeader(hdu, true).getIntValue(NAXIS) == 0) continue;
 
 			// Get the Header as a String
-			var hdr = hdu.getHeader();
+			var hdr = getHeader(hdu, true);
 
 			if (filter != null && !filter.matchesFilter(hdr)) continue;
 			if (!noExtensionNames && !Objects.equals("SCI", hdr.getStringValue(EXTNAME))) {
@@ -1164,6 +1225,13 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ip = imgtmp;
 		//ip.flipVertical();
 		return ip;
+	}
+
+	private Header getHeader(BasicHDU<?> hdu, boolean decompress) {
+		if (decompress && hdu instanceof CompressedImageHDU compressedImageHDU) {
+			return compressedImageHDU.getImageHeader();
+		}
+		return hdu.getHeader();
 	}
 
 	/**

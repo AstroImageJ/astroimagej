@@ -17,10 +17,11 @@ import astroj.WCS;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.astro.logging.AIJLogger;
+import ij.plugin.FITS_Reader;
 
 public record WcsShape(List<WCSCurve> curves) {
     public Area getArea(WCS wcs) {
-        if (wcs == null) {
+        if (wcs == null || !wcs.hasWCS()) {
             return new Area();
         }
 
@@ -121,7 +122,9 @@ public record WcsShape(List<WCSCurve> curves) {
                 var hdr = FitsJ.getHeader(imp, i);
                 var wcs = new WCS(hdr);
                 if (!wcs.hasWCS()) {
-                    imp.setSliceWithoutUpdate(i);
+                    int finalI = i;
+                    ScopedValue.where(FITS_Reader.HEADER_ONLY, true).where(FITS_Reader.REF_SLICE, imp.getProcessor())
+                            .run(() -> imp.setSliceWithoutUpdate(finalI));
                 }
             }
             var hdr = FitsJ.getHeader(imp, i);
@@ -158,7 +161,8 @@ public record WcsShape(List<WCSCurve> curves) {
         }
         
         if (area == null) {
-            IJ.error("WCS Intersection failed to find any paltesolved images");
+            AIJLogger.log("WCS Intersection failed to find any platesolved images");
+            return null;
         }
 
         return WcsShape.fromArea(initial, area);

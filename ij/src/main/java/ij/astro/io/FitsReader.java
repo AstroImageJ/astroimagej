@@ -87,7 +87,7 @@ public class FitsReader implements AutoCloseable {
         this.directory = directory;
         this.fileName = fileName;
         this.fits = fits;
-        this.hdus = fits.read();//todo does this actually do deferred reads?
+        this.hdus = fits.read(); // Reads to end of File, and for RandomAccess files skips reading data
         hduDescriptors = new ArrayList<>(fits.getNumberOfHDUs());
 
         for (int i = 0; i < fits.getNumberOfHDUs(); i++) {
@@ -113,13 +113,18 @@ public class FitsReader implements AutoCloseable {
             try (var zip = new ZipFile(s[0] + ".zip")) {
                 var m = new ProgressMonitorInputStream(IJ.getInstance(),
                         "Reading FITS image", zip.getInputStream(zip.getEntry(s[1].substring(1))));
+                FitsFactory.setAllowHeaderRepairs(true);
                 return new FitsReader(new Fits(m), directory, fileName);
             }
         }
 
-        return new FitsReader(Path.of(path), directory, fileName);//todo use FitsFile?
+        return new FitsReader(Path.of(path), directory, fileName);
     }
 
+    /**
+     * Sets up dimensions for image data and find first HDU from the file with NAXIS > 1,
+     * assume it is an image.
+     */
     private void setupImageData() {
         for (int i = 0; i < hduDescriptors.size(); i++) {
             var descriptor = hduDescriptors.get(i);
@@ -328,6 +333,10 @@ public class FitsReader implements AutoCloseable {
         return headers;
     }
 
+    /**
+     * From 3D array of pixel data, create a stack. Uses provided Header to set info for processes such
+     * as MultiAperture.
+     */
     private ProcessedFits processorsFrom3DData(int index, int imageCount, List<String> headers, boolean includeProcessors) throws IOException {
         Object[] data = null;
 
@@ -345,6 +354,10 @@ public class FitsReader implements AutoCloseable {
         return processorsFrom3DData(data, imageCount, headers, includeProcessors);
     }
 
+    /**
+     * From 3D array of pixel data, create a stack. Uses provided Header to set info for processes such
+     * as MultiAperture.
+     */
     private ProcessedFits processorsFrom3DData(Object[] data, int imageCount, List<String> headers, boolean includeProcessors) {
         var processors = new ArrayList<ImageProcessor>();
         var outputHeaders = new ArrayList<String>();
@@ -378,6 +391,9 @@ public class FitsReader implements AutoCloseable {
         return new ProcessedFits(processors, outputHeaders);
     }
 
+    /**
+     * Create a stack from a fits file that only contains multiple images
+     */
     private ProcessedFits processorsFromManyHdu(boolean includeProcessors) throws IOException {
         var processors = new ArrayList<ImageProcessor>();
         var headers = new ArrayList<String>();
@@ -411,6 +427,12 @@ public class FitsReader implements AutoCloseable {
         return new ProcessedFits(processors, headers);
     }
 
+    /**
+     * Convert 2D image data into an ImageProcessor, scale image data
+     * <p>
+     * Data is transposed to match {@link ImageProcessor} implementations
+     * (see {@link ImageProcessor#getPixelValue(int, int)})
+     */
     private ImageProcessor twoDimensionalImageData2Processor(int imageIndex) throws IOException {
         var hdu = fits.getHDU(imageIndex);
         Object imageData = null;
@@ -425,6 +447,12 @@ public class FitsReader implements AutoCloseable {
         return twoDimensionalImageData2Processor(imageData);
     }
 
+    /**
+     * Convert 2D image data into an ImageProcessor, scale image data
+     * <p>
+     * Data is transposed to match {@link ImageProcessor} implementations
+     * (see {@link ImageProcessor#getPixelValue(int, int)})
+     */
     private ImageProcessor twoDimensionalImageData2Processor(Object imageData) {
         var type = ImageType.getType(imageData, bScale, bZero);
         var imgtmp = type.makeProcessor(width, height);
@@ -432,6 +460,9 @@ public class FitsReader implements AutoCloseable {
         return conditionImageProcessor(pixels, imgtmp);
     }
 
+    /**
+     * Set pixel and scaling data of the ImageProcessor, flip the image vertically.
+     */
     private ImageProcessor conditionImageProcessor(Object pixels, ImageProcessor imgtmp) {
         imgtmp.setPixels(pixels);
         imgtmp.resetMinAndMax();
@@ -457,6 +488,8 @@ public class FitsReader implements AutoCloseable {
     }
 
     private boolean isBasic3DImage() {
+        // For compressed multiHDU files, the first HDU likely has no data as it
+        // was added to allow for compression.
         var firstValidHdu = hduDescriptors.getFirst().getFormedHeader().getIntValue(NAXIS) == 0 ? 1 : 0;
         return isBasic3DImageDescriptors() && processBasic3DImage(firstValidHdu);
     }
@@ -515,6 +548,7 @@ public class FitsReader implements AutoCloseable {
             var hdr = hduDescriptors.get(index).getFormedHeader();
             var isCalImage = "cal".equals(hdr.findCard("IMAGTYPE").getValue().trim());
             if (isCalImage) {
+                // Copy primary header to displayHDU
                 if (hdr.getBooleanValue("INHERIT", false)) {
                     Cursor<String, HeaderCard> j = hduDescriptors.getFirst().getFormedHeader().iterator();
 
@@ -546,6 +580,11 @@ public class FitsReader implements AutoCloseable {
         return true;
     }
 
+    /**
+     * Convert base image header for TESScut images to a 3D FITS image.
+     * <p>
+     * Updates {@link FitsReader#width}, {@link FitsReader#height}, and {@link FitsReader#depth}
+     */
     private Header convertHeaderForFfi(Header header, TableHDU<?> tableHDU) {
         /*header.setNaxes(3);
         header.setNaxis(3, tableHDU.getNRows());*/
@@ -648,6 +687,13 @@ public class FitsReader implements AutoCloseable {
         return "Hyper Suprime-Cam".equals(hduDescriptors.getFirst().getFormedHeader().getStringValue("INSTRUME"));
     }
 
+    /**
+     * Determine if an image is from LCO.
+     * <p>
+     * Most LCO images contain 3 image HDUs, with the science image separated from the others by a table HDU.
+     * In some cases, this table is missing, which would make LCO images be treated as a multiHDU FITS file,
+     * opening an image stack. This behavior is not desired.
+     */
     private boolean isLco() {
         if (hduDescriptors.size() <= 1) {
             return false;
@@ -657,12 +703,18 @@ public class FitsReader implements AutoCloseable {
         return "LCOGT".equals(x == null ? null : x.trim()) && "SCI".equals(d == null ? null : d.trim());
     }
 
+    /**
+     * Determine if a table is a TESS 2-minute postage stamp.
+     */
     private boolean isTessSpocPostageStamp() {
         var hdr = hduDescriptors.getFirst().getFormedHeader();
         return ("TESS").equals(hdr.getStringValue(TELESCOP)) && hdr.containsKey("CREATOR") &&
                 hdr.getStringValue("CREATOR").contains("TargetPixelExporterPipelineModule");
     }
 
+    /**
+     * Determine if the image is a TESS FFI.
+     */
     private boolean isTessSpocFfiFull(int i) {
         var hdr = hduDescriptors.get(i).getFormedHeader();
         var telescope = hdr.findCard("TELESCOP");
@@ -678,27 +730,47 @@ public class FitsReader implements AutoCloseable {
         return tVal.strip().equals("TESS") && iCom.contains("FFI image type");
     }
 
+    /**
+     * Determine if a table is a TESS cut.
+     */
     private boolean isTessSpocFfiCut(int i) {
         var hdr = hduDescriptors.get(i).getFormedHeader();
         return "astrocut".equals(hdr.getStringValue("CREATOR")) && hdr.findCard("TICAVER") == null;
     }
 
+    /**
+     * Determine if the image is a TICA image
+     */
     private boolean isTessTicaFfiFull(int i) {
         return isTessTicaFfiFull(hduDescriptors.get(i).getFormedHeader());
     }
 
+    /**
+     * Determine if a table is a TESS cut.
+     */
     private boolean isTessTicaFfiCut(int i) {
         return isTessTicaFfiCut(hduDescriptors.get(i).getFormedHeader());
     }
 
+    /**
+     * Determine if the image is a TICA image
+     */
     private boolean isTessTicaFfiFull(Header hdr) {
         return null != hdr.findCard("TICAVER") && hdr.findCard("CREATOR") == null;
     }
 
+    /**
+     * Determine if a table is a TESS cut.
+     */
     private boolean isTessTicaFfiCut(Header hdr) {
         return null != hdr.findCard("TICAVER") && "astrocut".equals(hdr.getStringValue("CREATOR"));
     }
 
+    /**
+     * Calculate BJD_TDB for TESS or TICA FFIs as they are missing it.
+     * <p>
+     * Note: Assumes all needed cards are present.
+     */
     private void generateTimings(int i) throws HeaderCardException {
         var header = hduDescriptors.get(i).getFormedHeader();
 

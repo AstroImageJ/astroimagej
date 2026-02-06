@@ -6512,7 +6512,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             regExclusion.addItemListener(_ -> {
                 var needsManual = regExclusion.getSelectedItem() != BorderRegionExclusion.NONE &&
                         regExclusion.getSelectedItem() != BorderRegionExclusion.WCS;
+                var needsWcs = regExclusion.getSelectedItem() == BorderRegionExclusion.WCS ||
+                        regExclusion.getSelectedItem() == BorderRegionExclusion.COMMON;
                 RegionExclusion.EXCLUDE_BORDERS.set(needsManual);
+                RegionExclusion.EXCLUDE_UNCOMMON_REGION.set(needsWcs);
                 RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
             });
             manualRegionExclusion.addActionListener(_ -> RegionExclusion.editSettings());
@@ -6522,8 +6525,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (suggestCompStars) {
                 var needsManual = regExclusion.getSelectedItem() != BorderRegionExclusion.NONE &&
                         regExclusion.getSelectedItem() != BorderRegionExclusion.WCS;
+                var needsWcs = regExclusion.getSelectedItem() == BorderRegionExclusion.WCS ||
+                        regExclusion.getSelectedItem() == BorderRegionExclusion.COMMON;
                 RegionExclusion.EXCLUDE_BORDERS.set(needsManual);
-                if (!RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get() && needsManual) {
+                RegionExclusion.EXCLUDE_UNCOMMON_REGION.set(needsWcs);
+                if (!RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get() && (needsManual || needsWcs)) {
                     RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
                 }
             }
@@ -6602,8 +6608,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (!suggestCompStars) {
                 var needsManual = REGION_EXLUSION_MODE.get() != BorderRegionExclusion.NONE &&
                         REGION_EXLUSION_MODE.get() != BorderRegionExclusion.WCS;
+                var needsWcs = REGION_EXLUSION_MODE.get() == BorderRegionExclusion.WCS ||
+                        REGION_EXLUSION_MODE.get() == BorderRegionExclusion.COMMON;
                 RegionExclusion.EXCLUDE_BORDERS.set(needsManual);
-                if (!RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get() && needsManual) {
+                RegionExclusion.EXCLUDE_UNCOMMON_REGION.set(needsWcs);
+                if (!RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get() && (needsManual || needsWcs)) {
                     RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
                 }
             }
@@ -6756,16 +6765,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         switch (REGION_EXLUSION_MODE.get()) {
             case NONE -> {
                 RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(false);
-                ac.setWcsShape(null);
+                RegionExclusion.EXCLUDE_UNCOMMON_REGION.set(false);
                 return;
             }
             case MANUAL -> {
                 RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
-                ac.setWcsShape(null);
+                RegionExclusion.EXCLUDE_UNCOMMON_REGION.set(false);
                 return;
             }
             case WCS, COMMON -> {
                 RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
+                RegionExclusion.EXCLUDE_UNCOMMON_REGION.set(true);
             }
         }
         var region = WcsShape.createCommonRegion(imp, firstSlice, lastSlice);

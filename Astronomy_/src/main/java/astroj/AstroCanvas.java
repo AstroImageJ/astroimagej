@@ -142,6 +142,7 @@ public class AstroCanvas extends OverlayCanvas {
         RegionExclusion.BORDER_EXCLUSION_LEFT.addListener(this, (_, _) -> updateDisplay());
         RegionExclusion.BORDER_EXCLUSION_RIGHT.addListener(this, (_, _) -> updateDisplay());
         RegionExclusion.DISPLAY_EXCLUDED_REGIONS.addListener(this, (_, _) -> updateDisplay());
+        RegionExclusion.EXCLUDE_UNCOMMON_REGION.addListener(this, (_, _) -> updateDisplay());
     }
 
     private void updateDisplay() {
@@ -710,7 +711,7 @@ public class AstroCanvas extends OverlayCanvas {
             }
         }
 
-        if (wcsShape != null && wcs != null) {
+        if (RegionExclusion.EXCLUDE_UNCOMMON_REGION.get() && wcsShape != null && wcs != null) {
             var aijTransform = new AffineTransform(canvTrans);
             // Create transform to screenspace coordinates
             var srcRect = getSrcRect();

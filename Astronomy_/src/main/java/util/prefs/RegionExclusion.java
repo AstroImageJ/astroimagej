@@ -24,6 +24,7 @@ import ij.process.ImageProcessor;
 public class RegionExclusion {
     public static final Property<Boolean> DISPLAY_EXCLUDED_REGIONS = new Property<>(false, RegionExclusion.class);
     public static final Property<Boolean> EXCLUDE_BORDERS = new Property<>(false, RegionExclusion.class);
+    public static final Property<Boolean> EXCLUDE_UNCOMMON_REGION = new Property<>(true, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_LEFT = new Property<>(0, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_RIGHT = new Property<>(0, RegionExclusion.class);
     public static final Property<Integer> BORDER_EXCLUSION_TOP = new Property<>(0, RegionExclusion.class);
@@ -43,9 +44,13 @@ public class RegionExclusion {
 
         var gd = new GenericSwingDialog("Region Exclusion");
 
-        var cbs = gd.addCheckboxGroup(1, 1, new String[]{"Exclude Borders"},
-                new boolean[]{EXCLUDE_BORDERS.get()},
-                List.of(EXCLUDE_BORDERS::set));
+        var cbs = gd.addCheckboxGroup(2, 1, new String[]{"Exclude Borders", "Exclude non-common image regions (requires WCS)"},
+                new boolean[]{EXCLUDE_BORDERS.get(), EXCLUDE_UNCOMMON_REGION.get()},
+                List.of(EXCLUDE_BORDERS::set, EXCLUDE_UNCOMMON_REGION::set));
+
+        cbs.subComponents().get(1).setToolTipText("""
+                Include only the image region that is common to all images. This option only affects the region used for auto comp star selection.
+                """);
 
         gd.addCheckbox("Lock all region values to Top", LOCK_BORDERS_TO_TOP);
 

@@ -18,4 +18,16 @@ repositories {
 
 dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("com.charleskorn.kaml:kaml:0.83.0")
+
+    implementation("org.bouncycastle:bcprov-jdk18on:1.80")
+    implementation("org.bouncycastle:bcpg-jdk18on:1.80")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
+
+    implementation("dev.sigstore:sigstore-java:2.0.0")
+
+    implementation("net.java.dev.jna:jna:5.18.1")
+    implementation("net.java.dev.jna:jna-platform:5.18.1")
+    implementation("com.github.frimtec:jpse:1.4.0")
 }

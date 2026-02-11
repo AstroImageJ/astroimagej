@@ -484,7 +484,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         // Verify signature
         if (buffer != null && signatureBuffer != null) {
             IJ.showStatus("Verifying signature...");
-            var bundle = Bundle.from(new InputStreamReader(new ByteArrayInputStream(signatureBuffer)));
+            var bundle = Bundle.from(new InputStreamReader(new ByteArrayInputStream(signatureBuffer), StandardCharsets.UTF_8));
             var options = VerificationOptions.builder().addCertificateMatchers(
                     VerificationOptions.CertificateMatcher.fulcio()
                             .subjectAlternativeName(StringMatcher.string(CERTIFICATE_IDENTITY))

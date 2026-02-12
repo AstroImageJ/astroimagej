@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -43,6 +44,7 @@ import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
+import ij.astro.util.PixelPatcher;
 import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.astro.util.ZipOpenerUtil;
 import ij.io.FileInfo;
@@ -73,6 +75,10 @@ public class FitsReader implements AutoCloseable {
     public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
     private static final LeapSeconds LEAP_SECONDS = new LeapSeconds();
     private static final int MAX_THREADS = getThreadCount();
+    private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No PixelPatcher implementation found"));
+    private static final boolean DEBUG_BPM = true;
     private final Fits fits;
     private final List<HDUDescriptor> hduDescriptors;
     private final BasicHDU<?>[] hdus;
@@ -199,6 +205,9 @@ public class FitsReader implements AutoCloseable {
 
         var header = descriptor.getFormedHeader();
         if (isBasic3DImage()) {
+            if (DEBUG_BPM && isLco() && findBadPixelMask() != -1) {
+                return 2;
+            }
             return countStackableImagesFromDescriptors();
         }
 
@@ -309,16 +318,24 @@ public class FitsReader implements AutoCloseable {
         if (naxis == 2) {
             var headerText = headerToString(header);
             var headers = List.of(headerText);
+            var bpmMaskIdx = findBadPixelMask();
 
             if (filter != null && !filter.matchesFilter(header)) {
                 return new ProcessedFits(List.of(), List.of());
             }
 
             if (!includeProcessors) {
+                if (DEBUG_BPM && bpmMaskIdx != -1) {
+                    return new ProcessedFits(List.of(), List.of(headerText, headerText));
+                }
                 return new ProcessedFits(List.of(), headers);
             }
 
             var processor = twoDimensionalImageData2Processor(firstImageIndex);
+            var mask = processBadPixelMask(processor, bpmMaskIdx);
+            if (DEBUG_BPM && mask != null) {
+                return new ProcessedFits(List.of(processor, mask), List.of(headerText, headerText));
+            }
             return new ProcessedFits(List.of(processor), headers);
         }
 
@@ -543,6 +560,31 @@ public class FitsReader implements AutoCloseable {
         }
 
         return new ProcessedFits(processors, headers);
+    }
+
+    private int findBadPixelMask() {
+        var maskIdx = -1;
+        for (int i = 0; i < hduDescriptors.size(); i++) {
+            var hdr = hduDescriptors.get(i).original();
+            if ("BPM".equals(hdr.getStringValue(EXTNAME))) {
+                maskIdx = i;
+                break;
+            }
+        }
+
+        return maskIdx;
+    }
+
+    private ImageProcessor processBadPixelMask(ImageProcessor ip, int maskIdx) throws IOException {
+        if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH || maskIdx == -1) {
+            return null;
+        }
+
+        var maskIp = twoDimensionalImageData2Processor(maskIdx);
+
+        PIXEL_PATCHER.patch(ip, maskIp, PixelPatcher.TYPE.get().toPatchType());
+
+        return maskIp;
     }
 
     /**

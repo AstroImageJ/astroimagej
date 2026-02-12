@@ -5,7 +5,7 @@ import ij.astro.io.prefs.Property;
 import ij.process.ImageProcessor;
 
 public interface PixelPatcher {
-    Property<PatchType.Type> TYPE = new Property<>(PatchType.Type.CONSTANT_VALUE, PixelPatcher.class);
+    Property<PatchType.Type> TYPE = new Property<>(PatchType.Type.PASS_THROUGH, PixelPatcher.class);
 
     void patch(ImageProcessor ip, ImageProcessor mask, PatchType patchType);
 

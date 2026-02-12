@@ -544,6 +544,13 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		PIXEL_PATCHER.patch(ip, maskIp, PixelPatcher.TYPE.get().toPatchType());
 
+		// Debug by adding mask to stack
+		if (false) {
+			var stack = new ImageStack(maskIp.getWidth(), maskIp.getHeight());
+			stack.addSlice(ip);
+			stack.addSlice(maskIp);
+			setStack(stack);
+		}
 	}
 
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {

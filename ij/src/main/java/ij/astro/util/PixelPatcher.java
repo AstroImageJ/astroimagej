@@ -15,6 +15,7 @@ public interface PixelPatcher {
 
         record PassThrough() implements PatchType {}
         record FitPlane() implements PatchType {}
+        record FitGaussian() implements PatchType {}
         record NearestNeighbor(MergeType mergeType) implements PatchType {
             public static final Property<MergeType> MERGE_TYPE = new Property<>(MergeType.NEAREST_NEIGHBOR, NearestNeighbor.class);
 
@@ -80,7 +81,6 @@ public interface PixelPatcher {
             }
         }
         //todo PSF option
-        //todo gaussian fit option
 
         enum Type {
             AVERAGE_FILL,
@@ -90,6 +90,7 @@ public interface PixelPatcher {
             CONSTANT_VALUE,
             NEAREST_NEIGHBOR,
             PASS_THROUGH,
+            FIT_GAUSSIAN,
             ;
 
             public PatchType toPatchType() {
@@ -101,6 +102,7 @@ public interface PixelPatcher {
                     case CONSTANT_VALUE -> new ConstantValue();
                     case NEAREST_NEIGHBOR -> new NearestNeighbor();
                     case PASS_THROUGH -> new PassThrough();
+                    case FIT_GAUSSIAN -> new FitGaussian();
                 };
             }
         }

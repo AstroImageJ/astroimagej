@@ -2,7 +2,7 @@
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="ij.astro.gui.PixelPatcherOptionsDialog">
   <grid id="27dc6" binding="rootPanel" layout-manager="GridBagLayout">
     <constraints>
-      <xy x="20" y="20" width="780" height="133"/>
+      <xy x="20" y="20" width="877" height="167"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -15,48 +15,9 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="25870" class="javax.swing.JRadioButton" binding="averageFillRadioButton">
+          <component id="9e2fc" class="javax.swing.JComboBox" binding="patchTypeSelector" custom-create="true">
             <constraints/>
-            <properties>
-              <selected value="true"/>
-              <text value="Average Fill"/>
-            </properties>
-          </component>
-          <component id="5981f" class="javax.swing.JRadioButton" binding="medianFillRadioButton">
-            <constraints/>
-            <properties>
-              <text value="Median Fill"/>
-            </properties>
-          </component>
-          <component id="95a8b" class="javax.swing.JRadioButton" binding="floodFillRadioButton" default-binding="true">
-            <constraints/>
-            <properties>
-              <text value="Flood Fill"/>
-            </properties>
-          </component>
-          <component id="621cc" class="javax.swing.JRadioButton" binding="nearestNeighborRadioButton" default-binding="true">
-            <constraints/>
-            <properties>
-              <text value="Nearest Neighbor"/>
-            </properties>
-          </component>
-          <component id="5b52a" class="javax.swing.JRadioButton" binding="fitPlaneRadioButton" default-binding="true">
-            <constraints/>
-            <properties>
-              <text value="Fit Plane"/>
-            </properties>
-          </component>
-          <component id="1ecaa" class="javax.swing.JRadioButton" binding="constantValueRadioButton" default-binding="true">
-            <constraints/>
-            <properties>
-              <text value="Constant Value"/>
-            </properties>
-          </component>
-          <component id="193d6" class="javax.swing.JRadioButton" binding="passThroughRadioButton" default-binding="true">
-            <constraints/>
-            <properties>
-              <text value="Pass Through"/>
-            </properties>
+            <properties/>
           </component>
         </children>
       </grid>
@@ -237,6 +198,21 @@
             <border type="none"/>
             <children>
               <component id="dc248" class="javax.swing.JLabel">
+                <constraints/>
+                <properties>
+                  <text value="No options can be specified for the patch mode."/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="11544" binding="fitGuassianCard" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+            <constraints>
+              <card name="fitGaussianCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="3eab" class="javax.swing.JLabel">
                 <constraints/>
                 <properties>
                   <text value="No options can be specified for the patch mode."/>

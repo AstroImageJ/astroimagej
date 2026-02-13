@@ -48,7 +48,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         // No unmasked values present
                         if (Double.isNaN(average)) {
-                            //continue;
+                            continue;//todo log at end how many were skipped, suggest using another mode
                         }
 
                         ip.setf(x, y, (float) average);
@@ -58,7 +58,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         // No unmasked values present
                         if (Double.isNaN(median)) {
-                            //continue;
+                            continue;//todo log at end how many were skipped, suggest using another mode
                         }
 
                         ip.setf(x, y, (float) median);
@@ -70,7 +70,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 .toArray();
 
                         if (borderValues.length == 0) {
-                            //todo how to handle
+                            //todo throw error no good pixels
                             continue;
                         }
 
@@ -104,7 +104,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                         var badPixels = region.pixels();
 
                         if (borderPixels.isEmpty()) {
-                            //todo how to handle
+                            //todo throw error no good pixels
                             continue;
                         }
 
@@ -200,6 +200,32 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 ip.setf(pixel.x, pixel.y, (float) avg);
                             }
                         }
+                    }
+                    case PatchType.FitGaussian() -> {
+                        var region = collectContinuousRegion(ip, mask, visited, x, y);
+
+                        var bounds = region.bounds();
+
+                        //todo need fallback if fit fails
+
+                        var n = bounds.width * bounds.height - region.pixels().size();
+                        var xs = new double[n];
+                        var ys = new double[n];
+                        var zs = new double[n];
+
+                        var c = 0;
+                        for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                            for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                                if (!(mask.getf(i, j) > 0)) {
+                                    continue;
+                                }
+                                xs[c] = i;
+                                ys[c] = j;
+                                zs[c++] = ip.getf(i, j);
+                            }
+                        }
+
+
                     }
                 }
             }

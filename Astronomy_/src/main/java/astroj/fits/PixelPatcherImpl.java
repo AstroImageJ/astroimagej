@@ -204,19 +204,46 @@ public class PixelPatcherImpl implements PixelPatcher {
                     case PatchType.FitGaussian() -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
 
-                        var bounds = region.bounds();
+                        var bounds = (Rectangle) region.bounds().clone();
 
-                        //todo need fallback if fit fails
+                        var n = (region.bounds.height * region.bounds.width) - region.pixels().size();
+                        var size = 0;
+                        var pSize = 0;
+                        //AIJLogger.log("Start");
+                        do {
+                            //AIJLogger.log(bounds);
+                            bounds.grow(1, 1);
+                            bounds.x = Math.max(bounds.x, 0);
+                            bounds.y = Math.max(bounds.y, 0);
+                            bounds.width = Math.min(bounds.width, ip.getWidth() - bounds.x);
+                            bounds.height = Math.min(bounds.height, ip.getHeight() - bounds.y);
 
-                        var n = bounds.width * bounds.height - region.pixels().size();
+                            pSize = size;
+                            size = bounds.width * bounds.height;
+                            n = 0;
+                            for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
+                                for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
+                                    if ((mask.getf(i, j) > 0)) {
+                                        continue;
+                                    }
+                                    n++;
+                                }
+                            }
+                        } while (n < 6 * 50 && bounds.width < ip.getWidth() && bounds.height < ip.getHeight() && pSize != size);
+
+                        if (pSize == size) {
+                            AIJLogger.log("Failed to find gauss region with enough good pixels");
+                            continue;
+                        }
+
                         var xs = new double[n];
                         var ys = new double[n];
                         var zs = new double[n];
 
                         var c = 0;
-                        for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
-                            for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
-                                if (!(mask.getf(i, j) > 0)) {
+                        for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
+                            for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
+                                if ((mask.getf(i, j) > 0)) {
                                     continue;
                                 }
                                 xs[c] = i;
@@ -225,7 +252,22 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
                         }
 
+                        //var f = new Gaussian2DFitter2(xs, ys, zs);
+                        var f = new Gaussian2DFitter(xs, ys, zs);
 
+                        /*IJ.log("Original: " + region.bounds);
+                        IJ.log("Region: " + bounds);
+                        IJ.log("Chi2: " + f.getChiSquared());
+                        IJ.log("Amplitude: " + f.getAmplitude() + " XCenter: " + f.getXCenter() +
+                                " YCenter: " + f.getYCenter() + " SigmaX: " + f.getSigmaX() + " SigmaY: " + f.getSigmaY() +
+                                " Baseline: " + f.getBaseline());*/
+
+                        for (Pixel pixel : region.pixels) {
+                            /*if (region.bounds.width == 8 && region.bounds.height == 11) {
+                                AIJLogger.log("Correcting pixel value from: " + ip.getf(pixel.x, pixel.y) + " to: " + f.fittedValue(pixel.x, pixel.y));
+                            }*/
+                            ip.setf(pixel.x, pixel.y, (float) f.fittedValue(pixel.x, pixel.y));
+                        }
                     }
                 }
             }
@@ -297,6 +339,10 @@ public class PixelPatcherImpl implements PixelPatcher {
     private record Region(Rectangle bounds, List<Pixel> pixels, List<Pixel> borderPixels) {
         Region() {
             this(new Rectangle(), new ArrayList<>(), new ArrayList<>());
+            bounds.x = -1;
+            bounds.y = -1;
+            bounds.width = 0;
+            bounds.height = 0;
         }
 
         void addToRegion(int x, int y) {
@@ -305,10 +351,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
         void addToRegion(Pixel p) {
             pixels.add(p);
-            bounds.width = Math.max(bounds.width, p.x - bounds.x);
-            bounds.height = Math.max(bounds.height, p.y - bounds.y);
-            bounds.x = Math.min(bounds.x, p.x);
-            bounds.y = Math.min(bounds.y, p.y);
+            growBounds(p);
         }
 
         void addBorderPixel(int x, int y) {
@@ -317,6 +360,17 @@ public class PixelPatcherImpl implements PixelPatcher {
 
         void addBorderPixel(Pixel p) {
             borderPixels.add(p);
+            growBounds(p);
+        }
+
+        private void growBounds(Pixel p) {
+            if (bounds.x < 0) {
+                bounds.x = p.x;
+                bounds.y = p.y;
+                bounds.width = 1;
+                bounds.height = 1;
+                return;
+            }
             bounds.width = Math.max(bounds.width, p.x - bounds.x);
             bounds.height = Math.max(bounds.height, p.y - bounds.y);
             bounds.x = Math.min(bounds.x, p.x);

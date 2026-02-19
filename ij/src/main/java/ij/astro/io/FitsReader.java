@@ -66,7 +66,7 @@ public class FitsReader implements AutoCloseable {
     private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
             .findFirst()
             .orElseThrow(() -> new RuntimeException("No PixelPatcher implementation found"));
-    private static final boolean DEBUG_BPM = true;
+    private static final boolean DEBUG_BPM = false;
     private final Fits fits;
     private final List<HDUDescriptor> hduDescriptors;
     private final BasicHDU<?>[] hdus;

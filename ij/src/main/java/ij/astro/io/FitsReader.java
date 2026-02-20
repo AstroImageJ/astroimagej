@@ -44,6 +44,7 @@ import ij.io.Opener;
 import ij.measure.ResultsTable;
 import ij.plugin.FITS_Reader;
 import ij.plugin.FolderOpener;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
@@ -179,7 +180,7 @@ public class FitsReader implements AutoCloseable {
         var header = descriptor.getFormedHeader();
         if (isBasic3DImageDescriptors()) {
             if (DEBUG_BPM && isLco() && findBadPixelMask() != -1) {
-                return 2;
+                return 3;
             }
             return countStackableImagesFromDescriptors();
         }
@@ -292,16 +293,28 @@ public class FitsReader implements AutoCloseable {
 
             if (!includeProcessors) {
                 if (DEBUG_BPM && bpmMaskIdx != -1) {
-                    return new ProcessedFits(List.of(), List.of(headerText, headerText));
+                    return new ProcessedFits(List.of(), List.of(headerText, headerText, headerText));
                 }
                 return new ProcessedFits(List.of(), headers);
             }
 
             var processor = twoDimensionalImageData2Processor(firstImageIndex);
+            var original = DEBUG_BPM ? new FloatProcessor(processor.getFloatArray()) : null;
             var mask = processBadPixelMask(processor, bpmMaskIdx);
-            if (DEBUG_BPM && mask != null) {
-                return new ProcessedFits(List.of(processor, mask), List.of(headerText, headerText));
+
+            if (DEBUG_BPM) {
+                var delta = new FloatProcessor(width, height);
+                for (int i = 0; i < original.getWidth(); i++) {
+                    for (int j = 0; j < original.getHeight(); j++) {
+                        delta.setf(i, j, processor.getf(i, j) - original.getf(i, j));
+                    }
+                }
+
+                if (mask != null) {
+                    return new ProcessedFits(List.of(processor, mask, delta), List.of(headerText, headerText, headerText));
+                }
             }
+
             return new ProcessedFits(List.of(processor), headers);
         }
 

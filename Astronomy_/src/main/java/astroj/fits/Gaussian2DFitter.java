@@ -59,6 +59,7 @@ public class Gaussian2DFitter {
         //AIJLogger.log("chi2: " + minimizer.getFunctionValue());
         params = minimizer.getParams();
         chiSquared = minimizer.getFunctionValue();
+        //IJ.log("Iter: " + minimizer.getIterations() + " Minimizations: " + minimizer.getCompletedMinimizations());
     }
 
     public double getAmplitude() {
@@ -115,6 +116,7 @@ public class Gaussian2DFitter {
         private final double maxY;
         private final double minZ;
         private final double maxZ;
+        private final double dof;
 
         private Gaussian2DFunction(double minX, double maxX, double minY, double maxY, double minZ, double maxZ) {
             this.minX = minX;
@@ -123,6 +125,7 @@ public class Gaussian2DFitter {
             this.maxY = maxY;
             this.minZ = minZ;
             this.maxZ = maxZ;
+            this.dof = xData.length - 6;;
         }
 
         @Override
@@ -145,7 +148,8 @@ public class Gaussian2DFitter {
                 var residual = zData[i] - model;
                 sumSqResiduals += residual * residual;
             }
-            return sumSqResiduals / 6;
+
+            return sumSqResiduals / dof;
         }
     }
 }

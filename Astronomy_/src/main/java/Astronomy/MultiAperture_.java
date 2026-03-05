@@ -6181,7 +6181,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             switch (shape) {
                 case CIRCULAR -> {
                     g.addLineSeparator();
-                    var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
+                    var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, radiusSetting, false);
                     g.addGenericComponent(apRadiiButtons.get(ApRadius.FIXED));
                     g.setOverridePosition(true);
                     g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_FIXED));
@@ -6223,7 +6223,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 case ELLIPTICAL -> {
                     g.addLineSeparator();
-                    var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
+                    var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, radiusSetting, false);
                     g.addGenericComponent(apRadiiButtons.get(ApRadius.FIXED));
                     g.setOverridePosition(true);
                     g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_FIXED));
@@ -6328,7 +6328,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addDoubleSpaceLineSeparator();
 
-        var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
+        var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, apLoading.get(), true);
         for (ApLoading value : ApLoading.values()) {
             apLoadingButtons.get(value).setEnabled(value.isEnabled());
             if (value.isSelected()) {

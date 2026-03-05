@@ -1,5 +1,16 @@
 package Astronomy;// Stack_Aligner.java
 
+import java.awt.Frame;
+import java.awt.Point;
+import java.io.File;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Locale;
+
+import javax.swing.JCheckBox;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
 import astroj.AstroStackWindow;
 import astroj.Centroid;
 import astroj.FitsJ;
@@ -11,13 +22,6 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.File;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Locale;
 
 /**
  * Based on MultiAperture_.java
@@ -156,7 +160,7 @@ public class Stack_Aligner extends MultiAperture_
         }
 
         gd.addLineSeparator();
-        var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
+        var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, apLoading.get(), true);
         for (ApLoading value : ApLoading.values()) {
             apLoadingButtons.get(value).setEnabled(value.isEnabled());
             if (value.isSelected()) {

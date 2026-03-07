@@ -638,6 +638,10 @@ public class FitsReader implements AutoCloseable {
                 hdr.deleteKey("NAXIS3");
                 hdr.deleteKey("OBJECT");
 
+                // Move to end
+                hdr.seekTail();
+                hdr.prevCard();
+
                 var bjd0 = 2457000d;
                 var bjd1 = 0d;
                 bjd1 = ((double[])tableHDU.getElement(i, bjdColumn))[0];
@@ -917,9 +921,13 @@ public class FitsReader implements AutoCloseable {
 
         Header getFormedHeader() {
             if (decompressed != null) {
+                decompressed.seekHead();
+                decompressed.nextCard();
                 return decompressed;
             }
 
+            original.seekHead();
+            original.nextCard();
             return original;
         }
 

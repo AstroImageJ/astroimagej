@@ -251,7 +251,14 @@ public class FitsReader implements AutoCloseable {
                 }
 
                 if (!includeProcessors) {
-                    return new ProcessedFits(List.of(), headers);
+                    var filteredHdrs = new ArrayList<String>();
+                    for (int i = 0; i < headers.size(); i++) {
+                        if (skipImageForQual(headers, i)) {
+                            continue;
+                        }
+                        filteredHdrs.add(headers.get(i));
+                    }
+                    return new ProcessedFits(List.of(), filteredHdrs);
                 }
 
                 var data = (Object[]) tableHDU.getColumn("FLUX");
@@ -368,13 +375,7 @@ public class FitsReader implements AutoCloseable {
             if (headers != null && !headers.isEmpty()) {
                 var headerIndex = headers.size() == 1 ? 0 : i;
                 var headerValue = headers.get(headerIndex);
-                if (headerValue.contains("AIJ_Q")) { // For TESScut, skip bad images
-                    AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
-                    continue;
-                } else if (headerValue.contains("AIJ_Q2")) { // For Postage stamp, skip null images
-                    continue;
-                } else if (headerValue.contains("NO_BJD")) { // For TESScut, skip if no BJD available
-                    AIJLogger.log("     Skipping an image due to a missing or invalid BJD time: " + (i+1));
+                if (skipImageForQual(headerValue, i)) {
                     continue;
                 }
                 header = headerValue + "\n";
@@ -389,6 +390,30 @@ public class FitsReader implements AutoCloseable {
         }
 
         return new ProcessedFits(processors, outputHeaders);
+    }
+
+    private boolean skipImageForQual(List<String> headers, int i) {
+        if (headers != null && !headers.isEmpty()) {
+            var headerIndex = headers.size() == 1 ? 0 : i;
+            var headerValue = headers.get(headerIndex);
+            return skipImageForQual(headerValue, headerIndex);
+        }
+
+        return false;
+    }
+
+    private boolean skipImageForQual(String headerValue, int i) {
+        if (headerValue.contains("AIJ_Q")) { // For TESScut, skip bad images
+            AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
+            return true;
+        } else if (headerValue.contains("AIJ_Q2")) { // For Postage stamp, skip null images
+            return true;
+        } else if (headerValue.contains("NO_BJD")) { // For TESScut, skip if no BJD available
+            AIJLogger.log("     Skipping an image due to a missing or invalid BJD time: " + (i+1));
+            return true;
+        }
+
+        return false;
     }
 
     /**

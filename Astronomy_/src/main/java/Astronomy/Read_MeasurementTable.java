@@ -1,7 +1,9 @@
 package Astronomy;// Read_MeasurementTable.java
 
-import astroj.MeasurementTable;
+import java.util.Set;
+
 import ij.IJ;
+import ij.astro.util.FileAssociationHandler;
 import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
 
@@ -18,15 +20,8 @@ public class Read_MeasurementTable implements PlugIn {
             path = dir + filename;
         }
 
-        // IJ.showMessage ("open "+dir+filename);
-        MeasurementTable table = MeasurementTable.getTableFromFile(path);
-        if (table == null) {
+        if (!FileAssociationHandler.handleFile(path, Set.of())) {
             IJ.showMessage("Unable to open measurement table " + path);
-        } else {
-            table.show();
-            if (MultiPlot_.isRunning()) {
-                MultiPlot_.loadDataOpenConfig(table, path);
-            }
         }
     }
 }

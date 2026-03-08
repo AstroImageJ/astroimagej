@@ -55,7 +55,7 @@ public class AIJStartupHandler implements PlugIn {
 
                     MultiPlot_.loadDataOpenConfig(table, p.toString());
                 }
-            }, true, Prefs.defaultResultsExtension());
+            }, true, Prefs.defaultResultsExtension(), ".tbl", ".csv", ".tsv");
     private static final AssociationMapper multiplotFitsTableHandler =
             new AssociationMapper(p -> {
                 if (FitsExtensionUtil.isFitsFile(p.toString())) {

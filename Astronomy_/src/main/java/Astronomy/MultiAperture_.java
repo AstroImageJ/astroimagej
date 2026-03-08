@@ -6137,6 +6137,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Standard preferences dialog for MultiAperture_
      */
     protected GenericSwingDialog dialog() {
+        if (Recorder.record) {
+            Recorder.setCommand("MultiAperture ");
+        }
         if (!Prefs.isLocationOnScreen(new Point(xLocation, yLocation))) {
             xLocation = 10;
             yLocation = 10;

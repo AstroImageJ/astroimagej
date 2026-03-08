@@ -1,11 +1,28 @@
 package util;
 
+import static Astronomy.MultiPlot_.useMacroSubtitle;
+import static Astronomy.MultiPlot_.useMacroTitle;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
+
+import javax.swing.SwingUtilities;
+
 import Astronomy.AstroImageJUpdaterV6;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
-import astroj.*;
+import astroj.Aperture;
+import astroj.AstroCanvas;
+import astroj.FreeformPixelApertureRoi;
+import astroj.IJU;
+import astroj.MeasurementTable;
+import astroj.ShapedApertureRoi;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.io.prefs.Property;
@@ -16,16 +33,6 @@ import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.concurrent.Executors;
-
-import static Astronomy.MultiPlot_.useMacroSubtitle;
-import static Astronomy.MultiPlot_.useMacroTitle;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -75,6 +82,17 @@ public class AIJStartupHandler implements PlugIn {
 
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
+                        if (!SwingUtilities.isEventDispatchThread() && IJ.isMacro()) {
+                            var start = System.currentTimeMillis();
+                            while (!asw.isReady) {
+                                IJ.wait(5);
+                                if (IJ.getInstance() != null && IJ.getInstance().quitting()) return;
+                                if ((System.currentTimeMillis()-start)>2000) {
+                                    break; // 2 second timeout
+                                }
+                            }
+                        }
+
                         var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
                         if (d != null && !d.legacy()) {
                             var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
@@ -151,6 +169,17 @@ public class AIJStartupHandler implements PlugIn {
             new AssociationMapper((p, openOptions) -> {
                 var asw = IJU.getBestOpenAstroStackWindow();
                 if (asw != null) {
+                    if (!SwingUtilities.isEventDispatchThread() && IJ.isMacro()) {
+                        var start = System.currentTimeMillis();
+                        while (!asw.isReady) {
+                            IJ.wait(5);
+                            if (IJ.getInstance() != null && IJ.getInstance().quitting()) return;
+                            if ((System.currentTimeMillis()-start)>2000) {
+                                break; // 2 second timeout
+                            }
+                        }
+                    }
+
                     try {
                         var s = Files.readString(p);
                         var d = AperturesFileCodec.readContents(s);

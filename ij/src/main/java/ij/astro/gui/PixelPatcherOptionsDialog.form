@@ -295,6 +295,96 @@
               </grid>
             </children>
           </grid>
+          <grid id="406ee" binding="fitMoffatCard" layout-manager="GridBagLayout">
+            <constraints>
+              <card name="fitMoffatCard"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="3e3e3" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <gridbag weightx="0.0" weighty="0.0"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="b57bb" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Min. Count"/>
+                      <toolTipText value="Minium amount of good pixels in the region to be fit"/>
+                    </properties>
+                  </component>
+                  <component id="cd5a4" class="javax.swing.JSpinner" binding="moffatMinCount" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+              <grid id="69d37" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <gridbag weightx="0.0" weighty="0.0"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="f388a" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Max. Iter."/>
+                    </properties>
+                  </component>
+                  <component id="28f83" class="javax.swing.JSpinner" binding="moffatMaxIter" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+              <grid id="7a7f" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <gridbag weightx="0.0" weighty="0.0"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="34b87" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Max. Rel. Err."/>
+                    </properties>
+                  </component>
+                  <component id="6aa2b" class="javax.swing.JSpinner" binding="moffatRelErr" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+              <grid id="3d2b6" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <gridbag weightx="0.0" weighty="0.0"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="c8d80" class="javax.swing.JLabel">
+                    <constraints/>
+                    <properties>
+                      <text value="Max. Abs. Err."/>
+                    </properties>
+                  </component>
+                  <component id="b6915" class="javax.swing.JSpinner" binding="moffatAbsErr" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
         </children>
       </grid>
       <grid id="e18ea" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="2">

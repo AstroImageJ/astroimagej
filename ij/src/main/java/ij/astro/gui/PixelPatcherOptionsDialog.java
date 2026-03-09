@@ -42,6 +42,10 @@ public class PixelPatcherOptionsDialog extends JDialog {
     private JComboBox<PixelPatcher.PatchType.NearestNeighbor.MergeType> nearestNeighborPixelSource;
     private JComboBox<PixelPatcher.PatchType.Type> patchTypeSelector;
     private JPanel fitGuassianCard;
+    private JSpinner gaussianMinCount;
+    private JSpinner gaussianMaxIter;
+    private JSpinner gaussianRelErr;
+    private JSpinner gaussianAbsErr;
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), PixelPatcherOptionsDialog.class);
 
     static void main() {
@@ -61,6 +65,8 @@ public class PixelPatcherOptionsDialog extends JDialog {
         $$$setupUI$$$();
 
         UIHelper.setLookAndFeel();
+
+        setModal(true);
 
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         WINDOW_LOCATION.locationSavingWindow(this);
@@ -172,6 +178,10 @@ public class PixelPatcherOptionsDialog extends JDialog {
         PixelPatcher.PatchType.AverageFill.Y_RADIUS.registerChangeListener(averageYRadiusSpinner);
         PixelPatcher.PatchType.MedianFill.X_RADIUS.registerChangeListener(medianXRadiusSpinner);
         PixelPatcher.PatchType.MedianFill.Y_RADIUS.registerChangeListener(medianYRadiusSpinner);
+        PixelPatcher.PatchType.FitGaussian.MIN_COUNT.registerChangeListener(gaussianMinCount);
+        PixelPatcher.PatchType.FitGaussian.MAX_ITER.registerChangeListener(gaussianMaxIter);
+        PixelPatcher.PatchType.FitGaussian.ABS_ERR.registerChangeListener(gaussianAbsErr);
+        PixelPatcher.PatchType.FitGaussian.REL_ERR.registerChangeListener(gaussianRelErr);
         nearestNeighborPixelSource.addItemListener(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.toItemListener());
     }
 
@@ -272,21 +282,59 @@ public class PixelPatcherOptionsDialog extends JDialog {
         label8.setText("No options can be specified for the patch mode.");
         passThroughCard.add(label8);
         fitGuassianCard = new JPanel();
-        fitGuassianCard.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        fitGuassianCard.setLayout(new GridBagLayout());
         optionPanel.add(fitGuassianCard, "fitGaussianCard");
-        final JLabel label9 = new JLabel();
-        label9.setText("No options can be specified for the patch mode.");
-        fitGuassianCard.add(label9);
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        panel6.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        fitGuassianCard.add(panel6, gbc);
+        final JLabel label9 = new JLabel();
+        label9.setText("Min. Count");
+        label9.setToolTipText("Minium amount of good pixels in the region to be fit");
+        panel6.add(label9);
+        panel6.add(gaussianMinCount);
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        fitGuassianCard.add(panel7, gbc);
+        final JLabel label10 = new JLabel();
+        label10.setText("Max. Iter.");
+        panel7.add(label10);
+        panel7.add(gaussianMaxIter);
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        fitGuassianCard.add(panel8, gbc);
+        final JLabel label11 = new JLabel();
+        label11.setText("Max. Rel. Err.");
+        panel8.add(label11);
+        panel8.add(gaussianRelErr);
+        final JPanel panel9 = new JPanel();
+        panel9.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        fitGuassianCard.add(panel9, gbc);
+        final JLabel label12 = new JLabel();
+        label12.setText("Max. Abs. Err.");
+        panel9.add(label12);
+        panel9.add(gaussianAbsErr);
+        final JPanel panel10 = new JPanel();
+        panel10.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.fill = GridBagConstraints.BOTH;
-        rootPanel.add(panel6, gbc);
+        rootPanel.add(panel10, gbc);
         okButton = new JButton();
         okButton.setText("Ok");
-        panel6.add(okButton);
+        panel10.add(okButton);
     }
 
     /**
@@ -314,6 +362,26 @@ public class PixelPatcherOptionsDialog extends JDialog {
                         PixelPatcher.PatchType.MedianFill.Y_RADIUS.get().intValue(),
                         0, Integer.MAX_VALUE, 1));
         constantValueSpinner = new JSpinner(new SpinnerNumberModel(Double.NaN, null, null, 1));
+        gaussianMinCount =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get().intValue(),
+                        6, Integer.MAX_VALUE, 1));
+        gaussianMaxIter =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitGaussian.MAX_ITER.get().intValue(),
+                        10, Integer.MAX_VALUE, 1));
+        gaussianAbsErr =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitGaussian.ABS_ERR.get().doubleValue(),
+                        1e-200, 1.0, 1e-10));
+        gaussianRelErr =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitGaussian.REL_ERR.get().doubleValue(),
+                        1e-200, 1.0, 1e-10));
+        var ne = new JSpinner.NumberEditor(gaussianRelErr, "0.######E0");
+        gaussianRelErr.setEditor(ne);
+        ne = new JSpinner.NumberEditor(gaussianAbsErr, "0.######E0");
+        gaussianAbsErr.setEditor(ne);
 
         nearestNeighborPixelSource = new JComboBox<>(PixelPatcher.PatchType.NearestNeighbor.MergeType.values());
         nearestNeighborPixelSource.setSelectedItem(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.get());

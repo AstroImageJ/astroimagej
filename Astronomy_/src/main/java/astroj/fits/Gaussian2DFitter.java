@@ -10,56 +10,53 @@ public class Gaussian2DFitter {
     private final double[] xData;
     private final double[] yData;
     private final double[] zData;
+    private final int maxIter;
+    private final double relErr;
+    private final double maxErr;
     private boolean fitSuccessful;
     private double chiSquared;
 
-    public Gaussian2DFitter(double[] xData, double[] yData, double[] zData) {
+    public Gaussian2DFitter(double[] xData, double[] yData, double[] zData, int maxIter, double relErr, double maxErr) {
         this.xData = xData;
         this.yData = yData;
         this.zData = zData;
+        this.maxIter = maxIter;
+        this.relErr = relErr;
+        this.maxErr = maxErr;
         performFit();
     }
 
     private void performFit() {
-        var xs = Arrays.stream(xData).summaryStatistics();
-        var ys = Arrays.stream(yData).summaryStatistics();
-        var zs = Arrays.stream(zData).summaryStatistics();
+        var xSumStat = Arrays.stream(xData).summaryStatistics();
+        var ySumStat = Arrays.stream(yData).summaryStatistics();
+        var zSumStat = Arrays.stream(zData).summaryStatistics();
 
         var initialParams = new double[6];
-        initialParams[0] = zs.getMax(); // Amplitude
-        initialParams[1] = (xs.getMax() - xs.getMin()) / 2 + xs.getMin(); // XCenter
-        initialParams[2] = (ys.getMax() - ys.getMin()) / 2 + ys.getMin(); // YCenter
-        initialParams[3] = (xs.getMax() - xs.getMin()) / 2; // SigmaX
-        initialParams[4] = (ys.getMax() - ys.getMin()) / 2; // SigmaY
-        initialParams[5] = zs.getMin(); // Baseline
+        initialParams[0] = zSumStat.getMax(); // Amplitude
+        initialParams[1] = (xSumStat.getMax() - xSumStat.getMin()) / 2 + xSumStat.getMin(); // XCenter
+        initialParams[2] = (ySumStat.getMax() - ySumStat.getMin()) / 2 + ySumStat.getMin(); // YCenter
+        initialParams[3] = (xSumStat.getMax() - xSumStat.getMin()) / 2; // SigmaX
+        initialParams[4] = (ySumStat.getMax() - ySumStat.getMin()) / 2; // SigmaY
+        initialParams[5] = zSumStat.getMin(); // Baseline
 
-        /*IJ.log("Amplitude: " + initialParams[0] + " XCenter: " + initialParams[1] +
-                " YCenter: " + initialParams[2] + " SigmaX: " + initialParams[3] + " SigmaY: " + initialParams[4] +
-                " Baseline: " + initialParams[5]);*/
-
-        var dx = (xs.getMax() - xs.getMin()) * 2;
-        var dy = (ys.getMax() - ys.getMin()) * 2;
-        var dz = (zs.getMax() - zs.getMin()) * 2;
-        var function = new Gaussian2DFunction(xs.getMin() - dx, xs.getMax() + dx, ys.getMin() - dy, ys.getMax() + dy, zs.getMin() - dz, zs.getMax() + dz);
+        var function = new Gaussian2DFunction();
         var minimizer = new Minimizer();
         minimizer.setFunction(function, 6);
-        minimizer.setMaxIterations(10000);
+        minimizer.setMaxIterations(maxIter);
 
         var initialParamVariations = new double[6];
         initialParamVariations[0] = Math.abs(initialParams[1]);
-        initialParamVariations[1] = Math.abs(initialParams[1] - xs.getMin());
-        initialParamVariations[2] = Math.abs(initialParams[2] - ys.getMin());
+        initialParamVariations[1] = Math.abs(initialParams[1] - xSumStat.getMin());
+        initialParamVariations[2] = Math.abs(initialParams[2] - ySumStat.getMin());
         initialParamVariations[3] = Math.abs(initialParams[3]);
         initialParamVariations[4] = Math.abs(initialParams[4]);
         initialParamVariations[5] = Math.abs(initialParams[5]);
 
-        //IJ.log(Arrays.toString(initialParamVariations));
+        minimizer.setMaxError(relErr, maxErr);
 
         fitSuccessful = minimizer.minimize(initialParams, initialParamVariations) == Minimizer.SUCCESS;
-        //AIJLogger.log("chi2: " + minimizer.getFunctionValue());
         params = minimizer.getParams();
         chiSquared = minimizer.getFunctionValue();
-        //IJ.log("Iter: " + minimizer.getIterations() + " Minimizations: " + minimizer.getCompletedMinimizations());
     }
 
     public double getAmplitude() {
@@ -110,22 +107,10 @@ public class Gaussian2DFitter {
     }
 
     private class Gaussian2DFunction implements UserFunction {
-        private final double minX;
-        private final double maxX;
-        private final double minY;
-        private final double maxY;
-        private final double minZ;
-        private final double maxZ;
         private final double dof;
 
-        private Gaussian2DFunction(double minX, double maxX, double minY, double maxY, double minZ, double maxZ) {
-            this.minX = minX;
-            this.maxX = maxX;
-            this.minY = minY;
-            this.maxY = maxY;
-            this.minZ = minZ;
-            this.maxZ = maxZ;
-            this.dof = xData.length - 6;;
+        private Gaussian2DFunction() {
+            this.dof = xData.length - 6;
         }
 
         @Override

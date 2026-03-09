@@ -46,6 +46,11 @@ public class PixelPatcherOptionsDialog extends JDialog {
     private JSpinner gaussianMaxIter;
     private JSpinner gaussianRelErr;
     private JSpinner gaussianAbsErr;
+    private JPanel fitMoffatCard;
+    private JSpinner moffatMinCount;
+    private JSpinner moffatMaxIter;
+    private JSpinner moffatRelErr;
+    private JSpinner moffatAbsErr;
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), PixelPatcherOptionsDialog.class);
 
     static void main() {
@@ -126,6 +131,12 @@ public class PixelPatcherOptionsDialog extends JDialog {
                             PixelPatcher.TYPE.set(PixelPatcher.PatchType.Type.FIT_GAUSSIAN);
                         }
                     }
+                    case FIT_MOFFAT -> {
+                        if (optionPanel.getLayout() instanceof CardLayout cardLayout) {
+                            cardLayout.show(optionPanel, "fitMoffatCard");
+                            PixelPatcher.TYPE.set(PixelPatcher.PatchType.Type.FIT_MOFFAT);
+                        }
+                    }
                 }
             }
         });
@@ -170,6 +181,11 @@ public class PixelPatcherOptionsDialog extends JDialog {
                     cardLayout.show(optionPanel, "fitGaussianCard");
                 }
             }
+            case FIT_MOFFAT -> {
+                if (optionPanel.getLayout() instanceof CardLayout cardLayout) {
+                    cardLayout.show(optionPanel, "fitMoffatCard");
+                }
+            }
         }
         patchTypeSelector.setSelectedItem(PixelPatcher.TYPE.get());
         floodFillUseMedianCheckbox.addItemListener(PixelPatcher.PatchType.FloodFill.USE_MEDIAN.toItemListener());
@@ -182,6 +198,10 @@ public class PixelPatcherOptionsDialog extends JDialog {
         PixelPatcher.PatchType.FitGaussian.MAX_ITER.registerChangeListener(gaussianMaxIter);
         PixelPatcher.PatchType.FitGaussian.ABS_ERR.registerChangeListener(gaussianAbsErr);
         PixelPatcher.PatchType.FitGaussian.REL_ERR.registerChangeListener(gaussianRelErr);
+        PixelPatcher.PatchType.FitMoffat.MIN_COUNT.registerChangeListener(moffatMinCount);
+        PixelPatcher.PatchType.FitMoffat.MAX_ITER.registerChangeListener(moffatMaxIter);
+        PixelPatcher.PatchType.FitMoffat.ABS_ERR.registerChangeListener(moffatAbsErr);
+        PixelPatcher.PatchType.FitMoffat.REL_ERR.registerChangeListener(moffatRelErr);
         nearestNeighborPixelSource.addItemListener(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.toItemListener());
     }
 
@@ -325,16 +345,64 @@ public class PixelPatcherOptionsDialog extends JDialog {
         label12.setText("Max. Abs. Err.");
         panel9.add(label12);
         panel9.add(gaussianAbsErr);
+        fitMoffatCard = new JPanel();
+        fitMoffatCard.setLayout(new GridBagLayout());
+        optionPanel.add(fitMoffatCard, "fitMoffatCard");
         final JPanel panel10 = new JPanel();
-        panel10.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        panel10.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel10, gbc);
+        final JLabel label13 = new JLabel();
+        label13.setText("Min. Count");
+        label13.setToolTipText("Minium amount of good pixels in the region to be fit");
+        panel10.add(label13);
+        panel10.add(moffatMinCount);
+        final JPanel panel11 = new JPanel();
+        panel11.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel11, gbc);
+        final JLabel label14 = new JLabel();
+        label14.setText("Max. Iter.");
+        panel11.add(label14);
+        panel11.add(moffatMaxIter);
+        final JPanel panel12 = new JPanel();
+        panel12.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel12, gbc);
+        final JLabel label15 = new JLabel();
+        label15.setText("Max. Rel. Err.");
+        panel12.add(label15);
+        panel12.add(moffatRelErr);
+        final JPanel panel13 = new JPanel();
+        panel13.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel13, gbc);
+        final JLabel label16 = new JLabel();
+        label16.setText("Max. Abs. Err.");
+        panel13.add(label16);
+        panel13.add(moffatAbsErr);
+        final JPanel panel14 = new JPanel();
+        panel14.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.fill = GridBagConstraints.BOTH;
-        rootPanel.add(panel10, gbc);
+        rootPanel.add(panel14, gbc);
         okButton = new JButton();
         okButton.setText("Ok");
-        panel10.add(okButton);
+        panel14.add(okButton);
     }
 
     /**
@@ -382,6 +450,27 @@ public class PixelPatcherOptionsDialog extends JDialog {
         gaussianRelErr.setEditor(ne);
         ne = new JSpinner.NumberEditor(gaussianAbsErr, "0.######E0");
         gaussianAbsErr.setEditor(ne);
+
+        moffatMinCount =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitMoffat.MIN_COUNT.get().intValue(),
+                        6, Integer.MAX_VALUE, 1));
+        moffatMaxIter =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitMoffat.MAX_ITER.get().intValue(),
+                        10, Integer.MAX_VALUE, 1));
+        moffatAbsErr =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitMoffat.ABS_ERR.get().doubleValue(),
+                        1e-200, 1.0, 1e-10));
+        moffatRelErr =
+                new JSpinner(new SpinnerNumberModel(
+                        PixelPatcher.PatchType.FitMoffat.REL_ERR.get().doubleValue(),
+                        1e-200, 1.0, 1e-10));
+        ne = new JSpinner.NumberEditor(moffatRelErr, "0.######E0");
+        moffatRelErr.setEditor(ne);
+        ne = new JSpinner.NumberEditor(moffatAbsErr, "0.######E0");
+        moffatAbsErr.setEditor(ne);
 
         nearestNeighborPixelSource = new JComboBox<>(PixelPatcher.PatchType.NearestNeighbor.MergeType.values());
         nearestNeighborPixelSource.setSelectedItem(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.get());

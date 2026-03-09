@@ -201,17 +201,16 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
                         }
                     }
-                    case PatchType.FitGaussian() -> {
+                    case PatchType.FitGaussian(int minCount, int maxIter, double relErr, double absErr) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
 
                         var bounds = (Rectangle) region.bounds().clone();
 
                         var n = (region.bounds.height * region.bounds.width) - region.pixels().size();
+
                         var size = 0;
                         var pSize = 0;
-                        //AIJLogger.log("Start");
                         do {
-                            //AIJLogger.log(bounds);
                             bounds.grow(1, 1);
                             bounds.x = Math.max(bounds.x, 0);
                             bounds.y = Math.max(bounds.y, 0);
@@ -229,10 +228,11 @@ public class PixelPatcherImpl implements PixelPatcher {
                                     n++;
                                 }
                             }
-                        } while (n < 6 * 50 && bounds.width < ip.getWidth() && bounds.height < ip.getHeight() && pSize != size);
+                        } while (n < minCount && bounds.width < ip.getWidth() && bounds.height < ip.getHeight() && pSize != size);
 
                         if (pSize == size) {
-                            AIJLogger.log("Failed to find gauss region with enough good pixels");
+                            AIJLogger.log("Failed to find region with enough good pixels for region: " +
+                                    bounds);
                             continue;
                         }
 
@@ -252,20 +252,66 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
                         }
 
-                        //var f = new Gaussian2DFitter2(xs, ys, zs);
-                        var f = new Gaussian2DFitter(xs, ys, zs);
-
-                        /*IJ.log("Original: " + region.bounds);
-                        IJ.log("Region: " + bounds);
-                        IJ.log("Chi2: " + f.getChiSquared());
-                        IJ.log("Amplitude: " + f.getAmplitude() + " XCenter: " + f.getXCenter() +
-                                " YCenter: " + f.getYCenter() + " SigmaX: " + f.getSigmaX() + " SigmaY: " + f.getSigmaY() +
-                                " Baseline: " + f.getBaseline());*/
+                        var f = new Gaussian2DFitter(xs, ys, zs, maxIter, relErr, absErr);
 
                         for (Pixel pixel : region.pixels) {
-                            /*if (region.bounds.width == 8 && region.bounds.height == 11) {
-                                AIJLogger.log("Correcting pixel value from: " + ip.getf(pixel.x, pixel.y) + " to: " + f.fittedValue(pixel.x, pixel.y));
-                            }*/
+                            ip.setf(pixel.x, pixel.y, (float) f.fittedValue(pixel.x, pixel.y));
+                        }
+                    }
+                    case PatchType.FitMoffat(int minCount, int maxIter, double relErr, double absErr) -> {
+                        var region = collectContinuousRegion(ip, mask, visited, x, y);
+
+                        var bounds = (Rectangle) region.bounds().clone();
+
+                        var n = (region.bounds.height * region.bounds.width) - region.pixels().size();
+
+                        var size = 0;
+                        var pSize = 0;
+                        do {
+                            bounds.grow(1, 1);
+                            bounds.x = Math.max(bounds.x, 0);
+                            bounds.y = Math.max(bounds.y, 0);
+                            bounds.width = Math.min(bounds.width, ip.getWidth() - bounds.x);
+                            bounds.height = Math.min(bounds.height, ip.getHeight() - bounds.y);
+
+                            pSize = size;
+                            size = bounds.width * bounds.height;
+                            n = 0;
+                            for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
+                                for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
+                                    if ((mask.getf(i, j) > 0)) {
+                                        continue;
+                                    }
+                                    n++;
+                                }
+                            }
+                        } while (n < minCount && bounds.width < ip.getWidth() && bounds.height < ip.getHeight() && pSize != size);
+
+                        if (pSize == size) {
+                            AIJLogger.log("Failed to find region with enough good pixels for region: " +
+                                    bounds);
+                            continue;
+                        }
+
+                        var xs = new double[n];
+                        var ys = new double[n];
+                        var zs = new double[n];
+
+                        var c = 0;
+                        for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
+                            for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
+                                if ((mask.getf(i, j) > 0)) {
+                                    continue;
+                                }
+                                xs[c] = i;
+                                ys[c] = j;
+                                zs[c++] = ip.getf(i, j);
+                            }
+                        }
+
+                        var f = new Moffat2DFitter(xs, ys, zs, maxIter, relErr, absErr);
+
+                        for (Pixel pixel : region.pixels) {
                             ip.setf(pixel.x, pixel.y, (float) f.fittedValue(pixel.x, pixel.y));
                         }
                     }

@@ -15,7 +15,26 @@ public interface PixelPatcher {
 
         record PassThrough() implements PatchType {}
         record FitPlane() implements PatchType {}
-        record FitGaussian() implements PatchType {}
+        record FitGaussian(int minCount, int maxIter, double relErr, double absErr) implements PatchType {
+            public static final Property<Integer> MIN_COUNT = new Property<>(20, FitGaussian.class);
+            public static final Property<Integer> MAX_ITER = new Property<>(3000, FitGaussian.class);
+            public static final Property<Double> REL_ERR = new Property<>(1e-8, FitGaussian.class);
+            public static final Property<Double> ABS_ERR = new Property<>(1e-8, FitGaussian.class);
+
+            public FitGaussian() {
+                this(MIN_COUNT.get(), MAX_ITER.get(), REL_ERR.get(), ABS_ERR.get());
+            }
+        }
+        record FitMoffat(int minCount, int maxIter, double relErr, double absErr) implements PatchType {
+            public static final Property<Integer> MIN_COUNT = new Property<>(20, FitMoffat.class);
+            public static final Property<Integer> MAX_ITER = new Property<>(3000, FitMoffat.class);
+            public static final Property<Double> REL_ERR = new Property<>(1e-8, FitMoffat.class);
+            public static final Property<Double> ABS_ERR = new Property<>(1e-8, FitMoffat.class);
+
+            public FitMoffat() {
+                this(MIN_COUNT.get(), MAX_ITER.get(), REL_ERR.get(), ABS_ERR.get());
+            }
+        }
         record NearestNeighbor(MergeType mergeType) implements PatchType {
             public static final Property<MergeType> MERGE_TYPE = new Property<>(MergeType.NEAREST_NEIGHBOR, NearestNeighbor.class);
 
@@ -91,6 +110,7 @@ public interface PixelPatcher {
             NEAREST_NEIGHBOR,
             PASS_THROUGH,
             FIT_GAUSSIAN,
+            FIT_MOFFAT,
             ;
 
             public PatchType toPatchType() {
@@ -103,6 +123,7 @@ public interface PixelPatcher {
                     case NEAREST_NEIGHBOR -> new NearestNeighbor();
                     case PASS_THROUGH -> new PassThrough();
                     case FIT_GAUSSIAN -> new FitGaussian();
+                    case FIT_MOFFAT -> new FitMoffat();
                 };
             }
         }

@@ -101,6 +101,7 @@ import ij.astro.gui.nstate.NState;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
+import ij.gui.GUI;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
 import ij.gui.Toolbar;
@@ -7024,6 +7025,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         SpringUtil.makeCompactGrid(helpPanel, helpPanel.getComponentCount() / 2, 2, 6, 6, 6, 6);
 
         helpFrame.add(helpScrollPane);
+        GUI.scaleFrame(helpFrame);
         helpFrame.pack();
         helpFrame.setResizable(true);
         Dimension mainScreenSize = Toolkit.getDefaultToolkit().getScreenSize();

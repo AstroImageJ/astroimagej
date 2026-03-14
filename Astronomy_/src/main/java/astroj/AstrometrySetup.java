@@ -48,6 +48,7 @@ import javax.swing.event.PopupMenuListener;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.util.Tools;
 import util.prefs.RegionExclusion;
 
@@ -1413,6 +1414,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         SpringUtil.makeCompactGrid(astrometrySetupPanel, nlines, 5, 2, 2, 2, 2);
         scrollPane = new JScrollPane(astrometrySetupPanel);
         astrometrySetupFrame.add(scrollPane);
+        GUI.scaleFrame(astrometrySetupFrame);
         astrometrySetupFrame.pack();
         astrometrySetupFrame.setResizable(true);
 

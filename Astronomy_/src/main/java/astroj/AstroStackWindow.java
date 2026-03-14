@@ -115,6 +115,7 @@ import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FitsCompressionUtil;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.gui.GenericDialog;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
@@ -2822,6 +2823,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         setResizable(true);
 
+        GUI.scaleFrame(this);
 
         pack();
 

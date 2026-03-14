@@ -24,6 +24,7 @@ import Astronomy.multiplot.table.MeasurementsWindow;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.measure.ResultsTable;
 
 public class FilterHandler extends JDialog {
@@ -62,6 +63,8 @@ public class FilterHandler extends JDialog {
         setModalityType(ModalityType.MODELESS);
 
         addComponents();
+
+        GUI.scaleFrame(this);
 
         pack();
         UIHelper.setCenteredOnWindow(this, window);

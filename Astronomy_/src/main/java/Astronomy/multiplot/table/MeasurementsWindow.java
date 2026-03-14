@@ -80,6 +80,7 @@ import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
 import ij.measure.ResultsTableMacros;
@@ -432,6 +433,8 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 handleGotoEvent();
             }
         });
+
+        GUI.scaleFrame(this);
 
         pack();
 

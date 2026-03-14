@@ -119,6 +119,7 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.LeapSeconds;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.gui.MultiLineLabel;
 import ij.plugin.frame.Editor;
 import ij.util.Tools;
@@ -1965,6 +1966,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         dialogFrame.setJMenuBar(menuBar);
         dialogFrame.add(mainScrollPane);
+
+        GUI.scaleFrame(dialogFrame);
+
         dialogFrame.pack();
         dialogFrame.setResizable(true);
 

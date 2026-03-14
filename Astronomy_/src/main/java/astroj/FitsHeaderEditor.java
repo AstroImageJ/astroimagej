@@ -1,24 +1,43 @@
 // FITS_Header_Editor.java
 package astroj;
 
-import Astronomy.multiplot.macro.title.parser.ResolverContext;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.io.SaveDialog;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.function.Consumer;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.function.Consumer;
+
+import Astronomy.multiplot.macro.title.parser.ResolverContext;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.gui.GUI;
+import ij.io.SaveDialog;
 
 public class FitsHeaderEditor implements ListSelectionListener, ActionListener, ItemListener {
     public static final String NL = System.getProperty("line.separator");
@@ -369,6 +388,8 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         panel.add(gui, BorderLayout.SOUTH);
         table.doLayout();
         frame.add(panel);
+
+        GUI.scaleFrame(frame);
 
         frame.pack();
         if (!newTable) {

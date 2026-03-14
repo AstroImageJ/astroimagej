@@ -1,9 +1,44 @@
 package ij.gui;
 
-import ij.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Scrollbar;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.image.BufferedImage;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.AbstractButton;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenuBar;
+import javax.swing.JSlider;
+import javax.swing.JTable;
+import javax.swing.UIManager;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Menus;
+import ij.Prefs;
+import ij.astro.AstroImageJ;
 
 /** This class consists of static GUI utility methods. */
 public class GUI {
@@ -11,6 +46,8 @@ public class GUI {
 	private static Color lightGray = new Color(240,240,240);
 	private static boolean isWindows8;
 	private static Color scrollbarBackground = new Color(245,245,245);
+	@AstroImageJ(reason = "Scale frames")
+	private static boolean scaledMenu = false;
 
 	static {
 		if (IJ.isWindows()) {
@@ -255,7 +292,221 @@ public class GUI {
 		component.setFont(font.deriveFont((float) guiScale * font.getSize()));
 		return true;
 	}
-	
+
+	@AstroImageJ(reason = "Scale frames")
+	public static void scaleFrame(Dialog dialog) {
+		scale(dialog, Prefs.getGuiScale());
+	}
+
+	@AstroImageJ(reason = "Scale frames")
+	public static void scaleFrame(Frame frame) {
+		if (frame == null || Prefs.getGuiScale() <= 0 || Prefs.getGuiScale() == 1) {
+			return;
+		}
+
+		var mb = frame.getMenuBar();
+        if (mb != null) {
+			mb.setFont(Menus.getFont(true));
+        }
+
+		if (!scaledMenu) {
+			var font = (Font) UIManager.get("Menu.font");
+			if (font != null) {
+				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
+				UIManager.put("Menu.font", font.deriveFont(newSize));
+			}
+
+			font = (Font) UIManager.get("MenuBar.font");
+			if (font != null) {
+				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
+				UIManager.put("MenuBar.font", font.deriveFont(newSize));
+			}
+
+			font = (Font) UIManager.get("MenuItem.font");
+			if (font != null) {
+				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
+				UIManager.put("MenuItem.font", font.deriveFont(newSize));
+			}
+
+			font = (Font) UIManager.get("CheckBoxMenuItem.font");
+			if (font != null) {
+				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
+				UIManager.put("CheckBoxMenuItem.font", font.deriveFont(newSize));
+			}
+
+			font = (Font) UIManager.get("PopupMenu.font");
+			if (font != null) {
+				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
+				UIManager.put("PopupMenu.font", font.deriveFont(newSize));
+			}
+
+			font = (Font) UIManager.get("RadioButtonMenuItem.font");
+			if (font != null) {
+				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
+				UIManager.put("RadioButtonMenuItem.font", font.deriveFont(newSize));
+			}
+
+			scaledMenu = true;
+		}
+
+		scale(frame, Prefs.getGuiScale());
+	}
+
+	@AstroImageJ(reason = "Scale frames")
+	private static void scale(Component comp, double factor) {
+		if (comp == null || factor <= 0 || factor == 1) {
+			return;
+		}
+
+		var font = comp.getFont();
+		if (font != null) {
+			var newSize = (float) (font.getSize2D() * factor);
+			comp.setFont(font.deriveFont(newSize));
+		}
+
+		if (comp instanceof JMenuBar) {
+			return;
+		}
+
+		if (comp instanceof JSlider jSlider) {
+			var table = jSlider.getLabelTable();
+            //noinspection unchecked
+            table.elements().asIterator().forEachRemaining(label -> {
+                if (label instanceof JLabel jLabel) {
+					scale(jLabel, factor);
+                }
+			});
+			jSlider.setLabelTable(table);
+		}
+
+		if (comp instanceof JTable jTable) {
+			jTable.setRowHeight((int) ((jTable.getRowHeight() * factor * 0.9)));
+		}
+
+		if (comp instanceof JList<?> jList) {
+			jList.setFixedCellHeight((int) (jList.getFixedCellHeight() * factor * 0.9));
+		}
+
+        if (comp instanceof JComponent jComponent) {
+            var border = jComponent.getBorder();
+            if (border instanceof TitledBorder titledBorder) {
+                font = titledBorder.getTitleFont();
+				var newSize = (float) (font.getSize2D() * factor);
+				titledBorder.setTitleFont(font.deriveFont(newSize));
+
+				var b = titledBorder.getBorder();
+				if (b instanceof LineBorder lb) {
+					var thickness = Math.max(1, (int) Math.round(lb.getThickness() * factor));
+					titledBorder.setBorder(new LineBorder(lb.getLineColor(), thickness, lb.getRoundedCorners()));
+				}
+            }
+
+			if (border instanceof LineBorder lb) {
+				var thickness = Math.max(1, (int) Math.round(lb.getThickness() * factor));
+				jComponent.setBorder(new LineBorder(lb.getLineColor(), thickness, lb.getRoundedCorners()));
+			}
+
+			var popup = jComponent.getComponentPopupMenu();
+            if (popup != null) {
+                scale(popup, factor);
+            }
+        }
+
+        if (comp.isPreferredSizeSet()) {
+			var size = comp.getPreferredSize();
+            comp.setPreferredSize(new Dimension((int) Math.max(1, Math.round(size.width * factor)),
+					(int) Math.max(1, Math.round(size.height * factor))));
+        }
+
+        if (comp.isMaximumSizeSet()) {
+			var size = comp.getMaximumSize();
+			comp.setMaximumSize(new Dimension((int) Math.max(1, Math.round(size.width * factor)),
+					(int) Math.max(1, Math.round(size.height * factor))));
+        }
+
+		if (comp.isMinimumSizeSet()) {
+			var size = comp.getMinimumSize();
+			comp.setMinimumSize(new Dimension((int) Math.max(1, Math.round(size.width * factor)),
+					(int) Math.max(1, Math.round(size.height * factor))));
+		}
+
+		if (comp instanceof AbstractButton button) {
+			if (button.getDisabledIcon() instanceof ImageIcon imageIcon) {
+				button.setDisabledIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (button.getPressedIcon() instanceof ImageIcon imageIcon) {
+				button.setPressedIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (button.getRolloverIcon() instanceof ImageIcon imageIcon) {
+				button.setRolloverIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (button.getDisabledSelectedIcon() instanceof ImageIcon imageIcon) {
+				button.setDisabledSelectedIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (button.getRolloverSelectedIcon() instanceof ImageIcon imageIcon) {
+				button.setRolloverIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (button.getSelectedIcon() instanceof ImageIcon imageIcon) {
+				button.setSelectedIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (button.getIcon() instanceof ImageIcon imageIcon) {
+				button.setIcon(scaleImageIcon(imageIcon, factor));
+			}
+		}
+
+		if (comp instanceof JLabel label) {
+			if (label.getIcon() instanceof ImageIcon imageIcon) {
+				label.setIcon(scaleImageIcon(imageIcon, factor));
+			}
+
+			if (label.getDisabledIcon() instanceof ImageIcon imageIcon) {
+				label.setDisabledIcon(scaleImageIcon(imageIcon, factor));
+			}
+		}
+
+		if (comp instanceof Container container) {
+			for (Component child : container.getComponents()) {
+				scale(child, factor);
+			}
+		}
+	}
+
+	@AstroImageJ(reason = "Scale frames")
+	private static ImageIcon scaleImageIcon(ImageIcon in, double factor) {
+		if (in == null || factor <= 0) {
+			return in;
+		}
+
+		var img = in.getImage();
+		if (img == null) {
+			return in;
+		}
+
+		var w = img.getWidth(null);
+		var h = img.getHeight(null);
+		if (w <= 0 || h <= 0) {
+			return in;
+		}
+
+		var nw = Math.max(1, (int) Math.round(w * factor));
+		var nh = Math.max(1, (int) Math.round(h * factor));
+
+		var bufferedImage = new BufferedImage(nw, nh, BufferedImage.TYPE_INT_ARGB);
+		var g2 = bufferedImage.createGraphics();
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+		g2.drawImage(img, 0, 0, nw, nh, null);
+		g2.dispose();
+
+		return new ImageIcon(bufferedImage);
+	}
+
 	/** Works around an OpenJDK bug on Windows that
 	 * causes the scrollbar thumb color and background
 	 * color to be almost identical.

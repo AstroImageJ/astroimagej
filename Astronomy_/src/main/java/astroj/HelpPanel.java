@@ -31,23 +31,45 @@
 
 package astroj;
 
-import ij.IJ;
-import util.BrowserOpener;
+import static ij.IJ.showMessage;
 
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.text.*;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLDocument;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
 
-import static ij.IJ.showMessage;
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.SpringLayout;
+import javax.swing.WindowConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Document;
+import javax.swing.text.Highlighter;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLDocument;
+
+import ij.IJ;
+import ij.gui.GUI;
+import util.BrowserOpener;
 
 /*
  * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
@@ -223,6 +245,7 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         SpringUtil.makeCompactGrid (mainPanel,mainPanel.getComponentCount(),1, 2,2,2,2);
 
 		add(mainPanel);
+        GUI.scaleFrame(this);
 		pack();
 		setResizable(true);
 //        mainFrame.setLocation(dialogFrameLocationX, dialogFrameLocationY);

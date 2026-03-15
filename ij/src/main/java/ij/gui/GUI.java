@@ -39,6 +39,7 @@ import ij.ImagePlus;
 import ij.Menus;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.text.TextPanel;
 
 /** This class consists of static GUI utility methods. */
 public class GUI {
@@ -361,7 +362,11 @@ public class GUI {
 		var font = comp.getFont();
 		if (font != null) {
 			var newSize = (float) (font.getSize2D() * factor);
-			comp.setFont(font.deriveFont(newSize));
+			var scaledFont = font.deriveFont(newSize);
+			comp.setFont(scaledFont);
+			if (comp instanceof TextPanel textPanel) {
+				textPanel.setFont(scaledFont, IJ.isMacOSX() || Prefs.get("tw.font.anti", true));
+			}
 		}
 
 		if (comp instanceof JMenuBar) {
@@ -381,6 +386,7 @@ public class GUI {
 
 		if (comp instanceof JTable jTable) {
 			jTable.setRowHeight((int) ((jTable.getRowHeight() * factor * 0.9)));
+			scale(jTable.getTableHeader(), factor);
 		}
 
 		if (comp instanceof JList<?> jList) {

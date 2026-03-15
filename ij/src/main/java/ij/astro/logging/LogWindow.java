@@ -1,13 +1,14 @@
 package ij.astro.logging;
 
+import java.awt.Dimension;
+import java.awt.Font;
+import java.util.Arrays;
+
 import ij.IJ;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.gui.GUI;
 import ij.text.TextWindow;
-
-import java.awt.*;
-import java.util.Arrays;
 
 /**
  * Custom TextWindow for use with {@link AIJLogger}'s logging capabilities - implements closing and screen pos/size of
@@ -41,6 +42,10 @@ public class LogWindow extends TextWindow {
         }
 
         getTextPanel().setFont(new Font("SansSerif", Font.PLAIN, 16));
+
+        GUI.scaleFrame(this);
+        pack();
+        revalidate();
     }
 
     @Override

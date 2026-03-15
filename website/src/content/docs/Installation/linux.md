@@ -122,7 +122,7 @@ LCO CTIO (lsc)	-30.165	-70.815	2215
 
 Have questions or want to contribute? Reach out to us!
 
-AstroImageJ User Technical Support: [Nabble User Forum](http://astroimagej.170.s1.nabble.com/)
+AstroImageJ User Technical Support: [Historical Nabble User Forum](http://astroimagej.170.s1.nabble.com/)
 
 GitHub Discussions: [Github AIJ User Discussions](https://github.com/AstroImageJ/astroimagej/discussions)
 

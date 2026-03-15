@@ -13,7 +13,7 @@ export default defineConfig({
         social: [
             { icon: 'github', label: 'GitHub', href: 'https://github.com/AstroImageJ/astroimagej' },
             { icon: 'comment', label: 'Github Discussions', href: 'https://github.com/AstroImageJ/astroimagej/discussions' },
-            { icon: 'comment-alt', label: 'Nabble Forum', href: 'http://astroimagej.170.s1.nabble.com/' },
+            { icon: 'comment-alt', label: 'Historical Nabble Forum', href: 'http://astroimagej.170.s1.nabble.com/' },
         ],
         editLink: {
             baseUrl: 'https://github.com/AstroImageJ/astroimagej/edit/master/website/',

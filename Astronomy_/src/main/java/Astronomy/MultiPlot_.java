@@ -11072,7 +11072,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         updateplotbutton = new JButton("Redraw Plot");
         updateplotbutton.setToolTipText("redraws the plot and brings the panel to the front");
         updateplotbutton.setFont(p11);
-        updateplotbutton.setPreferredSize(new Dimension(90, 20));
+        updateplotbutton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         updateplotbutton.addActionListener(e -> {
             totalPanOffsetX = 0.0;
             totalPanOffsetY = 0.0;
@@ -11091,7 +11091,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         addastrodatabutton = new JButton(" Add Data ");
         addastrodatabutton.setToolTipText("Add new astronomical data columns to table.");
         addastrodatabutton.setFont(p11);
-        addastrodatabutton.setPreferredSize(new Dimension(90, 20));
+        addastrodatabutton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         addastrodatabutton.addActionListener(e -> {
             if (addAstroDataFrame != null && addAstroDataFrame.isShowing()) {
                 addAstroDataFrame.setVisible(true);
@@ -11112,7 +11112,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         moreybutton = new JButton("Y-data ");
         moreybutton.setToolTipText("opens the Y-data panel");
         moreybutton.setFont(p11);
-        moreybutton.setPreferredSize(new Dimension(90, 20));
+        moreybutton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         moreybutton.addActionListener(e -> {
             if (subFrame.isShowing()) { subFrame.setVisible(true); } else {
                 setSubpanelVisible = true;
@@ -11124,7 +11124,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         refStarButton = new JButton("Ref. Stars");
         refStarButton.setFont(p11);
         refStarButton.setToolTipText("opens the reference star panel");
-        refStarButton.setPreferredSize(new Dimension(90, 20));
+        refStarButton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         refStarButton.addActionListener(e -> {
             if (refStarFrame != null && refStarFrame.isShowing()) {
                 refStarFrame.setVisible(true);

@@ -20,9 +20,12 @@ import java.awt.Scrollbar;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -296,7 +299,7 @@ public class GUI {
 
 	@AstroImageJ(reason = "Scale frames")
 	public static void scaleFrame(Dialog dialog) {
-		scale(dialog, Prefs.getGuiScale());
+		scale(dialog, Prefs.getGuiScale(), new HashSet<>());
 	}
 
 	@AstroImageJ(reason = "Scale frames")
@@ -350,14 +353,20 @@ public class GUI {
 			scaledMenu = true;
 		}
 
-		scale(frame, Prefs.getGuiScale());
+		scale(frame, Prefs.getGuiScale(), new HashSet<>());
 	}
 
 	@AstroImageJ(reason = "Scale frames")
-	private static void scale(Component comp, double factor) {
+	private static void scale(Component comp, double factor, Set<Component> processed) {
 		if (comp == null || factor <= 0 || factor == 1) {
 			return;
 		}
+
+		if (processed.contains(comp)) {
+			return;
+		}
+
+		processed.add(comp);
 
 		var font = comp.getFont();
 		if (font != null) {
@@ -373,12 +382,30 @@ public class GUI {
 			return;
 		}
 
-		if (comp instanceof JSlider jSlider) {
+        //noinspection rawtypes
+		if (comp instanceof JComboBox comboBox) {
+			var newItems = new java.util.ArrayList<>();
+			for (int i = 0; i < comboBox.getItemCount(); i++) {
+				var item = comboBox.getItemAt(i);
+				if (item instanceof ImageIcon imageIcon) {
+					item = scaleImageIcon(imageIcon, factor);
+				}
+				if (item instanceof Component component) {
+					scale(component, factor, processed);
+				}
+				newItems.add(item);
+			}
+
+			//noinspection rawtypes,unchecked
+			comboBox.setModel(new javax.swing.DefaultComboBoxModel(newItems.toArray(new Object[0])));
+		}
+
+        if (comp instanceof JSlider jSlider) {
 			var table = jSlider.getLabelTable();
             //noinspection unchecked
             table.elements().asIterator().forEachRemaining(label -> {
                 if (label instanceof JLabel jLabel) {
-					scale(jLabel, factor);
+					scale(jLabel, factor, processed);
                 }
 			});
 			jSlider.setLabelTable(table);
@@ -386,7 +413,7 @@ public class GUI {
 
 		if (comp instanceof JTable jTable) {
 			jTable.setRowHeight((int) ((jTable.getRowHeight() * factor * 0.9)));
-			scale(jTable.getTableHeader(), factor);
+			scale(jTable.getTableHeader(), factor, processed);
 		}
 
 		if (comp instanceof JList<?> jList) {
@@ -414,7 +441,7 @@ public class GUI {
 
 			var popup = jComponent.getComponentPopupMenu();
             if (popup != null) {
-                scale(popup, factor);
+                scale(popup, factor, processed);
             }
         }
 
@@ -478,7 +505,7 @@ public class GUI {
 
 		if (comp instanceof Container container) {
 			for (Component child : container.getComponents()) {
-				scale(child, factor);
+				scale(child, factor, processed);
 			}
 		}
 	}

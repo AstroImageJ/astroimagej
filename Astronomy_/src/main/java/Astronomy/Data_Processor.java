@@ -1033,6 +1033,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         SpringUtil.makeCompactGrid(fitsHeaderPanel, fitsHeaderPanel.getComponentCount(), 1, 2, 2, 2, 2);
         fitsHeaderScrollPane = new JScrollPane(fitsHeaderPanel);
         fitsHeaderFrame.add(fitsHeaderScrollPane);
+        GUI.scaleFrame(fitsHeaderFrame);
         fitsHeaderFrame.pack();
         fitsHeaderFrame.setResizable(true);
 

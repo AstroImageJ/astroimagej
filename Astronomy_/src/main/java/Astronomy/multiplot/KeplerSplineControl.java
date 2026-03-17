@@ -46,6 +46,7 @@ import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
 
@@ -86,6 +87,7 @@ public class KeplerSplineControl {
             }
             createUI();
             var p = makePanel();
+            GUI.scaleFrame(p);
             p.pack();
             p.setVisible(true);
             window = p;

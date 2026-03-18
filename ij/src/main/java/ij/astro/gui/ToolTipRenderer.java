@@ -1,7 +1,11 @@
 package ij.astro.gui;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Component;
+
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JList;
 
 public class ToolTipRenderer extends DefaultListCellRenderer {
 
@@ -11,6 +15,9 @@ public class ToolTipRenderer extends DefaultListCellRenderer {
         JComponent component = (JComponent) super.getListCellRendererComponent(list, value, index, isSelected,
                 cellHasFocus);
         String tip = null;
+        if (value instanceof ImageIcon imageIcon) {
+            tip = imageIcon.getDescription();
+        }
         if (value instanceof ToolTipProvider ttp) {
             tip = ttp.getToolTip();
         }

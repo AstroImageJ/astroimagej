@@ -140,6 +140,7 @@ import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.accessors.TransferablePlot;
 import ij.astro.gui.GenericSwingDialog;
+import ij.astro.gui.ToolTipRenderer;
 import ij.astro.gui.nstate.BiState;
 import ij.astro.gui.nstate.NStateButton;
 import ij.astro.gui.nstate.TriState;
@@ -11879,6 +11880,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
         detrendtypecombobox[c] = new JComboBox<>(detrendiconlist);
+        detrendtypecombobox[c].setRenderer(new ToolTipRenderer());
         detrendtypecombobox[c].setFont(p11);
         detrendtypecombobox[c].setSelectedIndex(detrendFitIndex[c]);
         detrendtypecombobox[c].setMaximumRowCount(10);
@@ -12072,6 +12074,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         normpanelgroup[c].setBorder(BorderFactory.createEmptyBorder());
 
         normtypecombobox[c] = new JComboBox<>(normiconlist);
+        normtypecombobox[c].setRenderer(new ToolTipRenderer());
         normtypecombobox[c].setFont(p11);
         normtypecombobox[c].setToolTipText("<html>Select a 'Norm/Mag Ref' region mode that shows green color over the region(s) of data to include in the calculation.<br>" + "If 'Out Mag' is selected, the mean of the region is used as the reference<br>" + "level when converting the plotted data to relative magnitude.<br>" + "Set the Fit and Normalize region markers at the bottom of the Multi-plot Main panel.</html>");
         normtypecombobox[c].setSelectedIndex(normIndex[c]);

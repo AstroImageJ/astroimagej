@@ -20,7 +20,9 @@ import java.awt.Scrollbar;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.swing.AbstractButton;
@@ -298,12 +300,12 @@ public class GUI {
 	}
 
 	@AstroImageJ(reason = "Scale frames")
-	public static void scaleFrame(Dialog dialog) {
-		scale(dialog, Prefs.getGuiScale(), new HashSet<>());
+	public static void scaleFrame(Dialog dialog, Component... processed) {
+		scale(dialog, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
 	}
 
 	@AstroImageJ(reason = "Scale frames")
-	public static void scaleFrame(Frame frame) {
+	public static void scaleFrame(Frame frame, Component... processed) {
 		if (frame == null || Prefs.getGuiScale() <= 0 || Prefs.getGuiScale() == 1) {
 			return;
 		}
@@ -353,7 +355,7 @@ public class GUI {
 			scaledMenu = true;
 		}
 
-		scale(frame, Prefs.getGuiScale(), new HashSet<>());
+		scale(frame, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
 	}
 
 	@AstroImageJ(reason = "Scale frames")
@@ -369,7 +371,7 @@ public class GUI {
 		processed.add(comp);
 
 		var font = comp.getFont();
-		if (font != null) {
+		if (font != null && !scaledFont(font)) {
 			var newSize = (float) (font.getSize2D() * factor);
 			var scaledFont = font.deriveFont(newSize);
 			comp.setFont(scaledFont);
@@ -508,6 +510,42 @@ public class GUI {
 				scale(child, factor, processed);
 			}
 		}
+	}
+
+	private static boolean scaledFont(Font original) {
+		if (!scaledMenu) {
+			var font = (Font) UIManager.get("Menu.font");
+            if (Objects.equals(font, original)) {
+                return true;
+            }
+
+			font = (Font) UIManager.get("MenuBar.font");
+			if (Objects.equals(font, original)) {
+				return true;
+			}
+
+			font = (Font) UIManager.get("MenuItem.font");
+			if (Objects.equals(font, original)) {
+				return true;
+			}
+
+			font = (Font) UIManager.get("CheckBoxMenuItem.font");
+			if (Objects.equals(font, original)) {
+				return true;
+			}
+
+			font = (Font) UIManager.get("PopupMenu.font");
+			if (Objects.equals(font, original)) {
+				return true;
+			}
+
+			font = (Font) UIManager.get("RadioButtonMenuItem.font");
+			if (Objects.equals(font, original)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	@AstroImageJ(reason = "Scale frames")

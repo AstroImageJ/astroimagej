@@ -11264,7 +11264,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJU.setFrameSizeAndLocation(subFrame, subFrameLocationX, subFrameLocationY, subFrameWidth, subFrameHeight);
         }
 
-        GUI.scaleFrame(subFrame);
+        GUI.scaleFrame(subFrame, legendpopup);
 
         if (openDataSetWindow || setSubpanelVisible) {
             subFrame.setVisible(true);

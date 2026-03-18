@@ -11629,7 +11629,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         legendslabelconfigureButton.setToolTipText("Set legend preferences");
         legendslabelconfigureButton.setMargin(new Insets(0, 0, 0, 0));
         legendslabelconfigureButton.setMaximumSize(new Dimension(25, 25));
-        legendslabelconfigureButton.addActionListener(ae -> legendpopup.show(legendslabelconfigureButton, mainsubpanel.getX(), mainsubpanel.getY() + 25));
+        legendslabelconfigureButton.addActionListener(ae -> legendpopup.show(legendslabelconfigureButton, subFrame.getX(), subFrame.getY() + 25));
         legendslabelgroup.add(legendslabelconfigureButton);
 
         mainsubpanelgroup.add(legendslabelgroup);

@@ -575,7 +575,7 @@ public class GUI {
 		g2.drawImage(img, 0, 0, nw, nh, null);
 		g2.dispose();
 
-		return new ImageIcon(bufferedImage);
+		return new ImageIcon(bufferedImage, in.getDescription());
 	}
 
 	/** Works around an OpenJDK bug on Windows that

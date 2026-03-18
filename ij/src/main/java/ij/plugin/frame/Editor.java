@@ -1746,7 +1746,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
     }
     
     void setFont() {
-        ta.setFont(new Font(getFontName(), Font.PLAIN, sizes[fontSizeIndex]));
+        ta.setFont(new Font(getFontName(), Font.PLAIN, (int) (sizes[fontSizeIndex] * Prefs.getGuiScale())));
     }
     
     String getFontName() {

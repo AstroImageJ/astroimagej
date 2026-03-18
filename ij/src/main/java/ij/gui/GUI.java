@@ -303,6 +303,7 @@ public class GUI {
 
 	@AstroImageJ(reason = "Scale frames")
 	public static void scaleFrame(Dialog dialog, Component... processed) {
+		scaleDefaultFonts();
 		scale(dialog, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
 	}
 
@@ -317,6 +318,12 @@ public class GUI {
 			mb.setFont(Menus.getFont(true));
         }
 
+		scaleDefaultFonts();
+
+		scale(frame, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
+	}
+
+	private static void scaleDefaultFonts() {
 		if (!scaledMenu) {
 			var d = UIManager.getLookAndFeelDefaults();
 			for (var key : d.keySet()) {
@@ -340,8 +347,6 @@ public class GUI {
 
 			scaledMenu = true;
 		}
-
-		scale(frame, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
 	}
 
 	@AstroImageJ(reason = "Scale frames")

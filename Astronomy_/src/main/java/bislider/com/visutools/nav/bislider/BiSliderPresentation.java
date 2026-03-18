@@ -2,10 +2,7 @@ package bislider.com.visutools.nav.bislider;
 
 import java.awt.AWTException;
 import java.awt.BorderLayout;
-import java.awt.event.*;
-import java.awt.geom.*;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -19,16 +16,47 @@ import java.awt.RenderingHints;
 import java.awt.Robot;
 import java.awt.Shape;
 import java.awt.SystemColor;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.io.*;
-import java.text.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
+import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.JTextField;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalLookAndFeel;
+
+import ij.Prefs;
 
 /**
  * The graphical interface of the bean (drawing and mouse event handling). <br>
@@ -151,9 +179,9 @@ implements Serializable, MouseListener, MouseMotionListener, MouseWheelListener,
   
   // but not the margins.
   protected final static  int                                           MARGIN_RULER_LEFT               = 10;
-  protected               int                                           Margin_Ruler_Top                = 13;
+  protected               int                                           Margin_Ruler_Top                = (int) (13 * Prefs.getGuiScale());
   protected final static  int                                           MARGIN_RULER_RIGHT              = 10;
-  protected final static  int                                           MARGIN_RULER_BOTTOM             = 3;
+  protected final static  int                                           MARGIN_RULER_BOTTOM             = (int) (3 * Prefs.getGuiScale());
   
   //protected               Dimension                                     PreferredSize                     = new Dimension(5, 5);
   //protected               Dimension                                     MinimumSize                       = new Dimension(5, 5);
@@ -512,6 +540,8 @@ implements Serializable, MouseListener, MouseMotionListener, MouseWheelListener,
       Ctrl.getArcSize(), Ctrl.getArcSize());
     //Graphics2.setColor(Color.RED);
     //Graphics2.fill(NewClip);
+
+    Graphics2.setFont(Font1);
     
     int              SegmentCount      = Ctrl.getSegmentCount();
     FontMetrics      TheFontMetrics    = Graphics2.getFontMetrics();

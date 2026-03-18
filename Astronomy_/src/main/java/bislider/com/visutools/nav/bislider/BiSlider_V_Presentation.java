@@ -1,16 +1,46 @@
 package bislider.com.visutools.nav.bislider;
 
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.io.*;
-import java.text.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Robot;
+import java.awt.Shape;
+import java.awt.SystemColor;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
+import java.text.DecimalFormat;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
-import java.beans.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JSlider;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import ij.Prefs;
 
 /**
  * Vertical presentation of the graphical interface of the bean (drawing and mouse event handling). <br>
@@ -212,6 +242,7 @@ public class BiSlider_V_Presentation
     Font             Font1             = Ctrl.getFont();
     if (Font1==null)
       Font1 = new Font("Dialog", Font.PLAIN, 12);
+    Font1 = Font1.deriveFont((float) (Font1.getSize() * Prefs.getGuiScale()));
     Font             Font2             = new Font(Font1.getName(), Font.BOLD, Font1.getSize());
     Shape            OldClip           = Graphics2.getClip();
     /*Shape            NewClip           = new Rectangle2D.Float(
@@ -220,7 +251,9 @@ public class BiSlider_V_Presentation
     Shape NewClip           = new RoundRectangle2D.Float(
       MARGIN_RULER_LEFT, Margin_Ruler_Top,
       RulerWidth, RulerHeight,
-      Ctrl.getArcSize(), Ctrl.getArcSize());    
+      Ctrl.getArcSize(), Ctrl.getArcSize());
+
+    Graphics2.setFont(Font1);
 
     int              SegmentCount      = Ctrl.getSegmentCount();
     FontMetrics      TheFontMetrics    = Graphics2.getFontMetrics();

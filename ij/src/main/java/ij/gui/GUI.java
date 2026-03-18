@@ -20,12 +20,14 @@ import java.awt.Scrollbar;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
 import javax.swing.AbstractButton;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -316,40 +318,24 @@ public class GUI {
         }
 
 		if (!scaledMenu) {
-			var font = (Font) UIManager.get("Menu.font");
-			if (font != null) {
-				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
-				UIManager.put("Menu.font", font.deriveFont(newSize));
+			var d = UIManager.getLookAndFeelDefaults();
+			for (var key : d.keySet()) {
+				if (key != null && key.toString().endsWith(".font")) {
+					var v = d.get(key);
+					if (v instanceof Font f) {
+                        d.put(key, f.deriveFont((float) Math.max(1.0, f.getSize2D() * Prefs.getGuiScale())));
+					}
+				}
 			}
 
-			font = (Font) UIManager.get("MenuBar.font");
-			if (font != null) {
-				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
-				UIManager.put("MenuBar.font", font.deriveFont(newSize));
-			}
-
-			font = (Font) UIManager.get("MenuItem.font");
-			if (font != null) {
-				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
-				UIManager.put("MenuItem.font", font.deriveFont(newSize));
-			}
-
-			font = (Font) UIManager.get("CheckBoxMenuItem.font");
-			if (font != null) {
-				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
-				UIManager.put("CheckBoxMenuItem.font", font.deriveFont(newSize));
-			}
-
-			font = (Font) UIManager.get("PopupMenu.font");
-			if (font != null) {
-				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
-				UIManager.put("PopupMenu.font", font.deriveFont(newSize));
-			}
-
-			font = (Font) UIManager.get("RadioButtonMenuItem.font");
-			if (font != null) {
-				var newSize = (float) (font.getSize2D() * Prefs.getGuiScale());
-				UIManager.put("RadioButtonMenuItem.font", font.deriveFont(newSize));
+			var ud = UIManager.getDefaults();
+			for (var key : ud.keySet()) {
+				if (key != null && key.toString().endsWith(".font")) {
+					var v = ud.get(key);
+					if (!Objects.equals(v, d.get(key)) && v instanceof Font f) {
+                        ud.put(key, f.deriveFont((float) Math.max(1.0, f.getSize2D() * Prefs.getGuiScale())));
+					}
+				}
 			}
 
 			scaledMenu = true;
@@ -386,7 +372,7 @@ public class GUI {
 
         //noinspection rawtypes
 		if (comp instanceof JComboBox comboBox) {
-			var newItems = new java.util.ArrayList<>();
+			var newItems = new ArrayList<>();
 			for (int i = 0; i < comboBox.getItemCount(); i++) {
 				var item = comboBox.getItemAt(i);
 				if (item instanceof ImageIcon imageIcon) {
@@ -399,7 +385,7 @@ public class GUI {
 			}
 
 			//noinspection rawtypes,unchecked
-			comboBox.setModel(new javax.swing.DefaultComboBoxModel(newItems.toArray(new Object[0])));
+			comboBox.setModel(new DefaultComboBoxModel(newItems.toArray(new Object[0])));
 		}
 
         if (comp instanceof JSlider jSlider) {
@@ -414,12 +400,12 @@ public class GUI {
 		}
 
 		if (comp instanceof JTable jTable) {
-			jTable.setRowHeight((int) ((jTable.getRowHeight() * factor * 0.9)));
+			jTable.setRowHeight((int) ((jTable.getRowHeight() * factor)));
 			scale(jTable.getTableHeader(), factor, processed);
 		}
 
 		if (comp instanceof JList<?> jList) {
-			jList.setFixedCellHeight((int) (jList.getFixedCellHeight() * factor * 0.9));
+			jList.setFixedCellHeight((int) (jList.getFixedCellHeight() * factor));
 		}
 
         if (comp instanceof JComponent jComponent) {
@@ -513,35 +499,23 @@ public class GUI {
 	}
 
 	private static boolean scaledFont(Font original) {
-		if (!scaledMenu) {
-			var font = (Font) UIManager.get("Menu.font");
-            if (Objects.equals(font, original)) {
-                return true;
-            }
-
-			font = (Font) UIManager.get("MenuBar.font");
-			if (Objects.equals(font, original)) {
-				return true;
+		if (scaledMenu) {
+			var d = UIManager.getLookAndFeelDefaults();
+			for (var key : d.keySet()) {
+				if (key != null && key.toString().endsWith(".font")) {
+                    if (Objects.equals(d.get(key), original)) {
+						return true;
+					}
+				}
 			}
 
-			font = (Font) UIManager.get("MenuItem.font");
-			if (Objects.equals(font, original)) {
-				return true;
-			}
-
-			font = (Font) UIManager.get("CheckBoxMenuItem.font");
-			if (Objects.equals(font, original)) {
-				return true;
-			}
-
-			font = (Font) UIManager.get("PopupMenu.font");
-			if (Objects.equals(font, original)) {
-				return true;
-			}
-
-			font = (Font) UIManager.get("RadioButtonMenuItem.font");
-			if (Objects.equals(font, original)) {
-				return true;
+			var ud = UIManager.getDefaults();
+			for (var key : ud.keySet()) {
+				if (key != null && key.toString().endsWith(".font")) {
+					if (Objects.equals(d.get(key), original)) {
+						return true;
+					}
+				}
 			}
 		}
 

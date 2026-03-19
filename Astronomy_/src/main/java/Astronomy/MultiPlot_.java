@@ -5446,8 +5446,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJU.setFrameSizeAndLocation(addAstroDataFrame, addAstroDataFrameLocationX, addAstroDataFrameLocationY, 0, 0);
         }
         UIHelper.recursiveFontSetter(addAstroDataFrame, p11);
-        addAstroDataFrame.pack();
         GUI.scaleFrame(addAstroDataFrame);
+        addAstroDataFrame.pack();
         addAstroDataFrame.setVisible(true);
         addAstroDataFrameWasShowing = true;
 

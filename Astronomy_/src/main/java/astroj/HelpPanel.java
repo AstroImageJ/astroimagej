@@ -66,8 +66,11 @@ import javax.swing.text.Document;
 import javax.swing.text.Highlighter;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 
 import ij.IJ;
+import ij.Prefs;
 import ij.gui.GUI;
 import util.BrowserOpener;
 
@@ -204,6 +207,15 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         status = new JLabel();
         jLabel1 = new JLabel();
         ImageIcon dialogFrameIcon = createImageIcon("astroj/images/help.png", "Help_Icon");
+
+        var kit = new HTMLEditorKit();
+        var ss = new StyleSheet();
+        ss.addRule("body { font-family: SansSerif; font-size: %spt; }".formatted((int)(16 * Prefs.getGuiScale())));
+        ss.addRule("code { font-size: %spt; }".formatted((int)(16 * Prefs.getGuiScale())));
+        ss.addStyleSheet(kit.getStyleSheet());
+        kit.setStyleSheet(ss);
+
+        textArea.setEditorKit(kit);
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(callingProgramID+" Help");

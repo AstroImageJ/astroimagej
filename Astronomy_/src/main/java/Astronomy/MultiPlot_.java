@@ -11073,7 +11073,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         updateplotbutton = new JButton("Redraw Plot");
         updateplotbutton.setToolTipText("redraws the plot and brings the panel to the front");
         updateplotbutton.setFont(p11);
-        updateplotbutton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
+        updateplotbutton.setMaximumSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         updateplotbutton.addActionListener(e -> {
             totalPanOffsetX = 0.0;
             totalPanOffsetY = 0.0;
@@ -11092,7 +11092,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         addastrodatabutton = new JButton(" Add Data ");
         addastrodatabutton.setToolTipText("Add new astronomical data columns to table.");
         addastrodatabutton.setFont(p11);
-        addastrodatabutton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
+        addastrodatabutton.setMaximumSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         addastrodatabutton.addActionListener(e -> {
             if (addAstroDataFrame != null && addAstroDataFrame.isShowing()) {
                 addAstroDataFrame.setVisible(true);
@@ -11105,27 +11105,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         line1morepanelspanel.add(addastrodatabutton);
 
-        SpringUtil.makeCompactGrid(line1morepanelspanel, 1, line1morepanelspanel.getComponentCount(), 0, 0, 0, 0);
-        morepanelspanel.add(line1morepanelspanel);
-
-        JPanel line2morepanelspanel = new JPanel(new SpringLayout());
-
         moreybutton = new JButton("Y-data ");
         moreybutton.setToolTipText("opens the Y-data panel");
         moreybutton.setFont(p11);
-        moreybutton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
+        moreybutton.setMaximumSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         moreybutton.addActionListener(e -> {
             if (subFrame.isShowing()) { subFrame.setVisible(true); } else {
                 setSubpanelVisible = true;
                 showMoreCurvesJPanel();
             }
         });
-        line2morepanelspanel.add(moreybutton);
+        line1morepanelspanel.add(moreybutton);
 
         refStarButton = new JButton("Ref. Stars");
         refStarButton.setFont(p11);
         refStarButton.setToolTipText("opens the reference star panel");
-        refStarButton.setPreferredSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
+        refStarButton.setMaximumSize(new Dimension((int) (90 * Prefs.getGuiScale()), (int) (20 * Prefs.getGuiScale())));
         refStarButton.addActionListener(e -> {
             if (refStarFrame != null && refStarFrame.isShowing()) {
                 refStarFrame.setVisible(true);
@@ -11138,10 +11133,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         });
 
-        line2morepanelspanel.add(refStarButton);
+        line1morepanelspanel.add(refStarButton);
 
-        SpringUtil.makeCompactGrid(line2morepanelspanel, 1, line2morepanelspanel.getComponentCount(), 0, 0, 0, 0);
-        morepanelspanel.add(line2morepanelspanel);
+        SpringUtil.makeCompactGrid(line1morepanelspanel, 2, line1morepanelspanel.getComponentCount() / 2, 0, 0, 0, 0);
+        morepanelspanel.add(line1morepanelspanel);
 
         SpringUtil.makeCompactGrid(morepanelspanel, morepanelspanel.getComponentCount(), 1, 2, 0, 2, 2);
         mainpanelgroupf.add(morepanelspanel);

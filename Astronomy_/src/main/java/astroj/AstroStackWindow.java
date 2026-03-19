@@ -117,6 +117,7 @@ import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.gui.GenericDialog;
+import ij.gui.ImageLayout;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
 import ij.gui.Roi;
@@ -548,10 +549,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     private PlotWindow stackPixelPlotWin = null;
     private static final Property<Point> stackPlotWindowLocation = new Property<>(new Point(), AstroStackWindow.class);
     private static final Property<Boolean> SHOW_IN_ALADIN = new Property<>(true, AstroStackWindow.class);
+    private final ImageLayout imageLayout;
 
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
         super(imp, ac);
+        imageLayout = new ImageLayout(ic);
         isReady = false;
         if (IJ.isMacro() && !isVisible()) //'super' may have called show()
             imp.setDeactivated(); //prepare for waitTillActivated (imp may have been activated before)
@@ -6173,6 +6176,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //			colw = Math.max(colw, d.width);
 //		}
 //		moveComponents(target, x, insets.top + vgap, colw, maxheight - y, nmembers);
+
+            imageLayout.layoutContainer(target);
 
 //        else
 //            {

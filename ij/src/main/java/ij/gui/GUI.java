@@ -20,6 +20,7 @@ import java.awt.Scrollbar;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import javax.swing.JList;
 import javax.swing.JMenuBar;
 import javax.swing.JSlider;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
@@ -304,7 +306,15 @@ public class GUI {
 	@AstroImageJ(reason = "Scale frames")
 	public static void scaleFrame(Dialog dialog, Component... processed) {
 		scaleDefaultFonts();
-		scale(dialog, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
+        if (SwingUtilities.isEventDispatchThread()) {
+			scale(dialog, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(() -> scale(dialog, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed))));
+            } catch (InterruptedException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
 	}
 
 	@AstroImageJ(reason = "Scale frames")
@@ -320,7 +330,15 @@ public class GUI {
 
 		scaleDefaultFonts();
 
-		scale(frame, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
+		if (SwingUtilities.isEventDispatchThread()) {
+			scale(frame, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
+		} else {
+			try {
+				SwingUtilities.invokeAndWait(() -> scale(frame, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed))));
+			} catch (InterruptedException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private static void scaleDefaultFonts() {

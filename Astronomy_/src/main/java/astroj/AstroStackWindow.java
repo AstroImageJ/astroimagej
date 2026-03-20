@@ -6177,8 +6177,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //		}
 //		moveComponents(target, x, insets.top + vgap, colw, maxheight - y, nmembers);
 
-            imageLayout.layoutContainer(target);
-
 //        else
 //            {
             Dimension psize = preferredLayoutSize(target);
@@ -6191,6 +6189,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             int newCanvasHeight = newCanvasHeight();
             ac.setDrawingSize(newCanvasWidth, newCanvasHeight);
             Rectangle r = new Rectangle(ac.getSrcRect());
+
+            var mainPanel = target.getComponent(0);
+            var s = mainPanel.getSize();
+            mainPanel.setLocation((getWidth() - s.width) / 2, mainPanel.getY());
 
             if (imp == null) {
                 return;

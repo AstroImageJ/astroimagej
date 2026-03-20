@@ -302,6 +302,13 @@ tasks.register<Sync>("sync") {
     // Doing so allows the UP-TO-DATE check to pass
     exclude("aij.log")
 
+    val prefs = providers.environmentVariable("AIJ_PREFS")
+    if (prefs.isPresent) {
+        from(prefs.get()) {
+            rename { "AIJ_Prefs.txt" }
+        }
+    }
+
     destinationDir = file("${projectDir}/AIJ-Run")
 }
 

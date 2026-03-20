@@ -65,6 +65,7 @@ import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.gui.MultiLineLabel;
 import ij.plugin.PlugIn;
 import util.BrowserOpener;
@@ -808,6 +809,9 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         b.add(Box.createVerticalStrut(10));
 
         d.add(b);
+
+        GUI.scaleFrame(d);
+
         d.pack();
         d.doLayout();
 

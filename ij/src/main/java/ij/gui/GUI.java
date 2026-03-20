@@ -389,9 +389,13 @@ public class GUI {
 				newItems.add(item);
 			}
 
+			var originalIndex = comboBox.getSelectedIndex();
 			//noinspection rawtypes,unchecked
-			comboBox.setModel(new DefaultComboBoxModel(newItems.toArray(new Object[0])));
-		}
+			var model = new DefaultComboBoxModel(newItems.toArray(new Object[0]));
+			model.setSelectedItem(newItems.get(originalIndex));
+			//noinspection unchecked
+			comboBox.setModel(model);
+        }
 
         if (comp instanceof JSlider jSlider) {
 			var table = jSlider.getLabelTable();

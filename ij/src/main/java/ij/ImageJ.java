@@ -1,23 +1,34 @@
 package ij;
 
-import ij.astro.AstroImageJ;
-import ij.astro.logging.ConsoleLogging;
-import ij.gui.*;
-import ij.io.Opener;
-import ij.macro.Interpreter;
-import ij.plugin.GelAnalyzer;
-import ij.plugin.JavaProperties;
-import ij.plugin.MacroInstaller;
-import ij.plugin.Orthogonal_Views;
-import ij.plugin.filter.PlugInFilterRunner;
-import ij.plugin.frame.*;
-import ij.text.TextWindow;
-import ij.util.Tools;
-
-import javax.swing.*;
-import javax.swing.text.DefaultEditorKit;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuComponent;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.ImageProducer;
 import java.io.CharArrayWriter;
 import java.io.File;
@@ -25,7 +36,46 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.util.*;
+import java.util.Hashtable;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.Vector;
+
+import javax.swing.ImageIcon;
+import javax.swing.InputMap;
+import javax.swing.JLabel;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.text.DefaultEditorKit;
+
+import ij.astro.AstroImageJ;
+import ij.astro.logging.ConsoleLogging;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Overlay;
+import ij.gui.ProgressBar;
+import ij.gui.Roi;
+import ij.gui.TextRoi;
+import ij.gui.Toolbar;
+import ij.io.Opener;
+import ij.macro.Interpreter;
+import ij.plugin.FolderOpener;
+import ij.plugin.GelAnalyzer;
+import ij.plugin.JavaProperties;
+import ij.plugin.MacroInstaller;
+import ij.plugin.Orthogonal_Views;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.frame.ContrastAdjuster;
+import ij.plugin.frame.Editor;
+import ij.plugin.frame.Fitter;
+import ij.plugin.frame.RoiManager;
+import ij.plugin.frame.ThresholdAdjuster;
+import ij.text.TextWindow;
+import ij.util.Tools;
 
 /**
 This frame is the main ImageJ class.
@@ -773,7 +823,7 @@ public class ImageJ extends Frame implements ActionListener,
 		}
     }
 
-	@AstroImageJ(reason = "Copy main method out to allow threading", modified = false)
+	@AstroImageJ(reason = "Copy main method out to allow threading; Allow inputing a folder to open", modified = false)
 	private static void main0(String... args) {
 		boolean noGUI = false;
 		int mode = IMAGEJ_APP;
@@ -843,7 +893,11 @@ public class ImageJ extends Frame implements ActionListener,
 				macros++;
 			} else if (arg.length()>0 && arg.indexOf("ij.ImageJ")==-1) {
 				File file = new File(arg);
-				IJ.open(file.getAbsolutePath(), Opener.OpenOption.SKIP_UI);
+                if (file.isDirectory()) {
+					FolderOpener.open(file.getAbsolutePath()).show();
+                } else {
+					IJ.open(file.getAbsolutePath(), Opener.OpenOption.SKIP_UI);
+				}
 			}
 		}
 		if (IJ.debugMode && IJ.getInstance()==null && !GraphicsEnvironment.isHeadless())

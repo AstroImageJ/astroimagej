@@ -68,8 +68,8 @@ public class AstroCanvas extends OverlayCanvas {
     int x1, y1, x2, y2, xc, yc;
     Color mouseApertureColor = new Color(128, 128, 255);
     Cursor redCrossHairCursor, clearCursor;
-    Font p12 = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-    Font p16 = new Font(Font.MONOSPACED, Font.PLAIN, 20);
+    Font p12 = new Font(Font.SANS_SERIF, Font.PLAIN, (int) (12 * Prefs.getGuiScale()));
+    Font p16 = new Font(Font.MONOSPACED, Font.PLAIN, (int) (20 * Prefs.getGuiScale()));
     DecimalFormat twoplaces = new DecimalFormat("0.00", IJU.dfs);    int zoomIndicatorSize = 100, len = zoomIndicatorSize / 2;
     DecimalFormat onePlace = new DecimalFormat("0.0", IJU.dfs);
     DecimalFormat noPlaces = new DecimalFormat("0", IJU.dfs);

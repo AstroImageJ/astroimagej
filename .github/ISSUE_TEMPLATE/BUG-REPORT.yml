@@ -1,0 +1,85 @@
+name: Bug Report
+description: File a bug report.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: aij_version
+    attributes:
+      label: AIJ Version
+      description: What version of AIJ is affected?
+      placeholder: 6.0.0.00
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you on?
+      options:
+        - Windows
+        - MacOS
+        - Linux
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: os_version
+    attributes:
+      label: Operating System Version
+      description: What version is your operating system (Windows 10, Fedora 44, etc)?
+      placeholder: Windows 11
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+  - type: upload
+    id: screenshots
+    attributes:
+      label: Upload screenshots
+      description: If applicable, add screenshots to help explain your problem.
+    validations:
+      required: false
+  - type: upload
+    id: examples
+    attributes:
+      label: Upload example files
+      description: |
+        If applicable, add example files that demonstrate the problem, such as an image or measurements table.
+        Files may need to be zipped to be uploaded.
+    validations:
+      required: false
+  - type: upload
+    id: prefs
+    attributes:
+      label: Upload preferences
+      description: |
+        If applicable, upload the preferences file. It is `AIJ_Prefs.txt`, and can be located from `Multi-Plot Main > File > Open AIJ Preferences Folder...`
+    validations:
+      required: false
+  - type: upload
+    id: aij-log
+    attributes:
+      label: Upload AIJ log file
+      description: |
+        If applicable, upload your AIJ log file. It can be found in the following places:
+         - MacOS: `~/Library/Logs/AstroImageJ/aij.log`
+         - Windows: `%LOCALAPPDATA%\AstroImageJ\Logs\aij.log`
+         - Linux: `~/.local/state/astroiamgej/logs/aij.log` or `$XDG_STATE_HOME/astroiamgej/logs/aij.log`
+    validations:
+      required: false

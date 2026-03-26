@@ -1023,8 +1023,13 @@ public class FolderOpener implements PlugIn, TextListener {
 			Opener opener = new Opener(Opener.OpenOption.SKIP_UI);
 			opener.setSilentMode(true);
 			IJ.redirectErrorMessages(true);
-			ImagePlus imp = opener.openImage(directory, sf);
-			IJ.redirectErrorMessages(false);
+            ImagePlus imp = null;
+            try {
+                imp = opener.openImage(directory, sf);
+            } catch (Exception e) {
+                return Pair.IntFloatPair.empty();
+            }
+            IJ.redirectErrorMessages(false);
 
 			if (imp != null) {
 				width = imp.getWidth();

@@ -47,11 +47,15 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.font.GlyphVector;
+import java.awt.font.TextAttribute;
+import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.text.AttributedString;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -403,7 +407,7 @@ public class VectorPlotDrawing {
             g.setFont(pp.getxLabel().getFont() == null ? scFont.deriveFont(12f) : plot.scFont(pp.getxLabel().getFont()).deriveFont(12f));
             int xpos = (int) (leftMargin + (plot.frame.width - getStringWidth(g, xLabelToDraw)) / 2D);
             int ypos = (int) (y + getStringBounds(g, xLabelToDraw).height);
-            g.drawString(xLabelToDraw, xpos, ypos); //todo add sub/superscript drawing like ylabel
+            drawAttributed(g, xLabelToDraw, xpos, ypos);
             g.setFont(g.getFont().deriveFont(12f));
         }
         if (yCats == null) {
@@ -531,6 +535,70 @@ public class VectorPlotDrawing {
         }
 
         return out;
+    }
+
+    AttributedString stringToAttributed(String labelStr, Font font) {
+        boolean doParse = (labelStr.contains("^^") || labelStr.contains("!!"));
+        doParse = doParse && (!labelStr.contains("^^^") && !labelStr.contains("!!!"));
+        if (!doParse) {
+            var attribs = new AttributedString(labelStr);
+            if (!labelStr.isEmpty()) {
+                attribs.addAttribute(TextAttribute.FONT, font);
+            }
+            return attribs;
+        }
+
+        if (labelStr.endsWith("^^") || labelStr.endsWith("!!")) {
+            labelStr = labelStr.substring(0, labelStr.length() - 2);
+        }
+        if (labelStr.startsWith("^^") || labelStr.startsWith("!!")) {
+            labelStr = " " + labelStr;
+        }
+        int len = labelStr.length();
+        int[] tags = new int[len];
+        int nTags = 0;
+
+        for (int jj = 0; jj < len - 2; jj++) {//get positions where font size changes
+            if (labelStr.startsWith("^^", jj)) {
+                tags[nTags++] = jj;
+            }
+            if (labelStr.startsWith("!!", jj)) {
+                tags[nTags++] = -jj;
+            }
+        }
+        tags[nTags++] = len;
+        tags = Arrays.copyOf(tags, nTags);
+
+        int leftIndex = 0;
+
+        record AttributedText(int start, int end, Integer attribute) {}
+        var attribs = new ArrayList<AttributedText>();
+        var str = new StringBuilder();
+
+        boolean subscript = labelStr.startsWith("!!");
+        for (int pp = 0; pp < tags.length; pp++) {//draw all text fragments
+            int rightIndex = tags[pp];
+            rightIndex = Math.abs(rightIndex);
+            String part = labelStr.substring(leftIndex, rightIndex);
+            var i = str.length();
+            str.append(part);
+            boolean small = pp % 2 == 1;//toggle odd/even
+            if (small) {
+                attribs.add(new AttributedText(i, str.length(),
+                        subscript ? TextAttribute.SUPERSCRIPT_SUB : TextAttribute.SUPERSCRIPT_SUPER));
+            }
+            leftIndex = rightIndex + 2;
+            subscript = tags[pp] < 0;//negative positions = subscript
+        }
+
+        var attributedString = new AttributedString(str.toString());
+        //attributedString.addAttribute(TextAttribute.FONT, font);
+
+        for (AttributedText attrib : attribs) {
+            attributedString.addAttribute(TextAttribute.SUPERSCRIPT, attrib.attribute, attrib.start, attrib.end);
+        }
+
+        return attributedString;
     }
 
     /**
@@ -764,13 +832,34 @@ public class VectorPlotDrawing {
         if (s == null || s.isEmpty()) {
             return;
         }
-        var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
-        var outline = gv.getOutline();
-        var rotated = AffineTransform.getRotateInstance(angleRadians).createTransformedShape(outline);
-        var bounds = rotated.getBounds2D();
-        var translate = AffineTransform.getTranslateInstance(x - bounds.getX(), y - bounds.getY());
-        Java2.setAntialiasedText(g, true);
-        g.fill(translate.createTransformedShape(rotated));
+
+        var as = stringToAttributed(s, g.getFont());
+        var iterator = as.getIterator();
+        if (iterator.getEndIndex() == 0) {
+            return;
+        }
+
+        var old = g.getTransform();
+        var at = new AffineTransform(old);
+        at.translate(x, y);
+        at.rotate(angleRadians);
+        g.setTransform(at);
+
+        var layout = new TextLayout(iterator, g.getFontRenderContext());
+        var bounds = layout.getBounds();
+
+        g.drawString(iterator, (float) -bounds.getWidth(), /*(float) bounds.getHeight()*/0);
+
+        g.setTransform(old);
+    }
+
+    private void drawAttributed(Graphics2D g, String text, float x, float y) {
+        var as = stringToAttributed(text, g.getFont());
+        var iterator = as.getIterator();
+        if (iterator.getEndIndex() == 0) {
+            return;
+        }
+        g.drawString(iterator, x, y);
     }
 
     /**

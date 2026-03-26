@@ -64,6 +64,10 @@ public class Periodogram_ implements PlugIn {
     private static final Property<Double> MASK_FACTOR_PERIOD = new Property<>(0.1, Periodogram_.class);
     private static final Property<Double> LIMB_U1 = new Property<>(0.3, Periodogram_.class);
     private static final Property<Double> LIMB_U2 = new Property<>(0.3, Periodogram_.class);
+    private static final Property<Boolean> LOCK_T0 = new Property<>(false, Periodogram_.class);
+    private static final Property<Double> LOCKED_T0_VALUE = new Property<>(0.0, Periodogram_.class);
+    private static final Property<Double> TLS_A_RS = new Property<>(15.0, Periodogram_.class);
+    private static final Property<Double> TLS_INC = new Property<>(90.0, Periodogram_.class);
 
     @Override
     public void run(String arg) {
@@ -133,6 +137,8 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
                     gdCol.addNumericField("In-transit masking factor", TRANSIT_MASK_FACTOR.get(), 2);
                     gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, T0_MASK.get());
+                    gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
+                    gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -148,6 +154,8 @@ public class Periodogram_ implements PlugIn {
                     int nPlanets = (int) gdCol.getNextNumber();
                     double maskFactor = gdCol.getNextNumber();
                     String t0MaskingChoice = gdCol.getNextChoice();
+                    boolean lockT0 = gdCol.getNextBoolean();
+                    double lockedT0Value = gdCol.getNextNumber();
                     TIME_COL.set(timeCol);
                     FLUX_COL.set(fluxCol);
                     MIN_PERIOD.set(minPeriodUser);
@@ -160,6 +168,8 @@ public class Periodogram_ implements PlugIn {
                     PLANET_COUNT.set((double) nPlanets);
                     TRANSIT_MASK_FACTOR.set(maskFactor);
                     T0_MASK.set(t0MaskingChoice);
+                    LOCK_T0.set(lockT0);
+                    LOCKED_T0_VALUE.set(lockedT0Value);
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;
@@ -382,7 +392,12 @@ public class Periodogram_ implements PlugIn {
                         double modelCenterTimeForMasking = Double.NaN;
                         double minAverageT0 = Double.NaN;
                         // --- Phase-folded sliding trapezoid Huber loss T0 refinement ---
-                        if (bestPeriod > 0 && bestDuration > 0) {
+                        if (lockT0 && bestPeriod > 0) {
+                            // User-locked T0: use the exact value entered; masking uses modular arithmetic so no propagation needed
+                            modelCenterTimeForMasking = lockedT0Value;
+                            minAverageT0 = lockedT0Value;
+                            System.out.printf("[DIAG] T0 locked: using exact user value=%.6f\n", lockedT0Value);
+                        } else if (bestPeriod > 0 && bestDuration > 0) {
                             // Calculate minAverageT0 as in the min average method
                             {
                                 int nBins = 200;
@@ -576,7 +591,7 @@ public class Periodogram_ implements PlugIn {
                             modelCenterTimeForMasking = modelCenterTime;
                             System.out.printf("[DIAG] minAverageT0 (phase=0): %.6f\n", minAverageT0);
                             System.out.printf("[DIAG] Model center (phase=%.6f): %.6f\n", bestPhaseOffset / bestPeriod, modelCenterTime);
-                        }
+                        } // end else if (bestPeriod > 0 && bestDuration > 0)
                         // Find the index of the highest peak (bestIdx)
                         int bestIdx = 0;
                         for (int i = 1; i < power.length; i++) {
@@ -606,10 +621,11 @@ public class Periodogram_ implements PlugIn {
                         List<Integer> sortedTopPeaks = new ArrayList<>(topPeaks.subList(topPeaks.size() - nLabelPeaks, topPeaks.size()));
                         sortedTopPeaks.sort((a, b) -> Double.compare(power[b], power[a]));
                         // After calculating t0_ref_masking for both methods, store them for each peak
-                        // Model center (sliding fit)
+                        // When T0 is locked, use the exact user value with no phase refinement
                         double t0_ref_masking_model_center = Double.NaN;
-                        if (!Double.isNaN(modelCenterTimeForMasking) && !Double.isNaN(bestPeriod)) {
-                            // Use minPhase from the masking block
+                        if (lockT0 && !Double.isNaN(modelCenterTimeForMasking)) {
+                            t0_ref_masking_model_center = lockedT0Value;
+                        } else if (!Double.isNaN(modelCenterTimeForMasking) && !Double.isNaN(bestPeriod)) {
                             int nBins = 200;
                             int minPointsPerBin = 5;
                             double[] phases_model_center = new double[n];
@@ -629,9 +645,10 @@ public class Periodogram_ implements PlugIn {
                             double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
                             t0_ref_masking_model_center = modelCenterTimeForMasking + minPhase * bestPeriod;
                         }
-                        // Min average (phase bin)
                         double t0_ref_masking_min_avg = Double.NaN;
-                        if (!Double.isNaN(minAverageT0) && !Double.isNaN(bestPeriod)) {
+                        if (lockT0 && !Double.isNaN(minAverageT0)) {
+                            t0_ref_masking_min_avg = lockedT0Value;
+                        } else if (!Double.isNaN(minAverageT0) && !Double.isNaN(bestPeriod)) {
                             int nBins = 200;
                             int minPointsPerBin = 5;
                             double[] phases_min_avg = new double[n];
@@ -651,10 +668,18 @@ public class Periodogram_ implements PlugIn {
                             double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
                             t0_ref_masking_min_avg = minAverageT0 + minPhase * bestPeriod;
                         }
+                        // Compute odd/even transit depths for this iteration
+                        double blsT0ForOE = t0MaskingChoice.equals("Min average (phase bin)")
+                                ? t0_ref_masking_min_avg : t0_ref_masking_model_center;
+                        double[] blsOE = (!Double.isNaN(blsT0ForOE) && bestPeriod > 0 && bestDuration > 0)
+                                ? computeOddEvenDepths(t, f, bestPeriod, blsT0ForOE, bestDuration)
+                                : new double[]{Double.NaN, Double.NaN, Double.NaN, 0, 0};
+                        double blsOddDepth = blsOE[0], blsEvenDepth = blsOE[1], blsOddEvenDiffPct = blsOE[2];
+                        int blsNOddIn = (int) blsOE[3], blsNEvenIn = (int) blsOE[4];
                         // Save all peaks for this iteration
                         for (int i = 0; i < nLabelPeaks; i++) {
                             int peakIdx = sortedTopPeaks.get(i);
-                            allPeaks.add(new PeakResult(planet + 1, i + 1, periods[peakIdx], power[peakIdx], bestDurations[peakIdx], bestDepths[peakIdx], bestPhases[peakIdx], t0_ref_masking_model_center, t0_ref_masking_min_avg));
+                            allPeaks.add(new PeakResult(planet + 1, i + 1, periods[peakIdx], power[peakIdx], bestDurations[peakIdx], bestDepths[peakIdx], bestPhases[peakIdx], t0_ref_masking_model_center, t0_ref_masking_min_avg, blsOddDepth, blsEvenDepth, blsOddEvenDiffPct, blsNOddIn, blsNEvenIn));
                         }
                         // Improved soft mask: robust phase-centering for all in-transit points
                         if (!Double.isNaN(bestPeriod) && !Double.isNaN(bestPhase) && !Double.isNaN(bestDuration) && (!Double.isNaN(modelCenterTimeForMasking) || !Double.isNaN(minAverageT0))) {
@@ -680,8 +705,10 @@ public class Periodogram_ implements PlugIn {
                                 if (bin >= nBins) bin = nBins - 1;
                                 binFluxes.get(bin).add(sortedFlux[i]);
                             }
-                            double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
-                            t0_ref_masking = t0_ref_masking + minPhase * bestPeriod;
+                            if (!lockT0) {
+                                double minPhase = getMinPhase(nBins, binFluxes, minPointsPerBin);
+                                t0_ref_masking = t0_ref_masking + minPhase * bestPeriod;
+                            }
                             // Mask in-transit points using this T0
                             double halfMask = 0.5 * maskFactor * bestDuration;
                             for (int i = 0; i < n; i++) {
@@ -787,26 +814,33 @@ public class Periodogram_ implements PlugIn {
                     // Show results in a table
                     StringBuilder resultMsg = new StringBuilder();
                     String t0ColLabel = t0MaskingChoice.equals("Min average (phase bin)") ? "T0 (masking, Min avg)" : "T0 (masking, Model center)";
-                    String header = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-12s %-24s\n",
-                            "Iter", "Pk", "Period", "Power", "Duration (hr)", "Depth", "Phase", t0ColLabel);
-                    String sep = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-12s %-24s\n",
-                            "----", "---", "------------", "----------", "--------------", "----------", "------------", "------------------------");
+                    String header = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-12s %-24s %-10s %-10s %-10s %-8s %-8s\n",
+                            "Iter", "Pk", "Period", "Power", "Duration (hr)", "Depth", "Phase", t0ColLabel,
+                            "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts");
+                    String sep = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-12s %-24s %-10s %-10s %-10s %-8s %-8s\n",
+                            "----", "---", "------------", "----------", "--------------", "----------", "------------", "------------------------",
+                            "----------", "----------", "----------", "--------", "--------");
                     resultMsg.append(header).append(sep);
                     int lastIter = -1;
                     for (PeakResult pr : allPeaks) {
                         if (lastIter != -1 && pr.iteration != lastIter) resultMsg.append("\n");
                         String t0Val = t0MaskingChoice.equals("Min average (phase bin)")
-                                ? (Double.isNaN(pr.t0_masking_min_avg) ? "" : String.format("%.6f", pr.t0_masking_min_avg))
-                                : (Double.isNaN(pr.t0_masking_model_center) ? "" : String.format("%.6f", pr.t0_masking_model_center));
+                                ? (Double.isNaN(pr.t0_masking_min_avg) ? "---" : String.format("%.6f", pr.t0_masking_min_avg))
+                                : (Double.isNaN(pr.t0_masking_model_center) ? "---" : String.format("%.6f", pr.t0_masking_model_center));
                         double durationHours = pr.duration * 24.0;
-                        resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.4f %10.4f %12.6f %24s\n",
-                                pr.iteration, pr.peakNumber, pr.period, pr.power, durationHours, pr.depth, pr.phase, t0Val));
+                        String oddDepthStr  = Double.isNaN(pr.oddDepth)       ? "---" : String.format("%.4f", pr.oddDepth);
+                        String evenDepthStr = Double.isNaN(pr.evenDepth)      ? "---" : String.format("%.4f", pr.evenDepth);
+                        String diffPctStr   = Double.isNaN(pr.oddEvenDiffPct) ? "---" : String.format("%.1f", pr.oddEvenDiffPct);
+                        resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.4f %10.4f %12.6f %24s %10s %10s %10s %8d %8d\n",
+                                pr.iteration, pr.peakNumber, pr.period, pr.power, durationHours, pr.depth, pr.phase, t0Val,
+                                oddDepthStr, evenDepthStr, diffPctStr, pr.nOddIn, pr.nEvenIn));
                         lastIter = pr.iteration;
                     }
                     // Show results in a JTable with Save as CSV button
-                    SwingUtilities.invokeLater(() -> 
-                            createResultsTable(new String[]{"Iter", "Pk", "Period", "Power", "Duration (hr)", 
-                                            "Depth", "Phase", "T0 (masking, Model center)"
+                    SwingUtilities.invokeLater(() ->
+                            createResultsTable(new String[]{"Iter", "Pk", "Period", "Power", "Duration (hr)",
+                                            "Depth", "Phase", "T0 (masking, Model center)",
+                                            "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts"
                                     },
                                     resultMsg, "BLS Multi-Planet Results"));
                 }).start();
@@ -1213,6 +1247,10 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, T0_MASK.get());
                     gdCol.addNumericField("Limb darkening u1", LIMB_U1.get(), 3);
                     gdCol.addNumericField("Limb darkening u2", LIMB_U2.get(), 3);
+                    gdCol.addNumericField("Semi-major axis (a/Rs)", TLS_A_RS.get(), 2);
+                    gdCol.addNumericField("Inclination (deg)", TLS_INC.get(), 2);
+                    gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
+                    gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -1230,6 +1268,10 @@ public class Periodogram_ implements PlugIn {
                     String t0MaskingChoice = gdCol.getNextChoice();
                     double u1 = gdCol.getNextNumber();
                     double u2 = gdCol.getNextNumber();
+                    double aRs = gdCol.getNextNumber();
+                    double inc = gdCol.getNextNumber();
+                    boolean lockT0 = gdCol.getNextBoolean();
+                    double lockedT0Value = gdCol.getNextNumber();
                     TIME_COL.set(timeCol);
                     FLUX_COL.set(fluxCol);
                     MIN_PERIOD.set(minPeriod);
@@ -1242,8 +1284,12 @@ public class Periodogram_ implements PlugIn {
                     PLANET_COUNT.set((double) nPlanets);
                     TRANSIT_MASK_FACTOR.set(maskFactor);
                     T0_MASK.set(t0MaskingChoice);
+                    LOCK_T0.set(lockT0);
+                    LOCKED_T0_VALUE.set(lockedT0Value);
                     LIMB_U1.set(u1);
                     LIMB_U2.set(u2);
+                    TLS_A_RS.set(aRs);
+                    TLS_INC.set(inc);
 
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
@@ -1343,7 +1389,7 @@ public class Periodogram_ implements PlugIn {
                         long tlsStartTime = System.currentTimeMillis(); // Start time for ETA
                         //TextWindow tlsProgressWin = new TextWindow("Periodogram Progress", "Progress\n", 600, 200); // moved outside loop
                         System.out.print("TLS Progress: [");
-                        TLS.Result tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods, minFracDur, maxFracDur, nDurations, u1, u2, (pi) -> {
+                        TLS.Result tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods, minFracDur, maxFracDur, nDurations, u1, u2, aRs, inc, (pi) -> {
                             if (tlsCancelled.get()) return;
                             int nStars = (int) Math.round(barLength * (pi + 1) / (double) nPeriods);
                             StringBuilder bar = new StringBuilder();
@@ -1399,6 +1445,17 @@ public class Periodogram_ implements PlugIn {
                         double bestDuration = tlsResult.bestDurations[bestIdx];
                         double bestDepth = tlsResult.bestDepths[bestIdx];
 
+                        // If T0 is locked, override the T0 values returned by TLS
+                        if (lockT0 && bestPeriod > 0) {
+                            double tMidTLS = (t[0] + t[t.length - 1]) / 2.0;
+                            long nAdjTLS = Math.round((tMidTLS - lockedT0Value) / bestPeriod);
+                            double adjustedT0TLS = lockedT0Value + nAdjTLS * bestPeriod;
+                            tlsResult.t0_sliding = adjustedT0TLS;
+                            tlsResult.t0_minavg = adjustedT0TLS;
+                            System.out.printf("[TLS DIAG] T0 locked: user=%.6f, adjusted to nearest transit=%.6f\n",
+                                    lockedT0Value, adjustedT0TLS);
+                        }
+
                         // Find peaks with minimum separation (same logic as BLS)
                         int minSeparation = Math.max(1, (int) (nPeriods * 0.01)); // 1% of period range
                         List<Integer> peakIndices = findPeaks(tlsResult.sde, minSeparation);
@@ -1419,10 +1476,18 @@ public class Periodogram_ implements PlugIn {
                         }
                         topPeaks.sort((a, b) -> Double.compare(tlsResult.sde[b], tlsResult.sde[a]));
 
+                        // Compute odd/even transit depths for this TLS iteration
+                        double tlsT0ForOE = t0MaskingChoice.equals("Min average (phase bin)")
+                                ? tlsResult.t0_minavg : tlsResult.t0_sliding;
+                        double[] tlsOE = (!Double.isNaN(tlsT0ForOE) && bestPeriod > 0 && bestDuration > 0)
+                                ? computeOddEvenDepths(t, f, bestPeriod, tlsT0ForOE, bestDuration)
+                                : new double[]{Double.NaN, Double.NaN, Double.NaN, 0, 0};
+                        double tlsOddDepth = tlsOE[0], tlsEvenDepth = tlsOE[1], tlsOddEvenDiffPct = tlsOE[2];
+                        int tlsNOddIn = (int) tlsOE[3], tlsNEvenIn = (int) tlsOE[4];
                         // Save all peaks for this iteration
                         for (int i = 0; i < topPeaks.size(); i++) {
                             int peakIdx = topPeaks.get(i);
-                            allResults.add(new TLSResult(planetFinal + 1, i + 1, tlsResult.periods[peakIdx], tlsResult.sde[peakIdx], bestDuration, bestDepth, tlsResult.t0_sliding, tlsResult.t0_minavg));
+                            allResults.add(new TLSResult(planetFinal + 1, i + 1, tlsResult.periods[peakIdx], tlsResult.sde[peakIdx], bestDuration, bestDepth, tlsResult.t0_sliding, tlsResult.t0_minavg, tlsOddDepth, tlsEvenDepth, tlsOddEvenDiffPct, tlsNOddIn, tlsNEvenIn));
                         }
 
                         // Print results to console for this iteration
@@ -1545,26 +1610,33 @@ public class Periodogram_ implements PlugIn {
                     // Show results in a table
                     StringBuilder resultMsg = new StringBuilder();
                     String t0ColLabel = t0MaskingChoice.equals("Min average (phase bin)") ? "T0 (masking, Min avg)" : "T0 (masking, Model center)";
-                    String header = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s\n",
-                            "Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth", t0ColLabel);
-                    String sep = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s\n",
-                            "----", "---", "------------", "----------", "--------------", "----------", "------------------------");
+                    String header = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s %-10s %-10s %-10s %-8s %-8s\n",
+                            "Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth", t0ColLabel,
+                            "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts");
+                    String sep = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s %-10s %-10s %-10s %-8s %-8s\n",
+                            "----", "---", "------------", "----------", "--------------", "----------", "------------------------",
+                            "----------", "----------", "----------", "--------", "--------");
                     resultMsg.append(header).append(sep);
                     int lastIter = -1;
                     for (TLSResult tr : allResults) {
                         if (lastIter != -1 && tr.iteration != lastIter) resultMsg.append("\n");
                         String t0Val = t0MaskingChoice.equals("Min average (phase bin)")
-                                ? (Double.isNaN(tr.t0_minavg) ? "" : String.format("%.6f", tr.t0_minavg))
-                                : (Double.isNaN(tr.t0_sliding) ? "" : String.format("%.6f", tr.t0_sliding));
+                                ? (Double.isNaN(tr.t0_minavg) ? "---" : String.format("%.6f", tr.t0_minavg))
+                                : (Double.isNaN(tr.t0_sliding) ? "---" : String.format("%.6f", tr.t0_sliding));
                         double durationHours = tr.duration * 24.0;
-                        resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.4f %10.4f %24s\n",
-                                tr.iteration, tr.peakNumber, tr.period, tr.sde, durationHours, tr.depth, t0Val));
+                        String oddDepthStr  = Double.isNaN(tr.oddDepth)       ? "---" : String.format("%.4f", tr.oddDepth);
+                        String evenDepthStr = Double.isNaN(tr.evenDepth)      ? "---" : String.format("%.4f", tr.evenDepth);
+                        String diffPctStr   = Double.isNaN(tr.oddEvenDiffPct) ? "---" : String.format("%.1f", tr.oddEvenDiffPct);
+                        resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.4f %10.4f %24s %10s %10s %10s %8d %8d\n",
+                                tr.iteration, tr.peakNumber, tr.period, tr.sde, durationHours, tr.depth, t0Val,
+                                oddDepthStr, evenDepthStr, diffPctStr, tr.nOddIn, tr.nEvenIn));
                         lastIter = tr.iteration;
                     }
                     // Show results in a JTable with Save as CSV button
-                    SwingUtilities.invokeLater(() -> 
-                            createResultsTable(new String[]{"Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth", 
-                                    "T0 (masking, Model center)"
+                    SwingUtilities.invokeLater(() ->
+                            createResultsTable(new String[]{"Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth",
+                                    "T0 (masking, Model center)",
+                                    "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts"
                             }, resultMsg, "TLS Multi-Planet Results"));
                 }).start();
             } else {
@@ -1676,6 +1748,46 @@ public class Periodogram_ implements PlugIn {
         return saveButton;
     }
 
+    /**
+     * Compute odd/even transit depths by separating transits into two interleaved sets.
+     * Transit index 0 (at T0) is "even", index ±1 is "odd", etc.
+     *
+     * @return double[] { oddDepth, evenDepth, oddEvenDiffPct, nOddIn, nEvenIn }
+     *         where depths are (meanOut - meanIn), diffPct = |odd-even|/max(|odd|,|even|)*100
+     */
+    static double[] computeOddEvenDepths(double[] time, double[] flux, double period, double t0, double duration) {
+        double sumOddIn = 0, sumEvenIn = 0;
+        int nOddIn = 0, nEvenIn = 0;
+        double sumOut = 0;
+        int nOut = 0;
+        double halfDuration = 0.5 * duration;
+        for (int i = 0; i < time.length; i++) {
+            int transitIdx = (int) Math.round((time[i] - t0) / period);
+            double tCenter = t0 + transitIdx * period;
+            if (Math.abs(time[i] - tCenter) < halfDuration) {
+                if (transitIdx % 2 == 0) {
+                    sumEvenIn += flux[i];
+                    nEvenIn++;
+                } else {
+                    sumOddIn += flux[i];
+                    nOddIn++;
+                }
+            } else {
+                sumOut += flux[i];
+                nOut++;
+            }
+        }
+        double meanOut = nOut > 0 ? sumOut / nOut : 1.0;
+        double oddDepth  = nOddIn  > 0 ? meanOut - sumOddIn  / nOddIn  : Double.NaN;
+        double evenDepth = nEvenIn > 0 ? meanOut - sumEvenIn / nEvenIn : Double.NaN;
+        double oddEvenDiffPct = Double.NaN;
+        if (!Double.isNaN(oddDepth) && !Double.isNaN(evenDepth)) {
+            double maxD = Math.max(Math.abs(oddDepth), Math.abs(evenDepth));
+            if (maxD > 0) oddEvenDiffPct = 100.0 * Math.abs(oddDepth - evenDepth) / maxD;
+        }
+        return new double[]{oddDepth, evenDepth, oddEvenDiffPct, nOddIn, nEvenIn};
+    }
+
     private static double getMinPhase(int nBins, List<List<Double>> binFluxes, int minPointsPerBin) {
         double minAvg = Double.POSITIVE_INFINITY;
         int minBin = -1;
@@ -1731,13 +1843,15 @@ public class Periodogram_ implements PlugIn {
 
     private record PeakResult(int iteration, int peakNumber, double period, double power, double duration,
                       double depth, double phase, double t0_masking_model_center,
-                      double t0_masking_min_avg) {
+                      double t0_masking_min_avg,
+                      double oddDepth, double evenDepth, double oddEvenDiffPct, int nOddIn, int nEvenIn) {
     }
 
     private record LSResult(int iteration, int peakNumber, double period, double power, double maskCenter) {
     }
 
     private record TLSResult(int iteration, int peakNumber, double period, double sde, double duration,
-                     double depth, double t0_sliding, double t0_minavg) {
+                     double depth, double t0_sliding, double t0_minavg,
+                     double oddDepth, double evenDepth, double oddEvenDiffPct, int nOddIn, int nEvenIn) {
     }
 }

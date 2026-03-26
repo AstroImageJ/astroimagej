@@ -1,6 +1,6 @@
 package Astronomy;
 
-import ij.IJ;
+import static Astronomy.Periodogram_.huberLoss;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
-import static Astronomy.Periodogram_.huberLoss;
+import ij.IJ;
 
 public class TLS {
     /**
@@ -29,15 +29,11 @@ public class TLS {
      * @param progressCallback Callback to report progress (period index)
      * @return Result object with period grid and SDE
      */
-    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, double u1, double u2, IntConsumer progressCallback) {
+    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, double u1, double u2, double aRs, double inc, IntConsumer progressCallback) {
         double[] periods = new double[nPeriods];
         double[] sde = new double[nPeriods];
         double[] bestDurations = new double[nPeriods];
         double[] bestDepths = new double[nPeriods];
-        // Limb darkening and geometric parameters (box-shaped model)
-        // u1 and u2 now come from parameters
-        double aRs = 15.0; // Scaled semi-major axis
-        double inc = 90.0; // Central transit (impact parameter = 0)
         double rprsGuess = 0.1; // Initial guess for planet/star radius ratio
         int nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);

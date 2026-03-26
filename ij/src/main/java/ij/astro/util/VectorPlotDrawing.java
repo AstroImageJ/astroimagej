@@ -45,10 +45,12 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -86,6 +88,9 @@ public class VectorPlotDrawing {
 
     public void drawVectorForm(Graphics graphics) {
         if (graphics instanceof Graphics2D g2) {
+            //todo understand these hints, are there others needed?
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             initPlotDrawing(g2);
             for (IPlotObject plotObject : allPlotObjects) {
                 //todo mimic order of drawing, see drawContents
@@ -398,28 +403,38 @@ public class VectorPlotDrawing {
             int xpos = (int) (leftMargin + (plot.frame.width - getStringWidth(g, xLabelToDraw)) / 2);
             int ypos = (int) (y + getStringBounds(g, xLabelToDraw).height);
             g.drawString(xLabelToDraw, xpos, ypos); //todo add sub/superscript drawing like ylabel
+            g.setFont(g.getFont().deriveFont(12f));
         }
         if (yCats == null) {
             g.setFont(pp.getxLabel().getFont() == null ? scFont.deriveFont(12f) : plot.scFont(pp.getxLabel().getFont()).deriveFont(12f));
+            var yLabel = stringToPixels(g, yLabelToDraw);
+            yLabel = rotateImage90CounterClockwise(yLabel);
             int xRightOfYLabel = (int) (xNumberRight - maxNumWidth - plot.sc(2));
-            int xpos = xRightOfYLabel - getStringWidth(g, yLabelToDraw) - plot.sc(2);
-            int ypos = (int) (topMargin + (plot.frame.height - g.getFontMetrics().getHeight()) / 2);
-            var o = g.getTransform();
-
-            // todo not a perfect match, but close enough - a bit too high
-            g.rotate(-Math.PI / 2f);
-            stringToPixels(g, yLabelToDraw, -ypos - getStringWidth(g, yLabelToDraw) / 2, 0);
-            g.setTransform(o);
+            int xpos = xRightOfYLabel - yLabel.getWidth() - plot.sc(2);
+            int ypos = (int) (-topMargin + ((plot.frame.height - yLabel.getHeight()) / 2D));
+            g.setFont(g.getFont().deriveFont(12f));
+            g.drawImage(yLabel, xpos, ypos, null);
         }
     }
 
-    void stringToPixels(Graphics2D g, String labelStr, int x, int y) {
+    BufferedImage stringToPixels(Graphics2D g, String labelStr) {
         Font bigFont = g.getFont();
         Rectangle rect = getStringBounds(g, labelStr);
         int ww = rect.width * 2;
         int hh = rect.height * 3;//enough space, will be cropped later
         int y0 = rect.height * 2;//base line
         g.setColor(Color.BLACK);
+
+        var image = new BufferedImage(ww, hh, BufferedImage.TYPE_INT_ARGB);
+        var imageGraphics = image.createGraphics();
+        imageGraphics.setFont(bigFont);
+        imageGraphics.setColor(Color.WHITE);
+        imageGraphics.fillRect(0, 0, ww, hh);
+        imageGraphics.setColor(Color.BLACK);
+        imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //todo invert lut
+        imageGraphics.setColor(g.getColor());
+        g = imageGraphics;
 
         FontMetrics fm = g.getFontMetrics();
         int ascent = fm.getAscent();
@@ -431,10 +446,11 @@ public class VectorPlotDrawing {
         boolean doParse = (labelStr.contains("^^") || labelStr.contains("!!"));
         doParse = doParse && (!labelStr.contains("^^^") && !labelStr.contains("!!!"));
         if (!doParse) {
-            g.drawString(labelStr, x, y0 + y);
+            g.drawString(labelStr, 0, y0);
             Rectangle cropRect = new Rectangle(bigBounds);
             cropRect.y += y0;
-            return;
+            g.dispose();
+            return image;//.getSubimage(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
         }
 
         if (labelStr.endsWith("^^") || labelStr.endsWith("!!")) {
@@ -489,11 +505,29 @@ public class VectorPlotDrawing {
             }
             xRight++;
             int partWidth = getStringWidth(g, part);
-            g.drawString(part, xRight + x, y2 + y);
+            g.drawString(part, xRight, y2);
             leftIndex = rightIndex + 2;
             subscript = tags[pp] < 0;//negative positions = subscript
             xRight += partWidth;
         }
+        xRight += h / 4;
+        Rectangle cropRect = new Rectangle(0, upperBound, xRight, lowerBound - upperBound);
+        g.dispose();
+        return image;//.getSubimage(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+    }
+
+    private BufferedImage rotateImage90CounterClockwise(BufferedImage img) {
+        var w = img.getWidth();
+        var h = img.getHeight();
+
+        var out = new BufferedImage(h, w, img.getType());
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                out.setRGB(y, w - 1 - x, img.getRGB(x, y));
+            }
+        }
+
+        return out;
     }
 
     /**

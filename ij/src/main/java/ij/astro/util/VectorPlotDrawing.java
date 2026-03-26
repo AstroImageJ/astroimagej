@@ -47,6 +47,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.font.GlyphVector;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
@@ -400,20 +401,22 @@ public class VectorPlotDrawing {
         // --- Write x and y axis text labels
         if (xCats == null) {
             g.setFont(pp.getxLabel().getFont() == null ? scFont.deriveFont(12f) : plot.scFont(pp.getxLabel().getFont()).deriveFont(12f));
-            int xpos = (int) (leftMargin + (plot.frame.width - getStringWidth(g, xLabelToDraw)) / 2);
+            int xpos = (int) (leftMargin + (plot.frame.width - getStringWidth(g, xLabelToDraw)) / 2D);
             int ypos = (int) (y + getStringBounds(g, xLabelToDraw).height);
             g.drawString(xLabelToDraw, xpos, ypos); //todo add sub/superscript drawing like ylabel
             g.setFont(g.getFont().deriveFont(12f));
         }
         if (yCats == null) {
-            g.setFont(pp.getxLabel().getFont() == null ? scFont.deriveFont(12f) : plot.scFont(pp.getxLabel().getFont()).deriveFont(12f));
-            var yLabel = stringToPixels(g, yLabelToDraw);
-            yLabel = rotateImage90CounterClockwise(yLabel);
+            var yLabelFont = pp.getyLabel().getFont() == null ? scFont : plot.scFont(pp.getyLabel().getFont());
+            g.setFont(yLabelFont);
+            var gv = yLabelFont.createGlyphVector(g.getFontRenderContext(), yLabelToDraw);
+            var rotated = AffineTransform.getRotateInstance(-Math.PI / 2).createTransformedShape(gv.getOutline());
+            var rb = rotated.getBounds2D();
             int xRightOfYLabel = (int) (xNumberRight - maxNumWidth - plot.sc(2));
-            int xpos = xRightOfYLabel - yLabel.getWidth() - plot.sc(2);
-            int ypos = (int) (-topMargin + ((plot.frame.height - yLabel.getHeight()) / 2D));
+            int xpos = (int) (xRightOfYLabel - rb.getWidth() - plot.sc(2));
+            int ypos = (int) (topMargin + (plot.frame.height - rb.getHeight()) / 2D);
+            drawRotatedString(g, yLabelToDraw, xpos, ypos, -Math.PI / 2);
             g.setFont(g.getFont().deriveFont(12f));
-            g.drawImage(yLabel, xpos, ypos, null);
         }
     }
 
@@ -757,6 +760,19 @@ public class VectorPlotDrawing {
         }
     }
 
+    private void drawRotatedString(Graphics2D g, String s, int x, int y, double angleRadians) {
+        if (s == null || s.isEmpty()) {
+            return;
+        }
+        var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
+        var outline = gv.getOutline();
+        var rotated = AffineTransform.getRotateInstance(angleRadians).createTransformedShape(outline);
+        var bounds = rotated.getBounds2D();
+        var translate = AffineTransform.getTranslateInstance(x - bounds.getX(), y - bounds.getY());
+        Java2.setAntialiasedText(g, true);
+        g.fill(translate.createTransformedShape(rotated));
+    }
+
     /**
      * Draws a single-line string at the current drawing location cx, cy and
      * adds the line height (FontMetrics.getHeight) to the current y coordinate 'cy'
@@ -776,7 +792,9 @@ public class VectorPlotDrawing {
         // Removed this check as ImageProcessor#drawString2 still draws even when false
         if (cxx >= 0 /*&& cy - h >= 0*/) {
             Java2.setAntialiasedText(g, true);
-            g.drawString(s, cxx, (h - descent) + cy - h);
+            int baselineY = (h - descent) + cy - h;
+            var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
+            g.fill(gv.getOutline(cxx, baselineY));
             cy += h;
         }
     }

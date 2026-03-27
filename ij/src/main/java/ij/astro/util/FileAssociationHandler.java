@@ -1,13 +1,13 @@
 package ij.astro.util;
 
+import ij.io.Opener;
+
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-
-import ij.io.Opener;
 
 /**
  * Handles the registration and execution of file handlers.

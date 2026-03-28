@@ -993,6 +993,898 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
 
     void buildAstroWindow() {
+        buildMenubar();
+
+        mainPanel = new Panel(new SpringLayout());
+        topPanelA = new JPanel();
+        topPanelA.setLayout(new BoxLayout(topPanelA, BoxLayout.LINE_AXIS));
+        zoomPanel = new JPanel();
+        zoomPanel.setLayout(new BoxLayout(zoomPanel, BoxLayout.LINE_AXIS));
+        topPanelB = new JPanel();
+        topPanelB.setLayout(new BoxLayout(topPanelB, BoxLayout.LINE_AXIS));
+        topPanelBC = new JPanel(new SpringLayout());
+        bottomPanelB = new JPanel();
+        bottomPanelB.setLayout(new BoxLayout(bottomPanelB, BoxLayout.LINE_AXIS));
+
+        topPanelB.add(Box.createHorizontalGlue());
+
+        Dimension valueDim = new Dimension(90, 20);
+        Dimension valueDimMin = new Dimension(90, 20);
+        Dimension intCntDim = new Dimension(120, 20);
+        Dimension intCntDimMin = new Dimension(120, 20);
+        Dimension labelDim = new Dimension(65, 20);
+        Dimension labelDimMin = new Dimension(65, 20);
+
+        JLabel ijXLabel = new JLabel("ImageJ X:");
+        ijXLabel.setFont(p12);
+        ijXLabel.setHorizontalAlignment(JLabel.RIGHT);
+        ijXLabel.setPreferredSize(labelDim);
+        ijXLabel.setMaximumSize(labelDim);
+        ijXLabel.setMinimumSize(labelDimMin);
+        ijXLabel.setLabelFor(ijXTextField);
+        topPanelBC.add(ijXLabel);
+
+        ijXTextField = new JTextField("");
+        ijXTextField.setFont(p12);
+        ijXTextField.setHorizontalAlignment(JLabel.RIGHT);
+        ijXTextField.setPreferredSize(valueDim);
+        ijXTextField.setMaximumSize(valueDim);
+        ijXTextField.setMinimumSize(valueDimMin);
+        ijXTextField.setEditable(false);
+        topPanelBC.add(ijXTextField);
+
+        JLabel ijYLabel = new JLabel("ImageJ Y:");
+        ijYLabel.setFont(p12);
+        ijYLabel.setHorizontalAlignment(JLabel.RIGHT);
+        ijYLabel.setPreferredSize(labelDim);
+        ijYLabel.setMaximumSize(labelDim);
+        ijYLabel.setMinimumSize(labelDimMin);
+        ijYLabel.setLabelFor(ijYTextField);
+        topPanelBC.add(ijYLabel);
+
+        ijYTextField = new JTextField("");
+        ijYTextField.setFont(p12);
+        ijYTextField.setHorizontalAlignment(JTextField.RIGHT);
+        ijYTextField.setPreferredSize(valueDim);
+        ijYTextField.setMaximumSize(valueDim);
+        ijYTextField.setMinimumSize(valueDimMin);
+        ijYTextField.setEditable(false);
+        topPanelBC.add(ijYTextField);
+
+        JLabel valueLabel = new JLabel("Value:");
+        valueLabel.setFont(p12);
+        valueLabel.setHorizontalAlignment(JLabel.RIGHT);
+        valueLabel.setPreferredSize(labelDim);
+        valueLabel.setMaximumSize(labelDim);
+        valueLabel.setMinimumSize(labelDimMin);
+        valueLabel.setLabelFor(valueTextField);
+        topPanelBC.add(valueLabel);
+
+        valueTextField = new JTextField("");
+        valueTextField.setFont(b12);
+        valueTextField.setHorizontalAlignment(JTextField.RIGHT);
+        valueTextField.setPreferredSize(intCntDim);
+        valueTextField.setMaximumSize(intCntDim);
+        valueTextField.setMinimumSize(intCntDimMin);
+        valueTextField.setEditable(false);
+        topPanelBC.add(valueTextField);
+
+        JLabel RALabel = new JLabel("RA:");
+        RALabel.setFont(p12);
+        RALabel.setHorizontalAlignment(JLabel.RIGHT);
+        RALabel.setPreferredSize(labelDim);
+        RALabel.setMaximumSize(labelDim);
+        RALabel.setMinimumSize(labelDimMin);
+        RALabel.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+        RALabel.setLabelFor(RATextField);
+        topPanelBC.add(RALabel);
+
+        RATextField = new JTextField("");
+        RATextField.setFont(p12);
+        RATextField.setHorizontalAlignment(JLabel.RIGHT);
+        RATextField.setPreferredSize(valueDim);
+        RATextField.setMaximumSize(valueDim);
+        RATextField.setMinimumSize(valueDimMin);
+        RATextField.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+        RATextField.setEditable(goodWCS);
+        RATextField.addActionListener(this);
+        RATextField.addFocusListener(this);
+        RATextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0 || (e.getModifiers() & MouseEvent.CTRL_MASK) != 0)) {
+                    RATextField.postActionEvent();
+                }
+            }
+        });
+        topPanelBC.add(RATextField);
+
+        JLabel DecLabel = new JLabel("DEC:");
+        DecLabel.setFont(p12);
+        DecLabel.setHorizontalAlignment(JLabel.RIGHT);
+        DecLabel.setPreferredSize(labelDim);
+        DecLabel.setMaximumSize(labelDim);
+        DecLabel.setMinimumSize(labelDimMin);
+        DecLabel.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+        DecLabel.setLabelFor(DecTextField);
+        topPanelBC.add(DecLabel);
+
+        DecTextField = new JTextField("");
+        DecTextField.setFont(p12);
+        DecTextField.setHorizontalAlignment(JLabel.RIGHT);
+        DecTextField.setPreferredSize(valueDim);
+        DecTextField.setMaximumSize(valueDim);
+        DecTextField.setMinimumSize(valueDimMin);
+        DecTextField.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+        DecTextField.setEditable(goodWCS);
+        DecTextField.addActionListener(this);
+        DecTextField.addFocusListener(this);
+        topPanelBC.add(DecTextField);
+
+//                JLabel arcLengthLabel = new JLabel("Arclen:");
+        peakLabel = new JTextField("Peak:");
+        peakLabel.setFont(p12);
+        peakLabel.setBorder(BorderFactory.createEmptyBorder());
+        peakLabel.setBackground(topPanelA.getBackground());
+        peakLabel.setPreferredSize(labelDim);
+        peakLabel.setMaximumSize(labelDim);
+        peakLabel.setMinimumSize(labelDimMin);
+        peakLabel.setHorizontalAlignment(JLabel.RIGHT);
+        topPanelBC.add(peakLabel);
+
+        peakTextField = new JTextField("");
+        peakTextField.setFont(p12);
+        peakTextField.setHorizontalAlignment(JLabel.RIGHT);
+        peakTextField.setPreferredSize(intCntDim);
+        peakTextField.setMaximumSize(intCntDim);
+        peakTextField.setMinimumSize(intCntDimMin);
+        peakTextField.setEditable(false);
+        topPanelBC.add(peakTextField);
+
+        JLabel fitsXLabel = new JLabel("FITS X:");
+        fitsXLabel.setFont(p12);
+        fitsXLabel.setHorizontalAlignment(JLabel.RIGHT);
+        fitsXLabel.setPreferredSize(labelDim);
+        fitsXLabel.setMaximumSize(labelDim);
+        fitsXLabel.setMinimumSize(labelDimMin);
+        fitsXLabel.setLabelFor(fitsXTextField);
+        topPanelBC.add(fitsXLabel);
+
+        fitsXTextField = new JTextField("");
+        fitsXTextField.setFont(p12);
+        fitsXTextField.setHorizontalAlignment(JLabel.RIGHT);
+        fitsXTextField.setPreferredSize(valueDim);
+        fitsXTextField.setMaximumSize(valueDim);
+        fitsXTextField.setMinimumSize(valueDimMin);
+        fitsXTextField.setEditable(false);
+        topPanelBC.add(fitsXTextField);
+
+        JLabel fitsYLabel = new JLabel("FITS Y:");
+        fitsYLabel.setFont(p12);
+        fitsYLabel.setHorizontalAlignment(JLabel.RIGHT);
+        fitsYLabel.setPreferredSize(labelDim);
+        fitsYLabel.setMaximumSize(labelDim);
+        fitsYLabel.setMinimumSize(labelDimMin);
+        fitsYLabel.setLabelFor(fitsYTextField);
+        topPanelBC.add(fitsYLabel);
+
+        fitsYTextField = new JTextField("");
+        fitsYTextField.setFont(p12);
+        fitsYTextField.setHorizontalAlignment(JLabel.RIGHT);
+        fitsYTextField.setPreferredSize(valueDim);
+        fitsYTextField.setMaximumSize(valueDim);
+        fitsYTextField.setMinimumSize(valueDimMin);
+        fitsYTextField.setEditable(false);
+        topPanelBC.add(fitsYTextField);
+
+//                JLabel lengthLabel = new JLabel("Length:");
+        lengthLabel = new JTextField("Int Cnts:");
+        lengthLabel.setFont(p12);
+        lengthLabel.setBorder(BorderFactory.createEmptyBorder());
+        lengthLabel.setBackground(topPanelA.getBackground());
+        lengthLabel.setPreferredSize(labelDim);
+        lengthLabel.setMaximumSize(labelDim);
+        lengthLabel.setMinimumSize(labelDimMin);
+        lengthLabel.setHorizontalAlignment(JLabel.RIGHT);
+        topPanelBC.add(lengthLabel);
+
+        lengthTextField = new JTextField("");
+        lengthTextField.setFont(p12);
+        lengthTextField.setHorizontalAlignment(JLabel.RIGHT);
+        lengthTextField.setPreferredSize(intCntDim);
+        lengthTextField.setMaximumSize(intCntDim);
+        lengthTextField.setMinimumSize(intCntDimMin);
+        lengthTextField.setEditable(false);
+        topPanelBC.add(lengthTextField);
+
+        SpringUtil.makeCompactGrid(topPanelBC, 3, topPanelBC.getComponentCount() / 3, 3, 3, 3, 3);
+        topPanelB.add(topPanelBC);
+
+        topPanelB.add(Box.createGlue());
+
+        mainPanel.add(topPanelB);
+
+        int iconWidth = 26;
+        int iconHeight = 26;
+        Dimension iconDimension = new Dimension(iconWidth, iconHeight);
+
+        ImageIcon zoomInFastIcon = createImageIcon("images/viewmag++.png", "In Fast");
+        ImageIcon zoomInIcon = createImageIcon("images/viewmag+.png", "In");
+        ImageIcon zoomOutIcon = createImageIcon("images/viewmag-.png", "Out");
+        ImageIcon zoomFitIcon = createImageIcon("images/viewmagfit.png", "Fit");
+        ImageIcon multiApertureIcon = createImageIcon("images/multiaperture.png", "Multi-Aperture");
+        ImageIcon alignIcon = createImageIcon("images/align.png", "Stack Align");
+        ImageIcon headerIcon = createImageIcon("images/header.png", "Header");
+        ImageIcon negativeIcon = createImageIcon("images/negative.png", "Negative");
+        ImageIcon negativeIconSelected = createImageIcon("images/negativeselected.png", "Negative (selected)");
+        ImageIcon regExclusionIcon = createImageIcon("images/regExclusion.png", "Region Exclusion");
+        ImageIcon regExclusionIconSelected = createImageIcon("images/regExclusionSelected.png", "Region Exclusion (Selected)");
+        ImageIcon autoscaleIcon = createImageIcon("images/autoscale.png", "Autoscale");
+        ImageIcon broomIcon = createImageIcon("images/broom.png", "Clear Aperture Overlay");
+        ImageIcon showAllIcon = createImageIcon("images/showallaps.png", "Show All Apertures in Overlay");
+        ImageIcon showAnnotationIcon = createImageIcon("images/showannotations.png", "Toggle display of annotations in overlay");
+        ImageIcon showAnnotationIconSelected = createImageIcon("images/showannotationsselected.png", "Toggle display of annotations in overlay");
+        ImageIcon showSkyIcon = createImageIcon("images/showsky.png", "Toggle Sky Annuli");
+        ImageIcon showSkyIconSelected = createImageIcon("images/showskyselected.png", "Toggle Sky Annuli (selected)");
+        ImageIcon sourceIDIcon = createImageIcon("images/sourceid.png", "Toogle Source ID");
+        ImageIcon sourceIDIconSelected = createImageIcon("images/sourceidselected.png", "Toogle Source ID (selected)");
+        ImageIcon sourceCountsIcon = createImageIcon("images/sourcecounts.png", "Toggle Source Counts");
+        ImageIcon sourceCountsIconSelected = createImageIcon("images/sourcecountsselected.png", "Toggle Source Counts (selected)");
+        ImageIcon centroidIcon = createImageIcon("images/centroid.png", "Centroid Apertures");
+        ImageIcon centroidIconSelected = createImageIcon("images/centroidselected.png", "Centroid Apertures (selected)");
+        ImageIcon setApertureIcon = createImageIcon("images/setaperture.png", "Change Aperture Settings");
+        ImageIcon clearMeasurementsIcon = createImageIcon("images/cleartable.png", "Clear Measurements Table");
+        ImageIcon deleteSliceIcon = createImageIcon("images/deleteslice.png", "Delete Current Slice");
+        ImageIcon astrometryIcon = createImageIcon("images/astrometry.png", "Plate Solve");
+        ImageIcon astrometryIconSelected = createImageIcon("images/astrometryselected.png", "Plate Solve (selected)");
+
+        topPanelA.add(Box.createHorizontalGlue());
+        topPanelA.add(Box.createHorizontalStrut(20));
+        Insets buttonMargin = new Insets(2, 2, 2, 2); //top,left,bottom,right
+//                if (IJ.isWindows() || IJ.isMacintosh())
+//                       buttonMargin = new Insets(2,4,2,4); //top,left,bottom,right
+
+        buttonSub32768 = new JButton("-32768");
+//                buttonSub32768.setMargin(buttonMargin);
+        buttonSub32768.addActionListener(this);
+//                topPanelAC.add(buttonSub32768);
+        buttonAdd32768 = new JButton("+32768");
+//                buttonAdd32768.setMargin(buttonMargin);
+        buttonAdd32768.addActionListener(this);
+//                topPanelAC.add(buttonAdd32768);
+
+        buttonDeleteSlice = new JButton(deleteSliceIcon);
+        buttonDeleteSlice.setToolTipText("delete currently displayed slice from stack");
+        buttonDeleteSlice.setPreferredSize(iconDimension);
+        buttonDeleteSlice.setMargin(buttonMargin);
+        buttonDeleteSlice.addActionListener(this);
+        topPanelA.add(buttonDeleteSlice);
+
+        topPanelA.add(Box.createHorizontalStrut(10));
+
+        buttonNegative = new JToggleButton(negativeIcon, useInvertingLut);
+        buttonNegative.setToolTipText("display as image negative");
+        buttonNegative.setSelectedIcon(negativeIconSelected);
+        buttonNegative.setPreferredSize(iconDimension);
+        buttonNegative.setMargin(buttonMargin);
+        buttonNegative.addActionListener(this);
+        topPanelA.add(buttonNegative);
+
+        var regExclusion = new JToggleButton(regExclusionIcon, RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get());
+        regExclusion.setToolTipText("Display region exclusion");
+        regExclusion.setSelectedIcon(regExclusionIconSelected);
+        regExclusion.setPreferredSize(iconDimension);
+        regExclusion.setMargin(buttonMargin);
+        regExclusion.addActionListener(_ -> RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(regExclusion.isSelected()));
+        regExclusion.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    RegionExclusion.editSettings();
+                }
+            }
+        });
+        RegionExclusion.DISPLAY_EXCLUDED_REGIONS.addListener(regExclusion, (_, n) -> {
+            regExclusion.setSelected(n);
+        });
+        topPanelA.add(regExclusion);
+
+        buttonShowAnnotations = new JToggleButton(showAnnotationIcon, ac.showAnnotations);
+        buttonShowAnnotations.setToolTipText("<html>left-click: toggle display of annotations<br>" +
+                "middle-click or control-click: display (append) annotations from FITS header<br>" +
+                "right-click or shift-click: display (replace) annotations from FITS header</html>");
+        buttonShowAnnotations.setSelectedIcon(showAnnotationIconSelected);
+        buttonShowAnnotations.setPreferredSize(iconDimension);
+        buttonShowAnnotations.setMargin(buttonMargin);
+//                buttonShowAnnotations.addActionListener(this);
+        buttonShowAnnotations.addMouseListener(new MouseListener() {
+            public void mousePressed(MouseEvent e) {
+                if (!e.isShiftDown() && !e.isControlDown() && ((e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0)) {
+                    ac.showAnnotations = !ac.showAnnotations;
+//                            buttonShowAnnotations.setSelected(ac.showAnnotations);
+                    Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
+                    ac.repaint();
+                } else if (e.isShiftDown() || (e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0) {
+                    buttonShowAnnotations.setSelected(true);
+                    ac.showAnnotations = true;
+                    Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
+                    displayAnnotationsFromHeader(true, true, true);
+                } else if (e.isControlDown() || (e.getModifiers() & MouseEvent.BUTTON2_MASK) != 0) {
+                    buttonShowAnnotations.setSelected(true);
+                    ac.showAnnotations = true;
+                    Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
+                    displayAnnotationsFromHeader(false, true, true);
+                }
+            }
+
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+            }
+
+            public void mouseClicked(MouseEvent e) {
+            }
+        });
+
+        topPanelA.add(buttonShowAnnotations);
+
+        buttonShowSky = new JToggleButton(showSkyIcon, showSkyOverlay);
+        buttonShowSky.setToolTipText("toggle display of aperture sky background regions");
+        buttonShowSky.setSelectedIcon(showSkyIconSelected);
+        buttonShowSky.setPreferredSize(iconDimension);
+        buttonShowSky.setMargin(buttonMargin);
+        buttonShowSky.addActionListener(this);
+        topPanelA.add(buttonShowSky);
+
+        buttonSourceID = new JToggleButton(sourceIDIcon, nameOverlay);
+        buttonSourceID.setToolTipText("toggle display of aperture source identifications");
+        buttonSourceID.setSelectedIcon(sourceIDIconSelected);
+        buttonSourceID.setPreferredSize(iconDimension);
+        buttonSourceID.setMargin(buttonMargin);
+        buttonSourceID.addActionListener(this);
+        topPanelA.add(buttonSourceID);
+
+        buttonSourceCounts = new JToggleButton(sourceCountsIcon, valueOverlay);
+        buttonSourceCounts.setToolTipText("toggle display of aperture source integrated counts");
+        buttonSourceCounts.setSelectedIcon(sourceCountsIconSelected);
+        buttonSourceCounts.setPreferredSize(iconDimension);
+        buttonSourceCounts.setMargin(buttonMargin);
+        buttonSourceCounts.addActionListener(this);
+        topPanelA.add(buttonSourceCounts);
+
+        buttonCentroid = new JToggleButton(centroidIcon, reposition);
+        buttonCentroid.setToolTipText("centroid apertures");
+        buttonCentroid.setSelectedIcon(centroidIconSelected);
+        buttonCentroid.setPreferredSize(iconDimension);
+        buttonCentroid.setMargin(buttonMargin);
+        buttonCentroid.addActionListener(this);
+        topPanelA.add(buttonCentroid);
+
+        buttonSetAperture = new JButton(setApertureIcon);
+        buttonSetAperture.setToolTipText("change aperture settings");
+        buttonSetAperture.setPreferredSize(iconDimension);
+        buttonSetAperture.setMargin(buttonMargin);
+        buttonSetAperture.addActionListener(this);
+        topPanelA.add(buttonSetAperture);
+
+        buttonShowAll = new JButton(showAllIcon);
+        buttonShowAll.setToolTipText("draw all stored apertures in overlay");
+        buttonShowAll.setPreferredSize(iconDimension);
+        buttonShowAll.setMargin(buttonMargin);
+        buttonShowAll.addActionListener(this);
+        topPanelA.add(buttonShowAll);
+
+        buttonBroom = new JButton(broomIcon);
+        buttonBroom.setToolTipText("clear apertures and annotations from overlay");
+        buttonBroom.setPreferredSize(iconDimension);
+        buttonBroom.setMargin(buttonMargin);
+        buttonBroom.addActionListener(this);
+        topPanelA.add(buttonBroom);
+
+        topPanelA.add(Box.createHorizontalStrut(10));
+
+        buttonFlipX = new JButton("FlipX");
+//                buttonFlipX.setMargin(buttonMargin);
+        buttonFlipX.addActionListener(this);
+//                topPanelA.add(buttonFlipX);
+        buttonFlipY = new JButton("FlipY");
+//                buttonFlipY.setMargin(buttonMargin);
+        buttonFlipY.addActionListener(this);
+//                topPanelA.add(buttonFlipY);
+        buttonRotCCW = new JButton("RotCCW");
+//                buttonRotCCW.setMargin(buttonMargin);
+        buttonRotCCW.addActionListener(this);
+//                topPanelA.add(buttonRotCCW);
+        buttonRotCW = new JButton("RotCW");
+//                buttonRotCW.setMargin(buttonMargin);
+        buttonRotCW.addActionListener(this);
+//                topPanelA.add(buttonRotCW);
+
+        buttonClearMeasurements = new JButton(clearMeasurementsIcon);
+        buttonClearMeasurements.setToolTipText("clear measurements table data");
+        buttonClearMeasurements.setPreferredSize(iconDimension);
+        buttonClearMeasurements.setMargin(buttonMargin);
+        buttonClearMeasurements.addActionListener(this);
+        topPanelA.add(buttonClearMeasurements);
+
+        buttonMultiAperture = new JButton(multiApertureIcon);
+        buttonMultiAperture.setToolTipText("perform multi-aperture photometry");
+        buttonMultiAperture.setPreferredSize(iconDimension);
+        buttonMultiAperture.setMargin(buttonMargin);
+        buttonMultiAperture.addActionListener(this);
+        topPanelA.add(buttonMultiAperture);
+
+        buttonAlign = new JButton(alignIcon);
+        buttonAlign.setToolTipText("align stack using apertures");
+        buttonAlign.setPreferredSize(iconDimension);
+        buttonAlign.setMargin(buttonMargin);
+        buttonAlign.addActionListener(this);
+        topPanelA.add(buttonAlign);
+
+        buttonAstrometry = new JToggleButton(astrometryIcon, false);
+        buttonAstrometry.setToolTipText("<html>plate solve using astrometry.net<br>" +
+                "left-click to start with options panel<br>" +
+                "shift-click or right-click to skip options panel</html>");
+        buttonAstrometry.setPreferredSize(iconDimension);
+        buttonAstrometry.setSelectedIcon(astrometryIconSelected);
+        buttonAstrometry.setMargin(buttonMargin);
+        buttonAstrometry.addActionListener(this);
+        buttonAstrometry.addMouseListener(new MouseListener() {
+            public void mousePressed(MouseEvent e) {
+                if ((e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0 && !buttonAstrometry.isSelected()) {
+                    handleAstrometry(false);
+                }
+            }
+
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+            }
+
+            public void mouseClicked(MouseEvent e) {
+            }
+        });
+        topPanelA.add(buttonAstrometry);
+
+        astrometry = new Astrometry();
+
+        buttonHeader = new JButton(headerIcon);
+        buttonHeader.setToolTipText("display fits header");
+        buttonHeader.setPreferredSize(iconDimension);
+        buttonHeader.setMargin(buttonMargin);
+        buttonHeader.addActionListener(this);
+        topPanelA.add(buttonHeader);
+        topPanelA.add(Box.createHorizontalStrut(10));
+        topPanelA.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+//                buttonLUT = new JButton("LUT");
+//                buttonLUT.setMargin(buttonMargin);
+//                buttonLUT.addActionListener(this);
+//                topPanelAC.add(buttonLUT);
+
+
+//                JLabel zoomLabel = new JLabel("Zoom  ");
+//                zoomPanel.add(zoomLabel);
+
+
+        buttonZoomInFast = new JButton(zoomInFastIcon);
+        buttonZoomInFast.setToolTipText("zoom in fast");
+        buttonZoomInFast.setMargin(buttonMargin);
+        buttonZoomInFast.addActionListener(this);
+        buttonZoomInFast.setPreferredSize(iconDimension);
+        zoomPanel.add(buttonZoomInFast);
+
+        buttonZoomIn = new JButton(zoomInIcon);
+        buttonZoomIn.setMargin(buttonMargin);
+        buttonZoomIn.addActionListener(this);
+        buttonZoomIn.setToolTipText("zoom in");
+        buttonZoomIn.setPreferredSize(iconDimension);
+        zoomPanel.add(buttonZoomIn);
+
+        buttonZoomOut = new JButton(zoomOutIcon);
+        buttonZoomOut.setMargin(buttonMargin);
+        buttonZoomOut.addActionListener(this);
+        buttonZoomOut.setToolTipText("zoom out");
+        buttonZoomOut.setPreferredSize(iconDimension);
+        zoomPanel.add(buttonZoomOut);
+
+        buttonFit = new JButton(zoomFitIcon);
+        buttonFit.setMargin(buttonMargin);
+        buttonFit.setToolTipText("zoom to fit image to window");
+        buttonFit.setPreferredSize(iconDimension);
+        buttonFit.addActionListener(this);
+        zoomPanel.add(buttonFit);
+//                zoomPanel.setBorder(BorderFactory.createTitledBorder(""));
+        topPanelA.add(zoomPanel);
+
+        topPanelA.add(Box.createHorizontalStrut(10));
+
+        buttonAutoLevels = new JButton(autoscaleIcon);
+        buttonAutoLevels.setToolTipText("auto brightness and contrast");
+        buttonAutoLevels.setMargin(buttonMargin);
+        buttonAutoLevels.setPreferredSize(iconDimension);
+        buttonAutoLevels.addActionListener(this);
+        topPanelA.add(buttonAutoLevels);
+        topPanelA.add(Box.createHorizontalGlue());
+        mainPanel.add(topPanelA);
+
+
+//                icPanel.add(ac);
+//                SpringUtil.makeCompactGrid (icPanel, 1, 1, 0,0,0,0);
+
+        mainPanel.add(ac);
+
+//                stackSliders = super.getComponents();
+
+//                IJ.log("stackSliders.length="+stackSliders.length);
+        if (cSelector != null) mainPanel.add(cSelector);
+        if (zSelector != null) mainPanel.add(zSelector);
+        if (tSelector != null) mainPanel.add(tSelector);
+//                JScrollBar stackSlider = new JScrollBar(JScrollBar.HORIZONTAL, 0, 1, 0, imp.getNSlices());
+//                stackSlider.addAdjustmentListener(new AdjustmentListener() {
+//                                                      //@Override
+//                                                      public void adjustmentValueChanged(AdjustmentEvent e) {
+//                                                          int slice = stackSlider.getValue()+1;
+//                                                          imp.setSlice(slice);
+//                                                      }
+//                                                  });
+//                mainPanel.add(stackSlider);
+//
+//                JSlider stackSlider2 = new JSlider(JSlider.HORIZONTAL, 1, imp.getNSlices(), 1);
+//                stackSlider2.addChangeListener(ev -> {
+//                    int slice = stackSlider2.getValue();
+//                    imp.setSlice(slice);
+//                });
+//                mainPanel.add(stackSlider2);
+
+//                if (super.getNScrollbars() > 0)
+//                        for (int i = 0; i < super.getNScrollbars(); i++)
+//                                {
+//                                stackSliders[i].setPreferredSize(new Dimension(100,18));
+//                                mainPanel.add(stackSliders[i]);
+//                                }
+
+
+        minValueTextField = new JTextField(fourPlaces.format(minValue));
+        minValueTextField.setFont(p12);
+        minValueTextField.setPreferredSize(new Dimension(70, 17));
+        minValueTextField.setHorizontalAlignment(JTextField.LEFT);
+        writeNumericPanelField(minValue, minValueTextField);
+        bottomPanelB.add(minValueTextField);
+        JTextField minlabelTextField = new JTextField(":min");
+        minlabelTextField.setFont(p12);
+        minlabelTextField.setPreferredSize(new Dimension(30, 17));
+        minlabelTextField.setHorizontalAlignment(JTextField.LEFT);
+        minlabelTextField.setBorder(BorderFactory.createEmptyBorder());
+        minlabelTextField.setEditable(false);
+        bottomPanelB.add(minlabelTextField);
+
+        bottomPanelB.add(Box.createHorizontalStrut(10));
+
+        blackTextfield = new JTextField(fourPlaces.format(blackValue));
+        blackTextfield.setFont(b12);
+        blackTextfield.setPreferredSize(new Dimension(70, 17));
+        blackTextfield.setHorizontalAlignment(JTextField.RIGHT);
+        blackTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
+        blackTextfield.setEditable(true);
+        blackTextfield.addActionListener(this);
+        blackTextfield.addFocusListener(this);
+        writeNumericPanelField(blackValue, blackTextfield);
+//                minTextField.getDocument().addDocumentListener(new thisDocumentListener());
+        bottomPanelB.add(blackTextfield);
+
+        JTextField lowlabelTextField = new JTextField(":black");
+        lowlabelTextField.setFont(p12);
+        lowlabelTextField.setPreferredSize(new Dimension(30, 17));
+        lowlabelTextField.setHorizontalAlignment(JTextField.LEFT);
+        lowlabelTextField.setBorder(BorderFactory.createEmptyBorder());
+        lowlabelTextField.setEditable(false);
+        bottomPanelB.add(lowlabelTextField);
+
+        bottomPanelB.add(Box.createHorizontalGlue());
+
+        JTextField meanlabelTextField = new JTextField("mean:");
+        meanlabelTextField.setFont(p12);
+        meanlabelTextField.setPreferredSize(new Dimension(70, 17));
+        meanlabelTextField.setHorizontalAlignment(JTextField.RIGHT);
+        meanlabelTextField.setBorder(BorderFactory.createEmptyBorder());
+        meanlabelTextField.setEditable(false);
+        bottomPanelB.add(meanlabelTextField);
+
+        meanTextField = new JTextField(fourPlaces.format(stats.mean));
+        meanTextField.setFont(p12);
+        meanTextField.setPreferredSize(new Dimension(70, 17));
+        meanTextField.setHorizontalAlignment(JTextField.LEFT);
+        meanTextField.setBorder(BorderFactory.createEmptyBorder());
+        meanTextField.setEditable(false);
+        writeNumericPanelField(stats.mean, meanTextField);
+        bottomPanelB.add(meanTextField);
+
+        bottomPanelB.add(Box.createHorizontalGlue());
+
+        JTextField highlabelTextField = new JTextField("white:");
+        highlabelTextField.setFont(p12);
+        highlabelTextField.setPreferredSize(new Dimension(30, 17));
+        highlabelTextField.setHorizontalAlignment(JTextField.RIGHT);
+        highlabelTextField.setBorder(BorderFactory.createEmptyBorder());
+        highlabelTextField.setEditable(false);
+        bottomPanelB.add(highlabelTextField);
+
+        whiteTextfield = new JTextField(fourPlaces.format(whiteValue));
+        whiteTextfield.setFont(b12);
+        whiteTextfield.setPreferredSize(new Dimension(70, 17));
+        whiteTextfield.setHorizontalAlignment(JTextField.RIGHT);
+        whiteTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
+        whiteTextfield.setEditable(true);
+        whiteTextfield.addActionListener(this);
+        whiteTextfield.addFocusListener(this);
+        writeNumericPanelField(whiteValue, whiteTextfield);
+//                maxTextField.getDocument().addDocumentListener(new thisDocumentListener());
+        bottomPanelB.add(whiteTextfield);
+
+        bottomPanelB.add(Box.createHorizontalStrut(10));
+
+        JTextField maxlabelTextField = new JTextField("max:");
+        maxlabelTextField.setFont(p12);
+        maxlabelTextField.setPreferredSize(new Dimension(30, 17));
+        maxlabelTextField.setHorizontalAlignment(JTextField.RIGHT);
+        maxlabelTextField.setBorder(BorderFactory.createEmptyBorder());
+        maxlabelTextField.setEditable(false);
+        bottomPanelB.add(maxlabelTextField);
+
+        maxValueTextField = new JTextField(fourPlaces.format(maxValue));
+        maxValueTextField.setFont(p12);
+        maxValueTextField.setPreferredSize(new Dimension(70, 17));
+        maxValueTextField.setHorizontalAlignment(JTextField.RIGHT);
+        writeNumericPanelField(maxValue, maxValueTextField);
+        bottomPanelB.add(maxValueTextField);
+        updateMinMaxValueTextFields();
+        bottomPanelB.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+//                SpringUtil.makeCompactGrid (bottomPanelB, 1, bottomPanelB.getComponentCount(), 5,0,5,0);
+//                ImageProcessor ip = imp.getProcessor();
+
+        getBiSliderStatistics();
+        histogram = stats.histogram;
+        logHistogram = new double[histogram.length];
+
+        for (int i = 0; i < histogram.length; i++) {
+            if (histogram[i] <= 1)
+                logHistogram[i] = 0;
+            else
+                logHistogram[i] = Math.log(histogram[i]);
+            if (logHistogram[i] > histMax)
+                histMax = logHistogram[i];
+        }
+
+        minMaxBiSlider = new BiSlider(BiSlider.RGB);
+        minMaxBiSlider.setUniformSegment(false);
+        minMaxBiSlider.setDecimalFormater(fourPlaces);
+        minMaxBiSlider.setFont(p13);
+//                minMaxBiSlider.setHorizontal(false);
+//                minMaxBiSlider.setUI((BiSliderPresentation) metal);
+        minMaxBiSlider.setVisible(true);
+        minMaxBiSlider.setValues(minValue, maxValue);
+        minMaxBiSlider.setMinimumColoredValue(blackValue);
+        minMaxBiSlider.setMaximumColoredValue(whiteValue);
+        minMaxBiSlider.setMinimumValue(minValue);
+        minMaxBiSlider.setMaximumValue(maxValue);
+        minMaxBiSlider.setSegmentSize((maxValue - minValue) / (double) BISLIDER_SEGMENTS);
+        minMaxBiSlider.setMinimumColor(Color.BLACK);
+
+        minMaxBiSlider.setMiddleColor(Color.BLACK);
+        minMaxBiSlider.setMaximumColor(Color.BLACK);
+        minMaxBiSlider.setColoredValues(blackValue, whiteValue);
+        minMaxBiSlider.setUnit("  ");
+        minMaxBiSlider.setSliderBackground(Color.LIGHT_GRAY);
+        minMaxBiSlider.setForeground(Color.BLACK);
+
+        minMaxBiSlider.setDefaultColor(Color.WHITE);
+        minMaxBiSlider.setPreferredSize(new Dimension(535, 75));
+        minMaxBiSlider.setPrecise(false);
+        minMaxBiSlider.setOpaque(true);
+        minMaxBiSlider.setArcSize(0);
+        minMaxBiSlider.addContentPainterListener(new ContentPainterListener() {
+            public void paint(ContentPainterEvent ContentPainterEvent_Arg) {
+                Graphics2D Graphics2 = (Graphics2D) ContentPainterEvent_Arg.getGraphics();
+                Rectangle Rect1 = ContentPainterEvent_Arg.getRectangle();
+                Graphics2.setColor((new Color(230, 230, 230)));
+                Graphics2.fillRect(Rect1.x, Rect1.y, Rect1.width, Rect1.height);
+                Rectangle Rect2 = ContentPainterEvent_Arg.getBoundingRectangle();
+//                    double BarHeight = Math.abs(Math.cos(Math.PI*(Rect2.x+Rect2.width/2) / minMaxBiSlider.getWidth()));
+//                    double BarHeight = (double)(Rect2.x+Rect2.width/2) / minMaxBiSlider.getWidth();
+//                    double BarHeight = Math.random();
+
+//                    float X = ((float)Rect2.x-minMaxBiSlider.getWidth()/2)/minMaxBiSlider.getWidth()*6;
+                double X = ((double) (Rect2.x - 10 - minMaxBiSlider.getX())) / ((double) minMaxBiSlider.getWidth() - 22.0);
+//                    double BarHeight = 1-Math.exp((-1*X*X)/2);
+                int index = (int) (histogram.length * X);
+                if (index < 0) index = 0;
+                if (index >= logHistogram.length) index = logHistogram.length - 1;
+//                    IJ.log("index = "+index+"   Max index = "+(logHistogram.length-1));
+                double BarHeight = 1.0 - (logHistogram[index]) / histMax;
+//                    X = ((float)(Rect2.x-Rect2.width - 10 - minMaxBiSlider.getX()))/(double)minMaxBiSlider.getWidth();
+//                    double BarHeight2 = 1-Math.exp((-1*X*X)/2);
+//                    double BarHeight2 = 1.0-(logHistogram[(int)(histogram.length*X)])/histMax;
+
+                if (ContentPainterEvent_Arg.getColor() != null) {
+                    Graphics2.setColor(Color.WHITE);
+                    Graphics2.fillRect(Rect2.x, Rect2.y, Rect2.width, (int) ((BarHeight * Rect2.height)));
+                    Graphics2.setColor(new Color(120, 165, 255));//(ContentPainterEvent_Arg.getColor());
+                    Graphics2.fillRect(Rect2.x, Rect2.y + (int) ((BarHeight * Rect2.height)), Rect2.width + 1, 1 + (int) (((1 - BarHeight) * Rect2.height)));
+                    //Graphics2.drawRect(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.width+1, 1+(int)(((1-BarHeight)*Rect2.height)));
+                } else {
+                    Graphics2.setColor(Color.LIGHT_GRAY);//(new Color(255, 255, 218, 64));
+                    Graphics2.fillRect(Rect2.x, Rect2.y + (int) ((BarHeight * Rect2.height)), Rect2.width + 1, 1 + (int) (((1 - BarHeight) * Rect2.height)));
+                }
+//                    Graphics2.setColor(Color.LIGHT_GRAY);
+//                    //Graphics2.drawRect(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.width-1, (int)(((1-BarHeight)*Rect2.height)));
+//                    Graphics2.drawLine(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.x+Rect2.width-1, Rect2.y+(int)((BarHeight*Rect2.height)));
+//                    Graphics2.drawLine(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.x, Rect2.y+(int)((prevBarHeight*Rect2.height)));
+////                    Graphics2.drawLine(Rect2.x, Rect2.y+(int)((Math.max(BarHeight, BarHeight2)*Rect2.height)), Rect2.x, Rect2.y+Rect2.height);
+//                    Rect3 = Rect2;
+//                    prevBarHeight = BarHeight;
+            }
+        });
+
+//                final JPopupMenu JPopupMenu6 = minMaxBiSlider.createPopupMenu();
+//                minMaxBiSlider.addMouseListener(new MouseAdapter(){
+//                  public void mousePressed(MouseEvent MouseEvent_Arg){
+//                    if (MouseEvent_Arg.getButton()==MouseEvent.BUTTON3){
+//                      JPopupMenu6.show(minMaxBiSlider, MouseEvent_Arg.getX(), MouseEvent_Arg.getY());
+//                    }
+//                  }
+//                });
+
+        final String initialText = "\n\n\n Use this BiSlider to see the events generated\n";
+        final JTextArea JTextArea5 = new JTextArea(initialText);
+        minMaxBiSlider.addBiSliderListener(new BiSliderAdapter() {
+            /** something changed that modified the color gradient between min and max */
+            public void newColors(BiSliderEvent BiSliderEvent_Arg) {
+//                      IJ.log("newColors()");
+            }
+
+            /**  min or max colored values changed  */
+            public void newValues(BiSliderEvent BiSliderEvent_Arg) {
+                if (updatesEnabled) {
+                    blackValue = minMaxBiSlider.getMinimumColoredValue();
+                    whiteValue = minMaxBiSlider.getMaximumColoredValue();
+                    sliceMin[imp.getCurrentSlice() - 1] = blackValue;
+                    sliceMax[imp.getCurrentSlice() - 1] = whiteValue;
+                    //
+                    //                            if (min < minValue)
+                    //                                    {
+                    //                                    min = minValue;
+                    //                                    minMaxBiSlider.setMinimumColoredValue(min);
+                    //                                    }
+                    //                            if (min > maxValue)
+                    //                                     {
+                    //                                    min = maxValue;
+                    //                                    minMaxBiSlider.setMinimumColoredValue(min);
+                    //                                    }
+                    //                            if (max > maxValue)
+                    //                                    {
+                    //                                    max = maxValue;
+                    //                                    minMaxBiSlider.setMaximumColoredValue(max);
+                    //                                    }
+                    //                            if (max < min)
+                    //                                    {
+                    //                                    max = min;
+                    //                                    minMaxBiSlider.setMaximumColoredValue(max);
+                    //                                    }
+
+                    imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
+                    minMaxChanged = true;
+                    writeNumericPanelField(blackValue, blackTextfield);
+                    writeNumericPanelField(whiteValue, whiteTextfield);
+                    savedBlackValue = blackValue;
+                    savedWhiteValue = whiteValue;
+                    if (autoContrast && autoGrabBandCFromHistogram) grabAutoScaleParameters();
+                    //                            Prefs.set("Astronomy_Tool.savedMin", savedMin);
+                    //                            Prefs.set("Astronomy_Tool.savedMax", savedMax);
+                    imp.updateAndDraw();
+                }
+            }
+
+            /**  min selected value changed  */
+            public void newMinValue(BiSliderEvent BiSliderEvent_Arg) {
+//                      IJ.log("newMinValue()");
+//                          getBiSliderStatistics;
+//                          updatePanelValues();
+            }
+
+            /**  max selected value changed  */
+            public void newMaxValue(BiSliderEvent BiSliderEvent_Arg) {
+//                      IJ.log("newMaxValue()");
+//                            getBiSliderStatistics;
+//                            maxValue = minMaxBiSlider.getMaximumValue();
+//                            minMaxBiSlider.setSegmentSize((maxValue - minValue)/256.0);
+//                            histogram = stats.histogram;
+//                            IJ.log("after histogram="+minMaxBiSlider.getMaximumValue());
+//                            for (int i=0; i<histogram.length; i++)
+//                                {
+//                                if (histogram[i] <= 1)
+//                                    logHistogram[i] = 0;
+//                                else
+//                                    logHistogram[i] = Math.log(histogram[i]);
+//                                if (logHistogram[i] > histMax)
+//                                    histMax = logHistogram[i];
+//                                }
+//                            updatePanelValues();
+            }
+
+            /**  selected segments changed  */
+            public void newSegments(BiSliderEvent BiSliderEvent_Arg) {
+//                          IJ.log("newSegments()");
+//                          getBiSliderStatistics);
+//                          updatePanelValues();
+            }
+        });
+//                Calibration cal = imp.getCalibration();
+//                imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
+//                minMaxChanged = true;
+        mainPanel.add(minMaxBiSlider);
+        mainPanel.add(bottomPanelB);
+
+        FileDrop fileDrop = new FileDrop(mainPanel, BorderFactory.createEmptyBorder(), new FileDrop.Listener() {
+            public void filesDropped(java.io.File[] files) {
+                openDragAndDropFiles(files);
+            }
+        });
+
+        SpringUtil.makeCompactGrid(mainPanel, mainPanel.getComponentCount(), 1, 0, 0, 0, 0);
+        setMinimumSize(new Dimension(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT));
+        setMenuBar(mainMenuBar);
+
+        setTitle(impTitle);
+        setName(impTitle);
+        add(mainPanel);
+        ImageIcon frameIcon = createImageIcon("images/astroIJ.png", "File Open");
+        this.setIconImage(frameIcon.getImage());
+
+        setResizable(true);
+
+        GUI.scaleFrame(this);
+
+        pack();
+
+        if (rememberWindowLocation) {
+            Dimension mainScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            if (!Prefs.isLocationOnScreen(new Point(frameLocationX, frameLocationY))) {
+                frameLocationX = mainScreenSize.width / 2 - getWidth() / 2;
+                frameLocationY = mainScreenSize.height / 2 - getHeight() / 2;
+            }
+            this.setLocation(frameLocationX, frameLocationY);
+        }
+
+        otherPanelsHeight = topPanelA.getHeight() + topPanelB.getHeight() +
+                bottomPanelB.getHeight() + minMaxBiSlider.getHeight();
+        frameHeightPadding = this.getHeight() - ac.getHeight();// - minMaxBiSlider.getHeight() - bottomPanelB.getHeight();
+        drawInfo(getGraphics());
+        repaint();
+    }
+
+    private void buildMenubar() {
         mainMenuBar = new MenuBar();
 //                JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 
@@ -1956,894 +2848,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
 
 //------end menus---------------------------------------------------------------------
-
-        mainPanel = new Panel(new SpringLayout());
-        topPanelA = new JPanel();
-        topPanelA.setLayout(new BoxLayout(topPanelA, BoxLayout.LINE_AXIS));
-        zoomPanel = new JPanel();
-        zoomPanel.setLayout(new BoxLayout(zoomPanel, BoxLayout.LINE_AXIS));
-        topPanelB = new JPanel();
-        topPanelB.setLayout(new BoxLayout(topPanelB, BoxLayout.LINE_AXIS));
-        topPanelBC = new JPanel(new SpringLayout());
-        bottomPanelB = new JPanel();
-        bottomPanelB.setLayout(new BoxLayout(bottomPanelB, BoxLayout.LINE_AXIS));
-
-        topPanelB.add(Box.createHorizontalGlue());
-
-        Dimension valueDim = new Dimension(90, 20);
-        Dimension valueDimMin = new Dimension(90, 20);
-        Dimension intCntDim = new Dimension(120, 20);
-        Dimension intCntDimMin = new Dimension(120, 20);
-        Dimension labelDim = new Dimension(65, 20);
-        Dimension labelDimMin = new Dimension(65, 20);
-
-        JLabel ijXLabel = new JLabel("ImageJ X:");
-        ijXLabel.setFont(p12);
-        ijXLabel.setHorizontalAlignment(JLabel.RIGHT);
-        ijXLabel.setPreferredSize(labelDim);
-        ijXLabel.setMaximumSize(labelDim);
-        ijXLabel.setMinimumSize(labelDimMin);
-        ijXLabel.setLabelFor(ijXTextField);
-        topPanelBC.add(ijXLabel);
-
-        ijXTextField = new JTextField("");
-        ijXTextField.setFont(p12);
-        ijXTextField.setHorizontalAlignment(JLabel.RIGHT);
-        ijXTextField.setPreferredSize(valueDim);
-        ijXTextField.setMaximumSize(valueDim);
-        ijXTextField.setMinimumSize(valueDimMin);
-        ijXTextField.setEditable(false);
-        topPanelBC.add(ijXTextField);
-
-        JLabel ijYLabel = new JLabel("ImageJ Y:");
-        ijYLabel.setFont(p12);
-        ijYLabel.setHorizontalAlignment(JLabel.RIGHT);
-        ijYLabel.setPreferredSize(labelDim);
-        ijYLabel.setMaximumSize(labelDim);
-        ijYLabel.setMinimumSize(labelDimMin);
-        ijYLabel.setLabelFor(ijYTextField);
-        topPanelBC.add(ijYLabel);
-
-        ijYTextField = new JTextField("");
-        ijYTextField.setFont(p12);
-        ijYTextField.setHorizontalAlignment(JTextField.RIGHT);
-        ijYTextField.setPreferredSize(valueDim);
-        ijYTextField.setMaximumSize(valueDim);
-        ijYTextField.setMinimumSize(valueDimMin);
-        ijYTextField.setEditable(false);
-        topPanelBC.add(ijYTextField);
-
-        JLabel valueLabel = new JLabel("Value:");
-        valueLabel.setFont(p12);
-        valueLabel.setHorizontalAlignment(JLabel.RIGHT);
-        valueLabel.setPreferredSize(labelDim);
-        valueLabel.setMaximumSize(labelDim);
-        valueLabel.setMinimumSize(labelDimMin);
-        valueLabel.setLabelFor(valueTextField);
-        topPanelBC.add(valueLabel);
-
-        valueTextField = new JTextField("");
-        valueTextField.setFont(b12);
-        valueTextField.setHorizontalAlignment(JTextField.RIGHT);
-        valueTextField.setPreferredSize(intCntDim);
-        valueTextField.setMaximumSize(intCntDim);
-        valueTextField.setMinimumSize(intCntDimMin);
-        valueTextField.setEditable(false);
-        topPanelBC.add(valueTextField);
-
-        JLabel RALabel = new JLabel("RA:");
-        RALabel.setFont(p12);
-        RALabel.setHorizontalAlignment(JLabel.RIGHT);
-        RALabel.setPreferredSize(labelDim);
-        RALabel.setMaximumSize(labelDim);
-        RALabel.setMinimumSize(labelDimMin);
-        RALabel.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
-        RALabel.setLabelFor(RATextField);
-        topPanelBC.add(RALabel);
-
-        RATextField = new JTextField("");
-        RATextField.setFont(p12);
-        RATextField.setHorizontalAlignment(JLabel.RIGHT);
-        RATextField.setPreferredSize(valueDim);
-        RATextField.setMaximumSize(valueDim);
-        RATextField.setMinimumSize(valueDimMin);
-        RATextField.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
-        RATextField.setEditable(goodWCS);
-        RATextField.addActionListener(this);
-        RATextField.addFocusListener(this);
-        RATextField.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER && ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0 || (e.getModifiers() & MouseEvent.CTRL_MASK) != 0)) {
-                    RATextField.postActionEvent();
-                }
-            }
-        });
-        topPanelBC.add(RATextField);
-
-        JLabel DecLabel = new JLabel("DEC:");
-        DecLabel.setFont(p12);
-        DecLabel.setHorizontalAlignment(JLabel.RIGHT);
-        DecLabel.setPreferredSize(labelDim);
-        DecLabel.setMaximumSize(labelDim);
-        DecLabel.setMinimumSize(labelDimMin);
-        DecLabel.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
-        DecLabel.setLabelFor(DecTextField);
-        topPanelBC.add(DecLabel);
-
-        DecTextField = new JTextField("");
-        DecTextField.setFont(p12);
-        DecTextField.setHorizontalAlignment(JLabel.RIGHT);
-        DecTextField.setPreferredSize(valueDim);
-        DecTextField.setMaximumSize(valueDim);
-        DecTextField.setMinimumSize(valueDimMin);
-        DecTextField.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
-        DecTextField.setEditable(goodWCS);
-        DecTextField.addActionListener(this);
-        DecTextField.addFocusListener(this);
-        topPanelBC.add(DecTextField);
-
-//                JLabel arcLengthLabel = new JLabel("Arclen:");
-        peakLabel = new JTextField("Peak:");
-        peakLabel.setFont(p12);
-        peakLabel.setBorder(BorderFactory.createEmptyBorder());
-        peakLabel.setBackground(topPanelA.getBackground());
-        peakLabel.setPreferredSize(labelDim);
-        peakLabel.setMaximumSize(labelDim);
-        peakLabel.setMinimumSize(labelDimMin);
-        peakLabel.setHorizontalAlignment(JLabel.RIGHT);
-        topPanelBC.add(peakLabel);
-
-        peakTextField = new JTextField("");
-        peakTextField.setFont(p12);
-        peakTextField.setHorizontalAlignment(JLabel.RIGHT);
-        peakTextField.setPreferredSize(intCntDim);
-        peakTextField.setMaximumSize(intCntDim);
-        peakTextField.setMinimumSize(intCntDimMin);
-        peakTextField.setEditable(false);
-        topPanelBC.add(peakTextField);
-
-        JLabel fitsXLabel = new JLabel("FITS X:");
-        fitsXLabel.setFont(p12);
-        fitsXLabel.setHorizontalAlignment(JLabel.RIGHT);
-        fitsXLabel.setPreferredSize(labelDim);
-        fitsXLabel.setMaximumSize(labelDim);
-        fitsXLabel.setMinimumSize(labelDimMin);
-        fitsXLabel.setLabelFor(fitsXTextField);
-        topPanelBC.add(fitsXLabel);
-
-        fitsXTextField = new JTextField("");
-        fitsXTextField.setFont(p12);
-        fitsXTextField.setHorizontalAlignment(JLabel.RIGHT);
-        fitsXTextField.setPreferredSize(valueDim);
-        fitsXTextField.setMaximumSize(valueDim);
-        fitsXTextField.setMinimumSize(valueDimMin);
-        fitsXTextField.setEditable(false);
-        topPanelBC.add(fitsXTextField);
-
-        JLabel fitsYLabel = new JLabel("FITS Y:");
-        fitsYLabel.setFont(p12);
-        fitsYLabel.setHorizontalAlignment(JLabel.RIGHT);
-        fitsYLabel.setPreferredSize(labelDim);
-        fitsYLabel.setMaximumSize(labelDim);
-        fitsYLabel.setMinimumSize(labelDimMin);
-        fitsYLabel.setLabelFor(fitsYTextField);
-        topPanelBC.add(fitsYLabel);
-
-        fitsYTextField = new JTextField("");
-        fitsYTextField.setFont(p12);
-        fitsYTextField.setHorizontalAlignment(JLabel.RIGHT);
-        fitsYTextField.setPreferredSize(valueDim);
-        fitsYTextField.setMaximumSize(valueDim);
-        fitsYTextField.setMinimumSize(valueDimMin);
-        fitsYTextField.setEditable(false);
-        topPanelBC.add(fitsYTextField);
-
-//                JLabel lengthLabel = new JLabel("Length:");
-        lengthLabel = new JTextField("Int Cnts:");
-        lengthLabel.setFont(p12);
-        lengthLabel.setBorder(BorderFactory.createEmptyBorder());
-        lengthLabel.setBackground(topPanelA.getBackground());
-        lengthLabel.setPreferredSize(labelDim);
-        lengthLabel.setMaximumSize(labelDim);
-        lengthLabel.setMinimumSize(labelDimMin);
-        lengthLabel.setHorizontalAlignment(JLabel.RIGHT);
-        topPanelBC.add(lengthLabel);
-
-        lengthTextField = new JTextField("");
-        lengthTextField.setFont(p12);
-        lengthTextField.setHorizontalAlignment(JLabel.RIGHT);
-        lengthTextField.setPreferredSize(intCntDim);
-        lengthTextField.setMaximumSize(intCntDim);
-        lengthTextField.setMinimumSize(intCntDimMin);
-        lengthTextField.setEditable(false);
-        topPanelBC.add(lengthTextField);
-
-        SpringUtil.makeCompactGrid(topPanelBC, 3, topPanelBC.getComponentCount() / 3, 3, 3, 3, 3);
-        topPanelB.add(topPanelBC);
-
-        topPanelB.add(Box.createGlue());
-
-        mainPanel.add(topPanelB);
-
-        int iconWidth = 26;
-        int iconHeight = 26;
-        Dimension iconDimension = new Dimension(iconWidth, iconHeight);
-
-        ImageIcon zoomInFastIcon = createImageIcon("images/viewmag++.png", "In Fast");
-        ImageIcon zoomInIcon = createImageIcon("images/viewmag+.png", "In");
-        ImageIcon zoomOutIcon = createImageIcon("images/viewmag-.png", "Out");
-        ImageIcon zoomFitIcon = createImageIcon("images/viewmagfit.png", "Fit");
-        ImageIcon multiApertureIcon = createImageIcon("images/multiaperture.png", "Multi-Aperture");
-        ImageIcon alignIcon = createImageIcon("images/align.png", "Stack Align");
-        ImageIcon headerIcon = createImageIcon("images/header.png", "Header");
-        ImageIcon negativeIcon = createImageIcon("images/negative.png", "Negative");
-        ImageIcon negativeIconSelected = createImageIcon("images/negativeselected.png", "Negative (selected)");
-        ImageIcon regExclusionIcon = createImageIcon("images/regExclusion.png", "Region Exclusion");
-        ImageIcon regExclusionIconSelected = createImageIcon("images/regExclusionSelected.png", "Region Exclusion (Selected)");
-        ImageIcon autoscaleIcon = createImageIcon("images/autoscale.png", "Autoscale");
-        ImageIcon broomIcon = createImageIcon("images/broom.png", "Clear Aperture Overlay");
-        ImageIcon showAllIcon = createImageIcon("images/showallaps.png", "Show All Apertures in Overlay");
-        ImageIcon showAnnotationIcon = createImageIcon("images/showannotations.png", "Toggle display of annotations in overlay");
-        ImageIcon showAnnotationIconSelected = createImageIcon("images/showannotationsselected.png", "Toggle display of annotations in overlay");
-        ImageIcon showSkyIcon = createImageIcon("images/showsky.png", "Toggle Sky Annuli");
-        ImageIcon showSkyIconSelected = createImageIcon("images/showskyselected.png", "Toggle Sky Annuli (selected)");
-        ImageIcon sourceIDIcon = createImageIcon("images/sourceid.png", "Toogle Source ID");
-        ImageIcon sourceIDIconSelected = createImageIcon("images/sourceidselected.png", "Toogle Source ID (selected)");
-        ImageIcon sourceCountsIcon = createImageIcon("images/sourcecounts.png", "Toggle Source Counts");
-        ImageIcon sourceCountsIconSelected = createImageIcon("images/sourcecountsselected.png", "Toggle Source Counts (selected)");
-        ImageIcon centroidIcon = createImageIcon("images/centroid.png", "Centroid Apertures");
-        ImageIcon centroidIconSelected = createImageIcon("images/centroidselected.png", "Centroid Apertures (selected)");
-        ImageIcon setApertureIcon = createImageIcon("images/setaperture.png", "Change Aperture Settings");
-        ImageIcon clearMeasurementsIcon = createImageIcon("images/cleartable.png", "Clear Measurements Table");
-        ImageIcon deleteSliceIcon = createImageIcon("images/deleteslice.png", "Delete Current Slice");
-        ImageIcon astrometryIcon = createImageIcon("images/astrometry.png", "Plate Solve");
-        ImageIcon astrometryIconSelected = createImageIcon("images/astrometryselected.png", "Plate Solve (selected)");
-
-        topPanelA.add(Box.createHorizontalGlue());
-        topPanelA.add(Box.createHorizontalStrut(20));
-        Insets buttonMargin = new Insets(2, 2, 2, 2); //top,left,bottom,right
-//                if (IJ.isWindows() || IJ.isMacintosh())
-//                       buttonMargin = new Insets(2,4,2,4); //top,left,bottom,right
-
-        buttonSub32768 = new JButton("-32768");
-//                buttonSub32768.setMargin(buttonMargin);
-        buttonSub32768.addActionListener(this);
-//                topPanelAC.add(buttonSub32768);
-        buttonAdd32768 = new JButton("+32768");
-//                buttonAdd32768.setMargin(buttonMargin);
-        buttonAdd32768.addActionListener(this);
-//                topPanelAC.add(buttonAdd32768);
-
-        buttonDeleteSlice = new JButton(deleteSliceIcon);
-        buttonDeleteSlice.setToolTipText("delete currently displayed slice from stack");
-        buttonDeleteSlice.setPreferredSize(iconDimension);
-        buttonDeleteSlice.setMargin(buttonMargin);
-        buttonDeleteSlice.addActionListener(this);
-        topPanelA.add(buttonDeleteSlice);
-
-        topPanelA.add(Box.createHorizontalStrut(10));
-
-        buttonNegative = new JToggleButton(negativeIcon, useInvertingLut);
-        buttonNegative.setToolTipText("display as image negative");
-        buttonNegative.setSelectedIcon(negativeIconSelected);
-        buttonNegative.setPreferredSize(iconDimension);
-        buttonNegative.setMargin(buttonMargin);
-        buttonNegative.addActionListener(this);
-        topPanelA.add(buttonNegative);
-
-        var regExclusion = new JToggleButton(regExclusionIcon, RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get());
-        regExclusion.setToolTipText("Display region exclusion");
-        regExclusion.setSelectedIcon(regExclusionIconSelected);
-        regExclusion.setPreferredSize(iconDimension);
-        regExclusion.setMargin(buttonMargin);
-        regExclusion.addActionListener(_ -> RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(regExclusion.isSelected()));
-        regExclusion.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    RegionExclusion.editSettings();
-                }
-            }
-        });
-        RegionExclusion.DISPLAY_EXCLUDED_REGIONS.addListener(regExclusion, (_, n) -> {
-            regExclusion.setSelected(n);
-        });
-        topPanelA.add(regExclusion);
-
-        buttonShowAnnotations = new JToggleButton(showAnnotationIcon, ac.showAnnotations);
-        buttonShowAnnotations.setToolTipText("<html>left-click: toggle display of annotations<br>" +
-                "middle-click or control-click: display (append) annotations from FITS header<br>" +
-                "right-click or shift-click: display (replace) annotations from FITS header</html>");
-        buttonShowAnnotations.setSelectedIcon(showAnnotationIconSelected);
-        buttonShowAnnotations.setPreferredSize(iconDimension);
-        buttonShowAnnotations.setMargin(buttonMargin);
-//                buttonShowAnnotations.addActionListener(this);
-        buttonShowAnnotations.addMouseListener(new MouseListener() {
-            public void mousePressed(MouseEvent e) {
-                if (!e.isShiftDown() && !e.isControlDown() && ((e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0)) {
-                    ac.showAnnotations = !ac.showAnnotations;
-//                            buttonShowAnnotations.setSelected(ac.showAnnotations);
-                    Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
-                    ac.repaint();
-                } else if (e.isShiftDown() || (e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0) {
-                    buttonShowAnnotations.setSelected(true);
-                    ac.showAnnotations = true;
-                    Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
-                    displayAnnotationsFromHeader(true, true, true);
-                } else if (e.isControlDown() || (e.getModifiers() & MouseEvent.BUTTON2_MASK) != 0) {
-                    buttonShowAnnotations.setSelected(true);
-                    ac.showAnnotations = true;
-                    Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
-                    displayAnnotationsFromHeader(false, true, true);
-                }
-            }
-
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            public void mouseExited(MouseEvent e) {
-            }
-
-            public void mouseClicked(MouseEvent e) {
-            }
-        });
-
-        topPanelA.add(buttonShowAnnotations);
-
-        buttonShowSky = new JToggleButton(showSkyIcon, showSkyOverlay);
-        buttonShowSky.setToolTipText("toggle display of aperture sky background regions");
-        buttonShowSky.setSelectedIcon(showSkyIconSelected);
-        buttonShowSky.setPreferredSize(iconDimension);
-        buttonShowSky.setMargin(buttonMargin);
-        buttonShowSky.addActionListener(this);
-        topPanelA.add(buttonShowSky);
-
-        buttonSourceID = new JToggleButton(sourceIDIcon, nameOverlay);
-        buttonSourceID.setToolTipText("toggle display of aperture source identifications");
-        buttonSourceID.setSelectedIcon(sourceIDIconSelected);
-        buttonSourceID.setPreferredSize(iconDimension);
-        buttonSourceID.setMargin(buttonMargin);
-        buttonSourceID.addActionListener(this);
-        topPanelA.add(buttonSourceID);
-
-        buttonSourceCounts = new JToggleButton(sourceCountsIcon, valueOverlay);
-        buttonSourceCounts.setToolTipText("toggle display of aperture source integrated counts");
-        buttonSourceCounts.setSelectedIcon(sourceCountsIconSelected);
-        buttonSourceCounts.setPreferredSize(iconDimension);
-        buttonSourceCounts.setMargin(buttonMargin);
-        buttonSourceCounts.addActionListener(this);
-        topPanelA.add(buttonSourceCounts);
-
-        buttonCentroid = new JToggleButton(centroidIcon, reposition);
-        buttonCentroid.setToolTipText("centroid apertures");
-        buttonCentroid.setSelectedIcon(centroidIconSelected);
-        buttonCentroid.setPreferredSize(iconDimension);
-        buttonCentroid.setMargin(buttonMargin);
-        buttonCentroid.addActionListener(this);
-        topPanelA.add(buttonCentroid);
-
-        buttonSetAperture = new JButton(setApertureIcon);
-        buttonSetAperture.setToolTipText("change aperture settings");
-        buttonSetAperture.setPreferredSize(iconDimension);
-        buttonSetAperture.setMargin(buttonMargin);
-        buttonSetAperture.addActionListener(this);
-        topPanelA.add(buttonSetAperture);
-
-        buttonShowAll = new JButton(showAllIcon);
-        buttonShowAll.setToolTipText("draw all stored apertures in overlay");
-        buttonShowAll.setPreferredSize(iconDimension);
-        buttonShowAll.setMargin(buttonMargin);
-        buttonShowAll.addActionListener(this);
-        topPanelA.add(buttonShowAll);
-
-        buttonBroom = new JButton(broomIcon);
-        buttonBroom.setToolTipText("clear apertures and annotations from overlay");
-        buttonBroom.setPreferredSize(iconDimension);
-        buttonBroom.setMargin(buttonMargin);
-        buttonBroom.addActionListener(this);
-        topPanelA.add(buttonBroom);
-
-        topPanelA.add(Box.createHorizontalStrut(10));
-
-        buttonFlipX = new JButton("FlipX");
-//                buttonFlipX.setMargin(buttonMargin);
-        buttonFlipX.addActionListener(this);
-//                topPanelA.add(buttonFlipX);
-        buttonFlipY = new JButton("FlipY");
-//                buttonFlipY.setMargin(buttonMargin);
-        buttonFlipY.addActionListener(this);
-//                topPanelA.add(buttonFlipY);
-        buttonRotCCW = new JButton("RotCCW");
-//                buttonRotCCW.setMargin(buttonMargin);
-        buttonRotCCW.addActionListener(this);
-//                topPanelA.add(buttonRotCCW);
-        buttonRotCW = new JButton("RotCW");
-//                buttonRotCW.setMargin(buttonMargin);
-        buttonRotCW.addActionListener(this);
-//                topPanelA.add(buttonRotCW);
-
-        buttonClearMeasurements = new JButton(clearMeasurementsIcon);
-        buttonClearMeasurements.setToolTipText("clear measurements table data");
-        buttonClearMeasurements.setPreferredSize(iconDimension);
-        buttonClearMeasurements.setMargin(buttonMargin);
-        buttonClearMeasurements.addActionListener(this);
-        topPanelA.add(buttonClearMeasurements);
-
-        buttonMultiAperture = new JButton(multiApertureIcon);
-        buttonMultiAperture.setToolTipText("perform multi-aperture photometry");
-        buttonMultiAperture.setPreferredSize(iconDimension);
-        buttonMultiAperture.setMargin(buttonMargin);
-        buttonMultiAperture.addActionListener(this);
-        topPanelA.add(buttonMultiAperture);
-
-        buttonAlign = new JButton(alignIcon);
-        buttonAlign.setToolTipText("align stack using apertures");
-        buttonAlign.setPreferredSize(iconDimension);
-        buttonAlign.setMargin(buttonMargin);
-        buttonAlign.addActionListener(this);
-        topPanelA.add(buttonAlign);
-
-        buttonAstrometry = new JToggleButton(astrometryIcon, false);
-        buttonAstrometry.setToolTipText("<html>plate solve using astrometry.net<br>" +
-                "left-click to start with options panel<br>" +
-                "shift-click or right-click to skip options panel</html>");
-        buttonAstrometry.setPreferredSize(iconDimension);
-        buttonAstrometry.setSelectedIcon(astrometryIconSelected);
-        buttonAstrometry.setMargin(buttonMargin);
-        buttonAstrometry.addActionListener(this);
-        buttonAstrometry.addMouseListener(new MouseListener() {
-            public void mousePressed(MouseEvent e) {
-                if ((e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0 && !buttonAstrometry.isSelected()) {
-                    handleAstrometry(false);
-                }
-            }
-
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            public void mouseExited(MouseEvent e) {
-            }
-
-            public void mouseClicked(MouseEvent e) {
-            }
-        });
-        topPanelA.add(buttonAstrometry);
-
-        astrometry = new Astrometry();
-
-        buttonHeader = new JButton(headerIcon);
-        buttonHeader.setToolTipText("display fits header");
-        buttonHeader.setPreferredSize(iconDimension);
-        buttonHeader.setMargin(buttonMargin);
-        buttonHeader.addActionListener(this);
-        topPanelA.add(buttonHeader);
-        topPanelA.add(Box.createHorizontalStrut(10));
-        topPanelA.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-
-//                buttonLUT = new JButton("LUT");
-//                buttonLUT.setMargin(buttonMargin);
-//                buttonLUT.addActionListener(this);
-//                topPanelAC.add(buttonLUT);
-
-
-//                JLabel zoomLabel = new JLabel("Zoom  ");
-//                zoomPanel.add(zoomLabel);
-
-
-        buttonZoomInFast = new JButton(zoomInFastIcon);
-        buttonZoomInFast.setToolTipText("zoom in fast");
-        buttonZoomInFast.setMargin(buttonMargin);
-        buttonZoomInFast.addActionListener(this);
-        buttonZoomInFast.setPreferredSize(iconDimension);
-        zoomPanel.add(buttonZoomInFast);
-
-        buttonZoomIn = new JButton(zoomInIcon);
-        buttonZoomIn.setMargin(buttonMargin);
-        buttonZoomIn.addActionListener(this);
-        buttonZoomIn.setToolTipText("zoom in");
-        buttonZoomIn.setPreferredSize(iconDimension);
-        zoomPanel.add(buttonZoomIn);
-
-        buttonZoomOut = new JButton(zoomOutIcon);
-        buttonZoomOut.setMargin(buttonMargin);
-        buttonZoomOut.addActionListener(this);
-        buttonZoomOut.setToolTipText("zoom out");
-        buttonZoomOut.setPreferredSize(iconDimension);
-        zoomPanel.add(buttonZoomOut);
-
-        buttonFit = new JButton(zoomFitIcon);
-        buttonFit.setMargin(buttonMargin);
-        buttonFit.setToolTipText("zoom to fit image to window");
-        buttonFit.setPreferredSize(iconDimension);
-        buttonFit.addActionListener(this);
-        zoomPanel.add(buttonFit);
-//                zoomPanel.setBorder(BorderFactory.createTitledBorder(""));
-        topPanelA.add(zoomPanel);
-
-        topPanelA.add(Box.createHorizontalStrut(10));
-
-        buttonAutoLevels = new JButton(autoscaleIcon);
-        buttonAutoLevels.setToolTipText("auto brightness and contrast");
-        buttonAutoLevels.setMargin(buttonMargin);
-        buttonAutoLevels.setPreferredSize(iconDimension);
-        buttonAutoLevels.addActionListener(this);
-        topPanelA.add(buttonAutoLevels);
-        topPanelA.add(Box.createHorizontalGlue());
-        mainPanel.add(topPanelA);
-
-
-//                icPanel.add(ac);
-//                SpringUtil.makeCompactGrid (icPanel, 1, 1, 0,0,0,0);
-
-        mainPanel.add(ac);
-
-//                stackSliders = super.getComponents();
-
-//                IJ.log("stackSliders.length="+stackSliders.length);
-        if (cSelector != null) mainPanel.add(cSelector);
-        if (zSelector != null) mainPanel.add(zSelector);
-        if (tSelector != null) mainPanel.add(tSelector);
-//                JScrollBar stackSlider = new JScrollBar(JScrollBar.HORIZONTAL, 0, 1, 0, imp.getNSlices());
-//                stackSlider.addAdjustmentListener(new AdjustmentListener() {
-//                                                      //@Override
-//                                                      public void adjustmentValueChanged(AdjustmentEvent e) {
-//                                                          int slice = stackSlider.getValue()+1;
-//                                                          imp.setSlice(slice);
-//                                                      }
-//                                                  });
-//                mainPanel.add(stackSlider);
-//
-//                JSlider stackSlider2 = new JSlider(JSlider.HORIZONTAL, 1, imp.getNSlices(), 1);
-//                stackSlider2.addChangeListener(ev -> {
-//                    int slice = stackSlider2.getValue();
-//                    imp.setSlice(slice);
-//                });
-//                mainPanel.add(stackSlider2);
-
-//                if (super.getNScrollbars() > 0)
-//                        for (int i = 0; i < super.getNScrollbars(); i++)
-//                                {
-//                                stackSliders[i].setPreferredSize(new Dimension(100,18));
-//                                mainPanel.add(stackSliders[i]);
-//                                }
-
-
-        minValueTextField = new JTextField(fourPlaces.format(minValue));
-        minValueTextField.setFont(p12);
-        minValueTextField.setPreferredSize(new Dimension(70, 17));
-        minValueTextField.setHorizontalAlignment(JTextField.LEFT);
-        writeNumericPanelField(minValue, minValueTextField);
-        bottomPanelB.add(minValueTextField);
-        JTextField minlabelTextField = new JTextField(":min");
-        minlabelTextField.setFont(p12);
-        minlabelTextField.setPreferredSize(new Dimension(30, 17));
-        minlabelTextField.setHorizontalAlignment(JTextField.LEFT);
-        minlabelTextField.setBorder(BorderFactory.createEmptyBorder());
-        minlabelTextField.setEditable(false);
-        bottomPanelB.add(minlabelTextField);
-
-        bottomPanelB.add(Box.createHorizontalStrut(10));
-
-        blackTextfield = new JTextField(fourPlaces.format(blackValue));
-        blackTextfield.setFont(b12);
-        blackTextfield.setPreferredSize(new Dimension(70, 17));
-        blackTextfield.setHorizontalAlignment(JTextField.RIGHT);
-        blackTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
-        blackTextfield.setEditable(true);
-        blackTextfield.addActionListener(this);
-        blackTextfield.addFocusListener(this);
-        writeNumericPanelField(blackValue, blackTextfield);
-//                minTextField.getDocument().addDocumentListener(new thisDocumentListener());
-        bottomPanelB.add(blackTextfield);
-
-        JTextField lowlabelTextField = new JTextField(":black");
-        lowlabelTextField.setFont(p12);
-        lowlabelTextField.setPreferredSize(new Dimension(30, 17));
-        lowlabelTextField.setHorizontalAlignment(JTextField.LEFT);
-        lowlabelTextField.setBorder(BorderFactory.createEmptyBorder());
-        lowlabelTextField.setEditable(false);
-        bottomPanelB.add(lowlabelTextField);
-
-        bottomPanelB.add(Box.createHorizontalGlue());
-
-        JTextField meanlabelTextField = new JTextField("mean:");
-        meanlabelTextField.setFont(p12);
-        meanlabelTextField.setPreferredSize(new Dimension(70, 17));
-        meanlabelTextField.setHorizontalAlignment(JTextField.RIGHT);
-        meanlabelTextField.setBorder(BorderFactory.createEmptyBorder());
-        meanlabelTextField.setEditable(false);
-        bottomPanelB.add(meanlabelTextField);
-
-        meanTextField = new JTextField(fourPlaces.format(stats.mean));
-        meanTextField.setFont(p12);
-        meanTextField.setPreferredSize(new Dimension(70, 17));
-        meanTextField.setHorizontalAlignment(JTextField.LEFT);
-        meanTextField.setBorder(BorderFactory.createEmptyBorder());
-        meanTextField.setEditable(false);
-        writeNumericPanelField(stats.mean, meanTextField);
-        bottomPanelB.add(meanTextField);
-
-        bottomPanelB.add(Box.createHorizontalGlue());
-
-        JTextField highlabelTextField = new JTextField("white:");
-        highlabelTextField.setFont(p12);
-        highlabelTextField.setPreferredSize(new Dimension(30, 17));
-        highlabelTextField.setHorizontalAlignment(JTextField.RIGHT);
-        highlabelTextField.setBorder(BorderFactory.createEmptyBorder());
-        highlabelTextField.setEditable(false);
-        bottomPanelB.add(highlabelTextField);
-
-        whiteTextfield = new JTextField(fourPlaces.format(whiteValue));
-        whiteTextfield.setFont(b12);
-        whiteTextfield.setPreferredSize(new Dimension(70, 17));
-        whiteTextfield.setHorizontalAlignment(JTextField.RIGHT);
-        whiteTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
-        whiteTextfield.setEditable(true);
-        whiteTextfield.addActionListener(this);
-        whiteTextfield.addFocusListener(this);
-        writeNumericPanelField(whiteValue, whiteTextfield);
-//                maxTextField.getDocument().addDocumentListener(new thisDocumentListener());
-        bottomPanelB.add(whiteTextfield);
-
-        bottomPanelB.add(Box.createHorizontalStrut(10));
-
-        JTextField maxlabelTextField = new JTextField("max:");
-        maxlabelTextField.setFont(p12);
-        maxlabelTextField.setPreferredSize(new Dimension(30, 17));
-        maxlabelTextField.setHorizontalAlignment(JTextField.RIGHT);
-        maxlabelTextField.setBorder(BorderFactory.createEmptyBorder());
-        maxlabelTextField.setEditable(false);
-        bottomPanelB.add(maxlabelTextField);
-
-        maxValueTextField = new JTextField(fourPlaces.format(maxValue));
-        maxValueTextField.setFont(p12);
-        maxValueTextField.setPreferredSize(new Dimension(70, 17));
-        maxValueTextField.setHorizontalAlignment(JTextField.RIGHT);
-        writeNumericPanelField(maxValue, maxValueTextField);
-        bottomPanelB.add(maxValueTextField);
-        updateMinMaxValueTextFields();
-        bottomPanelB.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-
-//                SpringUtil.makeCompactGrid (bottomPanelB, 1, bottomPanelB.getComponentCount(), 5,0,5,0);
-//                ImageProcessor ip = imp.getProcessor();
-
-        getBiSliderStatistics();
-        histogram = stats.histogram;
-        logHistogram = new double[histogram.length];
-
-        for (int i = 0; i < histogram.length; i++) {
-            if (histogram[i] <= 1)
-                logHistogram[i] = 0;
-            else
-                logHistogram[i] = Math.log(histogram[i]);
-            if (logHistogram[i] > histMax)
-                histMax = logHistogram[i];
-        }
-
-        minMaxBiSlider = new BiSlider(BiSlider.RGB);
-        minMaxBiSlider.setUniformSegment(false);
-        minMaxBiSlider.setDecimalFormater(fourPlaces);
-        minMaxBiSlider.setFont(p13);
-//                minMaxBiSlider.setHorizontal(false);
-//                minMaxBiSlider.setUI((BiSliderPresentation) metal);
-        minMaxBiSlider.setVisible(true);
-        minMaxBiSlider.setValues(minValue, maxValue);
-        minMaxBiSlider.setMinimumColoredValue(blackValue);
-        minMaxBiSlider.setMaximumColoredValue(whiteValue);
-        minMaxBiSlider.setMinimumValue(minValue);
-        minMaxBiSlider.setMaximumValue(maxValue);
-        minMaxBiSlider.setSegmentSize((maxValue - minValue) / (double) BISLIDER_SEGMENTS);
-        minMaxBiSlider.setMinimumColor(Color.BLACK);
-
-        minMaxBiSlider.setMiddleColor(Color.BLACK);
-        minMaxBiSlider.setMaximumColor(Color.BLACK);
-        minMaxBiSlider.setColoredValues(blackValue, whiteValue);
-        minMaxBiSlider.setUnit("  ");
-        minMaxBiSlider.setSliderBackground(Color.LIGHT_GRAY);
-        minMaxBiSlider.setForeground(Color.BLACK);
-
-        minMaxBiSlider.setDefaultColor(Color.WHITE);
-        minMaxBiSlider.setPreferredSize(new Dimension(535, 75));
-        minMaxBiSlider.setPrecise(false);
-        minMaxBiSlider.setOpaque(true);
-        minMaxBiSlider.setArcSize(0);
-        minMaxBiSlider.addContentPainterListener(new ContentPainterListener() {
-            public void paint(ContentPainterEvent ContentPainterEvent_Arg) {
-                Graphics2D Graphics2 = (Graphics2D) ContentPainterEvent_Arg.getGraphics();
-                Rectangle Rect1 = ContentPainterEvent_Arg.getRectangle();
-                Graphics2.setColor((new Color(230, 230, 230)));
-                Graphics2.fillRect(Rect1.x, Rect1.y, Rect1.width, Rect1.height);
-                Rectangle Rect2 = ContentPainterEvent_Arg.getBoundingRectangle();
-//                    double BarHeight = Math.abs(Math.cos(Math.PI*(Rect2.x+Rect2.width/2) / minMaxBiSlider.getWidth()));
-//                    double BarHeight = (double)(Rect2.x+Rect2.width/2) / minMaxBiSlider.getWidth();
-//                    double BarHeight = Math.random();
-
-//                    float X = ((float)Rect2.x-minMaxBiSlider.getWidth()/2)/minMaxBiSlider.getWidth()*6;
-                double X = ((double) (Rect2.x - 10 - minMaxBiSlider.getX())) / ((double) minMaxBiSlider.getWidth() - 22.0);
-//                    double BarHeight = 1-Math.exp((-1*X*X)/2);
-                int index = (int) (histogram.length * X);
-                if (index < 0) index = 0;
-                if (index >= logHistogram.length) index = logHistogram.length - 1;
-//                    IJ.log("index = "+index+"   Max index = "+(logHistogram.length-1));
-                double BarHeight = 1.0 - (logHistogram[index]) / histMax;
-//                    X = ((float)(Rect2.x-Rect2.width - 10 - minMaxBiSlider.getX()))/(double)minMaxBiSlider.getWidth();
-//                    double BarHeight2 = 1-Math.exp((-1*X*X)/2);
-//                    double BarHeight2 = 1.0-(logHistogram[(int)(histogram.length*X)])/histMax;
-
-                if (ContentPainterEvent_Arg.getColor() != null) {
-                    Graphics2.setColor(Color.WHITE);
-                    Graphics2.fillRect(Rect2.x, Rect2.y, Rect2.width, (int) ((BarHeight * Rect2.height)));
-                    Graphics2.setColor(new Color(120, 165, 255));//(ContentPainterEvent_Arg.getColor());
-                    Graphics2.fillRect(Rect2.x, Rect2.y + (int) ((BarHeight * Rect2.height)), Rect2.width + 1, 1 + (int) (((1 - BarHeight) * Rect2.height)));
-                    //Graphics2.drawRect(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.width+1, 1+(int)(((1-BarHeight)*Rect2.height)));
-                } else {
-                    Graphics2.setColor(Color.LIGHT_GRAY);//(new Color(255, 255, 218, 64));
-                    Graphics2.fillRect(Rect2.x, Rect2.y + (int) ((BarHeight * Rect2.height)), Rect2.width + 1, 1 + (int) (((1 - BarHeight) * Rect2.height)));
-                }
-//                    Graphics2.setColor(Color.LIGHT_GRAY);
-//                    //Graphics2.drawRect(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.width-1, (int)(((1-BarHeight)*Rect2.height)));
-//                    Graphics2.drawLine(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.x+Rect2.width-1, Rect2.y+(int)((BarHeight*Rect2.height)));
-//                    Graphics2.drawLine(Rect2.x, Rect2.y+(int)((BarHeight*Rect2.height)), Rect2.x, Rect2.y+(int)((prevBarHeight*Rect2.height)));
-////                    Graphics2.drawLine(Rect2.x, Rect2.y+(int)((Math.max(BarHeight, BarHeight2)*Rect2.height)), Rect2.x, Rect2.y+Rect2.height);
-//                    Rect3 = Rect2;
-//                    prevBarHeight = BarHeight;
-            }
-        });
-
-//                final JPopupMenu JPopupMenu6 = minMaxBiSlider.createPopupMenu();
-//                minMaxBiSlider.addMouseListener(new MouseAdapter(){
-//                  public void mousePressed(MouseEvent MouseEvent_Arg){
-//                    if (MouseEvent_Arg.getButton()==MouseEvent.BUTTON3){
-//                      JPopupMenu6.show(minMaxBiSlider, MouseEvent_Arg.getX(), MouseEvent_Arg.getY());
-//                    }
-//                  }
-//                });
-
-        final String initialText = "\n\n\n Use this BiSlider to see the events generated\n";
-        final JTextArea JTextArea5 = new JTextArea(initialText);
-        minMaxBiSlider.addBiSliderListener(new BiSliderAdapter() {
-            /** something changed that modified the color gradient between min and max */
-            public void newColors(BiSliderEvent BiSliderEvent_Arg) {
-//                      IJ.log("newColors()");
-            }
-
-            /**  min or max colored values changed  */
-            public void newValues(BiSliderEvent BiSliderEvent_Arg) {
-                if (updatesEnabled) {
-                    blackValue = minMaxBiSlider.getMinimumColoredValue();
-                    whiteValue = minMaxBiSlider.getMaximumColoredValue();
-                    sliceMin[imp.getCurrentSlice() - 1] = blackValue;
-                    sliceMax[imp.getCurrentSlice() - 1] = whiteValue;
-                    //
-                    //                            if (min < minValue)
-                    //                                    {
-                    //                                    min = minValue;
-                    //                                    minMaxBiSlider.setMinimumColoredValue(min);
-                    //                                    }
-                    //                            if (min > maxValue)
-                    //                                     {
-                    //                                    min = maxValue;
-                    //                                    minMaxBiSlider.setMinimumColoredValue(min);
-                    //                                    }
-                    //                            if (max > maxValue)
-                    //                                    {
-                    //                                    max = maxValue;
-                    //                                    minMaxBiSlider.setMaximumColoredValue(max);
-                    //                                    }
-                    //                            if (max < min)
-                    //                                    {
-                    //                                    max = min;
-                    //                                    minMaxBiSlider.setMaximumColoredValue(max);
-                    //                                    }
-
-                    imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
-                    minMaxChanged = true;
-                    writeNumericPanelField(blackValue, blackTextfield);
-                    writeNumericPanelField(whiteValue, whiteTextfield);
-                    savedBlackValue = blackValue;
-                    savedWhiteValue = whiteValue;
-                    if (autoContrast && autoGrabBandCFromHistogram) grabAutoScaleParameters();
-                    //                            Prefs.set("Astronomy_Tool.savedMin", savedMin);
-                    //                            Prefs.set("Astronomy_Tool.savedMax", savedMax);
-                    imp.updateAndDraw();
-                }
-            }
-
-            /**  min selected value changed  */
-            public void newMinValue(BiSliderEvent BiSliderEvent_Arg) {
-//                      IJ.log("newMinValue()");
-//                          getBiSliderStatistics;
-//                          updatePanelValues();
-            }
-
-            /**  max selected value changed  */
-            public void newMaxValue(BiSliderEvent BiSliderEvent_Arg) {
-//                      IJ.log("newMaxValue()");
-//                            getBiSliderStatistics;
-//                            maxValue = minMaxBiSlider.getMaximumValue();
-//                            minMaxBiSlider.setSegmentSize((maxValue - minValue)/256.0);
-//                            histogram = stats.histogram;
-//                            IJ.log("after histogram="+minMaxBiSlider.getMaximumValue());
-//                            for (int i=0; i<histogram.length; i++)
-//                                {
-//                                if (histogram[i] <= 1)
-//                                    logHistogram[i] = 0;
-//                                else
-//                                    logHistogram[i] = Math.log(histogram[i]);
-//                                if (logHistogram[i] > histMax)
-//                                    histMax = logHistogram[i];
-//                                }
-//                            updatePanelValues();
-            }
-
-            /**  selected segments changed  */
-            public void newSegments(BiSliderEvent BiSliderEvent_Arg) {
-//                          IJ.log("newSegments()");
-//                          getBiSliderStatistics);
-//                          updatePanelValues();
-            }
-        });
-//                Calibration cal = imp.getCalibration();
-//                imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
-//                minMaxChanged = true;
-        mainPanel.add(minMaxBiSlider);
-        mainPanel.add(bottomPanelB);
-
-        FileDrop fileDrop = new FileDrop(mainPanel, BorderFactory.createEmptyBorder(), new FileDrop.Listener() {
-            public void filesDropped(java.io.File[] files) {
-                openDragAndDropFiles(files);
-            }
-        });
-
-        SpringUtil.makeCompactGrid(mainPanel, mainPanel.getComponentCount(), 1, 0, 0, 0, 0);
-        setMinimumSize(new Dimension(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT));
-        setMenuBar(mainMenuBar);
-
-        setTitle(impTitle);
-        setName(impTitle);
-        add(mainPanel);
-        ImageIcon frameIcon = createImageIcon("images/astroIJ.png", "File Open");
-        this.setIconImage(frameIcon.getImage());
-
-        setResizable(true);
-
-        GUI.scaleFrame(this);
-
-        pack();
-
-        if (rememberWindowLocation) {
-            Dimension mainScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            if (!Prefs.isLocationOnScreen(new Point(frameLocationX, frameLocationY))) {
-                frameLocationX = mainScreenSize.width / 2 - getWidth() / 2;
-                frameLocationY = mainScreenSize.height / 2 - getHeight() / 2;
-            }
-            this.setLocation(frameLocationX, frameLocationY);
-        }
-
-        otherPanelsHeight = topPanelA.getHeight() + topPanelB.getHeight() +
-                bottomPanelB.getHeight() + minMaxBiSlider.getHeight();
-        frameHeightPadding = this.getHeight() - ac.getHeight();// - minMaxBiSlider.getHeight() - bottomPanelB.getHeight();
-        drawInfo(getGraphics());
-        repaint();
     }
 
 //            class thisDocumentListener implements DocumentListener

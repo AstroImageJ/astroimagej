@@ -572,6 +572,11 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		return ImagePlus.getClipboard();
 	}
 
+	@AstroImageJ(reason = "Remove textgap from ASW", modified = true)
+	public void setTextGap(int textGap) {
+		this.textGap = textGap;
+	}
+
 	public Rectangle getMaximumBounds() {
 		Rectangle maxWindow = GUI.getMaxWindowBounds(this);
 		if (imp==null)

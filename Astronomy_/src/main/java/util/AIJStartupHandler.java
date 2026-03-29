@@ -33,6 +33,8 @@ import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
+import nom.tam.fits.TableHDU;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -60,8 +62,8 @@ public class AIJStartupHandler implements PlugIn {
             new AssociationMapper(p -> {
                 if (FitsExtensionUtil.isFitsFile(p.toString())) {
                     try (var fits = new Fits(Files.newInputStream(p))) {
-                        fits.read(); // Read the headers in
-                        return fits.getPrimaryHeader().getBooleanValue("AIJ_TBL", false);
+                        var hdus = fits.read();
+                        return hdus.length > 1 && hdus[1] instanceof TableHDU<?> && !(hdus[1] instanceof CompressedImageHDU);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

@@ -15,7 +15,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Label;
 import java.awt.LayoutManager;
 import java.awt.Menu;
 import java.awt.MenuBar;
@@ -549,7 +548,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     private PlotWindow stackPixelPlotWin = null;
     private static final Property<Point> stackPlotWindowLocation = new Property<>(new Point(), AstroStackWindow.class);
     private static final Property<Boolean> SHOW_IN_ALADIN = new Property<>(true, AstroStackWindow.class);
-    private Label subtitleLabel;
 
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
         super(imp, ac);
@@ -1003,11 +1001,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         topPanelBC = new JPanel(new SpringLayout());
         bottomPanelB = new JPanel();
         bottomPanelB.setLayout(new BoxLayout(bottomPanelB, BoxLayout.LINE_AXIS));
-
-        subtitleLabel = new Label(createSubtitle());
-        subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        subtitleLabel.setPreferredSize(new Dimension(100, 10));
-        mainPanel.add(subtitleLabel);
 
         topPanelB.add(Box.createHorizontalGlue());
 
@@ -1869,9 +1862,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         GUI.scaleFrame(this);
 
-        setTextGap(0);
-        invalidate();
-
         pack();
 
         if (rememberWindowLocation) {
@@ -1884,7 +1874,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         }
 
         otherPanelsHeight = topPanelA.getHeight() + topPanelB.getHeight() +
-                bottomPanelB.getHeight() + minMaxBiSlider.getHeight() + subtitleLabel.getHeight();
+                bottomPanelB.getHeight() + minMaxBiSlider.getHeight();
         frameHeightPadding = this.getHeight() - ac.getHeight();// - minMaxBiSlider.getHeight() - bottomPanelB.getHeight();
 
         SwingUtilities.invokeLater(() -> {
@@ -2896,18 +2886,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
      * Draws a background to prevent text from "bolding" or overlapping from multiple calls.
      */
     private void drawSubtitle() {
+        var g = getGraphics();
         var sub = createSubtitle();
-        if ((oldSubtitle.isEmpty() || !oldSubtitle.equals(sub)) && subtitleLabel != null) {
-            subtitleLabel.setText(sub);
+        if (oldSubtitle.equals("") || !oldSubtitle.equals(sub)) {
+            var c = g.getColor();
+            g.setColor(Color.WHITE);
+            g.fillRect(super.getInsets().left + 5, 0, getWidth(), super.getInsets().top + g.getFontMetrics().getHeight() + 3);
+            g.setColor(c);
             oldSubtitle = sub;
-        }
-    }
-
-    @Override
-    public void drawInfo(Graphics g) {
-        var sub = createSubtitle();
-        if (subtitleLabel != null) {
-            subtitleLabel.setText(sub);
+            drawInfo(g);
         }
     }
 
@@ -6195,12 +6182,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
 //        else
 //            {
-            otherPanelsHeight = topPanelA.getHeight() + topPanelB.getHeight() +
-                    bottomPanelB.getHeight() + minMaxBiSlider.getHeight() + subtitleLabel.getHeight();
-
             Dimension psize = preferredLayoutSize(target);
             Component m = target.getComponent(0);
-            m.setSize(psize.width, psize.height);
+            Dimension d = m.getPreferredSize();
+            m.setSize(d.width, d.height);
 
 //            }
             int newCanvasWidth = newCanvasWidth();

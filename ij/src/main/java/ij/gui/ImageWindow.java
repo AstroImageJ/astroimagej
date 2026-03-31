@@ -122,9 +122,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		}
 		this.ic = ic;
 		ImageWindow previousWindow = imp.getWindow();
-		if (!getClass().getName().contains("AstroStackWindow")) {
-			setLayout(new ImageLayout(ic));
-		}
+		setLayout(new ImageLayout(ic));
 		add(ic);
 		addFocusListener(this);
 		addWindowListener(this);

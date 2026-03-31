@@ -1006,6 +1006,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         subtitleLabel = new Label(createSubtitle());
         subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        subtitleLabel.setPreferredSize(new Dimension(100, 10));
         mainPanel.add(subtitleLabel);
 
         topPanelB.add(Box.createHorizontalGlue());

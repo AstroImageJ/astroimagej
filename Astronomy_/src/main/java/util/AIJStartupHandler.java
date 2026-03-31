@@ -25,6 +25,7 @@ import astroj.MeasurementTable;
 import astroj.ShapedApertureRoi;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.io.FitsReader;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FileAssociationHandler.AssociationMapper;
@@ -32,9 +33,6 @@ import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
-import nom.tam.fits.Fits;
-import nom.tam.fits.TableHDU;
-import nom.tam.image.compression.hdu.CompressedImageHDU;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -61,10 +59,11 @@ public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotFitsTableHandler =
             new AssociationMapper(p -> {
                 if (FitsExtensionUtil.isFitsFile(p.toString())) {
-                    try (var fits = new Fits(Files.newInputStream(p))) {
-                        var hdus = fits.read();
-                        return hdus.length > 1 && hdus[1] instanceof TableHDU<?> && !(hdus[1] instanceof CompressedImageHDU);
-                    } catch (IOException e) {
+                    try (var fits = FitsReader.create(p.toString())){
+                        if (fits.size() <= 0) {
+                            return fits.isMeasurementsTable();
+                        }
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }

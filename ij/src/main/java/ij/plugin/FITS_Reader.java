@@ -87,6 +87,7 @@ import nom.tam.util.FitsFile;
 		modified = true)
 @Translation("Fits Reader")
 public class FITS_Reader extends ImagePlus implements PlugIn {
+	private static final boolean USE_NEW_READER = !"true".equalsIgnoreCase(System.getProperty("legacy.fits.reader"));
 	private static boolean flipImages = true;
 	// private WCS wcs;
 	private ImagePlus imagePlus;
@@ -132,7 +133,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		AIJLogger.setLogAutoCloses(Prefs.getBoolean(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE, true));
 
-		if (true) {
+		if (USE_NEW_READER) {
 			try (var r = FitsReader.create(path)) {
 				if (r.size() <= 0) {
 					if (r.isMeasurementsTable()) {
@@ -184,8 +185,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			return;
 		}
-
-		//todo implement legacy fallback, remove old nom.tam code
 
         /*
 		 * Extract array of HDU from FITS file using nom.tam.fits

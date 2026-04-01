@@ -53,6 +53,7 @@ import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.ImageHDU;
 import nom.tam.fits.TableHDU;
+import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.image.compression.hdu.CompressedTableHDU;
@@ -171,7 +172,7 @@ public class FitsReader implements AutoCloseable {
         }
 
         var header = descriptor.getFormedHeader();
-        if (isBasic3DImageDescriptors()) {
+        if (isBasic3DImage()) {
             return countStackableImagesFromDescriptors();
         }
 
@@ -425,10 +426,10 @@ public class FitsReader implements AutoCloseable {
 
         var noExtensionNames =
                 hduDescriptors.stream().allMatch(descriptor ->
-                        Objects.isNull(descriptor.getFormedHeader().getStringValue(EXTNAME)));
+                        Objects.isNull(descriptor.getStringValue(EXTNAME)));
         var noScienceImage =
                 hduDescriptors.stream().noneMatch(descriptor ->
-                        Objects.equals("SCI", descriptor.getFormedHeader().getStringValue(EXTNAME)));
+                        Objects.equals("SCI", descriptor.getStringValue(EXTNAME)));
 
         if (!noExtensionNames && noScienceImage) {
             AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
@@ -439,7 +440,7 @@ public class FitsReader implements AutoCloseable {
             if (header.getIntValue(NAXIS) == 0) {
                 continue;
             }
-            if (!noExtensionNames && !Objects.equals("SCI", header.getStringValue(EXTNAME))) {
+            if (!noExtensionNames && !Objects.equals("SCI", hduDescriptors.get(i).getStringValue(EXTNAME))) {
                 continue;
             }
 
@@ -542,9 +543,9 @@ public class FitsReader implements AutoCloseable {
 
     private int countStackableImagesFromDescriptors() {
         var noExtensionNames = hduDescriptors.stream()
-                .allMatch(descriptor -> Objects.isNull(descriptor.getFormedHeader().getStringValue(EXTNAME)));
+                .allMatch(descriptor -> Objects.isNull(descriptor.getStringValue(EXTNAME)));
         var noScienceImage = hduDescriptors.stream()
-                .noneMatch(descriptor -> Objects.equals("SCI", descriptor.getFormedHeader().getStringValue(EXTNAME)));
+                .noneMatch(descriptor -> Objects.equals("SCI", descriptor.getStringValue(EXTNAME)));
 
         if (!noExtensionNames && noScienceImage) {
             AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
@@ -559,7 +560,7 @@ public class FitsReader implements AutoCloseable {
             if (header.getIntValue(NAXIS) == 0) {
                 continue;
             }
-            if (!noExtensionNames && !Objects.equals("SCI", header.getStringValue(EXTNAME))) {
+            if (!noExtensionNames && !Objects.equals("SCI", descriptor.getStringValue(EXTNAME))) {
                 continue;
             }
             count++;
@@ -728,7 +729,7 @@ public class FitsReader implements AutoCloseable {
             return false;
         }
         var x = hduDescriptors.get(1).getFormedHeader().getStringValue("ORIGIN");
-        var d = hduDescriptors.get(1).getFormedHeader().getStringValue(EXTNAME);
+        var d = hduDescriptors.get(1).getStringValue(EXTNAME);
         return "LCOGT".equals(x == null ? null : x.trim()) && "SCI".equals(d == null ? null : d.trim());
     }
 
@@ -954,6 +955,10 @@ public class FitsReader implements AutoCloseable {
             original.seekHead();
             original.nextCard();
             return original;
+        }
+
+        public String getStringValue(IFitsHeader key) {
+            return getFormedHeader().getStringValue(key, original.getStringValue(key));
         }
 
         int[] getAxesFromHeader() {

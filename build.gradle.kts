@@ -194,6 +194,11 @@ javaRuntimeSystemsProperty.convention(providers.provider {
             return@mapValues
         }
 
+        if (meta.isEmpty()) {
+            logger.error("Found no JDK downloads for (sys = {}, {}, {}, {})", sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+            return@mapValues
+        }
+
         val jdkMeta = meta.first()
 
         // Update the maps with the metadata
@@ -224,6 +229,11 @@ javaRuntimeSystemsProperty.convention(providers.provider {
                 "A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
                 sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type
             )
+            return@mapValues
+        }
+
+        if (meta.isEmpty()) {
+            logger.error("Found no JMOD downloads for (sys = {}, {}, {}, {})", sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
             return@mapValues
         }
 

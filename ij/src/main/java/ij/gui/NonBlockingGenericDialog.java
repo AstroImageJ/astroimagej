@@ -1,11 +1,15 @@
 package ij.gui;
 
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
-
-import java.awt.*;
-import java.awt.event.*;
 
 /** This is an extension of GenericDialog that is non-modal.
  *	@author Johannes Schindelin
@@ -25,7 +29,9 @@ public class NonBlockingGenericDialog extends GenericDialog {
 		super.showDialog();
 		if (isMacro())
 			return;
-		if (!IJ.macroRunning()) {   // add to Window menu on event dispatch thread
+		if (EventQueue.isDispatchThread())
+			throw new RuntimeException("To avoid a deadlock, NonBlockingGenericDialog must not be called from the Event Queue");
+ 		if (!IJ.macroRunning()) {   // add to Window menu on event dispatch thread
 			final NonBlockingGenericDialog thisDialog = this;
 			EventQueue.invokeLater(new Runnable() {
 				public void run() {

@@ -1,6 +1,14 @@
 package ij.plugin;
 
-import ij.*;
+import java.awt.Window;
+import java.io.File;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
 import ij.gui.NewImage;
@@ -10,12 +18,9 @@ import ij.macro.Interpreter;
 import ij.plugin.frame.PlugInDialog;
 import ij.plugin.frame.PlugInFrame;
 import ij.plugin.frame.Recorder;
+import ij.stub.Applet;
 import ij.text.TextWindow;
 
-import java.applet.Applet;
-import java.awt.*;
-import java.io.File;
-	
 /**	Runs miscellaneous File and Window menu commands. */
 public class Commands implements PlugIn {
 	
@@ -141,7 +146,7 @@ public class Commands implements PlugIn {
 			return;
 		}
 		imp.close();
-		if (Recorder.record && !IJ.isMacro()) {
+		if (IJ.recording() && !IJ.isMacro()) {
 			if (Recorder.scriptMode())
 				Recorder.recordCall("imp.close();");
 			else

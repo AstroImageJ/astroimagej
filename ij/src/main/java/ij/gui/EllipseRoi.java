@@ -1,13 +1,14 @@
 package ij.gui;
 
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
 import ij.process.FloatPolygon;
-
-import java.awt.*;
-import java.awt.event.KeyEvent;
 
 /** This class implements the ellipse selection tool. */
 public class EllipseRoi extends PolygonRoi {
@@ -135,7 +136,7 @@ public class EllipseRoi extends PolygonRoi {
 	
 	protected void handleMouseUp(int screenX, int screenY) {
 		if (state==CONSTRUCTING) {
-			if (Recorder.record) {
+			if (IJ.recording()) {
 				double x1 = xpf[handle[2]]+x;
 				double y1 = ypf[handle[2]]+y;
 				double x2 = xpf[handle[0]]+x;

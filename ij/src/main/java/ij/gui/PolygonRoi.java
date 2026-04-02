@@ -1,14 +1,24 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.plugin.frame.*;
-import ij.util.Tools;
-import ij.util.FloatArray;
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.geom.*;
-import java.awt.event.*;
+
+import java.awt.Color;
+import java.awt.Event;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.awt.geom.GeneralPath;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.measure.Calibration;
+import ij.measure.SplineFitter;
+import ij.plugin.frame.LineWidthAdjuster;
+import ij.plugin.frame.Recorder;
+import ij.process.FloatPolygon;
+import ij.process.ImageProcessor;
+import ij.process.PolygonFiller;
 
 /** This class represents a polygon region of interest or polyline of interest. */
 public class PolygonRoi extends Roi {
@@ -590,7 +600,7 @@ public class PolygonRoi extends Roi {
 		if (imp!=null && !(type==TRACED_ROI))
 			imp.draw(x-5, y-5, width+10, height+10);
 		oldX=x; oldY=y; oldWidth=width; oldHeight=height;
-		if (Recorder.record && userCreated && (type==POLYGON||type==POLYLINE||type==ANGLE
+		if (IJ.recording() && userCreated && (type==POLYGON||type==POLYLINE||type==ANGLE
 		||(type==POINT&&Recorder.scriptMode()&&nPoints==3)))
 			Recorder.recordRoi(getPolygon(), type);
 		if (type!=POINT) modifyRoi();
@@ -690,7 +700,6 @@ public class PolygonRoi extends Roi {
 	}
 
 	protected void resetBoundingRect() {
-		//IJ.log("resetBoundingRect");
 		if (xpf!=null) {
 			resetSubPixelBoundingRect();
 			xp = toInt(xpf, xp, nPoints);
@@ -715,7 +724,6 @@ public class PolygonRoi extends Roi {
 			for (int i=0; i<nPoints; i++)
 				yp[i] -= ymin;
 		}
-		//IJ.log("reset: "+ymin+" "+before+" "+yp[0]);
 		x+=xmin; y+=ymin;
 		width=xmax-xmin; height=ymax-ymin;
 		if (useLineSubpixelConvention()) {
@@ -725,7 +733,6 @@ public class PolygonRoi extends Roi {
 	}
 
 	private void resetSubPixelBoundingRect() {
-		//IJ.log("resetSubPixelBoundingRect: "+state+" "+bounds);
 		if (xSpline!=null) {
 			resetSplineFitBoundingRect();
 			return;
@@ -946,11 +953,8 @@ public class PolygonRoi extends Roi {
 	 *  points remains unchanged.
 	 *  @return Arrays of x coordinates and y coordinates */
 	float[][] getSpline(int evaluationPoints, float[] xSpline, float[] ySpline) {
-		if (xpf==null) {
-			xpf = toFloat(xp);
-			ypf = toFloat(yp);
+		if (xpf==null)
 			enableSubPixelResolution();
-		}
 		if (xSpline==null || xSpline.length!=evaluationPoints)
 			xSpline = new float[evaluationPoints];
 		if (ySpline==null || ySpline.length!=evaluationPoints)
@@ -1065,7 +1069,6 @@ public class PolygonRoi extends Roi {
 			while ((distanceOverNextWrite >= 0.0 || i==npoints-1) && pointsWritten < npOut) {  // we have to write a new point
 				double fractionOverNextWrite = distanceOverNextWrite/distance;
 				if (distance==0) fractionOverNextWrite = 0;
-				//IJ.log("i="+i+" n="+pointsWritten+"/"+npOut+" leng="+IJ.d2s(lengthRead)+"/"+IJ.d2s(length)+" done="+IJ.d2s(pointsWritten*step)+" over="+IJ.d2s(fractionOverNextWrite)+" x,y="+IJ.d2s(x2 - fractionOverNextWrite*dx)+","+IJ.d2s(y2 - fractionOverNextWrite*dy));
 				xpOut[pointsWritten] = (float)(x2 - fractionOverNextWrite*dx);
 				ypOut[pointsWritten] = (float)(y2 - fractionOverNextWrite*dy);
 				distanceOverNextWrite -= step;
@@ -1420,7 +1423,7 @@ public class PolygonRoi extends Roi {
 	private boolean isTraced() {
 		if (type==TRACED_ROI)
 			return true;
-		else if (type!=POLYGON)
+		else if (type!=POLYGON || (this instanceof RotatedRectRoi))
 			return false;
 		else if (xp==null) {
 			if (xpf==null)

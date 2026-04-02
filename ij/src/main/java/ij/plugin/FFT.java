@@ -1,11 +1,19 @@
 package ij.plugin;
 
-import ij.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Undo;
+import ij.WindowManager;
 import ij.gui.GUI;
 import ij.gui.GenericDialog;
 import ij.measure.Measurements;
 import ij.plugin.frame.Recorder;
-import ij.process.*;
+import ij.process.ColorProcessor;
+import ij.process.FHT;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 
 /** 
 This class implements the FFT, Inverse FFT and Redisplay Power Spectrum commands 
@@ -105,7 +113,7 @@ public class FFT implements PlugIn, Measurements {
 			doForwardTransform(fht);   
 		}	 
 		IJ.showProgress(1.0);
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (inverse)
    				Recorder.recordCall("imp = FFT.inverse(imp);");
    			else

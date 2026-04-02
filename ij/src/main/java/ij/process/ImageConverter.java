@@ -1,13 +1,18 @@
 package ij.process;
 
-import ij.*;
+import java.awt.Point;
+import java.awt.image.ColorModel;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.LookUpTable;
+import ij.Prefs;
 import ij.gui.ImageWindow;
 import ij.measure.Calibration;
 import ij.measure.CurveFitter;
 import ij.plugin.frame.Recorder;
-
-import java.awt.*;
-import java.awt.image.ColorModel;
 
 /** This class converts an ImagePlus object to a different type. */
 public class ImageConverter {
@@ -152,7 +157,7 @@ public class ImageConverter {
 	}
 	
 	public static void record() {
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (Prefs.calibrateConversions) {
 				boolean state = true;
 				if (Recorder.scriptMode())

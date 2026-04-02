@@ -1,6 +1,35 @@
 package ij.text;
 
-import ij.*;
+import java.awt.AWTEvent;
+import java.awt.CheckboxMenuItem;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Image;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.MenuShortcut;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import ij.IJ;
+import ij.IJEventListener;
+import ij.ImageJ;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.ITableWindow;
 import ij.gui.GUI;
@@ -10,13 +39,6 @@ import ij.macro.Interpreter;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.Recorder;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
 
 /** Uses a TextPanel to displays text in a window.
 	@see TextPanel
@@ -311,7 +333,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	public void itemStateChanged(ItemEvent e) {
 		font = null;
         setFont();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			boolean state = monospacedButton.getState();
 			if (Recorder.scriptMode())
 				Recorder.recordCall("TextWindow.setMonospaced("+state+");");

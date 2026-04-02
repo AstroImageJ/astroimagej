@@ -1,7 +1,57 @@
 package ij.plugin.frame;
 
-import ij.*;
-import ij.gui.*;
+import java.awt.BasicStroke;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Checkbox;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowEvent;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImageListener;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.gui.Roi;
+import ij.gui.TrimmedButton;
+import ij.gui.YesNoCancelDialog;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
@@ -9,13 +59,14 @@ import ij.plugin.ChannelSplitter;
 import ij.plugin.PlugIn;
 import ij.plugin.Thresholder;
 import ij.plugin.filter.Analyzer;
-import ij.process.*;
+import ij.process.AutoThresholder;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.ShortProcessor;
+import ij.process.StackStatistics;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
 
 /** Adjusts the lower and upper threshold levels of the active image. This
 	class is multi-threaded to provide a more responsive user interface. */
@@ -393,7 +444,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 			mode = modeChoice.getSelectedIndex();
 			setLutColor(mode);
 			doStateChange = true;
-			if (Recorder.record) {
+			if (IJ.recording()) {
 				if (Recorder.scriptMode())
 					Recorder.recordCall("ThresholdAdjuster.setMode(\""+modes[mode]+"\");");
 				else
@@ -520,7 +571,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		maxThreshold = scaleDown(ip, level2);
 		//IJ.log("autoSetLevels: "+level1+" "+level2+" "+methodAndOptions);
 		updateScrollBars();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (noReset && ip.getBitDepth()!=8) {
 				ImageStatistics stats2 = ip.getStats();
 				if (ip.getMin()>stats2.min || ip.getMax()<stats2.max)
@@ -741,7 +792,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		if (ip.getBitDepth()!=8 && entireStack(imp))
 			ip.setMinAndMax(stats.min, stats.max);
 		updateScrollBars();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (Recorder.scriptMode())
 				Recorder.recordCall("IJ.resetThreshold(imp);");
 			else
@@ -800,7 +851,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		previousImageID = 0;
 		setup(imp, false);
 		updateScrollBars();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (imp.getBitDepth()==32) {
 				if (Recorder.scriptMode())
 					Recorder.recordCall("IJ.setThreshold(imp, "+IJ.d2s(ip.getMinThreshold(),4)+", "+IJ.d2s(ip.getMaxThreshold(),4)+");");
@@ -863,7 +914,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
  	void runThresholdCommand() {
 		Thresholder.setMethod(method);
 		Thresholder.setBackground(darkBackgroundCheckbox.getState()?"Dark":"Light");
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			Recorder.setCommand("Convert to Mask");
 			(new Thresholder()).run("mask");
 			Recorder.saveCommand();

@@ -1,9 +1,27 @@
 package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
+
+import java.awt.Image;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.gui.Line;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RotatedRectRoi;
 import ij.measure.Calibration;
-import java.awt.*;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
+import ij.process.StackConverter;
 
 /** This plugin implements the Edit/Selection/Straighten command. */
 public class Straightener implements PlugIn {
@@ -25,7 +43,10 @@ public class Straightener implements PlugIn {
 		int width = (int)Math.round(roi.getStrokeWidth());
 		boolean isMacro = IJ.macroRunning() && Macro.getOptions()!=null;
 		int stackSize = imp.getStackSize();
-		if (stackSize==1) processStack = false;
+		if (stackSize==1)
+			processStack = false;
+		if (imp.isComposite())
+			processStack = true;
 		String newTitle = WindowManager.getUniqueName(imp.getTitle());
 		if (width<=1 || isMacro || stackSize>1) {
 			if (width<=1) width = 20;
@@ -33,7 +54,7 @@ public class Straightener implements PlugIn {
 			gd.addStringField("Title:", newTitle, 15);
 			gd.addNumericField("Line Width:", width, 0, 3, "pixels");
 			if (stackSize>1)
-				gd.addCheckbox("Process Entire Stack", processStack);
+				gd.addCheckbox("Process entire stack", processStack);
 			gd.showDialog();
 			if (gd.wasCanceled()) {imp.unlock(); return;}
 			newTitle = gd.getNextString();
@@ -49,8 +70,21 @@ public class Straightener implements PlugIn {
 		ImageProcessor ip2 = null;
 		ImagePlus imp2 = null;
 		if (processStack) {
+			boolean compositeMode = imp.isComposite() && imp.getDisplayMode()==IJ.COMPOSITE;
+			if (compositeMode)
+				imp.setDisplayMode(IJ.COLOR);
 			ImageStack stack2 = straightenStack(imp, roi, width);
 			imp2 = new ImagePlus(newTitle, stack2);
+			if (compositeMode)
+				imp.setDisplayMode(IJ.COMPOSITE);
+			if (imp.isComposite()) {
+				ImageConverter.setDoScaling(false);
+				if (imp.getBitDepth()==8)
+					new StackConverter(imp2).convertToGray8();
+				else if (imp.getBitDepth()==16)
+					new StackConverter(imp2).convertToGray16();
+				ImageConverter.setDoScaling(true);
+			}
 		} else {
 			ip2 = straighten(imp, roi, width);
 			imp2 = new ImagePlus(newTitle, ip2);
@@ -61,7 +95,14 @@ public class Straightener implements PlugIn {
 		Calibration cal = imp.getCalibration();
 		if (cal.pixelWidth==cal.pixelHeight)
 			imp2.setCalibration(cal);
-		imp2.show();
+		if (imp.isComposite()) {
+			LUT[] luts = imp.getLuts();
+			CompositeImage cImp = new CompositeImage(imp2);
+			cImp.setLuts(luts);
+			cImp.setDisplayMode(imp.getDisplayMode());
+			cImp.show();
+		} else
+			imp2.show();
 	}
 
 	public ImageProcessor straighten(ImagePlus imp, Roi roi, int width) {

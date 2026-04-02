@@ -1,5 +1,12 @@
 package ij.io;
 
+import java.awt.Container;
+import java.awt.EventQueue;
+import java.io.File;
+
+import javax.swing.JFileChooser;
+import javax.swing.LookAndFeel;
+
 import ij.IJ;
 import ij.Macro;
 import ij.Prefs;
@@ -7,10 +14,6 @@ import ij.astro.AstroImageJ;
 import ij.astro.util.AIJFileChooser;
 import ij.plugin.frame.Recorder;
 import ij.util.Java2;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.File;
 
 /** This class displays a dialog box that allows the user can select a directory. */ 
  public class DirectoryChooser {
@@ -118,7 +121,7 @@ import java.io.File;
  	public String getDirectory() {
 		if (IJ.debugMode)
 			IJ.log("DirectoryChooser.getDirectory: "+directory);
-		if (Recorder.record && !IJ.isMacOSX())
+		if (IJ.recording() && !IJ.isMacOSX())
 			Recorder.recordPath(title, directory);
  		return directory;
  	}

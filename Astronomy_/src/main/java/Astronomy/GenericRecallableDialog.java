@@ -1,9 +1,43 @@
 package Astronomy;// package ij.gui;  if integrated into ImageJ proper, would likely belong to the ij.gui group
-import java.awt.*;
-import java.awt.event.*;
-import ij.*;
-import ij.gui.*;
-import java.util.*;
+
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.Choice;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Scrollbar;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import ij.IJ;
+import ij.Macro;
+import ij.WindowManager;
+import ij.gui.GUI;
+import ij.gui.MultiLineLabel;
 import ij.plugin.frame.Recorder;
 
 /** Walter O'Dell PhD,  wodell@rochester.edu,   11/6/02
@@ -545,7 +579,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       if (firstNumericField) tf.selectAll();
       firstNumericField = false;
       activePanel.add(tf); // WO prev: add(tf);
-      if (Recorder.record || macro)
+      if (IJ.recording() || macro)
          saveLabel(tf, label);
       if (activePanel == this) { x=0; y++; } // WO prev: y++;
       else x++; // WO added
@@ -602,7 +636,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       tf.setEditable(true);
       activePanel.add(tf); // WO prev: add(tf);
       stringField.addElement(tf);
-      if (Recorder.record || macro)
+      if (IJ.recording() || macro)
          saveLabel(tf, label);
       if (activePanel == this) { x=0; y++; } // WO added
       else x++; // WO prev: y++;
@@ -630,7 +664,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       activePanel.add(cb); // WO prev: add(cb);
       checkbox.addElement(cb);
       //ij.IJ.write("addCheckbox: "+ y+" "+cbIndex);
-      if (Recorder.record || macro)
+      if (IJ.recording() || macro)
          saveLabel(cb, label);
       if (activePanel == this) { x=0; y++; } // WO added
       else x++; // WO prev:  y++;
@@ -659,7 +693,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
             Checkbox cb = new Checkbox(labels[i1]);
             checkbox.addElement(cb);
             cb.setState(defaultValues[i1]);
-            if (Recorder.record || macro)
+            if (IJ.recording() || macro)
                saveLabel(cb, labels[i1]);
             panel.add(cb);
              i1++;
@@ -706,7 +740,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       grid.setConstraints(thisChoice, c);
       activePanel.add(thisChoice);  // WO prev: add(thisChoice);
       choice.addElement(thisChoice);
-      if (Recorder.record || macro)
+      if (IJ.recording() || macro)
          saveLabel(thisChoice, label);
       if (activePanel == this) { x=0; y++; } // WO added
       else x++; // WO prev: y++;
@@ -791,7 +825,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
             value = 0.0;
          }
       }
-      if (Recorder.record)
+      if (IJ.recording())
          recordOption(tf, trim(theText));
       nfIndex++;
       return value;
@@ -844,7 +878,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
          theText = Macro.getValue(macroOptions, label, theText);
          //IJ.write("getNextString: "+label+"  "+theText);
       }   
-      if (Recorder.record)
+      if (IJ.recording())
          recordOption(tf, theText);
       sfIndex++;
       return theText;
@@ -855,7 +889,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       if (checkbox==null)
          return false;
       Checkbox cb = (Checkbox)(checkbox.elementAt(cbIndex));
-      if (Recorder.record)
+      if (IJ.recording())
          recordCheckboxOption(cb);
       boolean state = cb.getState();
       if (macro) {
@@ -879,7 +913,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
          item = Macro.getValue(macroOptions, label, item);
          //IJ.write("getNextChoice: "+label+"  "+item);
       }   
-      if (Recorder.record)
+      if (IJ.recording())
          recordOption(thisChoice, item);
       choiceIndex++;
       return item;
@@ -904,7 +938,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
          }
 
       }   
-      if (Recorder.record)
+      if (IJ.recording())
          recordOption(thisChoice, thisChoice.getSelectedItem());
       choiceIndex++;
       return index;

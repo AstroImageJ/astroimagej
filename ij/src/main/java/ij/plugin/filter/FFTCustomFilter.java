@@ -1,5 +1,7 @@
 package ij.plugin.filter;
 
+import java.awt.Rectangle;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -11,8 +13,6 @@ import ij.process.ColorProcessor;
 import ij.process.FHT;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-
-import java.awt.*;
 
 
 /** This class implements the Process/FFT/Custom Filter command. */
@@ -61,7 +61,7 @@ public class FFTCustomFilter implements  PlugInFilter, Measurements {
 			imp.updateAndDraw();
 		}
 		IJ.showProgress(1.0);
-		if (Recorder.record && slice==1)
+		if (IJ.recording() && slice==1)
 			Recorder.recordCall("FFT.filter(imp,filter); //see Help/Examples/JavaScript/FFT Filter");
 	}
 	

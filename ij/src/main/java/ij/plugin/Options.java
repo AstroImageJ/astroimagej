@@ -1,6 +1,10 @@
 package ij.plugin;
 
-import ij.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.gui.Line;
@@ -9,6 +13,7 @@ import ij.io.FileSaver;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.LineWidthAdjuster;
+import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
 import ij.process.ColorProcessor;
 import ij.process.FloatBlitter;
@@ -91,7 +96,12 @@ public class Options implements PlugIn {
 			Prefs.doNotSaveWindowLocations = !gd.getNextBoolean();
 		Prefs.nonBlockingFilterDialogs = gd.getNextBoolean();
 		IJ.setDebugMode(gd.getNextBoolean());
-		//Prefs.modernMode = gd.getNextBoolean();
+		if (IJ.recording() && IJ.isMacOSX()) {
+			if (Recorder.scriptMode())
+				Recorder.recordCall("Prefs.setIJMenuBar = "+Prefs.setIJMenuBar+";");
+			else
+				Recorder.recordString("setOption(\"setIJMenuBar\", "+Prefs.setIJMenuBar+");\n");
+		}
 	}
 
 	void lineWidth() {

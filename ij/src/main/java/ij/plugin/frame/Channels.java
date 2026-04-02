@@ -1,17 +1,32 @@
 package ij.plugin.frame;
 
-import ij.*;
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.Choice;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.GUI;
 import ij.gui.GenericDialog;
 import ij.gui.HTMLDialog;
 import ij.gui.TrimmedButton;
 import ij.plugin.PlugIn;
-
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 
 /** Displays the ImageJ "Channels" dialog. */
 public class Channels extends PlugInDialog implements PlugIn, ItemListener, ActionListener {
@@ -233,7 +248,7 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 				IJ.runMacroFile("ij.jar:InvertAllLuts", null);	
 			ci.setMode(cmode);
 			ci.updateAndDraw();
-			if (Recorder.record) {
+			if (IJ.recording()) {
 				String mode = null;
 				if (index!=DIVIDER && Recorder.scriptMode()) {
 					switch (index) {
@@ -261,7 +276,7 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 					if (ci.getMode()==IJ.COMPOSITE) {
 						boolean[] active = ci.getActiveChannels();
 						active[i] = cb.getState();
-						if (Recorder.record) {
+						if (IJ.recording()) {
 							String str = "";
 							for (int c=0; c<ci.getNChannels(); c++)
 								str += active[c]?"1":"0";
@@ -272,7 +287,7 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 						}
 					} else {
 						imp.setPosition(i+1, imp.getSlice(), imp.getFrame());
-						if (Recorder.record) {
+						if (IJ.recording()) {
 							if (Recorder.scriptMode())
 								Recorder.recordCall("imp.setC("+(i+1)+");");
 							else

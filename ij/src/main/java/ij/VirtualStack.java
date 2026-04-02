@@ -28,7 +28,9 @@ public class VirtualStack extends ImageStack {
 	private int delay;
 	private Properties properties;
 	private boolean generateData;
-	private int[] indexes;  // used to translate non-CZT hyperstack slice numbers
+	private int[] indexes;  		// used to translate non-CZT hyperstack slice numbers (0-based)
+	/** subclasses that support translation of slice indices (by calling translate) should set this to true */
+	protected boolean canTranslate;
 
 	
 	/** Default constructor. */
@@ -50,6 +52,8 @@ public class VirtualStack extends ImageStack {
 		super(width, height, cm);
 		path = IJ.addSeparator(path);
 		this.path = path;
+		if (path != null)
+			canTranslate = true;
 		names = new String[INITIAL_SIZE];
 		labels = new String[INITIAL_SIZE];
 	}
@@ -88,17 +92,29 @@ public class VirtualStack extends ImageStack {
 		if (fileName.startsWith("."))
 			return;
 		if (names==null)
-				throw new IllegalArgumentException("VirtualStack(w,h,cm,path) constructor not used");
+			throw new IllegalArgumentException("This Virtual Stack cannot be modified [VirtualStack(w,h,cm,path) constructor not used]");
+		if (isTranslatingIndices())
+			throw new IllegalArgumentException("Virtual hyperstack with non-czt order cannot be modified");
 		nSlices++;
-	   if (nSlices==names.length) {
-			String[] tmp = new String[nSlices*2];
-			System.arraycopy(names, 0, tmp, 0, nSlices);
+		expandArrays(nSlices);
+		names[nSlices-1] = fileName;
+	}
+
+	/** Expands the 'names' and 'labels' arrays if existing and smaller than minSize.
+	 *  This should be called each time the stack is enlarged */
+	protected void expandArrays(int minSize) {
+		if (indexes != null && minSize < indexes.length)
+			minSize = indexes.length; //min size if slices were deleted previously
+		if (names != null && names.length < minSize) {
+			String[] tmp = new String[minSize*2];
+			System.arraycopy(names, 0, tmp, 0, names.length);
 			names = tmp;
-			tmp = new String[nSlices*2];
-			System.arraycopy(labels, 0, tmp, 0, nSlices);
+		}
+		if (labels != null && labels.length < minSize) {
+			String[] tmp = new String[minSize*2];
+			System.arraycopy(labels, 0, tmp, 0, labels.length);
 			labels = tmp;
 		}
-		names[nSlices-1] = fileName;
 	}
 
    /** Does nothing. */
@@ -109,12 +125,15 @@ public class VirtualStack extends ImageStack {
 	public void addSlice(String sliceLabel, ImageProcessor ip) {
 	}
 	
-	/** Does noting. */
+	/** Does nothing. */
 	public void addSlice(String sliceLabel, ImageProcessor ip, int n) {
 	}
 
     @AstroImageJ(reason = "Add method for moving sliced in a stack")
     public void swapSlices(int o, int n) {
+		if (isTranslatingIndices()) {
+			throw new IllegalArgumentException("Virtual hyperstack with non-czt order cannot be modified");
+		}
         if (o<1 || o>nSlices || n<1 || n>nSlices)
             throw new IllegalArgumentException("Argument out of range: "+o+" "+n);
         if (o==n) return;
@@ -145,6 +164,10 @@ public class VirtualStack extends ImageStack {
             throw new IllegalArgumentException("Index array must match stack size");
         }
 
+		if (isTranslatingIndices()) {
+			throw new IllegalArgumentException("Virtual hyperstack with non-czt order cannot be modified");
+		}
+
         var sortedNames = new String[nSlices];
         var sortedLabels = new String[nSlices];
         var sortedIndexes = indexes != null ? new int[nSlices] : null;
@@ -170,9 +193,16 @@ public class VirtualStack extends ImageStack {
 			return;
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException("Argument out of range: "+n);
+		if (names==null)
+			throw new IllegalArgumentException("This Virtual Stack cannot be modified [VirtualStack(w,h,cm,path) constructor not used]");
+		if (isTranslatingIndices())
+			throw new IllegalArgumentException("Virtual hyperstack with non-czt order cannot be modified");
 		for (int i=n; i<nSlices; i++)
 			names[i-1] = names[i];
 		names[nSlices-1] = null;
+		if (labels != null)
+			for (int i=n; i<nSlices; i++)
+				labels[i-1] = labels[i];
 		nSlices--;
 	}
 	
@@ -206,7 +236,7 @@ public class VirtualStack extends ImageStack {
 	 * {@link <a href="https://wsr.imagej.net/plugins/Test_Virtual_Stack2.java#gemsiv">Example</a>}
 	*/
 	public ImageProcessor getProcessor(int n) {
-		if (path==null) {  //Help>Examples?JavaScript>Terabyte VirtualStack
+		if (path==null) {  //Help>Examples>JavaScript>Terabyte VirtualStack
 			ImageProcessor ip = null;
 			int w=getWidth(), h=getHeight();
 			switch (bitDepth) {
@@ -253,11 +283,11 @@ public class VirtualStack extends ImageStack {
 			String info = (String)imp.getProperty("Info");
 			if (info!=null) {
 				if (FolderOpener.useInfo(info))
-					labels[n-1] = info;
+					setSliceLabel(info, n);
 			} else {
 				String sliceLabel = imp.getStack().getSliceLabel(1);
 				if (FolderOpener.useInfo(sliceLabel))
-					labels[n-1] = "Label: "+sliceLabel;
+					setSliceLabel("Label: "+sliceLabel, n);
 			}
 			depthThisImage = imp.getBitDepth();
 			ip = imp.getProcessor();
@@ -289,7 +319,8 @@ public class VirtualStack extends ImageStack {
 		ip.setSliceNumber(n);
 		return ip;
 	 }
-	 	 
+
+	 /** Draw label for Help>Examples>JavaScript>Terabyte VirtualStack */	 
 	 private void label(ImageProcessor ip, String msg, Color color) {
 		int size = getHeight()/20;
 		if (size<9) size=9;
@@ -310,15 +341,20 @@ public class VirtualStack extends ImageStack {
 		return getSize();
 	}
 
+	/** Returns the number of slices in this stack. Subclasses shold override this function. */
 	public int getSize() {
 		return nSlices;
 	}
 
 	/** Returns the label of the Nth image. */
 	public String getSliceLabel(int n) {
+		if (isTranslatingIndices())
+			n = translate(n);
 		if (labels==null)
 			return null;
-		String label = labels[n-1];
+		String label = (n<=labels.length) ? labels[n-1] : null; //subclass may have grown stack without adding labels
+		if (names == null)
+			return label;
 		if (label==null)
 			return names[n-1];
 		else {
@@ -334,11 +370,26 @@ public class VirtualStack extends ImageStack {
 		return null;
 	}
 
-   /** Does nothing. */
+	/** Sets the label of the specified slice, where {@literal 1<=n<=nSlices}. */
 	public void setSliceLabel(String label, int n) {
+		if (n <= 0 || n > getSize())
+			throw new IllegalArgumentException(outOfRange+n);
+		if (isTranslatingIndices())
+			n = translate(n);
+		if (labels == null)
+			labels = new String[getSize()];
+		expandArrays(getSize());
+		labels[n-1] = label;
 	}
 
-	/** Always return true. */
+	/** Sets the array of slice labels. The array size must be the stack size or larger */
+	protected void setSliceLabels(String[] labels) {
+		if (labels != null && labels.length < getSize())
+			throw new IllegalArgumentException("Labels array too short: "+labels.length);
+		this.labels = labels;
+	}
+
+	/** Always returns true. */
 	public boolean isVirtual() {
 		return true;
 	}
@@ -386,18 +437,47 @@ public class VirtualStack extends ImageStack {
 		return properties;
 	}
 	
-	/** Sets the table that translates slice numbers of hyperstacks not in default CZT order. */
+	/** Sets the (0-based) table that translates slice numbers of hyperstacks not in default CZT order.
+	 *  May be called with a null argument to stop translation of indexes.
+	 *  When called more than once, the translations are executed sequentially. */
 	public void setIndexes(int[] indexes) {
-		this.indexes = indexes;
+		if (indexes == null) {
+			this.indexes = null;
+			return;
+		}
+		if (indexesSorted(indexes)) return;
+		if (this.indexes == null) {
+			this.indexes = indexes;
+		} else if (indexes.length != this.indexes.length) {
+			throw new IllegalArgumentException("Invalid array length of indexes translation table");
+		} else {		//apply new translation to old translation (after stack->hyperstack>stack>hyperstack to reshuffle)
+			indexes = indexes.clone();
+			for (int i=0; i<indexes.length; i++)
+				indexes[i] = this.indexes[indexes[i]];
+			this.indexes = indexesSorted(indexes) ? null : indexes;
+		}
 	}
-	
+
+	/** Returns whether an indexes array is the trivial one, sorted numbers 0...length-1 */
+	boolean indexesSorted(int[] indexes) {
+		for (int i=0; i<indexes.length; i++)
+			if (indexes[i] != i)
+				return false;
+		return true;
+	}
+
 	/** Translates slice numbers of hyperstacks not in default CZT order. */
 	public int translate(int n) {
 		int n2 = (indexes!=null&&indexes.length==getSize()) ? indexes[n-1]+1 : n;
 		//IJ.log("translate: "+n+" "+n2+" "+getSize()+" "+(indexes!=null?indexes.length:null));
 		return n2;
 	}
-	
+
+	/** Returns whether this hyperstack uses index translation for hyperstacks not in default CZT order. */
+	public boolean isTranslatingIndices() {
+		return canTranslate && indexes!=null;
+	}
+
 	/** Reduces the number of slices in this stack by a factor. */
 	public void reduce(int factor) {
 		if (factor<2 || nSlices/factor<1 || names==null)
@@ -405,7 +485,8 @@ public class VirtualStack extends ImageStack {
 		nSlices = nSlices/factor;
 		for (int i=0; i<nSlices; i++) {
 			names[i] = names[i*factor];
-			labels[i] = labels[i*factor];
+			if (labels != null)
+				labels[i] = labels[i*factor];
 		}
 		ImagePlus imp = WindowManager.getCurrentImage();
 		if (imp!=null) {

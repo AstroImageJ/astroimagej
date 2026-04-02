@@ -1,7 +1,33 @@
 package ij.process;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.font.GlyphVector;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.awt.image.MemoryImageSource;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+import java.util.Random;
+
 import ij.Prefs;
-import ij.gui.*;
+import ij.gui.Arrow;
+import ij.gui.Line;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.ProgressBar;
+import ij.gui.Roi;
+import ij.gui.ShapeRoi;
+import ij.gui.Toolbar;
 import ij.measure.Measurements;
 import ij.plugin.Binner;
 import ij.plugin.Colors;
@@ -9,12 +35,6 @@ import ij.plugin.filter.GaussianBlur;
 import ij.process.AutoThresholder.Method;
 import ij.util.Java2;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.font.GlyphVector;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
-import java.util.Random;
 
 /**
 This abstract class is the superclass for classes that process
@@ -1059,22 +1079,22 @@ public abstract class ImageProcessor implements Cloneable {
 					v = i ^ (int)value;
 					break;
 				case GAMMA:
-					v = (int)(Math.exp(Math.log(i/255.0)*value)*255.0);
+					v = (int)Math.round(Math.exp(Math.log(i/255.0)*value)*255.0);
 					break;
 				case LOG:
 					if (i==0)
 						v = 0;
 					else
-						v = (int)(Math.log(i) * SCALE);
+						v = (int)Math.round(Math.log(i) * SCALE);
 					break;
 				case EXP:
-					v = (int)(Math.exp(i/SCALE));
+					v = (int)Math.round(Math.exp(i/SCALE));
 					break;
 				case SQR:
 						v = i*i;
 					break;
 				case SQRT:
-						v = (int)Math.sqrt(i);
+						v = (int)Math.round(Math.sqrt(i));
 					break;
 				case MINIMUM:
 					if (i<value)
@@ -1102,8 +1122,10 @@ public abstract class ImageProcessor implements Cloneable {
 
 	/**
 	 * Returns an array containing the pixel values along the
-	 * line starting at (x1,y1) and ending at (x2,y2). Pixel
-	 * values are sampled using getInterpolatedValue(double,double)
+	 * line starting at (x1,y1) and ending at (x2,y2). The end
+	 * point is included, and the interval is chosen such that
+	 * the distance between successive points is close to 1.0 pixel.
+	 * Pixel values are sampled using getInterpolatedValue(double,double)
 	 * if interpolation is enabled or getPixelValue(int,int) if it is not.
 	 * For byte and short images, returns calibrated values if a
 	 * calibration table has been set using setCalibrationTable().
@@ -1119,19 +1141,17 @@ public abstract class ImageProcessor implements Cloneable {
 		int n = (int)Math.round(Math.sqrt(dx*dx + dy*dy));
 		double xinc = n>0?dx/n:0;
 		double yinc = n>0?dy/n:0;
-		if (!((xinc==0&&n==height) || (yinc==0&&n==width)))
-			n++;
-		double[] data = new double[n];
+		double[] data = new double[n+1];
 		double rx = x1;
 		double ry = y1;
 		if (interpolate) {
-			for (int i=0; i<n; i++) {
+			for (int i=0; i<=n; i++) {
 				data[i] = getInterpolatedValue(rx, ry);
 				rx += xinc;
 				ry += yinc;
 			}
 		} else {
-			for (int i=0; i<n; i++) {
+			for (int i=0; i<=n; i++) {
 				data[i] = getPixelValue((int)Math.round(rx), (int)Math.round(ry));
 				rx += xinc;
 				ry += yinc;

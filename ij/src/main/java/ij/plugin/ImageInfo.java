@@ -1,7 +1,31 @@
 package ij.plugin;
 
-import ij.*;
-import ij.gui.*;
+import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.EllipseRoi;
+import ij.gui.GUI;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Line;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RotatedRectRoi;
 import ij.io.FileInfo;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
@@ -12,10 +36,6 @@ import ij.process.ImageStatistics;
 import ij.process.LUT;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.geom.Rectangle2D;
-import java.lang.reflect.Method;
 
 /** This plugin implements the Image/Show Info command. */
 public class ImageInfo implements PlugIn {
@@ -195,7 +215,7 @@ public class ImageInfo implements PlugIn {
 	    		String lut = getLutInfo(imp);
 				s += "(" + lut + ")\n";
 				if (imp.getNChannels()>1)
-					s += displayRanges(imp);
+					s += getDisplayRanges(imp);
 				else {
 					s += "Display range: "+(int)ip.getMin()+"-"+(int)ip.getMax()+"\n";
 					ip.resetRoi();
@@ -210,7 +230,7 @@ public class ImageInfo implements PlugIn {
 	    		} else
 	    			s += "Bits per pixel: 32 (float, "+getLutInfo(imp)+")\n";
 				if (imp.getNChannels()>1)
-					s += displayRanges(imp);
+					s += getDisplayRanges(imp);
 				else {
 					String pvrLabel = "Pixel value range: ";
 					s += "Display range: ";
@@ -497,7 +517,7 @@ public class ImageInfo implements PlugIn {
 		return lut;
 	}
 
-	private String displayRanges(ImagePlus imp) {
+	public static String getDisplayRanges(ImagePlus imp) {
 		LUT[] luts = imp.getLuts();
 		if (luts==null)
 			return "";
@@ -532,15 +552,15 @@ public class ImageInfo implements PlugIn {
 		//ed.create("Info for "+imp.getTitle(), info);
 	}
 
-    private String d2s(double n) {
+    private static String d2s(double n) {
 		return IJ.d2s(n,Tools.getDecimalPlaces(n));
     }
     
     private String getImageProperties(ImagePlus imp) {
-    	String s = "";
     	String[] props = imp.getPropertiesAsArray();
-    	if (props==null)
+    	if (props==null || props.length==0)
     		return null;
+		ArrayList list = new ArrayList();
 		for (int i=0; i<props.length; i+=2) {
 			String key = props[i];
 			String value = props[i+1];
@@ -548,11 +568,16 @@ public class ImageInfo implements PlugIn {
 				continue;
 			if (key!=null && value!=null && !(key.equals("ShowInfo")||key.equals("Slice_Label"))) {
 				if (value.length()<80)
-					s += key + ": " + value + "\n";
+					list.add(key + ": " + value + "\n");
 				else
-					s += key + ": <" + value.length() + " characters>\n";
+					list.add(key + ": <" + value.length() + " characters>\n");
 			}
 		}
+		String[] arr = (String[])list.toArray(new String[list.size()]);
+		Arrays.sort(arr);
+		String s = "";
+		for (int i=0; i<arr.length; i++)
+			s += arr[i];
 		return  (s.length()>0)?s:null;
     }
 

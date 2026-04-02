@@ -1,10 +1,20 @@
 package ij.plugin.frame;
-import java.awt.*;
-import java.awt.event.*;
-import ij.*;
-import ij.plugin.*;
-import ij.gui.*;
-import ij.process.*;
+
+import java.awt.Choice;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.GUI;
+import ij.gui.Roi;
+import ij.plugin.PlugIn;
+import ij.process.Blitter;
 
 /** Implements ImageJ's Paste Control window. */
 public class PasteController extends PlugInFrame implements PlugIn, ItemListener {
@@ -72,7 +82,7 @@ public class PasteController extends PlugInFrame implements PlugIn, ItemListener
 			case 13: mode = Blitter.MAX; break;
 		}
 		Roi.setPasteMode(mode);
-		if (Recorder.record)
+		if (IJ.recording())
 			Recorder.record("setPasteMode", pasteMode.getSelectedItem());
 		ImagePlus imp = WindowManager.getCurrentImage();
 	}

@@ -742,7 +742,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * and registers the routine for mouse clicks.
      */
     public void run(ImageProcessor ip) {
-        if (Recorder.record) {
+        if (IJ.recording()) {
             Recorder.setCommand(getClass().getName());
         }
 
@@ -6138,7 +6138,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Standard preferences dialog for MultiAperture_
      */
     protected GenericSwingDialog dialog() {
-        if (Recorder.record) {
+        if (IJ.recording()) {
             Recorder.setCommand("MultiAperture ");
         }
         if (!Prefs.isLocationOnScreen(new Point(xLocation, yLocation))) {

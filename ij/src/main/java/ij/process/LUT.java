@@ -1,10 +1,14 @@
 package ij.process;
-import ij.IJ;
-import ij.plugin.Colors;
-import java.awt.image.*;
-import java.awt.Color;
 
-	/** This is an indexed color model that allows an
+import java.awt.Color;
+import java.awt.image.IndexColorModel;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.plugin.Colors;
+
+/** This is an indexed color model that allows an
 		lower and upper bound to be specified. */
     public class LUT extends IndexColorModel implements Cloneable {
 		public static final String nameKey = "CurrentLUT";
@@ -106,6 +110,33 @@ import java.awt.Color;
 	public  String toString() {
 		return "rgb[0]="+Colors.colorToString(new Color(getRGB(0)))+", rgb[255]="
 			+Colors.colorToString(new Color(getRGB(255)))+", min="+IJ.d2s(min,4)+", max="+IJ.d2s(max,4);
+	}
+	
+	/** Returns 'true' if the LUTs of the two images differ. */
+	public static boolean LutsDiffer(ImagePlus imp1, ImagePlus imp2) {
+		if (!imp1.isComposite() || !imp2.isComposite())
+			return false;
+		LUT[] luts1 = ((CompositeImage)imp1).getLuts();
+		LUT[] luts2 = ((CompositeImage)imp2).getLuts();
+		if (luts1==null || luts2==null)
+			return false;
+		if (luts1.length!=luts2.length)
+			return true;
+		for (int i=0; i<luts1.length; i++) {
+			if (luts1[i].min!=luts2[i].min)
+				return true;
+			if (luts1[i].max!=luts2[i].max)
+				return true;
+			byte[] bytes1 = luts1[i].getBytes();
+			byte[] bytes2 = luts2[i].getBytes();
+			if (bytes1.length!=bytes2.length)
+				return true;
+			for (int j=0; j<bytes1.length; j++) {
+				if (bytes1[j]!=bytes2[j])
+					return true;
+			}
+		}
+		return false;
 	}
 
 }

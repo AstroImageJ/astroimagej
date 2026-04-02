@@ -1,13 +1,22 @@
 package ij.plugin;
 
-import ij.*;
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Undo;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.Recorder;
-import ij.process.*;
+import ij.process.Blitter;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.process.StackProcessor;
 
 /** This plugin implements the Process/Image Calculator command.
 <pre>
@@ -175,7 +184,7 @@ public class ImageCalculator implements PlugIn {
 				img3 = doOperation(img1, img2);
 		} else
 			img3 = doOperation(img1, img2);
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			String options = operators[operator];
 			if (createWindow) options += " create";
 			if (floatResult) options += " 32-bit";

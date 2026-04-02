@@ -1,10 +1,16 @@
 package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.measure.Calibration;
-import ij.plugin.frame.Recorder;
+
 import java.awt.AWTEvent;
 import java.awt.geom.Rectangle2D;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
+import ij.gui.Roi;
+import ij.measure.Calibration;
+import ij.plugin.frame.Recorder;
 
 /**
  * The plugin implements the Image/Adjust/Coordinates command. It allows
@@ -139,7 +145,7 @@ public class Coordinates implements PlugIn, DialogListener {
 		}
 		ImageWindow win = imp.getWindow();
 		imp.repaintWindow();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (Recorder.scriptMode()) {
 				if (xUnitChanged)
 					Recorder.recordCall("imp.getCalibration().setXUnit(\""+xUnit2+"\");", true);

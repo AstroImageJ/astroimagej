@@ -1,30 +1,32 @@
 package ij;
 
-import ij.astro.AstroImageJ;
-import ij.astro.accessors.ITableWindow;
-import ij.gui.*;
-import ij.io.*;
-import ij.macro.Interpreter;
-import ij.macro.MacroRunner;
-import ij.measure.Calibration;
-import ij.measure.Measurements;
-import ij.measure.ResultsTable;
-import ij.plugin.*;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.PlugInFilter;
-import ij.plugin.filter.PlugInFilterRunner;
-import ij.plugin.frame.Recorder;
-import ij.plugin.frame.ThresholdAdjuster;
-import ij.process.*;
-import ij.text.TextPanel;
-import ij.text.TextWindow;
-import ij.util.Tools;
-
-import java.applet.Applet;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
+import java.awt.Menu;
+import java.awt.MenuItem;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.CharArrayWriter;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.net.URLConnection;
@@ -32,7 +34,69 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.Vector;
+
+import ij.astro.AstroImageJ;
+import ij.astro.accessors.ITableWindow;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.gui.HTMLDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Line;
+import ij.gui.MessageDialog;
+import ij.gui.NewImage;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.ProgressBar;
+import ij.gui.Roi;
+import ij.gui.Toolbar;
+import ij.gui.Wand;
+import ij.gui.YesNoCancelDialog;
+import ij.io.DirectoryChooser;
+import ij.io.FileInfo;
+import ij.io.FileSaver;
+import ij.io.LogStream;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.io.PluginClassLoader;
+import ij.io.SaveDialog;
+import ij.macro.Interpreter;
+import ij.macro.MacroRunner;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.BatchProcessor;
+import ij.plugin.Colors;
+import ij.plugin.FileInfoVirtualStack;
+import ij.plugin.GifWriter;
+import ij.plugin.HyperStackMaker;
+import ij.plugin.JpegWriter;
+import ij.plugin.LutLoader;
+import ij.plugin.Macro_Runner;
+import ij.plugin.Memory;
+import ij.plugin.PlugIn;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.PlugInFilter;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.ThresholdAdjuster;
+import ij.process.AutoThresholder;
+import ij.process.Blitter;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.StackStatistics;
+import ij.stub.Applet;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.Tools;
 
 
 /** This class consists of static utility methods. */
@@ -443,9 +507,13 @@ public class IJ {
 		return macroRunning || Interpreter.getInstance()!=null;
 	}
 
-	/**Returns the Applet that created this ImageJ or null if running as an application.*/
+	/**
+	 * Returns the Applet that created this ImageJ or null if running as an application.
+	 * @deprecated Always returns null since removal of Applets in Java 26.
+	 */
+	@Deprecated(since = "IJ XX; Java 26")
 	public static Applet getApplet() {
-		return applet;
+		return null;
 	}
 	
 	/**Displays a message in the ImageJ status bar. If 's' starts 
@@ -1292,11 +1360,11 @@ public class IJ {
 		    		error(msg);
 					return PlugInFilter.DONE;
 		    	}
-				if (Recorder.record)
+				if (IJ.recording())
 					Recorder.recordOption("stack");
 				return flags | PlugInFilter.DOES_STACKS;
 			}
-			if (Recorder.record)
+			if (IJ.recording())
 				Recorder.recordOption("slice");
 		}
 		return flags;
@@ -1358,9 +1426,7 @@ public class IJ {
 		ImagePlus img = getImage();
 		Roi roi = img.getRoi();
 		if (shiftKeyDown() && roi!=null && roi.getType()==Roi.POINT) {
-			Polygon p = roi.getPolygon();
-			p.addPoint(x, y);
-			img.setRoi(new PointRoi(p.xpoints, p.ypoints, p.npoints));
+			((PointRoi)roi).addUserPoint(null, x, y);
 			IJ.setKeyUp(KeyEvent.VK_SHIFT);
 		} else if (altKeyDown() && roi!=null && roi.getType()==Roi.POINT) {
 			((PolygonRoi)roi).deleteHandle(x, y);
@@ -1374,9 +1440,7 @@ public class IJ {
 		ImagePlus img = getImage();
 		Roi roi = img.getRoi();
 		if (shiftKeyDown() && roi!=null && roi.getType()==Roi.POINT) {
-			Polygon p = roi.getPolygon();
-			p.addPoint((int)Math.round(x), (int)Math.round(y));
-			img.setRoi(new PointRoi(p.xpoints, p.ypoints, p.npoints));
+			((PointRoi)roi).addUserPoint(null, x, y);
 			IJ.setKeyUp(KeyEvent.VK_SHIFT);
 		} else if (altKeyDown() && roi!=null && roi.getType()==Roi.POINT) {
 			((PolygonRoi)roi).deleteHandle(x, y);
@@ -1871,7 +1935,7 @@ public class IJ {
 	public static boolean isAijDev() {
 		return ImageJ.isAijDev();
 	}
-	
+
 	/** Returns the ImageJ version and build number as a String, for 
 		example "1.46n05", or 1.46n99 if there is no build number. */
 	public static String getFullVersion() {
@@ -2622,6 +2686,11 @@ public class IJ {
 		protectStatusBar = protect;
 		if (!protectStatusBar)
 			statusBarThread = null;
+	}
+
+	/** Returns 'true' if the Recorder is running and ImageJ is not in headless mode. */
+	public static boolean recording() {
+		return (!GraphicsEnvironment.isHeadless()&&Recorder.record);
 	}
 
 }

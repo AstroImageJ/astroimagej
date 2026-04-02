@@ -1,11 +1,16 @@
 package ij.plugin;
-import ij.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
-import ij.gui.*;
-import ij.process.*;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.StackWindow;
 import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
-import java.awt.Point;
 
 /** This plugin animates stacks. */
 public class Animator implements PlugIn {
@@ -377,7 +382,7 @@ public class Animator implements PlugIn {
 				t = (int) gd.getNextNumber();
 				imp.setPosition(c, z, t);
 			}
-			if (Recorder.record) {
+			if (IJ.recording()) {
 				String method = Recorder.scriptMode()?"imp":"Stack";
 				Recorder.recordString(method+".setPosition("+c+","+z+","+t+");\n");
 				Recorder.disableCommandRecording();

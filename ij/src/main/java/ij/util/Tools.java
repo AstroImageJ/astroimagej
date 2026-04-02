@@ -1,12 +1,11 @@
 package ij.util;
 
-import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
-import ij.process.ImageStatistics;
-
-import java.awt.*;
-import java.io.*;
+import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +15,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.StringTokenizer;
 import java.util.Vector;
+
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 
 
 /** This class contains static utility methods. */
@@ -150,6 +154,25 @@ import java.util.Vector;
 		for (int i=0; i<array.length; i++)
 			if (array[i] == key)
 				return i;
+		return -1;
+	}
+
+	/** Returns the index of the first array element equal to the key,
+	 *  or -1 if no such element. If the key is null, returns the index
+	 *  of the first array element that is null, otherwise -1.
+	 *  This function can be also used as 'contains' by checking for
+	 *  the return value being >= 0.
+	 */
+	public static int indexOf(Object[] array, Object key) {
+		if (key != null) {
+			for (int i=0; i<array.length; i++)	
+				if (key.equals(array[i]))
+					return i;
+		} else {	// if key == null
+			for (int i=0; i<array.length; i++)
+				if (array[i] == null)
+					return i;
+		}
 		return -1;
 	}
 

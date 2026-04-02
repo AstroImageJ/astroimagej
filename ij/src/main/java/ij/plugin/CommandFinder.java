@@ -24,21 +24,59 @@
 
 package ij.plugin;
 
-import ij.*;
-import ij.gui.GUI;
-import ij.gui.HTMLDialog;
-import ij.plugin.frame.Editor;
-import ij.process.ImageProcessor;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Image;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumnModel;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.File;
-import java.util.*;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.GUI;
+import ij.gui.HTMLDialog;
+import ij.plugin.frame.Editor;
+import ij.process.ImageProcessor;
 
 public class CommandFinder implements PlugIn, ActionListener, WindowListener, KeyListener, ItemListener, MouseListener {
 
@@ -164,11 +202,15 @@ public class CommandFinder implements PlugIn, ActionListener, WindowListener, Ke
 		long now = System.currentTimeMillis();
 		int row = table.getSelectedRow();
 		int col = table.getSelectedColumn();
+		IJ.wait(10);
 		// Display cell contents in status bar
 		if (tableModel==null)
 			return;
-		String value = tableModel.getValueAt(row, col).toString();
-		IJ.showStatus(value);
+		String value = (String)tableModel.getValueAt(row, col);
+		if (value!=null)
+			IJ.showStatus(value);
+		else
+			IJ.showStatus("");
 		// Is this fast enough to be a double-click?
 		long thisClickInterval = now - lastClickTime;
 		if (thisClickInterval < multiClickInterval) {
@@ -637,8 +679,6 @@ public class CommandFinder implements PlugIn, ActionListener, WindowListener, Ke
 	}
 
 	public void windowActivated(WindowEvent e) {
-		if (IJ.isMacOSX() && frame != null)
-			frame.setMenuBar(Menus.getMenuBar());
 	}
 
 	public void windowDeactivated(WindowEvent e) {

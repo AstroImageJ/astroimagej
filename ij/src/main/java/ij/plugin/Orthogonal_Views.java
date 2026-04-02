@@ -1,17 +1,48 @@
 package ij.plugin;
 
-import ij.*;
-import ij.gui.ImageCanvas;
-import ij.gui.ImageWindow;
-import ij.gui.Roi;
-import ij.measure.Calibration;
-import ij.process.*;
-
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.geom.GeneralPath;
 import java.awt.image.ColorModel;
- 
+
+import ij.CommandListener;
+import ij.CompositeImage;
+import ij.Executer;
+import ij.IJ;
+import ij.ImageListener;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.gui.ShapeRoi;
+import ij.measure.Calibration;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+
 /**
  * This plugin projects dynamically orthogonal XZ and YZ views of a stack. 
  * The output images are calibrated, which allows measurements to be performed more easily. 
@@ -56,6 +87,7 @@ public class Orthogonal_Views implements PlugIn, MouseListener, MouseMotionListe
 	private boolean initialized;
 	private boolean sliceSet;
 	private Thread thread;
+	final static String CROSS = "|OV|";
 
 	 
 	public void run(String arg) {
@@ -566,7 +598,7 @@ public class Orthogonal_Views implements PlugIn, MouseListener, MouseMotionListe
 		
 	}
 	 
-	/** draws the crosses in the images */
+	/** draws the crosses on the images */
 	void drawCross(ImagePlus imp, Point p, GeneralPath path) {
 		int width=imp.getWidth();
 		int height=imp.getHeight();
@@ -583,7 +615,17 @@ public class Orthogonal_Views implements PlugIn, MouseListener, MouseMotionListe
 			done = true;
 			notify();
 		}
-		imp.setOverlay(null);
+		Overlay overlay = imp.getOverlay();
+		if (overlay!=null) {
+			overlay.remove(CROSS);
+			ImageCanvas ic = imp.getCanvas();
+			if (ic!=null)
+				ic.setCustomRoi(true);
+			if (overlay.size()==0)
+				imp.setOverlay(null);
+			else
+				imp.draw();
+		}
 		if (canvas!=null) {
 			canvas.removeMouseListener(this);
 			canvas.removeMouseMotionListener(this);
@@ -750,13 +792,28 @@ public class Orthogonal_Views implements PlugIn, MouseListener, MouseMotionListe
 		updateViews(p, is);
 		GeneralPath path = new GeneralPath();
 		drawCross(imp, p, path);
-		if (!done)
-			imp.setOverlay(path, color, new BasicStroke(1));
+		if (!done) {
+			if (imp.getOverlay()==null)
+				imp.setOverlay(new Overlay());
+			setOverlay(imp, path);
+		}
 		canvas.setCustomRoi(true);
 		updateCrosses(p.x, p.y, arat, brat);
 		if (syncZoom) updateMagnification(p.x, p.y);
 		arrangeWindows(sticky);
 		initialized = true;
+	}
+
+	private void setOverlay(ImagePlus imp, GeneralPath path) {
+		Overlay overlay = imp.getOverlay();
+		if (overlay==null)
+			overlay = new Overlay();
+		Roi roi = new ShapeRoi(path);
+		roi.setStrokeColor(color);
+		roi.setStroke(new BasicStroke(1));
+		overlay.remove(CROSS);
+		overlay.add(roi, CROSS);
+		imp.setOverlay(overlay);
 	}
 
 	private void updateCrosses(int x, int y, double arat, double brat) {
@@ -771,7 +828,7 @@ public class Orthogonal_Views implements PlugIn, MouseListener, MouseMotionListe
 		GeneralPath path = new GeneralPath();
 		drawCross(xz_image, p, path);
 		if (!done)
-			xz_image.setOverlay(path, color, new BasicStroke(1));
+			setOverlay(xz_image, path);
 		if (rotateYZ) {
 			if (flipXZ)
 				zcoord=(int)Math.round(brat*(z-zlice));
@@ -785,7 +842,7 @@ public class Orthogonal_Views implements PlugIn, MouseListener, MouseMotionListe
 		path = new GeneralPath();
 		drawCross(yz_image, p, path);
 		if (!done)
-			yz_image.setOverlay(path, color, new BasicStroke(1));
+			setOverlay(yz_image, path);
 		IJ.showStatus(imp.getLocationAsString(crossLoc.x, crossLoc.y));
 	}
 

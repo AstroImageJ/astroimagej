@@ -1,5 +1,14 @@
 package ij.gui;
 
+import java.awt.AWTEvent;
+import java.awt.Checkbox;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Frame;
+import java.awt.TextField;
+import java.util.ArrayList;
+import java.util.Vector;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -10,10 +19,6 @@ import ij.plugin.Colors;
 import ij.plugin.frame.Recorder;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Vector;
 
 /** This class implements the Plot Window's Data>"Add from Plot", "Add form Table", "Add Fit" and
  *  "More>Contents Style" dialogs
@@ -245,7 +250,7 @@ public class PlotContentsDialog implements DialogListener {
 			lastFitFunction = fitFunctionChoice.getSelectedItem();
 			IJ.log(curveFitterStatusString);
 		}
-		if (Recorder.record && !Recorder.scriptMode()) {
+		if (IJ.recording() && !Recorder.scriptMode()) {
 			if (dialogType == ADD_FROM_PLOT) {
 				Recorder.recordString("Plot.addFromPlot(\""+plotChoice.getSelectedItem()+"\", "+objectChoice.getSelectedIndex()+");\n");
 			} else if (dialogType == ADD_FROM_TABLE) {

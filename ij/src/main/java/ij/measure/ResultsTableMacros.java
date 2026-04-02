@@ -1,12 +1,23 @@
 package ij.measure;
+
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Choice;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+
+import ij.IJ;
+import ij.WindowManager;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.Recorder;
-import ij.plugin.*;
-import ij.*;
-import ij.gui.*;
-import ij.text.*;
-import java.awt.*;
-import java.awt.event.*;
 
 
 /** This class implements the Apply Macro command in tables.
@@ -96,7 +107,7 @@ public class ResultsTableMacros implements Runnable, DialogListener, ActionListe
 		}
 		if (runCount==0)
 			applyMacro();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			String macro = getMacroCode();
 			macro = macro.replaceAll("\n", " ");
 			if (Recorder.scriptMode()) {

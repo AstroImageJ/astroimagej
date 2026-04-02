@@ -1,12 +1,18 @@
 package ij.plugin;
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import ij.*;
-import ij.io.*;
-import ij.process.*;
-import ij.util.Tools;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StreamTokenizer;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.io.OpenDialog;
 import ij.plugin.frame.Recorder;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.util.Tools;
 
 
 /** This plugin opens a tab or comma delimeted text file as an image.
@@ -24,7 +30,7 @@ public class TextReader implements PlugIn {
 			ImageProcessor ip = open(path);
 			if (ip!=null)
 				new ImagePlus(name, ip).show();
-			if (Recorder.record && Recorder.scriptMode()) {
+			if (IJ.recording() && Recorder.scriptMode()) {
 				String path2 = Recorder.fixPath(path);
 				Recorder.recordCall("imp = IJ.openImage(\""+path2+"\");");
 			}

@@ -1,5 +1,5 @@
 package ij;
-import java.applet.Applet;
+import ij.stub.Applet;
 
 /**
 	Runs ImageJ as an applet and optionally opens up to 
@@ -19,25 +19,18 @@ import java.applet.Applet;
 	<p>
 	Macros contained in a file named "StartupMacros.txt", in the same directory as the HTML file
 	containing the applet tag, will be installed on startup.
+ @deprecated All methods can unconditionally throw since removal of Applets in Java 26.
 */
+@Deprecated(since = "IJ XX; Java 26")
 public class ImageJApplet extends Applet {
 
 	/** Starts ImageJ if it's not already running. */
     public void init() {
-    	ImageJ ij = IJ.getInstance();
-     	if (ij==null || (ij!=null && !ij.isShowing()))
-			new ImageJ(this);
-		for (int i=1; i<=9; i++) {
-			String url = getParameter("url"+i);
-			if (url==null) break;
-			ImagePlus imp = new ImagePlus(url);
-			if (imp!=null) imp.show();
-		}
+		throw new UnsupportedOperationException("Java 26 has removed Applets");
     }
     
     public void destroy() {
-    	ImageJ ij = IJ.getInstance();
-    	if (ij!=null) ij.quit();
+		throw new UnsupportedOperationException("Java 26 has removed Applets");
     }
 
 }

@@ -6,13 +6,17 @@
  */
 
 package ij.plugin.tool;
-import ij.*;
-import ij.gui.*;
+
+import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageRoi;
+import ij.gui.Roi;
 import ij.plugin.RoiRotator;
-import ij.plugin.tool.PlugInTool;
 import ij.plugin.frame.Recorder;
-import java.awt.*;
-import java.awt.event.*;
 
 public class RoiRotationTool extends PlugInTool {
 	ImageCanvas ic = null;
@@ -67,7 +71,7 @@ public class RoiRotationTool extends PlugInTool {
 	}
 		
 	public void mouseReleased(ImagePlus imp, MouseEvent e) {
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			Roi roi = imp.getRoi();
 			int n = roi.getPolygon().npoints;
 			if (n<=20 && roi.getType()!=Roi.LINE)

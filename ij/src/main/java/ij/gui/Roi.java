@@ -1,17 +1,15 @@
 package ij.gui;
 
-import ij.*;
-import ij.astro.AstroImageJ;
-import ij.macro.Interpreter;
-import ij.measure.Calibration;
-import ij.plugin.LutLoader;
-import ij.plugin.RectToolOptions;
-import ij.plugin.filter.ThresholdToSelection;
-import ij.plugin.frame.Recorder;
-import ij.plugin.frame.RoiManager;
-import ij.process.*;
-
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Event;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -20,7 +18,34 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.Vector;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
+import ij.astro.AstroImageJ;
+import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.plugin.LutLoader;
+import ij.plugin.RectToolOptions;
+import ij.plugin.filter.ThresholdToSelection;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.Blitter;
+import ij.process.ByteProcessor;
+import ij.process.FloatPolygon;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.LUT;
+import ij.process.PolygonFiller;
 
 /**
  * A rectangular region of interest and superclass for the other ROI classes.
@@ -61,6 +86,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	public static final int FERET_ARRAYSIZE = 16; // Size of array with Feret values
 	public static final int FERET_ARRAY_POINTOFFSET = 8; // Where point coordinates start in Feret array
 	private static final String NAMES_KEY = "group.names";
+	public static final int MAX_ROI_GROUP = 65535; // limit to uint16 max value
 
 	static final int NO_MODS=0, ADD_TO_ROI=1, SUBTRACT_FROM_ROI=2; // modification states
 
@@ -83,6 +109,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	private static int defaultGroup; // zero is no specific group
 	private static Color groupColor;
 	private static double defaultStrokeWidth;
+	private float minStrokeWidth = 0.1f;
 	private static String groupNamesString = Prefs.get(NAMES_KEY, null);
 	private static String[] groupNames;
 	private static boolean groupNamesChanged;
@@ -120,7 +147,6 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	private String name;
 	private int position;
 	private int channel, slice, frame;
-	protected boolean hyperstackPosition;
 	private Overlay prototypeOverlay;
 	private boolean subPixel;
 	private boolean activeOverlayRoi;
@@ -1612,7 +1638,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		state = NORMAL;
 		if (imp==null) return;
 		imp.draw(clipX-5, clipY-5, clipWidth+10, clipHeight+10);
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			String method;
 			if (type==OVAL)
 				Recorder.record("makeOval", x, y, width, height);
@@ -1814,7 +1840,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	 * @see #getGroupColor
 	*/
 	public static void setDefaultGroup(int group) {
-		if (group<0 || group>255)
+		if (group<0 || group>MAX_ROI_GROUP)
 			throw new IllegalArgumentException("Invalid group: "+group);
 		defaultGroup = group;
 		groupColor = getGroupColor(group);
@@ -1827,7 +1853,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 
 	/** Returns the group name associtated with the specified group. */
 	public static String getGroupName(int groupNumber) {
-		if (groupNumber<1 || groupNumber>255)
+		if (groupNumber<1 || groupNumber>MAX_ROI_GROUP)
 			return null;
 		if (groupNames==null && groupNamesString==null)
 			return null;
@@ -1842,7 +1868,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	}
 
 	public static synchronized void setGroupName(int groupNumber, String name) {
-		if (groupNumber<1 || groupNumber>255)
+		if (groupNumber<1 || groupNumber>MAX_ROI_GROUP)
 			return;
 		if (groupNamesString==null && groupNames==null)
 			groupNames = new String[groupNumber];
@@ -1854,7 +1880,6 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 				temp[i] = groupNames[i];
 			groupNames = temp;
 		}
-		//IJ.log("setGroupName: "+groupNumber+"  "+name+"  "+groupNames.length);
 		groupNames[groupNumber-1] = name;
 		groupNamesChanged = true;
 	}
@@ -1892,8 +1917,8 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 
 	/** Sets the group of this Roi, and updates stroke color accordingly. */
 	public void setGroup(int group) {
-		if (group<0 || group>255)
-			throw new IllegalArgumentException("Invalid group: "+group);
+		if (group<0 || group>MAX_ROI_GROUP)
+			group = 0;
 		if (group>0)
 			setStrokeColor(getGroupColor(group));
 		if (group==0 && this.group>0)
@@ -2072,6 +2097,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	 * @see #setUnscalableStrokeWidth(double)	 
 	 * @see #setStrokeColor(Color)
 	 * @see ij.ImagePlus#setOverlay(ij.gui.Overlay)
+	 * @see setMineStrokeWidth(double)
 	 */
 	public void setStrokeWidth(float strokeWidth) {
 		if (strokeWidth<0f)
@@ -2096,6 +2122,11 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	/** This is a version of setStrokeWidth() that accepts a double argument. */
 	public void setStrokeWidth(double strokeWidth) {
 		setStrokeWidth((float)strokeWidth);
+	}
+
+	/** Sets the minimum scaled stroke width (default=0.05). */
+	public void setMinStrokeWidth(double minWidth) {
+		minStrokeWidth = (float)minWidth;
 	}
 
 	/** Sets the width of the line used to draw this ROI and
@@ -2139,7 +2170,8 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		double mag = ic.getMagnification();
 		if (mag!=1.0) {
 			float width = (float)(stroke.getLineWidth()*mag);
-			//return new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+			if (width<minStrokeWidth)
+				width = minStrokeWidth;
 			return new BasicStroke(width, stroke.getEndCap(), stroke.getLineJoin(), stroke.getMiterLimit(), stroke.getDashArray(), stroke.getDashPhase());
 		} else
 			return stroke;
@@ -2200,7 +2232,6 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		if (n<0) n=0;
 		position = n;
 		channel = slice = frame = 0;
-		hyperstackPosition = false;
 	}
 
 	/** Returns the stack position (image number) for displaying this ROI,
@@ -2210,6 +2241,17 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	* @see ij.gui.Overlay
 	*/
 	public int getPosition() {
+		return position;
+	}
+	
+	public String getPositionAsString() {
+		String position = "" + getPosition();
+		if (hasHyperStackPosition())
+			position =  getCPosition() +","+getZPosition()+","+ getTPosition();
+		if (position.equals("0"))
+			position = "none";
+		else if (position.equals(""+PointRoi.POINTWISE_POSITION))
+			position = "point-specific";
 		return position;
 	}
 
@@ -2225,12 +2267,14 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		if (frame<0) frame=0;
 		this.frame = frame;
 		position = 0;
-		hyperstackPosition = true;
 	}
 
 	/** Returns 'true' if setPosition(C,Z,T) has been called. */
 	public boolean hasHyperStackPosition() {
-		return hyperstackPosition;
+		if (getPosition()==PointRoi.POINTWISE_POSITION)
+			return false;
+		else
+			return channel>0 || slice>0 || frame>0;
 	}
 
 	/** Sets the position of this ROI based on the stack position of the specified image.  */
@@ -2257,7 +2301,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	*   if this ROI is not associated with a particular slice.
 	*/
 	public final int getZPosition() {
-		return slice==0&&!hyperstackPosition ? position : slice;
+		return slice==0&&!hasHyperStackPosition() ? getPosition() : slice;
 	}
 
 	/** Returns the frame position of this ROI, or zero
@@ -2583,7 +2627,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	}
 
 	public String toString() {
-		return ("Roi["+getTypeAsString()+", x="+x+", y="+y+", width="+width+", height="+height+"]");
+		return ("Roi["+getTypeAsString()+", x="+x+", y="+y+", width="+width+", height="+height+", pos="+getPositionAsString()+"]");
 	}
 
 	/** Deprecated */

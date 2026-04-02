@@ -1,15 +1,33 @@
 package ij.plugin.frame;
 
+import java.awt.BorderLayout;
+import java.awt.Checkbox;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.TextField;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.awt.event.WindowEvent;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
-import ij.gui.*;
+import ij.gui.GUI;
+import ij.gui.Line;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RoiListener;
 import ij.plugin.PlugIn;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.event.*;
 
 /** Adjusts the width of line selections.  */
 public class LineWidthAdjuster extends PlugInFrame implements PlugIn,
@@ -164,7 +182,7 @@ public class LineWidthAdjuster extends PlugInFrame implements PlugIn,
 			if (roi!=null && roi.isLine())
 				strokeWidth = (int)roi.getStrokeWidth();
 		}
-		if (Recorder.record && strokeWidth>=0 && strokeWidth!=lineWidth0) {
+		if (IJ.recording() && strokeWidth>=0 && strokeWidth!=lineWidth0) {
 			if (Recorder.scriptMode()) {
 				Recorder.recordCall("roi = imp.getRoi();");
 				Recorder.recordCall("roi.setStrokeWidth("+strokeWidth+");");

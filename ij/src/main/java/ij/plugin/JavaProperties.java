@@ -1,17 +1,20 @@
 package ij.plugin;
 
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Properties;
+
 import ij.IJ;
 import ij.Menus;
 import ij.Prefs;
 import ij.gui.GUI;
 import ij.io.OpenDialog;
+import ij.stub.Applet;
 import ij.text.TextWindow;
-
-import java.applet.Applet;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Properties;
 
 /** Displays the Java system properties in a text window. */
 public class JavaProperties implements PlugIn {

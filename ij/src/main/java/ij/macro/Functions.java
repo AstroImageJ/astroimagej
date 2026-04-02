@@ -1,28 +1,18 @@
 package ij.macro;
 
-import ij.*;
-import ij.astro.AstroImageJ;
-import ij.astro.accessors.ITableWindow;
-import ij.gui.*;
-import ij.io.*;
-import ij.measure.Calibration;
-import ij.measure.CurveFitter;
-import ij.measure.Measurements;
-import ij.measure.ResultsTable;
-import ij.plugin.*;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.MaximumFinder;
-import ij.plugin.filter.Rotator;
-import ij.plugin.frame.*;
-import ij.process.*;
-import ij.text.TextPanel;
-import ij.text.TextWindow;
-import ij.util.IJMath;
-import ij.util.Tools;
-import ij.util.WildcardMatch;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.TextArea;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
@@ -31,10 +21,117 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.IndexColorModel;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.CharArrayWriter;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Vector;
+
+import javax.swing.SwingUtilities;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Menus;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
+import ij.astro.AstroImageJ;
+import ij.astro.accessors.ITableWindow;
+import ij.gui.Arrow;
+import ij.gui.EllipseRoi;
+import ij.gui.GenericDialog;
+import ij.gui.HistogramWindow;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Line;
+import ij.gui.NonBlockingGenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.ProfilePlot;
+import ij.gui.Roi;
+import ij.gui.RotatedRectRoi;
+import ij.gui.ShapeRoi;
+import ij.gui.StackWindow;
+import ij.gui.TextRoi;
+import ij.gui.Toolbar;
+import ij.gui.WaitForUserDialog;
+import ij.gui.Wand;
+import ij.gui.YesNoCancelDialog;
+import ij.io.FileInfo;
+import ij.io.FileSaver;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.io.SaveDialog;
+import ij.measure.Calibration;
+import ij.measure.CurveFitter;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.BatchProcessor;
+import ij.plugin.Colors;
+import ij.plugin.FITS_Reader;
+import ij.plugin.FolderOpener;
+import ij.plugin.ImageCalculator;
+import ij.plugin.ImageInfo;
+import ij.plugin.MacroInstaller;
+import ij.plugin.Macro_Runner;
+import ij.plugin.Orthogonal_Views;
+import ij.plugin.Straightener;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.MaximumFinder;
+import ij.plugin.filter.Rotator;
+import ij.plugin.frame.Channels;
+import ij.plugin.frame.ColorPicker;
+import ij.plugin.frame.ContrastAdjuster;
+import ij.plugin.frame.Editor;
+import ij.plugin.frame.Fitter;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.plugin.frame.ThresholdAdjuster;
+import ij.process.AutoThresholder;
+import ij.process.ColorProcessor;
+import ij.process.FHT;
+import ij.process.FloatBlitter;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.FloodFiller;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.LUT;
+import ij.process.ShortProcessor;
+import ij.process.StackStatistics;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.IJMath;
+import ij.util.Tools;
+import ij.util.WildcardMatch;
 
 
 /** This class implements the built-in macro functions. */
@@ -256,7 +353,7 @@ public class Functions implements MacroConstants, Measurements {
 			case MATCHES: value = matches(null); break;
 			case GET_STRING_WIDTH: value = getStringWidth(); break;
 			case FIT: value = fit(); break;
-			case OVERLAY: value = overlay(); break;
+			case OVERLAY: value = doOverlay(); break;
 			case SELECTION_CONTAINS: value = selectionContains(); break;
 			case PLOT: value = doPlot(); break;
 			default:
@@ -732,7 +829,6 @@ public class Functions implements MacroConstants, Measurements {
 		}
 		IJ.selectWindow(title);
 		resetImage();
-		interp.selectCount++;
 	}
 
 	void setForegroundColor() {
@@ -2330,6 +2426,7 @@ public class Functions implements MacroConstants, Measurements {
 		} else if (name.equals("drawShapes")) {
 			return drawShapes();
 		} else if (name.equals("drawGrid")) {
+			interp.getParens();
 			plot.drawShapes("redraw_grid", null);
 			return Double.NaN;
 		} else if (name.startsWith("setLineWidth")) {
@@ -3261,7 +3358,6 @@ public class Functions implements MacroConstants, Measurements {
 			interp.getRightParen();
 		}
 		resetImage();
-		interp.selectCount++;
 	}
 
 	void selectImage(String title) {
@@ -4016,7 +4112,7 @@ public class Functions implements MacroConstants, Measurements {
 		else
 			ff.fill8(x, y);
 		updateAndDraw();
-		if (Recorder.record && pgm.hasVars)
+		if (IJ.recording() && pgm.hasVars)
 			Recorder.record("floodFill", x, y);
 	}
 
@@ -4610,11 +4706,11 @@ public class Functions implements MacroConstants, Measurements {
 	}
 
 	String openAsRawString() {
-		int max = 5000;
+		long max = 5000;
 		String path = getFirstString();
 		boolean specifiedMax = false;
 		if (interp.nextToken()==',') {
-			max = (int)getNextArg();
+			max = (long)getNextArg();
 			specifiedMax = true;
 		}
 		interp.getRightParen();
@@ -4631,12 +4727,12 @@ public class Functions implements MacroConstants, Measurements {
 			interp.error("File not found");
 		try {
 			StringBuffer sb = new StringBuffer(5000);
-			int len = (int)file.length();
+			long len = file.length();
 			if (max>len || (path.endsWith(".txt")&&!specifiedMax))
 				max = len;
 			InputStream in = new BufferedInputStream(new FileInputStream(path));
 			DataInputStream dis = new DataInputStream(in);
-			byte[] buffer = new byte[max];
+			byte[] buffer = new byte[(int)max];
 			dis.readFully(buffer);
 			dis.close();
 			char[] buffer2 = new char[buffer.length];
@@ -4864,6 +4960,8 @@ public class Functions implements MacroConstants, Measurements {
 			ImageConverter.setDoScaling(true);
 		} else if (arg1.startsWith("mousewheel"))
 			Prefs.mouseWheelStackScrolling = state;
+		else if (arg1.startsWith("setijmenubar"))
+			Prefs.setIJMenuBar = state;
 		else
 			interp.error("Invalid option");
 	}
@@ -5222,6 +5320,25 @@ public class Functions implements MacroConstants, Measurements {
 		return desc.dispatch(this);
 	}
 
+	void handleProcessBuffers(InputStream... streams){
+		for (int i = 0; i < streams.length; i++) {
+			final InputStream is = streams[i];
+			new Thread(new Runnable(){
+                @Override
+                public void run(){
+                    try {
+                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                        while (br.readLine() != null)
+                        {}
+                    } catch (IOException ioe)
+                        {
+                        ioe.printStackTrace();  
+                    }
+                }
+            }).start();
+		}
+	}
+
 	String exec() {
 		String[] cmd;
 		StringBuffer sb = new StringBuffer(256);
@@ -5256,14 +5373,20 @@ public class Functions implements MacroConstants, Measurements {
 			Process p = Runtime.getRuntime().exec(cmd);
 			boolean returnImmediately = openingDoc || !waitForCompletion;
 			waitForCompletion = true;
-			if (returnImmediately)
+			if (returnImmediately){
+				handleProcessBuffers(p.getInputStream(), p.getErrorStream()); // empty both buffers
 				return null;
-			reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			} else {
+				handleProcessBuffers(p.getErrorStream()); // empty only unused ErrorStream buffer
+			}
+			reader = new BufferedReader(new InputStreamReader(p.getInputStream())); // notice that this function will discard all process error output
 			String line; int count=1;
 			while ((line=reader.readLine())!=null)  {
         		sb.append(line+"\n");
-        		if (count++==1&&line.startsWith("Microsoft Windows"))
-        			break; // user probably ran 'cmd' without /c option
+        		if (count++==1&&line.startsWith("Microsoft Windows")){
+					handleProcessBuffers(p.getInputStream()); // must empty the InputStream buffer anyway
+					break; // user probably ran 'cmd' without /c option
+				}
         	}
 		} catch (Exception e) {
     		sb.append(e.getMessage()+"\n");
@@ -5898,8 +6021,16 @@ public class Functions implements MacroConstants, Measurements {
 				IJ.makePoint((int)x, (int)y);
 			else
 				IJ.makePoint(x, y);
-		} else
-			getImage().setRoi(new PointRoi(x, y, options));
+		} else {
+			if (options!=null && options.equals("add")) { //add point to multi-point selection
+				IJ.setKeyDown(KeyEvent.VK_SHIFT);
+				if ((int)x==x && (int)y==y)
+					IJ.makePoint((int)x, (int)y);
+				else
+					IJ.makePoint(x, y);
+			} else
+				getImage().setRoi(new PointRoi(x, y, options));
+		}
 		resetImage();
 		shiftKeyDown = altKeyDown = false;
 	}
@@ -6166,9 +6297,28 @@ public class Functions implements MacroConstants, Measurements {
 			return deleteArrayIndex();
 		else if (name.equals("filter"))
 			return filterArray();
+		else if (name.equals("applyMacro"))
+			return applyMacroToArray();
 		else
 			interp.error("Unrecognized Array function");
 		return null;
+	}
+	
+	Variable[] applyMacroToArray() {
+		interp.getLeftParen();
+		Variable[] a = getArray();
+		String macro = (String)getNextString();
+		interp.getRightParen();
+		ResultsTable rt = new ResultsTable();
+		rt.setColumn("v", a);
+		rt.applyMacro(macro);
+		Variable column = null;
+		try {
+			column =  new Variable(rt.getColumnAsVariables("v"));
+		} catch (Exception e) {
+			interp.error(e.getMessage());
+		}
+		return column.getArray();
 	}
 
 	Variable[] filterArray() {
@@ -6789,7 +6939,7 @@ public class Functions implements MacroConstants, Measurements {
 			IJ.renameResults(arg1);
 	}
 
-	double overlay() {
+	double doOverlay() {
 		interp.getToken();
 		if (interp.token!='.')
 			interp.error("'.' expected");
@@ -6830,16 +6980,6 @@ public class Functions implements MacroConstants, Measurements {
 			getImage().setOverlay(overlayClipboard);
 			return Double.NaN;
 		} else if (name.equals("pasteAndMerge")) {
-			/*
-			interp.getParens();
-			if (overlayClipboard==null)
-				interp.error("Overlay clipboard empty");
-			Overlay overlay = getImage().getOverlay(); 
-			if (overlay!=null)
-				getImage().setOverlay(overlay.add(overlayClipboard));
-			else
-				getImage().setOverlay(overlayClipboard);
-			*/
 			return Double.NaN;
 		} else if (name.equals("drawLabels")) {
 			overlayDrawLabels = getBooleanArg();
@@ -6863,11 +7003,11 @@ public class Functions implements MacroConstants, Measurements {
 		if (overlay==null && name.equals("size")) {
 			interp.getParens();
 			return 0.0;
-		} else if (name.equals("hidden"))
+		} else if (name.equals("hidden")) {
 			return overlay!=null && imp.getHideOverlay()?1.0:0.0;
-		else if (name.equals("addSelection") || name.equals("addRoi"))
+		} else if (name.equals("addSelection") || name.equals("addRoi")) {
 			return overlayAddSelection(imp, overlay);
-		else if (name.equals("setPosition")) {
+		} else if (name.equals("setPosition")) {
 			addDrawingToOverlay(imp);
 			return overlaySetPosition(overlay);
 		} else if (name.equals("setFillColor"))
@@ -7019,7 +7159,7 @@ public class Functions implements MacroConstants, Measurements {
 			ResultsTable.selectRow(roi);
 		return Double.NaN;
 	}
-
+	
 	private double getOverlayElementBounds(Overlay overlay) {
 		int index = (int)getFirstArg();
 		Variable x = getNextVariable();
@@ -7036,7 +7176,7 @@ public class Functions implements MacroConstants, Measurements {
 		height.setValue(r.height);
 		return Double.NaN;
 	}
-
+	
 	double overlayAddSelection(ImagePlus imp, Overlay overlay) {
 		String strokeColor = null;
 		double strokeWidth = Double.NaN;
@@ -7970,6 +8110,9 @@ public class Functions implements MacroConstants, Measurements {
 			roi.setStrokeWidth(getArg());
 			imp.draw();
 			return null;
+		} else if (name.equals("setMinStrokeWidth")) {
+			roi.setMinStrokeWidth(getArg());
+			return null;
 		} else if (name.equals("getStrokeWidth")) {
 			interp.getParens();
 			return new Variable(roi.getStrokeWidth());
@@ -8210,7 +8353,7 @@ public class Functions implements MacroConstants, Measurements {
 			return null;
 		} else if (name.equals("setGroup")) {
 			int group = (int)getArg();
-			if (group<0 || group>255)
+			if (group<0 || group>Roi.MAX_ROI_GROUP)
 				interp.error("Group out of range");
 			rm.setGroup(group);
 			return null;
@@ -8283,7 +8426,7 @@ public class Functions implements MacroConstants, Measurements {
 		} else if (name.equals("get")) {
 			String value = imp.getProp(getStringArg());
 			return new Variable(value!=null?value:"");
-		} else if (name.equals("getNumber")) {
+		} else if (name.equals("getNumber") || name.equals("getValue")) {
 			String svalue = imp.getProp(getStringArg());
 			double nvalue = svalue!=null?Tools.parseDouble(svalue):Double.NaN;
 			return new Variable(nvalue);

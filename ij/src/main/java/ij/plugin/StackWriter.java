@@ -1,6 +1,20 @@
 package ij.plugin;
 
-import ij.*;
+import java.awt.Color;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Properties;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
@@ -12,15 +26,7 @@ import ij.process.ImageProcessor;
 import ij.process.LUT;
 import ij.util.Tools;
 
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Locale;
-import java.util.Properties;
-
-/** This plugin, which saves the images in a stack as separate files, 
+/** This plugin, which saves the images in a stack as separate files,
 	implements the File/Save As/Image Sequence command. */
 public class StackWriter implements PlugIn {
 	private static final String DIR_KEY = "save.sequence.dir";
@@ -159,8 +165,12 @@ public class StackWriter implements PlugIn {
 			}
 			if (label==null)
 				path = directory+name+digits+extension;
-			else
-				path = directory+label+extension;
+			else {
+				if (label.toLowerCase().endsWith(".tiff") && ".tif".equals(extension))
+					path = directory+label;
+				else
+					path = directory+label+extension;
+			}
 			try {
 				Files.createDirectories(Path.of(path).getParent());
 			} catch (IOException e) {
@@ -178,7 +188,7 @@ public class StackWriter implements PlugIn {
 					}
 				}
 			}
-			if (Recorder.record)
+			if (IJ.recording())
 				Recorder.disablePathRecording();
 			imp2.setOverlay(null);
 			if (overlay!=null && format.equals("tiff")) {
@@ -245,7 +255,7 @@ public class StackWriter implements PlugIn {
 			useLabels = gd.getNextBoolean();
 		else
 			useLabels = false;
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			String options2 = "format="+format;
 			if (nameChanged)
 				options2 += " name="+name;
@@ -285,4 +295,3 @@ public class StackWriter implements PlugIn {
 	}
 	
 }
-

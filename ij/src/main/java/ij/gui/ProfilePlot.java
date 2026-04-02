@@ -1,5 +1,9 @@
 package ij.gui;
 
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.Calibration;
@@ -8,9 +12,6 @@ import ij.process.FloatPolygon;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.util.ArrayList;
 
 /** Creates a density profile plot of a line or rectangular selection. */
 public class ProfilePlot {
@@ -231,7 +232,7 @@ public class ProfilePlot {
 		ip.setInterpolate(false);
 		for (int y=rect.y; y<rect.y+rect.height; y++) {
 			aLine = ip.getLine(rect.x, y, rect.x+rect.width-1, y);
-			for (int i=0; i<rect.width; i++) {
+			for (int i=0; i<aLine.length; i++) {
 				if (!Double.isNaN(aLine[i])) {
 					profile[i] += aLine[i];
 					counts[i]++;

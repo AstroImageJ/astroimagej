@@ -1,5 +1,15 @@
 package ij.gui;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Label;
+import java.awt.TextField;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.util.Vector;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Undo;
@@ -12,15 +22,8 @@ import ij.process.FloatPolygon;
 import ij.text.TextWindow;
 import ij.util.Tools;
 
-import java.awt.*;
-import java.awt.event.TextEvent;
-import java.awt.event.TextListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.util.Vector;
 
-
- /** Displays a dialog that allows the user to specify ROI properties such as color and line width. */
+/** Displays a dialog that allows the user to specify ROI properties such as color and line width. */
 public class RoiProperties implements TextListener, WindowListener {
 	private ImagePlus imp;
 	private Roi roi;
@@ -95,13 +98,7 @@ public class RoiProperties implements TextListener, WindowListener {
 			justification = troi.getJustification();
 			antialias = troi.getAntiAlias();
 		}
-		String position = ""+roi.getPosition();
-		if (roi.hasHyperStackPosition())
-			position =  roi.getCPosition() +","+roi.getZPosition()+","+ roi.getTPosition();
-		if (position.equals("0"))
-			position = "none";
-		else if (position.equals(""+PointRoi.POINTWISE_POSITION))
-			position = "point-specific";
+		String position = roi.getPositionAsString();			
 		String group = ""+roi.getGroup();
 		if (group.equals("0"))
 			group = "none";
@@ -320,7 +317,7 @@ public class RoiProperties implements TextListener, WindowListener {
 			listProperties(roi);
 		return true;
 	}
-	
+		
 	private void setPosition(Roi roi, String pos1, String pos2) {
 		if (pos1.equals(pos2))
 			return;
@@ -433,7 +430,7 @@ public class RoiProperties implements TextListener, WindowListener {
 		TextField tf = (TextField) e.getSource();
 		String str = tf.getText();
 		double group = Tools.parseDouble(str, Double.NaN);
-		if (!Double.isNaN(group) && group>=0 && group<=255) {
+		if (!Double.isNaN(group) && group>=0 && group<=Roi.MAX_ROI_GROUP) {
 			roi.setGroup((int)group);
 			String name = Roi.getGroupName((int)group);
 			if (name==null)

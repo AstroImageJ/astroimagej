@@ -1,5 +1,31 @@
 package ij.measure;
 
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.ref.WeakReference;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
+
+import javax.swing.SortOrder;
+
 import com.astroimagej.bspline.util.Pair;
 import ij.IJ;
 import ij.ImagePlus;
@@ -16,21 +42,14 @@ import ij.macro.Tokenizer;
 import ij.macro.Variable;
 import ij.plugin.FITS_Writer;
 import ij.plugin.filter.Analyzer;
-import ij.process.*;
+import ij.process.ByteProcessor;
+import ij.process.ByteStatistics;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 import ij.text.TextPanel;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.*;
-import java.lang.ref.WeakReference;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.*;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoubleUnaryOperator;
 
 
 /** This is a table for storing measurement results and strings as columns of values. 
@@ -532,6 +551,29 @@ public class ResultsTable implements Cloneable {
 		return fp;
 	}
 	
+	/** Creates a ResultsTable from an image or image selection. */
+	public static ResultsTable createTableFromImage(ImagePlus imp) {
+		if (imp==null)
+			return null;
+		Roi roi = imp.getRoi();
+		ImageProcessor ip = imp.getProcessor();
+		if (roi==null || roi.getType()==Roi.RECTANGLE)
+			return createTableFromImage(ip);
+		ResultsTable rt = new ResultsTable();
+		Rectangle r = ip.getRoi();
+		for (int y=r.y; y<r.y+r.height; y++) {
+			rt.incrementCounter();
+			rt.addLabel(" ", "Y"+y);
+			for (int x=r.x; x<r.x+r.width; x++) {
+				if (roi.contains(x,y))
+					rt.addValue("X"+x, ip.getPixelValue(x,y));
+				else
+					rt.addValue("X"+x, Double.NaN);
+			}
+		}
+		return rt;
+	}
+
 	/** Creates a ResultsTable from an image or image selection. */
 	public static ResultsTable createTableFromImage(ImageProcessor ip) {
 		ResultsTable rt = new ResultsTable();

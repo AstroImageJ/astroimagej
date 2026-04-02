@@ -1,10 +1,19 @@
  package ij.process;
 
- import java.awt.*;
- import java.awt.image.*;
+ import java.awt.Color;
+ import java.awt.Image;
+ import java.awt.image.BufferedImage;
+ import java.awt.image.ColorModel;
+ import java.awt.image.DataBuffer;
+ import java.awt.image.DataBufferByte;
+ import java.awt.image.DataBufferUShort;
+ import java.awt.image.IndexColorModel;
+ import java.awt.image.Raster;
+ import java.awt.image.SampleModel;
+ import java.awt.image.WritableRaster;
  import java.util.Random;
 
-/** ShortProcessors contain a 16-bit unsigned image
+ /** ShortProcessors contain a 16-bit unsigned image
 	and methods that operate on that image. */
 public class ShortProcessor extends ImageProcessor {
 
@@ -518,23 +527,23 @@ public class ShortProcessor extends ImageProcessor {
 						if (range<=0.0 || v1==min2)
 							v2 = v1;
 						else					
-							v2 = (int)(Math.exp(value*Math.log((v1-min2)/range))*range+min2);
+							v2 = (int)Math.round(Math.exp(value*Math.log((v1-min2)/range))*range+min2);
 						break;
 					case LOG:
 						if (v1<=0)
 							v2 = 0;
 						else 
-							v2 = (int)(Math.log(v1)*(max2/Math.log(max2)));
+							v2 = (int)Math.round(Math.log(v1)*(max2/Math.log(max2)));
 						break;
 					case EXP:
-						v2 = (int)(Math.exp(v1*(Math.log(max2)/max2)));
+						v2 = (int)Math.round(Math.exp(v1*(Math.log(max2)/max2)));
 						break;
 					case SQR:
 						double d1 = v1;
 						v2 = (int)(d1*d1);
 						break;
 					case SQRT:
-						v2 = (int)Math.sqrt(v1);
+						v2 = (int)Math.round(Math.sqrt(v1));
 						break;
 					case ABS:
 						v2 = (int)Math.abs(v1);
@@ -1288,4 +1297,3 @@ public class ShortProcessor extends ImageProcessor {
 	public void dilate() {}
 
 }
-

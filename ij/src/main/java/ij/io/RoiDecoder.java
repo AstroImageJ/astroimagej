@@ -1,11 +1,28 @@
 package ij.io;
 
-import ij.ImagePlus;
-import ij.gui.*;
-
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import ij.ImagePlus;
+import ij.gui.Arrow;
+import ij.gui.EllipseRoi;
+import ij.gui.ImageRoi;
+import ij.gui.Line;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RotatedRectRoi;
+import ij.gui.ShapeRoi;
+import ij.gui.TextRoi;
 
 /** This class decodes an ImageJ .roi file. 
 	<p>
@@ -88,6 +105,7 @@ public class RoiDecoder {
 	public static final int ROI_PROPS_OFFSET = 40;
 	public static final int ROI_PROPS_LENGTH = 44;
 	public static final int COUNTERS_OFFSET = 48;
+	public static final int GROUP_EXTENDED = 52;  //short (uint16) for groups > 255
 
 	// subtypes
 	public static final int TEXT = 1;
@@ -206,7 +224,11 @@ public class RoiDecoder {
 			overlayFontSize = getShort(hdr2Offset+OVERLAY_FONT_SIZE);
 			imageOpacity = getByte(hdr2Offset+IMAGE_OPACITY);
 			imageSize = getInt(hdr2Offset+IMAGE_SIZE);
-			group = getByte(hdr2Offset+GROUP);
+			int groupByte = getByte(hdr2Offset+GROUP);
+			if (version>=229 && groupByte==0 && hdr2Offset+GROUP_EXTENDED+2<=size)
+				group = getUnsignedShort(hdr2Offset+GROUP_EXTENDED);
+			else
+				group = groupByte;
 		}
 		
 		if (name!=null && name.endsWith(".roi"))

@@ -1,5 +1,14 @@
 package ij;
 
+import java.awt.GraphicsEnvironment;
+import java.awt.Menu;
+import java.awt.event.KeyEvent;
+import java.io.CharArrayWriter;
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.Hashtable;
+import java.util.Vector;
+
 import ij.io.OpenDialog;
 import ij.plugin.Duplicator;
 import ij.plugin.MacroInstaller;
@@ -7,14 +16,6 @@ import ij.plugin.frame.Editor;
 import ij.plugin.frame.Recorder;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.Hashtable;
-import java.util.Vector;
 
 
 /** Runs ImageJ menu commands in a separate thread.*/
@@ -66,7 +67,7 @@ public class Executer implements Runnable {
 			}
 		}
 		try {
-			if (Recorder.record) {
+			if (IJ.recording()) {
 				Recorder.setCommand(command);
 				runCommand(command);
 				Recorder.saveCommand();

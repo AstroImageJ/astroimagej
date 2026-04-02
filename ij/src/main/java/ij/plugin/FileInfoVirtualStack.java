@@ -1,5 +1,9 @@
 package ij.plugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Properties;
+
 import ij.CompositeImage;
 import ij.IJ;
 import ij.ImagePlus;
@@ -8,11 +12,11 @@ import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
 import ij.io.TiffDecoder;
-import ij.process.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Properties;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 /** This plugin opens a multi-page TIFF file, or a set of raw images, as a 
 	virtual stack. It implements the File/Import/TIFF Virtual Stack command. */
@@ -46,6 +50,8 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 	public FileInfoVirtualStack(FileInfo[] fi) {
 		info = fi;
 		nImages = info.length;
+		if (info[0].sliceLabels!=null && info[0].sliceLabels.length==nImages)
+			setSliceLabels(info[0].sliceLabels);
 	}
 
 	/** Opens the specified tiff file as a virtual stack. */
@@ -119,6 +125,8 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 			}
 		}
 		nImages = info.length;
+		if (info[0].sliceLabels!=null && info[0].sliceLabels.length==nImages)
+			setSliceLabels(info[0].sliceLabels);
 		FileOpener fo = new FileOpener(info[0]);
 		ImagePlus imp = fo.openImage();
 		if (nImages==1 && fi.fileType==FileInfo.RGB48)
@@ -131,6 +139,7 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 			setBitDepth(imp.getBitDepth());
 			imp2.setCalibration(imp.getCalibration());
 			imp2.setOverlay(imp.getOverlay());
+			canTranslate = true;
 			if (fi.info!=null)
 				imp2.setProperty("Info", fi.info);
 			if (props!=null) {
@@ -192,10 +201,14 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 	public void deleteSlice(int n) {
 		if (n<1 || n>nImages)
 			throw new IllegalArgumentException("Argument out of range: "+n);
+		if (isTranslatingIndices())
+			throw new IllegalArgumentException("Virtual hyperstack with non-czt order cannot be modified");
 		if (nImages<1) return;
 		for (int i=n; i<nImages; i++)
 			info[i-1] = info[i];
 		info[nImages-1] = null;
+		for (int i=n; i<nImages; i++)
+			setSliceLabel(getSliceLabel(i+1), i);
 		nImages--;
 	}
 	
@@ -251,16 +264,6 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 		return nImages;
 	}
 
-	/** Returns the label of the Nth image. */
-	public String getSliceLabel(int n) {
-		if (n<1 || n>nImages)
-			throw new IllegalArgumentException("Argument out of range: "+n);
-		if (info[0].sliceLabels==null || info[0].sliceLabels.length!=nImages)
-			return null;
-		else
-			return info[0].sliceLabels[n-1];
-	}
-
 	public int getWidth() {
 		return info[0].width;
 	}
@@ -271,15 +274,18 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 	
 	/** Adds an image to this stack. */
 	public synchronized  void addImage(FileInfo fileInfo) {
-		nImages++;
+		if (isTranslatingIndices())
+			throw new IllegalArgumentException("Virtual hyperstack with non-czt order cannot be modified");
 		if (info==null)
 			info = new FileInfo[250];
-		if (nImages==info.length) {
-			FileInfo[] tmp = new FileInfo[nImages*2];
-			System.arraycopy(info, 0, tmp, 0, nImages);
+		if (info.length <= nImages) {
+			FileInfo[] tmp = new FileInfo[nImages*2+1];
+			System.arraycopy(info, 0, tmp, 0, info.length);
 			info = tmp;
 		}
-		info[nImages-1] = fileInfo;
+		
+		info[nImages] = fileInfo;
+		nImages++;
 	}
 	
 	@Override

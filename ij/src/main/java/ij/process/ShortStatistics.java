@@ -1,6 +1,8 @@
 package ij.process;
-import ij.measure.Calibration;
+
 import java.awt.Rectangle;
+
+import ij.measure.Calibration;
 
 /** 16-bit image statistics, including histogram. */
 public class ShortStatistics extends ImageStatistics {
@@ -91,7 +93,7 @@ public class ShortStatistics extends ImageStatistics {
 			if (min<histMin) min = (int)histMin;
 			if (max>histMax) max = (int)histMax;
 		}
-		binSize = (histMax-histMin)/nBins;
+		binSize = (histMax-histMin+1)/nBins;
 		double scale = 1.0/binSize;
 		int hMin = (int)histMin;
 		histogram = new int[nBins]; // 256 bin histogram

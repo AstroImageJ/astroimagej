@@ -1,28 +1,80 @@
 package ij;
 
+import java.awt.BasicStroke;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.Window;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.ImageObserver;
+import java.awt.image.PixelGrabber;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.Vector;
+
 import ij.astro.AstroImageJ;
-import ij.gui.*;
+import ij.gui.Arrow;
+import ij.gui.EllipseRoi;
+import ij.gui.FreehandRoi;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageRoi;
+import ij.gui.ImageWindow;
+import ij.gui.Line;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RoiListener;
+import ij.gui.RotatedRectRoi;
+import ij.gui.ShapeRoi;
+import ij.gui.StackWindow;
+import ij.gui.TextRoi;
+import ij.gui.Toolbar;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.Opener;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
-import ij.plugin.*;
+import ij.plugin.AVI_Reader;
+import ij.plugin.Clipboard;
+import ij.plugin.Colors;
+import ij.plugin.ContrastEnhancer;
+import ij.plugin.Duplicator;
+import ij.plugin.FileInfoVirtualStack;
+import ij.plugin.PointToolOptions;
+import ij.plugin.Scaler;
+import ij.plugin.Thresholder;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.Channels;
 import ij.plugin.frame.ContrastAdjuster;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
-import ij.process.*;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.LUT;
+import ij.process.ShortProcessor;
 import ij.util.DicomTools;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.image.*;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.Vector;
 
 
 /**
@@ -1002,7 +1054,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 			ip.setCalibrationTable(cal.getCTable());
 		else
 			ip.setCalibrationTable(null);
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			Recorder recorder = Recorder.getInstance();
 			if (recorder!=null) recorder.imageUpdated(this);
 		}
@@ -2072,7 +2124,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 			deleteRoi();
 			return;
 		}
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			Recorder recorder = Recorder.getInstance();
 			if (recorder!=null) recorder.imageUpdated(this);
 		}

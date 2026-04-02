@@ -1,9 +1,6 @@
 package ij.process;
-import java.awt.*;
-import java.awt.image.*;
-import ij.*;
-import ij.gui.*;
-import ij.measure.*;
+
+import java.awt.image.ColorModel;
 
 /** This class converts an ImageProcessor to another data type. */
 public class TypeConverter {
@@ -235,11 +232,13 @@ public class TypeConverter {
 		if (cTable!=null && cTable.length==65536)
 			for (int i=0; i<width*height; i++)
 				pixels32[i] = cTable[pixels16[i]&0xffff];
-		else
+		else {
 			for (int i=0; i<width*height; i++)
 				pixels32[i] = pixels16[i]&0xffff;
+		}
 	    ColorModel cm = ip.getColorModel();
-	    return new FloatProcessor(width, height, pixels32, cm);
+	    FloatProcessor fp = new FloatProcessor(width, height, pixels32, cm);
+	    return fp;
 	}
 	
 	/** Converts processor to a ColorProcessor. */

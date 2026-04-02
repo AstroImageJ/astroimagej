@@ -1,15 +1,25 @@
 package ij.plugin;
 
-import ij.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Menus;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
 import ij.macro.Interpreter;
 import ij.plugin.frame.Editor;
 import ij.plugin.frame.Recorder;
-
-import java.io.*;
-import java.lang.reflect.Method;
 
 /** This class runs macros and scripts installed in the Plugins menu as well as
 	macros and scripts opened using the Plugins/Macros/Run command. */
@@ -40,7 +50,7 @@ public class Macro_Runner implements PlugIn {
 			if (name!=null) {
 				path = directory+name;
 				runMacroFile(path, null);
-				if (Recorder.record) {
+				if (IJ.recording()) {
 					path = Recorder.fixPath(path);
 					if (Recorder.scriptMode())
 						Recorder.recordCall("IJ.runMacroFile(\""+path+"\");");

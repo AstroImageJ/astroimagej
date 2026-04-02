@@ -1,7 +1,30 @@
 package ij.io;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
+import java.net.JarURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.CodeSource;
+import java.security.cert.Certificate;
+import java.util.HashMap;
+import java.util.Map;
+
 import ij.IJ;
-import java.io.*;
-import java.net.*;
 
 /** ImageJ uses this class loader to load plugins and resources from the
  * plugins directory and immediate subdirectories. This class loader will
@@ -17,6 +40,18 @@ import java.net.*;
 */
 public class PluginClassLoader extends URLClassLoader {
     protected String path;
+    private static final Map<URI, CodeSource> METADATA_CACHE = new HashMap<>();
+    private static final Map<ClassDesc, ClassDesc> APPLET_REMAP = Map.of(
+        ClassDesc.of("java.applet.Applet"), ClassDesc.of("ij.stub.Applet"),
+        ClassDesc.of("java.applet.AppletContext"), ClassDesc.of("ij.stub.AppletContext"),
+        ClassDesc.of("java.applet.AppletStub"), ClassDesc.of("ij.stub.AppletStub"),
+        ClassDesc.of("java.applet.AudioClip"), ClassDesc.of("ij.stub.AudioClip")
+    );
+    private static final ClassTransform APPLET_TRANSFORMER = createTransform();
+
+    static {
+        registerAsParallelCapable();
+    }
 
     /**
      * Creates a new PluginClassLoader that searches in the directory path
@@ -102,4 +137,185 @@ public class PluginClassLoader extends URLClassLoader {
 			addDirectory(f);
 	}
 
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        // Exclude java classes from remapping
+        if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("sun.")) {
+            return super.findClass(name);
+        }
+
+        var resourceName = name.replace('.', '/').concat(".class");
+
+        var resourceUrl = findResource(resourceName);
+        if (resourceUrl == null) {
+            IO.println("Resource not found: " + resourceName);
+            throw new ClassNotFoundException(name);
+        }
+
+        try {
+            var conn = resourceUrl.openConnection();
+
+            try (InputStream in = conn.getInputStream()) {
+                var bytes = in.readAllBytes();
+                var remapped = maybeRemapAppletRefs(bytes);
+
+                var lastDot = name.lastIndexOf('.');
+                if (lastDot != -1) {
+                    var pkg = name.substring(0, lastDot);
+                    if (getDefinedPackage(pkg) == null) {
+                        definePackage(pkg, null, null, null, null, null, null, null);
+                    }
+                }
+
+                try {
+                    var basePath = getCodeSourcePath(resourceUrl, resourceName);
+
+                    CodeSource codeSource = null;
+                    if (conn instanceof JarURLConnection jarURLConnection) {
+                        var jarEntry = jarURLConnection.getJarEntry();
+                        if (jarEntry != null) {
+                            codeSource = new CodeSource(resourceUrl, jarEntry.getCodeSigners());
+                        }
+                    }
+
+                    if (codeSource == null) {
+                        codeSource = getCodeSource(basePath, conn);
+                    }
+
+                    //Files.write(Paths.get(name + ".class"), remapped);
+
+                    return defineClass(name, remapped, 0, remapped.length, codeSource);
+                } catch (IOException | IllegalStateException e) {
+                    throw new ClassNotFoundException(name, e);
+                }
+            } catch (IOException e) {
+                throw new ClassNotFoundException(name, e);
+            }
+        } catch (IOException e) {
+            throw new ClassNotFoundException(name, e);
+        }
+    }
+
+    private static byte[] maybeRemapAppletRefs(byte[] classBytes) {
+        var cf = ClassFile.of();
+        return cf.transformClass(cf.parse(classBytes), APPLET_TRANSFORMER);
+    }
+
+    private static ClassTransform createTransform() {
+        CodeTransform codeTransform = (codeBuilder, e) -> {
+            switch (e) {
+                case InvokeInstruction i -> {
+                    var owner = i.owner().asSymbol();
+                    var type = i.typeSymbol();
+                    var rOwner = APPLET_REMAP.get(i.owner().asSymbol());
+                    var rType = APPLET_REMAP.get(type.returnType());
+
+                    if (rOwner != null || rType != null) {
+                        if (rType != null) {
+                            type = type.changeReturnType(rType);
+                        }
+                        if (rOwner != null) {
+                            owner = rOwner;
+                        }
+                        codeBuilder.invoke(i.opcode(), owner, i.name().stringValue(), type, i.isInterface());
+                    } else {
+                        codeBuilder.accept(i);
+                    }
+                }
+                case FieldInstruction f -> {
+                    var type = APPLET_REMAP.get(f.typeSymbol());
+                    if (type != null) {
+                        codeBuilder.fieldAccess(f.opcode(), f.owner().asSymbol(), f.name().stringValue(), type);
+                    } else {
+                        codeBuilder.accept(f);
+                    }
+                }
+                default -> codeBuilder.accept(e);
+            }
+        };
+
+        var methodTransform = MethodTransform.transformingCode(codeTransform);
+
+        ClassTransform fieldRemapper = (classBuilder, e) -> {
+            switch (e) {
+                case FieldModel f -> {
+                    var rf = APPLET_REMAP.get(f.fieldTypeSymbol());
+                    if (rf != null) {
+                        classBuilder.withField(f.fieldName().stringValue(), rf, f.flags().flagsMask());
+                    } else {
+                        classBuilder.accept(f);
+                    }
+                }
+                default -> classBuilder.accept(e);
+            }
+        };
+
+        return fieldRemapper.andThen(ClassTransform.transformingMethods(methodTransform));
+    }
+
+    private CodeSource getCodeSource(URI base, URLConnection conn) {
+        try {
+            return METADATA_CACHE.computeIfAbsent(base, (URI uri) -> {
+                try {
+                    if (conn instanceof JarURLConnection jarURLConnection) {
+                        return new CodeSource(jarURLConnection.getJarFileURL(), jarURLConnection.getCertificates());
+                    }
+
+                    var path = Path.of(uri);
+
+                    if (Files.isDirectory(path)) {
+                        return new CodeSource(path.toUri().toURL(), (Certificate[]) null);
+                    }
+                } catch (IOException e) {
+                    if (IJ.debugMode) {
+                        e.printStackTrace();
+                    }
+                }
+
+                return null;
+            });
+        } catch (IllegalStateException e) {
+            if (IJ.debugMode) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+    }
+
+    private URI getCodeSourcePath(URL url, String className) throws IllegalStateException {
+        try {
+            if ("jar".equals(url.getProtocol())) {
+                var file = url.getFile();
+                var sep = file.indexOf("!/");
+
+                if (sep == -1) {
+                    throw new IllegalStateException("Invalid jar url: " + url);
+                }
+
+                return new URI("jar:" + file.substring(0, sep) + "!/");
+            } else {
+                var path = Path.of(url.toURI());
+                var classPath = Path.of(className);
+
+                if (!path.endsWith(classPath)) {
+                    throw new IllegalStateException("URL does not end with resource: " + className);
+                }
+
+                var base = path;
+                for (int i = 0; i < classPath.getNameCount(); i++) {
+                    base = base.getParent();
+                    if (base == null) break;
+                }
+
+                if (base == null) {
+                    throw new IllegalStateException("Cannot determine code source for " + url);
+                }
+
+                return base.toUri();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to get CodeSource path", e);
+        }
+    }
 }

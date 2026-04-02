@@ -1,7 +1,28 @@
 package ij.plugin;
 
-import ij.*;
-import ij.gui.*;
+import java.awt.Color;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
+import ij.gui.Arrow;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageRoi;
+import ij.gui.Line;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RoiProperties;
+import ij.gui.Toolbar;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
@@ -9,9 +30,6 @@ import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
-
-import java.awt.*;
-import java.awt.geom.Rectangle2D;
 
 /** This plugin implements the commands in the Image/Overlay menu. */
 public class OverlayCommands implements PlugIn {
@@ -252,6 +270,9 @@ public class OverlayCommands implements PlugIn {
 	}
 	
 	private void setPosition(ImagePlus imp, Roi roi) {
+		//IJ.log("Overlay.setPosition: "+roi+" "+roi.getPositionAsString()+" "+roi.hasHyperStackPosition());
+		if (roi instanceof PointRoi && roi.size()>1)
+			return;
 		int stackSize = imp.getStackSize();
 		if (roi.hasHyperStackPosition() && imp.isHyperStack())
 			return;
@@ -335,13 +356,13 @@ public class OverlayCommands implements PlugIn {
 				return;
 			}
 			flattenStack(imp);
-			if (Recorder.record)
+			if (IJ.recording())
 				Recorder.recordCall("imp.flattenStack();");
 		} else {
 			ImagePlus imp2 = imp.flatten();
 			imp2.setTitle(WindowManager.getUniqueName(imp.getTitle()));
 			imp2.show();
-			if (Recorder.record) // Added by Marcel Boeglin 2014.01.12
+			if (IJ.recording()) // Added by Marcel Boeglin 2014.01.12
 				Recorder.recordCall("imp = imp.flatten();");
 		}
 	}

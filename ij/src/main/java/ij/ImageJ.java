@@ -74,6 +74,7 @@ import ij.plugin.frame.Editor;
 import ij.plugin.frame.Fitter;
 import ij.plugin.frame.RoiManager;
 import ij.plugin.frame.ThresholdAdjuster;
+import ij.stub.Applet;
 import ij.text.TextWindow;
 import ij.util.Tools;
 
@@ -136,8 +137,8 @@ public class ImageJ extends Frame implements ActionListener,
 	MouseListener, KeyListener, WindowListener, ItemListener, Runnable {
 
 	/** Plugins should call IJ.getVersion() or IJ.getFullVersion() to get the version string. */
-	public static final String VERSION = "1.54m";
-	public static final String BUILD = "1";
+	public static final String VERSION = "1.54s";
+	public static final String BUILD = ""; //14
 	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
@@ -172,7 +173,7 @@ public class ImageJ extends Frame implements ActionListener,
 	private ProgressBar progressBar;
 	private JLabel statusLine;
 	private boolean firstTime = true;
-	private java.applet.Applet applet; // null if not running as an applet
+	private Applet applet; // null if not running as an applet
 	private Vector classes = new Vector();
 	private boolean exitWhenQuitting;
 	private boolean quitting;
@@ -196,21 +197,26 @@ public class ImageJ extends Frame implements ActionListener,
 		this(null, mode);
 	}
 
-	/** Creates a new ImageJ frame that runs as an applet. */
-	public ImageJ(java.applet.Applet applet) {
+	/** Creates a new ImageJ frame that runs as an applet.
+	    @deprecated Applets were removed in Java 26*/
+	@Deprecated(since = "IJ XX; Java 26")
+	public ImageJ(Applet applet) {
 		this(applet, STANDALONE);
 	}
 
 	/** If 'applet' is not null, creates a new ImageJ frame that runs as an applet.
-		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
-		(non-standalone) version of ImageJ. */
-	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; update notification;" +
-			"Make MacAdapter look in plugins folder; set mac to use screen menubar; " +
-			"update keymapping on mac for copy/paste;", modified = true)
-	public ImageJ(java.applet.Applet applet, int mode) {
-		super("AstroImageJ");
-		ConsoleLogging.duplicateConsole2File();
-		System.setProperty("apple.laf.useScreenMenuBar", "true");
+	    If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded
+	    (non-standalone) version of ImageJ.
+	    @deprecated Applets were removed in Java 26.
+	 */
+    @AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; update notification;" +
+            "Make MacAdapter look in plugins folder; set mac to use screen menubar; " +
+            "update keymapping on mac for copy/paste;", modified = true)
+	@Deprecated(since = "IJ XX; Java 26")
+	public ImageJ(Applet applet, int mode) {
+        super("AstroImageJ");
+        ConsoleLogging.duplicateConsole2File();
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
 		if ((mode&DEBUG)!=0)
 			IJ.setDebugMode(true);
 		mode = mode & 255;
@@ -755,7 +761,7 @@ public class ImageJ extends Frame implements ActionListener,
 		if (IJ.isMacintosh() && !quitting) {
 			IJ.wait(10); // may be needed for Java 1.4 on OS X
 			MenuBar mb = Menus.getMenuBar();
-			if (mb!=null && mb!=getMenuBar()) {
+			if (mb!=null && mb!=getMenuBar() && !IJ.isMacro()) {
 				setMenuBar(mb);
 				Menus.setMenuBarCount++;
 				//if (IJ.debugMode) IJ.log("setMenuBar: "+Menus.setMenuBarCount);

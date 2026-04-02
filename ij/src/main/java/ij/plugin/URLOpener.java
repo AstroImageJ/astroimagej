@@ -1,17 +1,29 @@
 package ij.plugin;
 
-import ij.*;
+import java.awt.Color;
+import java.awt.Menu;
+import java.awt.MenuItem;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Hashtable;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.io.FileInfo;
 import ij.io.Opener;
 import ij.plugin.frame.Editor;
 import ij.plugin.frame.Recorder;
-
-import java.awt.*;
-import java.io.*;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Hashtable;
 
 /** Opens TIFFs, ZIP compressed TIFFs, DICOMs, GIFs and JPEGs using a URL. 
 	TIFF file names must end in ".tif", ZIP file names must end 
@@ -38,7 +50,7 @@ public class URLOpener implements PlugIn {
 				double startTime = System.currentTimeMillis();
 				String url = imageURL(urlOrName);
 				ImagePlus imp = new ImagePlus(url);
-				if (Recorder.record)
+				if (IJ.recording())
 					Recorder.recordCall("imp = IJ.openImage(\""+url+"\");");
 				if (imp.getType()==ImagePlus.COLOR_RGB)
 					Opener.convertGrayJpegTo8Bits(imp);

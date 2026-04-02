@@ -1,8 +1,17 @@
 package ij.plugin.frame;
-import java.awt.*;
-import java.awt.event.*;
-import ij.*;
-import ij.plugin.*;
+
+import java.awt.AWTEvent;
+import java.awt.Frame;
+import java.awt.Image;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.WindowManager;
+import ij.plugin.PlugIn;
 
 /**  This is a closeable window that plugins can extend. */
 public class PlugInFrame extends Frame implements PlugIn, WindowListener, FocusListener {
@@ -30,7 +39,7 @@ public class PlugInFrame extends Frame implements PlugIn, WindowListener, FocusL
     public void windowClosing(WindowEvent e) {
     	if (e.getSource()==this) {
     		close();
-    		if (Recorder.record)
+    		if (IJ.recording())
     			Recorder.record("run", "Close");
     	}
     }
@@ -43,10 +52,6 @@ public class PlugInFrame extends Frame implements PlugIn, WindowListener, FocusL
     }
 
     public void windowActivated(WindowEvent e) {
-		if (Prefs.setIJMenuBar) {
-			this.setMenuBar(Menus.getMenuBar());
-			Menus.setMenuBarCount++;
-		}
 		WindowManager.setWindow(this);
 	}
 

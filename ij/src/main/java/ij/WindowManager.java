@@ -1,5 +1,15 @@
 package ij;
 
+import java.awt.CheckboxMenuItem;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
+import java.awt.MenuItem;
+import java.awt.Window;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Vector;
+
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.ITableWindow;
 import ij.gui.HistogramWindow;
@@ -12,11 +22,6 @@ import ij.plugin.frame.PlugInFrame;
 import ij.plugin.frame.Recorder;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Vector;
 
 /** This class consists of static methods used to manage ImageJ's windows. */
 public class WindowManager {
@@ -57,7 +62,7 @@ public class WindowManager {
 		activations.remove(win);
 		activations.add(win);
 		Menus.updateMenus();
-		if (Recorder.record && !IJ.isMacro())
+		if (IJ.recording() && !IJ.isMacro())
 			Recorder.record("selectImage", win.getImagePlus().getTitle());
 	}
 	
@@ -583,7 +588,7 @@ public class WindowManager {
 				else
 					((Dialog)win).toFront();
 				((CheckboxMenuItem)item).setState(false);
-				if (Recorder.record && !IJ.isMacro())
+				if (IJ.recording() && !IJ.isMacro())
 					Recorder.record("selectWindow", title);
 				return;
 			}

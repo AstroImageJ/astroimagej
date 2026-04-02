@@ -1,7 +1,29 @@
 package ij;
 
+import java.awt.Color;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Properties;
+
 import ij.astro.AstroImageJ;
-import ij.gui.*;
+import ij.gui.GUI;
+import ij.gui.ImageCanvas;
+import ij.gui.NewImage;
+import ij.gui.PlotWindow;
+import ij.gui.Roi;
+import ij.gui.Toolbar;
 import ij.io.FileSaver;
 import ij.io.ImportDialog;
 import ij.io.OpenDialog;
@@ -11,15 +33,9 @@ import ij.plugin.filter.Filters;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.process.ColorProcessor;
 import ij.process.FloatBlitter;
+import ij.stub.Applet;
 import ij.text.TextWindow;
 import ij.util.Tools;
-
-import java.applet.Applet;
-import java.awt.*;
-import java.io.*;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Properties;
 
 /**
 This class contains the ImageJ preferences, which are 
@@ -172,7 +188,7 @@ public class Prefs {
 	public static boolean autoRunExamples = true;
 	/** Ignore stack positions when displaying points. */
 	public static boolean showAllPoints;
-	/** Set MenuBar on Macs running Java 8. */
+	/** Show ImageJ menu bar on image window activation on Macs. */
 	public static boolean setIJMenuBar = IJ.isMacOSX();
 	/** "ImageJ" window is always on top. */
 	public static boolean alwaysOnTop;
@@ -312,11 +328,25 @@ public class Prefs {
 	public static boolean containsKey(String key) {
 		return ijPrefs.containsKey(KEY_PREFIX+key);
 	}
-	
+
 	/** Finds and loads the configuration file ("IJ_Props.txt")
+
+    /**
+     * Finds and loads the configuration file ("IJ_Props.txt")
+     * and the preferences file ("IJ_Prefs.txt").
+     *
+     * @param ij
+     * @return    an error message if "IJ_Props.txt" not found.
+     */
+    public static String load(Object ij) {
+        return load(ij, null);
+    }
+
+    /** Finds and loads the configuration file ("IJ_Props.txt")
 	 * and the preferences file ("IJ_Prefs.txt").
 	 * @return	an error message if "IJ_Props.txt" not found.
 	*/
+	@Deprecated(since = "IJ XX; Java 26")
 	public static String load(Object ij, Applet applet) {
 		if (ImageJDir==null)
 			ImageJDir = System.getProperty("user.dir");
@@ -362,6 +392,7 @@ public class Prefs {
 	}
 	*/
 
+	@Deprecated(since = "IJ XX; Java 26")
 	static String loadAppletProps(InputStream f, Applet applet) {
 		if (f==null)
 			return PROPS_NAME+" not found in ij.jar";
@@ -398,9 +429,9 @@ public class Prefs {
 	public static String getImageJDir() {
 		String path = Menus.getImageJPath();
 		if (path==null) {
-			String ijPath = getPluginsDirProperty();
-			//if (ijPath==null)
-			//	ijPath = ImageJDir;
+			String ijPath = ImageJDir;
+			if (ijPath==null)
+				ijPath = getPluginsDirProperty();
 			if (ijPath==null)
 				ijPath = System.getProperty("user.dir");
 			return ijPath + File.separator;
@@ -460,7 +491,7 @@ public class Prefs {
 
 	/** Sets the path to the ImageJ directory. */
 	static void setHomeDir(String path) {
-		if (path.endsWith(File.separator))
+		if (path.endsWith(File.separator) || path.endsWith("/"))
 			path = path.substring(0, path.length()-1);
 		ImageJDir = path;
 	}

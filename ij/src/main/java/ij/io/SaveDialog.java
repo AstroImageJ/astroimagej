@@ -1,16 +1,26 @@
 package ij.io;
 
-import ij.*;
+import java.awt.EventQueue;
+import java.awt.FileDialog;
+import java.awt.Font;
+import java.awt.Frame;
+import java.io.File;
+import java.io.IOException;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.LookAndFeel;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.macro.Interpreter;
 import ij.plugin.frame.Recorder;
 import ij.util.Java2;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 
 /** This class displays a dialog window from 
 	which the user can save a file. */ 
@@ -261,7 +271,7 @@ public class SaveDialog {
 	/** Returns the selected file name. */
 	public String getFileName() {
 		if (name!=null) {
-			if (Recorder.record && dir!=null)
+			if (IJ.recording() && dir!=null)
 				Recorder.recordPath(title, dir+name);
 			OpenDialog.setLastName(name);
 		}

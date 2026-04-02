@@ -1,15 +1,23 @@
 package ij.plugin;
 
-import ij.*;
+import java.awt.Color;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.io.FileInfo;
 import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
-import ij.process.*;
-
-import java.awt.*;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 
 /** Implements the Image/Stacks/Images to Stack" command. */
@@ -130,7 +138,7 @@ public class ImagesToStack implements PlugIn {
 				staticKeep = keep;
 				staticTitlesAsLabels = titlesAsLabels;
 			}
-			if (Recorder.record)
+			if (IJ.recording())
    				Recorder.recordCall("imp = ImagesToStack.run(arrayOfImages);");
 		} else
 			keep = false;
@@ -202,6 +210,15 @@ public class ImagesToStack implements PlugIn {
 						}
 						ip2.insert(ip, xoff, yoff);
 						ip = ip2;
+						Overlay overlay2 = images[i].getOverlay();
+						if (overlay2!=null) {
+							overlay2.translate(xoff, yoff);
+							for (int j=0; j<overlay2.size(); j++) {
+								Roi roi = overlay2.get(j);
+								roi.setPosition(i+1);
+								overlay.add((Roi)roi.clone());
+							}
+						}
 						break;
 					case SCALE_SMALL: case SCALE_LARGE:
 						ip.setInterpolationMethod((bicubic?ImageProcessor.BICUBIC:ImageProcessor.BILINEAR));

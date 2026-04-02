@@ -1,8 +1,12 @@
 package ij.gui;
-import ij.*;
-import ij.plugin.*;
-import java.awt.*;
+
+import java.awt.AWTEvent;
+import java.awt.Color;
+import java.awt.TextField;
 import java.util.Vector;
+
+import ij.plugin.Colors;
+import ij.plugin.PlugIn;
 
 /** This plugin implements the Edit/Options/Roi Defaults command. */
 public class RoiDefaultsDialog implements PlugIn, DialogListener {
@@ -54,7 +58,7 @@ public class RoiDefaultsDialog implements PlugIn, DialogListener {
 		int group = (int)gd.getNextNumber();
 		Vector stringFields = gd.getStringFields();
 		TextField nameField = (TextField)(stringFields.get(0));
-		if (group>=0 && group<=255 && group!=currentGroup) {
+		if (group>=0 && group<=Roi.MAX_ROI_GROUP && group!=currentGroup) {
 			Roi.setDefaultGroup(group);
 			String name = getGroupName(group);
 			nameField.setText(name);

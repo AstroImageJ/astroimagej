@@ -1,14 +1,38 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.util.Tools;
-import ij.io.*;
-import ij.macro.Interpreter;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
+
+import java.awt.Button;
+import java.awt.Choice;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Vector;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.macro.Interpreter;
+import ij.process.ImageProcessor;
+import ij.util.StringSorter;
 
 /** This plugin implements the File/Batch/Macro and File/Batch/Virtual Stack commands. */
 	public class BatchProcessor implements PlugIn, ActionListener, ItemListener, Runnable {
@@ -189,6 +213,7 @@ import java.util.Vector;
 		list = FolderOpener.getFilteredList(list, filter, "Batch Processor");
 		if (list==null)
 			return;
+		StringSorter.sort(list);
 		int index = 0;
 		int startingCount = WindowManager.getImageCount();
 		for (int i=0; i<list.length; i++) {

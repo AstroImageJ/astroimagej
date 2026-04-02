@@ -1,5 +1,12 @@
 package ij.plugin;
 
+import java.awt.Checkbox;
+import java.awt.TextField;
+import java.awt.event.KeyEvent;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.Vector;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -15,12 +22,6 @@ import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import ij.process.StackStatistics;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.TextEvent;
-import java.awt.event.TextListener;
-import java.util.Vector;
 
 
 /** This plugin implements the Analyze/Histogram command. */
@@ -184,11 +185,11 @@ public class Histogram implements PlugIn, TextListener {
 			if (d.cancelPressed())
 				return PlugInFilter.DONE;
 			else if (d.yesPressed()) {
-				if (Recorder.record)
+				if (IJ.recording())
 					Recorder.recordOption("stack");
 				return flags+PlugInFilter.DOES_STACKS;
 			}
-			if (Recorder.record)
+			if (IJ.recording())
 				Recorder.recordOption("slice");
 		}
 		return flags;

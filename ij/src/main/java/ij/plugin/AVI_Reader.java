@@ -1,15 +1,8 @@
 package ij.plugin;
 
-import ij.*;
-import ij.gui.GenericDialog;
-import ij.io.FileInfo;
-import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Image;
+import java.awt.TextField;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
@@ -18,6 +11,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Vector;
+
+import javax.imageio.ImageIO;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Prefs;
+import ij.VirtualStack;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.io.FileInfo;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 /** <pre>
  * ImageJ Plugin for reading an AVI file into an image stack
@@ -627,7 +636,7 @@ public class AVI_Reader extends VirtualStack implements PlugIn {
 		long pos = raFile.getFilePointer();
 		//IJ.log("at 0x"+Long.toHexString(pos)+" filesize=0x"+Long.toHexString(fileSize));
 		// extended AVI: try to find further 'RIFF' chunks, where we expect AVIX tags
-		while (pos>0 && pos<fileSize && (frameNumber<lastFrameToRead+1))
+		while (pos>0 && pos<fileSize && (frameNumber<=lastFrameToRead))
 				pos = findFourccAndRead(FOURCC_RIFF, false, fileSize, false);
 		return;
 	 }
@@ -1215,12 +1224,12 @@ public class AVI_Reader extends VirtualStack implements PlugIn {
 		byte[] bPixels = null;
 		int[] cPixels = null;
 		short[] sPixels = null;
-		if (biBitCount <=8 || convertToGray) {
-			bPixels = new byte[dwWidth * biHeight];
-			pixels = bPixels;
-		} else if (biBitCount == 16 && dataCompression == NO_COMPRESSION) {
+		if (biBitCount == 16 && dataCompression == NO_COMPRESSION) {
 			sPixels = new short[dwWidth * biHeight];
 			pixels = sPixels;
+		} else if (biBitCount <=8 || convertToGray) {
+			bPixels = new byte[dwWidth * biHeight];
+			pixels = bPixels;
 		} else {
 			cPixels = new int[dwWidth * biHeight];
 			pixels = cPixels;
@@ -1231,12 +1240,12 @@ public class AVI_Reader extends VirtualStack implements PlugIn {
 			int	 offset		= topDown ? 0 : (biHeight-1)*dwWidth;
 			int	 rawOffset	= 0;
 			for (int i = biHeight - 1; i >= 0; i--) {  //for all lines
-				if (biBitCount <=8 || isPlanarFormat)
+				if (biBitCount==16 && dataCompression == NO_COMPRESSION)
+					unpackShort(rawData, rawOffset, sPixels, offset, dwWidth);
+				else if (biBitCount <=8 || isPlanarFormat) //planar&converToGray: read 1st plane (Y)
 					unpack8bit(rawData, rawOffset, bPixels, offset, dwWidth);
 				else if (convertToGray)
 					unpackGray(rawData, rawOffset, bPixels, offset, dwWidth);
-				else if (biBitCount==16 && dataCompression == NO_COMPRESSION)
-					unpackShort(rawData, rawOffset, sPixels, offset, dwWidth);
 				else
 					unpack(rawData, rawOffset, cPixels, offset, dwWidth);
 				rawOffset += isPlanarFormat ? dwWidth : scanLineSize;

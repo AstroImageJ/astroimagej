@@ -1,11 +1,29 @@
 package ij.io;
-import ij.gui.*;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import ij.gui.Arrow;
+import ij.gui.EllipseRoi;
+import ij.gui.ImageRoi;
+import ij.gui.Line;
+import ij.gui.OvalRoi;
+import ij.gui.Overlay;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RotatedRectRoi;
+import ij.gui.ShapeRoi;
+import ij.gui.TextRoi;
 import ij.process.FloatPolygon;
-import java.awt.*;
-import java.io.*;
-import java.util.*;
-import java.net.*;
-import java.awt.geom.*;
 
 
 /** Saves an ROI to a file or stream. RoiDecoder.java has a description of the file format.
@@ -15,7 +33,7 @@ import java.awt.geom.*;
 public class RoiEncoder {
 	static final int HEADER_SIZE = 64;
 	static final int HEADER2_SIZE = 64;
-	static final int VERSION = 228; // v1.52t (roi groups, scale stroke width)
+	static final int VERSION = 229; // v1.54s (extended roi groups via uint16)
 	private String path;
 	private OutputStream f;
 	private final int polygon=0, rect=1, oval=2, line=3, freeline=4, polyline=5, noRoi=6, freehand=7, 
@@ -423,7 +441,12 @@ public class RoiEncoder {
 			putProps(roi, hdr2Offset);
 		if (countersSize>0)
 			putPointCounters(roi, hdr2Offset);
-		putByte(hdr2Offset+RoiDecoder.GROUP, roi.getGroup());
+		int group = roi.getGroup();
+		if (group > 255) {
+			putByte(hdr2Offset+RoiDecoder.GROUP, 0);  // marker for extended group
+			putShort(hdr2Offset+RoiDecoder.GROUP_EXTENDED, group);
+		} else
+			putByte(hdr2Offset+RoiDecoder.GROUP, group);
 	}
 
 	void putName(Roi roi, int hdr2Offset) {

@@ -1,14 +1,20 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
+
+import java.awt.Desktop;
+import java.io.File;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.gui.Toolbar;
 import ij.io.Opener;
-import ij.text.TextWindow;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.Editor;
-import java.awt.Desktop;
-import java.awt.Frame;
-import java.io.File;
+import ij.process.ImageProcessor;
 
 /** This plugin implements the Plugins/Utilities/Unlock, Image/Rename
 	and Plugins/Utilities/Search commands. */
@@ -169,10 +175,9 @@ public class SimpleCommands implements PlugIn {
 	}
 	
 	private void imageToResults() {
-		ImagePlus imp = IJ.getImage();
-		ImageProcessor ip = imp.getProcessor();
-		ResultsTable rt = ResultsTable.createTableFromImage(ip);
-		rt.show("Results");
+		ResultsTable rt = ResultsTable.createTableFromImage(IJ.getImage());
+		if (rt!=null)
+			rt.show("Results");
 	}
 	
 	private void resultsToImage() {

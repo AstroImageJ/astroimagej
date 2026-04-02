@@ -1,7 +1,31 @@
 package ij.plugin;
 
-import ij.*;
-import ij.gui.*;
+import java.awt.Color;
+import java.awt.Frame;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.geom.Rectangle2D;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
+import ij.gui.EllipseRoi;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Line;
+import ij.gui.OvalRoi;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.RoiProperties;
+import ij.gui.RotatedRectRoi;
+import ij.gui.ShapeRoi;
+import ij.gui.Toolbar;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
@@ -9,11 +33,12 @@ import ij.plugin.filter.EDM;
 import ij.plugin.frame.LineWidthAdjuster;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
-import ij.process.*;
-
-import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.geom.Rectangle2D;
+import ij.process.Blitter;
+import ij.process.ByteProcessor;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 
 
 /** This plugin implements the commands in the Edit/Selection submenu. */
@@ -248,6 +273,7 @@ public class Selection implements PlugIn, Measurements {
 		if (roi instanceof EllipseRoi)
 			return;
 		PolygonRoi p = (PolygonRoi)roi;
+		p = (PolygonRoi)p.clone();
 		Undo.setup(Undo.ROI, imp);
 		if (!segmentedSelection && p.getNCoordinates()>3) {
 			if (p.subPixelResolution())
@@ -262,6 +288,7 @@ public class Selection implements PlugIn, Measurements {
 			p.removeSplineFit();
 		else
 			p.fitSpline();
+		imp.setRoi(p);
 		imp.draw();
 		LineWidthAdjuster.update(); 
 	}
@@ -347,7 +374,6 @@ public class Selection implements PlugIn, Measurements {
 		float[] curvature = getCurvature(x, y, n);
 		Rectangle r = roi.getBounds();
 		double threshold = rodbard(length);
-		//IJ.log("trim: "+length+" "+threshold);
 		double distance = Math.sqrt((x[1]-x[0])*(x[1]-x[0])+(y[1]-y[0])*(y[1]-y[0]));
 		x[0] += r.x; y[0]+=r.y;
 		int i2 = 1;
@@ -468,7 +494,6 @@ public class Selection implements PlugIn, Measurements {
 		y = smooth(y, n);
 		float[] curvature = getCurvature(x, y, n);
 		double threshold = rodbard(length);
-		//IJ.log("trim: "+length+" "+threshold);
 		double distance = Math.sqrt((x[1]-x[0])*(x[1]-x[0])+(y[1]-y[0])*(y[1]-y[0]));
 		int i2 = 1;
 		double x1,y1,x2=0,y2=0;
@@ -779,7 +804,7 @@ public class Selection implements PlugIn, Measurements {
 				}
 			}
 		}
-		if (Recorder.record && imp.getStackSize()>1) {
+		if (IJ.recording() && imp.getStackSize()>1) {
 			if (imp.isHyperStack()) {
 				int C = imp.getChannel();
 				int Z = imp.getSlice();
@@ -829,7 +854,7 @@ public class Selection implements PlugIn, Measurements {
 		int width = (int)roi.getStrokeWidth();
 		RoiProperties rp = new RoiProperties(title, imp, roi);
 		boolean ok = rp.showDialog();
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			boolean groupChanged = false;
 			String name2 = roi.getName();
 			if (name2==null) name2 = "";

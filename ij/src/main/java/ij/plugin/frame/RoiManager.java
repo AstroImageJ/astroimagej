@@ -1,27 +1,35 @@
 package ij.plugin.frame;
 
-import ij.*;
-import ij.gui.*;
-import ij.io.*;
-import ij.macro.Interpreter;
-import ij.macro.MacroRunner;
-import ij.measure.Calibration;
-import ij.measure.Measurements;
-import ij.measure.ResultsTable;
-import ij.plugin.*;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.Filler;
-import ij.process.FloatPolygon;
-import ij.process.ImageProcessor;
-import ij.process.ImageStatistics;
-import ij.util.Tools;
-
-import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.List;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowEvent;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -30,6 +38,60 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
+import ij.gui.ColorChooser;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageRoi;
+import ij.gui.MessageDialog;
+import ij.gui.Overlay;
+import ij.gui.Plot;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
+import ij.gui.ProfilePlot;
+import ij.gui.Roi;
+import ij.gui.RoiProperties;
+import ij.gui.ShapeRoi;
+import ij.gui.TextRoi;
+import ij.gui.Toolbar;
+import ij.gui.YesNoCancelDialog;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.io.RoiDecoder;
+import ij.io.RoiEncoder;
+import ij.io.SaveDialog;
+import ij.macro.Interpreter;
+import ij.macro.MacroRunner;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.Colors;
+import ij.plugin.OverlayCommands;
+import ij.plugin.OverlayLabels;
+import ij.plugin.RoiRotator;
+import ij.plugin.RoiScaler;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.Filler;
+import ij.process.FloatPolygon;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.util.Tools;
 
 /** This plugin implements the Analyze/Tools/ROI Manager command. */
 public class RoiManager extends PlugInFrame implements ActionListener, ItemListener, MouseListener, MouseWheelListener, ListSelectionListener, Iterable<Roi> {
@@ -253,7 +315,7 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 			pm.show(this, ploc.x, bloc.y);
 		} else if (command.equals("OR (Combine)")) {
 			new MacroRunner("roiManager(\"Combine\");");
-			if (Recorder.record) Recorder.record("roiManager", "Combine");
+			if (IJ.recording()) Recorder.record("roiManager", "Combine");
 		} else if (command.equals("Split"))
 			split();
 		else if (command.equals("AND"))
@@ -310,7 +372,7 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 			if (firstTime && okToSet())
 				labelsCheckbox.setState(true);
 			showAll(showAllCheckbox.getState()?SHOW_ALL:SHOW_NONE);
-			if (Recorder.record && recordShowAll) {
+			if (IJ.recording() && recordShowAll) {
 				if (showAllMode)
 						Recorder.record("roiManager", "Show All");
 					else
@@ -329,7 +391,7 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 				showAll(SHOW_NONE);
 			else {
 				showAll(editState?LABELS:NO_LABELS);
-				if (Recorder.record) {
+				if (IJ.recording()) {
 					if (editState)
 						Recorder.record("roiManager", "Show All with labels");
 					else if (showAllState)
@@ -708,7 +770,6 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 		Roi roi = (Roi)rois.get(index);
 		if (imp==null || roi==null)
 			return false;
-			//IJ.log("restore: "+roi.getPosition()+"  "+roi.getZPosition()+"  "+imp.getNSlices()+"  "+imp.getStackSize());
 		if (setSlice) {
 			boolean hyperstack = imp.isHyperStack();
 			int position = roi.getPosition();
@@ -813,7 +874,7 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 				return false;
 			path = directory + name;
 		}
-		if (Recorder.record && !IJ.macroRunning()) {
+		if (IJ.recording() && !IJ.macroRunning()) {
 			if (Recorder.scriptMode())
 				Recorder.recordCall("rm.open(\""+path+"\");");
 			else
@@ -938,7 +999,7 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 			errorMessage = e.getMessage();
 			IJ.error("ROI Manager", errorMessage);
 		}
-		if (Recorder.record && !IJ.isMacro()) {
+		if (IJ.recording() && !IJ.isMacro()) {
 			if (Recorder.scriptMode())
 				Recorder.recordCall("rm.save(\""+path+"\");");
 			else
@@ -999,7 +1060,7 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 		double time = (System.currentTimeMillis()-t0)/1000.0;
 		IJ.showProgress(1.0);
 		IJ.showStatus(IJ.d2s(time,3)+" seconds, "+indexes.length+" ROIs, "+path);
-		if (Recorder.record && !IJ.isMacro()) {
+		if (IJ.recording() && !IJ.isMacro()) {
 			if (Recorder.scriptMode())
 				Recorder.recordCall("rm.save(\""+path+"\");");
 			else
@@ -1213,6 +1274,8 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 
 	public static ResultsTable multiMeasure(ImagePlus imp, Roi[] rois, boolean appendResults) {
 		int nSlices = imp.getStackSize();
+		if (!measureAll)
+			nSlices = 1;
 		Analyzer aSys = new Analyzer(imp); // System Analyzer
 		ResultsTable rtSys = Analyzer.getResultsTable();
 		ResultsTable rtMulti = new ResultsTable();
@@ -1578,7 +1641,6 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 			if (group>=0)
 				roi.setGroup(group);
 			if (rpRoi!=null) {
-				//IJ.log("new pos="+rpRoi.getPosition());
 				if (rpRoi.hasHyperStackPosition())
 					roi.setPosition(rpRoi.getCPosition(), rpRoi.getZPosition(), rpRoi.getTPosition());
 				else
@@ -2720,7 +2782,6 @@ public class RoiManager extends PlugInFrame implements ActionListener, ItemListe
 			index += rot;
 			if (index<0) index = 0;
 			if (index>=getCount()) index = getCount();
-			//IJ.log(index+"  "+rot);
 			select(index);
 			if (IJ.isWindows())
 				list.requestFocusInWindow();

@@ -1,5 +1,14 @@
 package ij.io;
 
+import java.awt.Container;
+import java.awt.EventQueue;
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.io.File;
+
+import javax.swing.JFileChooser;
+import javax.swing.LookAndFeel;
+
 import ij.IJ;
 import ij.ImageJ;
 import ij.Macro;
@@ -9,10 +18,6 @@ import ij.astro.util.AIJFileChooser;
 import ij.macro.Interpreter;
 import ij.plugin.frame.Recorder;
 import ij.util.Java2;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.File;
 
 /** This class displays a dialog window from 
  * which the user can select an input file.
@@ -236,7 +241,7 @@ public class OpenDialog {
 	/** Returns the selected file name. */
 	public String getFileName() {
 		if (name!=null) {
-			if (Recorder.record && recordPath && dir!=null)
+			if (IJ.recording() && recordPath && dir!=null)
 				Recorder.recordPath(title, dir+name);
 			lastName = name;
 		}

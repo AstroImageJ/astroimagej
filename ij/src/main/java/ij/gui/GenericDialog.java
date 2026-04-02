@@ -1,6 +1,71 @@
 package ij.gui;
 
-import ij.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.SystemColor;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.image.ImageProducer;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Vector;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.io.DirectoryChooser;
 import ij.io.OpenDialog;
@@ -10,22 +75,6 @@ import ij.plugin.ScreenGrabber;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.plugin.frame.Recorder;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.dnd.DnDConstants;
-import java.awt.dnd.DropTarget;
-import java.awt.dnd.DropTargetAdapter;
-import java.awt.dnd.DropTargetDropEvent;
-import java.awt.event.*;
-import java.awt.image.ImageProducer;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Hashtable;
-import java.util.Locale;
-import java.util.Vector;
 
 
 /**
@@ -249,7 +298,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			panel.add(new Label(" "+units));
 			add(panel, c);
 		}
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(tf, label);
 	}
 
@@ -340,7 +389,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		defaultStrings.addElement(defaultText);
 		tf.setDropTarget(null);
 		new DropTarget(tf, new TextDropTarget(tf));
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(tf, label);
 	}
 
@@ -381,7 +430,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		panel.add(button);
 		layout.setConstraints(panel, constraints);
 		add(panel);
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(panel, label);
 	}
 
@@ -413,7 +462,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		panel.add(button);
 		layout.setConstraints(panel, constraints);
 		add(panel);
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(panel, label);
 	}
 
@@ -701,7 +750,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 				checkbox.addElement(cb);
 				cb.setState(defaultValues[i1]);
 				cb.addItemListener(this);
-				if (Recorder.record || macro)
+				if (IJ.recording() || macro)
 					saveLabel(cb, labels[i1]);
 				if (IJ.isLinux()) {
 					Panel panel2 = new Panel();
@@ -757,7 +806,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		c.anchor = GridBagConstraints.WEST;
 		c.insets = new Insets(insets.top, insets.left, 0, 0);
 		add(panel, c);
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(cg, label);
 	}
 
@@ -804,7 +853,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		choice.addElement(thisChoice);
 		int index = thisChoice.getSelectedIndex();
 		defaultChoiceIndexes.addElement(Integer.valueOf(index));
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(thisChoice, label);
 	}
 
@@ -995,6 +1044,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			sliderDigits = new Vector(5);
 		}
 		Scrollbar s = new Scrollbar(Scrollbar.HORIZONTAL, (int)defaultValue, 1, (int)minValue, (int)maxValue+1);
+		if (IJ.debugMode) IJ.log("Scrollbar: "+scale+" "+defaultValue+" "+minValue+" "+maxValue);
 		GUI.fixScrollbar(s);
 		slider.addElement(s);
 		s.addAdjustmentListener(this);
@@ -1064,7 +1114,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		c.insets.left = 0;
 		c.insets.bottom -= 3;
 		add(panel, c);
-		if (Recorder.record || macro)
+		if (IJ.recording() || macro)
 			saveLabel(tf, label);
 	}
 
@@ -1302,6 +1352,8 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	}
 
 	private void recordCheckboxOption(Checkbox cb) {
+		if (labels==null)
+			return;
 		String label = (String)labels.get((Object)cb);
 		if (label!=null) {
 			if (cb.getState()) // checked
@@ -1775,7 +1827,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 				if (!Double.isNaN(value)) {
 					Scrollbar sb = (Scrollbar)slider.elementAt(i);
 					double scale = ((Double)sliderScales.get(i)).doubleValue();
-					sb.setValue((int)(value*scale));
+					sb.setValue((int)Math.round(value*scale));
 				}
 			}
 		}
@@ -1865,7 +1917,8 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		return new Insets(i.top+10, i.left+10, i.bottom+10, i.right+10);
 	}
 
-	public synchronized void adjustmentValueChanged(AdjustmentEvent e) {
+	/** Callback for sliders */
+	public void adjustmentValueChanged(AdjustmentEvent e) {
 		Object source = e.getSource();
 		for (int i=0; i<slider.size(); i++) {
 			if (source==slider.elementAt(i)) {

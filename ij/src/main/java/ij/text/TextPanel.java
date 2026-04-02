@@ -1,8 +1,52 @@
 package ij.text;
 
-import ij.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Menu;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.PopupMenu;
+import java.awt.Scrollbar;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
-import ij.gui.*;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.PlotContentsDialog;
+import ij.gui.Roi;
 import ij.io.SaveDialog;
 import ij.macro.Interpreter;
 import ij.measure.ResultsTable;
@@ -11,17 +55,6 @@ import ij.plugin.Distribution;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.Recorder;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.Transferable;
-import java.awt.event.*;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Vector;
 
 
 /**
@@ -687,7 +720,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 			rt2.show(title);
 		}
 		Menus.updateWindowMenuItem(title1, title2);
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (Recorder.scriptMode())
 				Recorder.recordString("IJ.renameResults(\""+title1+"\", \""+title2+"\");\n");
 			else
@@ -784,7 +817,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 	*/
 	@AstroImageJ(reason = "Limit selection to tabs", modified = true)
 	public int copySelection() {
-		if (Recorder.record && title.equals("Results"))
+		if (IJ.recording() && title.equals("Results"))
 			Recorder.record("String.copyResults");
 		if (selStart==-1 || selEnd==-1)
 			return copyAll();
@@ -865,7 +898,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 				IJ.error("Text selection required");
 			return;
 		}
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (Recorder.scriptMode())
 				Recorder.recordString("IJ.deleteRows("+selStart+", "+selEnd+");\n");
 			else {
@@ -1083,13 +1116,13 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		if (isResults) {
 			Analyzer.setUnsavedMeasurements(false);
-			if (Recorder.record && !IJ.isMacro())
+			if (IJ.recording() && !IJ.isMacro())
 				Recorder.record("saveAs", "Results", path);
 		} else if (rt!=null) {
-			if (Recorder.record && !IJ.isMacro())
+			if (IJ.recording() && !IJ.isMacro())
 				Recorder.record("saveAs", "Results", path);
 		} else {
-			if (Recorder.record && !IJ.isMacro())
+			if (IJ.recording() && !IJ.isMacro())
 				Recorder.record("saveAs", "Text", path);
 		}
 		IJ.showStatus("");
@@ -1246,7 +1279,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		rt2.sort(column);
 		rt2.show(title);
 		scrollToTop();
-		if (Recorder.record)
+		if (IJ.recording())
 			Recorder.record("Table.sort", column);
 	}
 

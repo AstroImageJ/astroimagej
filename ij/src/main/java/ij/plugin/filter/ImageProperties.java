@@ -1,5 +1,12 @@
 package ij.plugin.filter;
 
+import java.awt.Color;
+import java.awt.TextField;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.Locale;
+import java.util.Vector;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Macro;
@@ -10,12 +17,6 @@ import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.event.TextEvent;
-import java.awt.event.TextListener;
-import java.util.Locale;
-import java.util.Vector;
 
 public class ImageProperties implements PlugInFilter, TextListener {
 	private final String SAME = "-";
@@ -209,7 +210,7 @@ public class ImageProperties implements PlugInFilter, TextListener {
 		if (global2 && global2!=global1)
 			FileOpener.setShowConflictMessage(true);			
 			
-		if (Recorder.record) {
+		if (IJ.recording()) {
 			if (Recorder.scriptMode()) {
 				if (xUnitChanged)
 					Recorder.recordCall("imp.getCalibration().setXUnit(\""+xunit2+"\");", true);

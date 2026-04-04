@@ -280,8 +280,14 @@ abstract class CreateAppImageTask
 
         sb.appendLine()
 
+        sb.appendLine("[Why]")
+        sb.appendLine("use-zgc=true")
+
+        sb.appendLine()
+
         sb.appendLine("[JavaOptions]")
         sb.appendLine("java-options=-Djpackage.app-version=${appVersion.get()}")
+        sb.appendLine($$"java-options=-XX:ErrorFile=$LOGDIR/hs_err_pid_%p.log")
 
         javaOpts.get().forEach {
             sb.appendLine("java-options=$it")

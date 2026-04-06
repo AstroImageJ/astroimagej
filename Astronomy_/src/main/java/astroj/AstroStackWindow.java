@@ -6195,7 +6195,16 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
             var mainPanel = target.getComponent(0);
             var s = mainPanel.getSize();
-            mainPanel.setLocation((getWidth() - s.width) / 2, mainPanel.getY());
+            var y = mainPanel.getY();
+            int top = getInsets().top + 3;
+            // On Linux, when running on Wayland via XWayland (e.g. on Fedora 44),
+            // sometimes the subtitle would be cut off due to incorrect insets that don't
+            // take into account the menubar height correctly
+            if (IJ.isLinux() && y < top) {
+                //IO.println("Corrected panel location");
+                y = top;
+            }
+            mainPanel.setLocation((getWidth() - s.width) / 2, y);
 
             if (imp == null) {
                 return;

@@ -211,7 +211,7 @@ public class ImageJ extends Frame implements ActionListener,
 	 */
     @AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; update notification;" +
             "Make MacAdapter look in plugins folder; set mac to use screen menubar; " +
-            "update keymapping on mac for copy/paste;", modified = true)
+            "update keymapping on mac for copy/paste; set window icon on linux as well as windows;", modified = true)
 	@Deprecated(since = "IJ XX; Java 26")
 	public ImageJ(Applet applet, int mode) {
         super("AstroImageJ");
@@ -267,7 +267,7 @@ public class ImageJ extends Frame implements ActionListener,
 		Dimension tbSize = toolbar.getPreferredSize();
 		setCursor(Cursor.getDefaultCursor()); // work-around for JDK 1.1.8 bug
 		if (mode!=NO_SHOW) {
-			if (IJ.isWindows()) try {setIcon();} catch(Exception e) {}
+			if (IJ.isWindows() || IJ.isLinux()) try {setIcon();} catch(Exception e) {}
 			setResizable(false);
 			setAlwaysOnTop(Prefs.alwaysOnTop);
 			pack();

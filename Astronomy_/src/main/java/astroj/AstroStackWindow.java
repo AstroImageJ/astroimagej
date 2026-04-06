@@ -2888,14 +2888,19 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     private void drawSubtitle() {
         var g = getGraphics();
         var sub = createSubtitle();
-        if (oldSubtitle.equals("") || !oldSubtitle.equals(sub)) {
-            var c = g.getColor();
-            g.setColor(Color.WHITE);
-            g.fillRect(super.getInsets().left + 5, 0, getWidth(), super.getInsets().top + g.getFontMetrics().getHeight() + 3);
-            g.setColor(c);
+        if (oldSubtitle.isEmpty() || !oldSubtitle.equals(sub)) {
             oldSubtitle = sub;
             drawInfo(g);
         }
+    }
+
+    @Override
+    public void drawInfo(Graphics g) {
+        var c = g.getColor();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, getWidth(), super.getInsets().top + /*g.getFontMetrics().getHeight() +*/ 3);
+        g.setColor(c);
+        super.drawInfo(g);
     }
 
     public void registerStackListener(Consumer<Void> listener) {

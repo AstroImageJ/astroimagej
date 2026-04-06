@@ -4883,7 +4883,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     int extraHeight() {
         return getInsets().top + getInsets().bottom + otherPanelsHeight
-                + super.getNScrollbars() * 17 + 10;
+                + super.getNScrollbars() * 17;
     }
 
 //       void clearAndPaint(){
@@ -6256,7 +6256,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             savedPanWidth = srcRect.width;
             savedMag = magnification;
             savedICWidth = newCanvasWidth();
-            savedICHeight = newCanvasHeight();
+            savedICHeight = newCanvasHeight() - 10; // Compensate for removed +10 in extraHeight to fix Wayland bottom gap
             savedIpWidth = imp.getWidth();
             savedIpHeight = imp.getHeight();
             Prefs.set("Astronomy_Tool.savedPanX", savedPanX);

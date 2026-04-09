@@ -10,6 +10,7 @@ import java.awt.image.ColorModel;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -635,7 +636,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		}
 		String countStr = "---";
 		if (!directorySet && options==null)
-			directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/");
+			directory = Objects.requireNonNullElse(Prefs.getDefaultDirectory(), Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/"));
 		if (directory!=null && !IJ.isMacro()) {
 			File f = new File(directory);
 			String[] names = f.list();
@@ -645,7 +646,7 @@ public class FolderOpener implements PlugIn, TextListener {
 			} // End zip as folder
 			countStr = names!=null?""+names.length:"---";
 		} else
-			directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/");
+			directory = Objects.requireNonNullElse(Prefs.getDefaultDirectory(), Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/"));
 		GenericDialog gd = new GenericDialog("Import Image Sequence");
 		gd.setInsets(5, 0, 0);
 		gd.addDirectoryField("Dir:", directory);		

@@ -759,7 +759,7 @@ public class FolderOpener implements PlugIn, TextListener {
 	// Copies settings from showDialog()
 	public void setOptions() {
 		if (!directorySet)
-			directory = Objects.requireNonNullElse(Prefs.getDefaultDirectory(), Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/"));
+			directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/");
 		if (directory!=null && !IJ.isMacro()) {
 			File f = new File(directory);
 			String[] names = f.list();
@@ -769,7 +769,7 @@ public class FolderOpener implements PlugIn, TextListener {
                 nFiles = names.length;
             } // End zip as folder
 		} else
-			directory = Objects.requireNonNullElse(Prefs.getDefaultDirectory(), Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/"));
+			directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/");
 
 		Prefs.set(DIR_KEY, directory);
 		OpenDialog.setDefaultDirectory(Path.of(directory).getParent().toString());

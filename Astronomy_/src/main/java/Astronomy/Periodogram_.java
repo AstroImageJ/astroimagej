@@ -68,6 +68,7 @@ public class Periodogram_ implements PlugIn {
     private static final Property<Double> LOCKED_T0_VALUE = new Property<>(0.0, Periodogram_.class);
     private static final Property<Double> TLS_A_RS = new Property<>(15.0, Periodogram_.class);
     private static final Property<Double> TLS_INC = new Property<>(90.0, Periodogram_.class);
+    private static final Property<String> PLOT_X_SCALE = new Property<>("Linear", Periodogram_.class);
 
     @Override
     public void run(String arg) {
@@ -139,6 +140,7 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, T0_MASK.get());
                     gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
                     gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
+                    gdCol.addRadioButtonGroup("X Axis Scale:", new String[]{"Linear", "Log"}, 1, 2, PLOT_X_SCALE.get());
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -156,6 +158,7 @@ public class Periodogram_ implements PlugIn {
                     String t0MaskingChoice = gdCol.getNextChoice();
                     boolean lockT0 = gdCol.getNextBoolean();
                     double lockedT0Value = gdCol.getNextNumber();
+                    String plotXScale = gdCol.getNextRadioButton();
                     TIME_COL.set(timeCol);
                     FLUX_COL.set(fluxCol);
                     MIN_PERIOD.set(minPeriodUser);
@@ -170,6 +173,7 @@ public class Periodogram_ implements PlugIn {
                     T0_MASK.set(t0MaskingChoice);
                     LOCK_T0.set(lockT0);
                     LOCKED_T0_VALUE.set(lockedT0Value);
+                    PLOT_X_SCALE.set(plotXScale);
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;
@@ -733,15 +737,15 @@ public class Periodogram_ implements PlugIn {
                                     planet + 1, bestPeriod, t0MaskingChoice, t0_ref_masking, bestDuration, bestDepth, halfMask);
                         }
                         // Show periodogram plot for this iteration
-                        Plot plot = new Plot("BLS Periodogram (Planet " + (planet + 1) + ")", "Period", "Power");
+                        Plot plot = new Plot("BLS Periodogram (Planet " + (planet + 1) + ")", "Period (days)", "Power");
                         plot.setLimits(minPeriod, maxPeriod, 0, bestPower * 1.1);
+                        if (plotXScale.equals("Log")) plot.setLogScaleX();
                         plot.addPoints(periods, power, Plot.DOT);
                         plot.addPoints(periods, power, Plot.LINE);
 
                         // Highlight the most dominant peak with vertical shaded band
                         if (bestIdx >= 0 && bestIdx < periods.length) {
                             double dominantPeriod = periods[bestIdx];
-                            double dominantPower = power[bestIdx];
 
                             // Calculate peak width for shading
                             double highlightPeakPower = power[bestIdx];
@@ -754,20 +758,17 @@ public class Periodogram_ implements PlugIn {
                                 highlightRight++;
                             }
 
-                            // Create shaded vertical band around dominant peak
-                            double bandLeft = periods[highlightLeft];
-                            double bandRight = periods[highlightRight];
                             double yMin = 0;
                             double yMax = bestPower * 1.1;
 
-                            // Draw a single vertical line at the dominant peak center instead of filled rectangle
-                            plot.setColor(Color.RED); // Red
+                            // Draw a single vertical line at the dominant peak center
+                            plot.setColor(Color.RED);
                             plot.addPoints(new double[]{dominantPeriod, dominantPeriod}, new double[]{yMin, yMax}, Plot.LINE);
 
                             // Reset color to black for other elements
                             plot.setColor(Color.BLACK);
 
-                            // Add orange vertical lines for harmonics/aliases of the dominant peak only
+                            // Add orange vertical lines for harmonics/aliases
                             plot.setColor(new Color(255, 165, 0)); // Orange
                             // First harmonic (2x period)
                             double harmonic1 = dominantPeriod * 2.0;
@@ -794,7 +795,6 @@ public class Periodogram_ implements PlugIn {
                             int peakIdx = sortedTopPeaks.get(i);
                             double peakPeriod = periods[peakIdx];
                             if (i == 0 && peakIdx == bestIdx) {
-                                // For the dominant peak (Peak 1), add T0 information
                                 String t0Value = "";
                                 if (t0MaskingChoice.equals("Min average (phase bin)")) {
                                     t0Value = Double.isNaN(minAverageT0) ? "N/A" : String.format("T0=%.3f", minAverageT0);
@@ -1251,6 +1251,7 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addNumericField("Inclination (deg)", TLS_INC.get(), 2);
                     gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
                     gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
+                    gdCol.addRadioButtonGroup("X Axis Scale:", new String[]{"Linear", "Log"}, 1, 2, PLOT_X_SCALE.get());
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -1272,6 +1273,7 @@ public class Periodogram_ implements PlugIn {
                     double inc = gdCol.getNextNumber();
                     boolean lockT0 = gdCol.getNextBoolean();
                     double lockedT0Value = gdCol.getNextNumber();
+                    String plotXScale = gdCol.getNextRadioButton();
                     TIME_COL.set(timeCol);
                     FLUX_COL.set(fluxCol);
                     MIN_PERIOD.set(minPeriod);
@@ -1290,6 +1292,7 @@ public class Periodogram_ implements PlugIn {
                     LIMB_U2.set(u2);
                     TLS_A_RS.set(aRs);
                     TLS_INC.set(inc);
+                    PLOT_X_SCALE.set(plotXScale);
 
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
@@ -1529,13 +1532,14 @@ public class Periodogram_ implements PlugIn {
                         }
 
                         // Show periodogram plot for this iteration
-                        Plot plot = new Plot("TLS Periodogram (Planet " + (planetFinal + 1) + ")", "Period", "SDE");
+                        Plot plot = new Plot("TLS Periodogram (Planet " + (planetFinal + 1) + ")", "Period (days)", "SDE");
+                        plot.setLimits(minPeriod, maxPeriod, 0, bestSDE * 1.1);
+                        if (plotXScale.equals("Log")) plot.setLogScaleX();
                         plot.add("line", tlsResult.periods, tlsResult.sde);
 
                         // Highlight the most dominant peak with vertical shaded band
                         if (bestIdx >= 0 && bestIdx < tlsResult.periods.length) {
                             double dominantPeriod = tlsResult.periods[bestIdx];
-                            double dominantSDE = tlsResult.sde[bestIdx];
 
                             // Calculate peak width for shading
                             double highlightPeakSDE = tlsResult.sde[bestIdx];
@@ -1548,20 +1552,17 @@ public class Periodogram_ implements PlugIn {
                                 highlightRight++;
                             }
 
-                            // Create shaded vertical band around dominant peak
-                            double bandLeft = tlsResult.periods[highlightLeft];
-                            double bandRight = tlsResult.periods[highlightRight];
                             double yMin = 0;
                             double yMax = bestSDE * 1.1;
 
-                            // Draw a single vertical line at the dominant peak center instead of filled rectangle
-                            plot.setColor(Color.RED); // Red
+                            // Draw a single vertical line at the dominant peak center
+                            plot.setColor(Color.RED);
                             plot.addPoints(new double[]{dominantPeriod, dominantPeriod}, new double[]{yMin, yMax}, Plot.LINE);
 
                             // Reset color to black for other elements
                             plot.setColor(Color.BLACK);
 
-                            // Add orange vertical lines for harmonics/aliases of the dominant peak only
+                            // Add orange vertical lines for harmonics/aliases
                             plot.setColor(new Color(255, 165, 0)); // Orange
                             // First harmonic (2x period)
                             double harmonic1 = dominantPeriod * 2.0;
@@ -1590,7 +1591,6 @@ public class Periodogram_ implements PlugIn {
                             int peakIdx = topPeaks.get(i);
                             double peakPeriod = tlsResult.periods[peakIdx];
                             if (i == 0 && peakIdx == bestIdx) {
-                                // For the dominant peak (Peak 1), add T0 information
                                 String t0Value = "";
                                 if (t0MaskingChoice.equals("Min average (phase bin)")) {
                                     t0Value = Double.isNaN(tlsResult.t0_minavg) ? "N/A" : String.format("T0=%.3f", tlsResult.t0_minavg);
@@ -1750,7 +1750,7 @@ public class Periodogram_ implements PlugIn {
 
     /**
      * Compute odd/even transit depths by separating transits into two interleaved sets.
-     * Transit index 0 (at T0) is "even", index ±1 is "odd", etc.
+     * Transit index 0 (at T0) is "odd", index ±1 is "even", etc.
      *
      * @return double[] { oddDepth, evenDepth, oddEvenDiffPct, nOddIn, nEvenIn }
      *         where depths are (meanOut - meanIn), diffPct = |odd-even|/max(|odd|,|even|)*100
@@ -1766,11 +1766,11 @@ public class Periodogram_ implements PlugIn {
             double tCenter = t0 + transitIdx * period;
             if (Math.abs(time[i] - tCenter) < halfDuration) {
                 if (transitIdx % 2 == 0) {
-                    sumEvenIn += flux[i];
-                    nEvenIn++;
-                } else {
                     sumOddIn += flux[i];
                     nOddIn++;
+                } else {
+                    sumEvenIn += flux[i];
+                    nEvenIn++;
                 }
             } else {
                 sumOut += flux[i];

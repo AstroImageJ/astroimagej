@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import ij.astro.AstroImageJ;
+import ij.astro.gui.FontLoader;
 import ij.gui.ImageWindow;
 import ij.plugin.MacroInstaller;
 import ij.process.ImageProcessor;
@@ -118,7 +119,12 @@ public class Menus {
 		fontSize = Prefs.getInt(Prefs.MENU_SIZE, defaultFontSize);
 	}
 
-	@AstroImageJ(reason = "Disable IJ zoom in favor of AIJ zoom, rename IJ to AIJ, remove IJ news", modified = true)
+	@AstroImageJ(reason = """
+            Disable IJ zoom in favor of AIJ zoom
+            Rename IJ to AIJ
+            Remove IJ news
+            Always set menubar font to that the default font is replaced
+            """, modified = true)
 	String addMenuBar() {
 		scale = Prefs.getGuiScale();
 		//if ((scale>=1.5&&scale<2.0) || (scale>=2.5&&scale<3.0))
@@ -292,8 +298,11 @@ public class Menus {
 		addPlugInItem(file, "Quit", "ij.plugin.Commands(\"quit\")", 0, false);
 
 		//System.out.println("MenuBar.setFont: "+fontSize+" "+scale+"  "+getFont());
-		if (fontSize!=0 || scale>1.0)
+		if (fontSize!=0 || scale>1.0) {
 			mbar.setFont(getFont());
+		} else {
+			mbar.setFont(getFont());
+		}
 		if (ij!=null) {
 			ij.setMenuBar(mbar);
 			Menus.setMenuBarCount++;
@@ -1692,6 +1701,7 @@ public class Menus {
 		return getFont(true);
 	}
 
+	@AstroImageJ(reason = "Replace default fonts", modified = true)
 	public static Font getFont(boolean checkSize) {
 		int size = fontSize==0?13:fontSize;
 		if (size<7)
@@ -1704,6 +1714,7 @@ public class Menus {
 		if (checkSize && IJ.isWindows() && size>17)
 			size = 17; // On Windows, the menu bar font size is set 12 if you set it to >17
 		Font menuFont =  new Font("SanSerif", Font.PLAIN, size);
+		menuFont = FontLoader.replaceFont(menuFont);
 		return menuFont;
 	}
 

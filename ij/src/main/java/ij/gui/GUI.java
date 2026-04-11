@@ -48,6 +48,7 @@ import ij.ImagePlus;
 import ij.Menus;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.astro.gui.FontLoader;
 import ij.text.TextPanel;
 
 /** This class consists of static GUI utility methods. */
@@ -217,7 +218,9 @@ public class GUI {
 	 * Scales an AWT component according to {@link Prefs#getGuiScale()}.
 	 * @param component the AWT component to be scaled. If a container, scaling is applied to all its child components
 	 */
+	@AstroImageJ(reason = "Replace default fonts", modified = true)
 	public static void scale(final Component component) {
+		FontLoader.replaceFonts(component);
 		final float scale = (float)Prefs.getGuiScale();
 		if (scale==1f)
 			return;
@@ -244,7 +247,9 @@ public class GUI {
 		component.setFont(font);
 	}
 
+	@AstroImageJ(reason = "Replace default fonts", modified = true)
 	public static void scalePopupMenu(final PopupMenu popup) {
+		FontLoader.replaceFonts(popup);
 		//System.out.println("scalePopupMenu1: "+popup);
 		if (Menus.getFontSize()!=0) {
             popup.setFont(Menus.getFont(false));
@@ -256,9 +261,10 @@ public class GUI {
 			return;
 		Font font=popup.getFont();
 		if (font==null)
-			font = new Font("SansSerif", Font.PLAIN, (int)(scale*13));
+			font = new Font("Google Sans Flex", Font.PLAIN, (int)(scale*13));
 		else
 			font = font.deriveFont(scale*font.getSize());
+		font = FontLoader.replaceFont(font);
 		popup.setFont(font);
 		//System.out.println("scalePopupMenu3: "+popup.getFont());
 	}
@@ -282,7 +288,9 @@ public class GUI {
 	 * @param component the component to be scaled
 	 * @return true, if component's font was resized
 	 */
+	@AstroImageJ(reason = "Replace default fonts", modified = true)
 	public static boolean scale(final JComponent component) {
+		FontLoader.replaceFonts(component);
 		final double guiScale = Prefs.getGuiScale();
 		if (guiScale == 1d)
 			return false;
@@ -305,6 +313,7 @@ public class GUI {
 
 	@AstroImageJ(reason = "Scale frames")
 	public static void scaleFrame(Dialog dialog, Component... processed) {
+		FontLoader.replaceFonts(dialog);
 		scaleDefaultFonts();
         if (SwingUtilities.isEventDispatchThread()) {
 			scale(dialog, Prefs.getGuiScale(), new HashSet<>(Arrays.asList(processed)));
@@ -319,6 +328,7 @@ public class GUI {
 
 	@AstroImageJ(reason = "Scale frames")
 	public static void scaleFrame(Frame frame, Component... processed) {
+		FontLoader.replaceFonts(frame);
 		if (frame == null || Prefs.getGuiScale() <= 0 || Prefs.getGuiScale() == 1) {
 			return;
 		}

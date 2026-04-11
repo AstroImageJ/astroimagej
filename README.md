@@ -134,6 +134,13 @@ Licensed under [BSD-3-clause](https://www.optinav.info/Stack-Sorter.htm#:~:text=
 ### [Json Simple](https://github.com/fangyidong/json-simple)
 Licensed under [Apache 2.0](https://github.com/fangyidong/json-simple?tab=Apache-2.0-1-ov-file).
 
+## Included Fonts
+### [Google Sans Flex](https://fonts.google.com/specimen/Google+Sans+Flex?preview.script=Latn)
+Licensed under [SIL Open Font License 1.1](https://fonts.google.com/specimen/Google+Sans+Flex/license?preview.script=Latn)
+
+### [Google Sans Code](https://fonts.google.com/specimen/Google+Sans+Code?preview.script=Latn)
+Licensed under [SIL Open Font License 1.1](https://fonts.google.com/specimen/Google+Sans+Code/license?preview.script=Latn)
+
 ## Sponsors
 <table>
  <tbody>

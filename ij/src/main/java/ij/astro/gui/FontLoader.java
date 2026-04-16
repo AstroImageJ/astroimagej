@@ -21,7 +21,7 @@ import javax.swing.border.TitledBorder;
 import ij.astro.util.UIHelper;
 
 public class FontLoader {
-    private static final Font FLEX = registerFont("fonts/PublicSans.ttf");
+    private static final Font FLEX = registerFont("fonts/GoogleSansFlex.ttf");
     private static final Font CODE = registerFont("fonts/GoogleSansCode.ttf");
     public static final Font SERIF = FLEX;
     public static final Font SANSERIF = FLEX;

@@ -1,13 +1,8 @@
 package ij.astro.gui;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.Frame;
-import java.awt.GraphicsEnvironment;
-import java.awt.MenuComponent;
+import java.awt.*;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -18,11 +13,12 @@ import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
+import ij.IJ;
 import ij.astro.util.UIHelper;
 
 public class FontLoader {
-    private static final Font FLEX = registerFont("fonts/GoogleSansFlex.ttf");
-    private static final Font CODE = registerFont("fonts/GoogleSansCode.ttf");
+    private static final Font FLEX = new Font("Google Sans Flex", Font.PLAIN, 12);
+    private static final Font CODE = new Font("Google Sans Code", Font.PLAIN, 12);
     public static final Font SERIF = FLEX;
     public static final Font SANSERIF = FLEX;
     public static final Font DIALOG = FLEX;
@@ -39,7 +35,10 @@ public class FontLoader {
     private static boolean replacedSwingFonts = false;
 
     static {
+        registerFonts();
         replaceSwingFonts();
+        // Failure to load the fonts will result in the family being set to "Dialog"
+        //FONT_REPLACEMENT.forEach((k, v) -> System.out.println(k + " -> " + v));
     }
 
     private FontLoader() {
@@ -137,20 +136,42 @@ public class FontLoader {
                 }
             }
 
+            // Workaround for JDK-8349701 and JDK-8367873 causing fonts to render incorrectly on Mac with
+            // the Metal backend
+            if (IJ.isMacOSX()) {
+                UIManager.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            }
+
             replacedSwingFonts = true;
         }
     }
 
-    private static Font registerFont(String font) {
-        try (var in = Files.newInputStream(Path.of(font))) {
+    private static void registerFonts() {
+        try (var stream = Files.walk(Path.of("fonts"), 2)) {
+            stream.filter(p -> p.getFileName().toString().endsWith(".ttf"))
+                    .forEach(FontLoader::registerFont);
+        } catch (IOException e) {
+            System.err.println("Failed to load fonts");
+            e.printStackTrace();
+        }
+    }
+
+    private static Font registerFont(String name) {
+        return registerFont(Path.of(name));
+    }
+
+    private static Font registerFont(Path path) {
+        try (var in = Files.newInputStream(path)) {
             Font base = Font.createFont(Font.TRUETYPE_FONT, in);
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(base);
+            //IO.println(path + " registered as " + base);
             return base.deriveFont((float) 12.0);
         } catch (IOException | FontFormatException e) {
-            System.err.println("Failed to load font " + font);
+            System.err.println("Failed to load font " + path);
             e.printStackTrace();
         }
 
+        // Fallback
         return new Font("SansSerif", Font.PLAIN, 12);
     }
 }

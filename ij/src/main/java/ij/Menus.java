@@ -33,7 +33,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import ij.astro.AstroImageJ;
-import ij.astro.gui.FontLoader;
 import ij.gui.ImageWindow;
 import ij.plugin.MacroInstaller;
 import ij.process.ImageProcessor;
@@ -1714,7 +1713,6 @@ public class Menus {
 		if (checkSize && IJ.isWindows() && size>17)
 			size = 17; // On Windows, the menu bar font size is set 12 if you set it to >17
 		Font menuFont =  new Font("SanSerif", Font.PLAIN, size);
-		menuFont = FontLoader.replaceFont(menuFont);
 		return menuFont;
 	}
 

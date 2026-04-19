@@ -42,7 +42,6 @@ import java.util.Vector;
 
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.ITableWindow;
-import ij.astro.gui.FontLoader;
 import ij.gui.GUI;
 import ij.gui.GenericDialog;
 import ij.gui.HTMLDialog;
@@ -104,8 +103,7 @@ import ij.util.Tools;
 public class IJ {
 
 	/** SansSerif, plain, 10-point font */
-	@AstroImageJ(reason = "Replace default fonts", modified = true)
-	public static Font font10 = FontLoader.SANSERIF.deriveFont(10f);
+	public static Font font10 = new Font("SansSerif", Font.PLAIN, 10);
 	/** SansSerif, plain, 12-point font */
 	public static Font font12 = ImageJ.SansSerif12;
 	/** SansSerif, plain, 14-point font */
@@ -623,14 +621,12 @@ public class IJ {
 		textPanel.setResultsTable(Analyzer.getResultsTable());
 	}
 
-	@AstroImageJ(reason = "Replace default fonts", modified = true)
 	public static synchronized void log(String s) {
 		if (s==null) return;
 		if (logPanel==null && ij!=null) {
 			TextWindow logWindow = new TextWindow("Log", "", 400, 250);
 			logPanel = logWindow.getTextPanel();
 			logPanel.setFont(new Font("SansSerif", Font.PLAIN, 16));
-			logPanel.setFont(FontLoader.replaceFont(logPanel.getFont()));
 		}
 		if (logPanel!=null) {
 			if (s.startsWith("\\"))

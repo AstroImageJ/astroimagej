@@ -51,7 +51,6 @@ import javax.swing.UIManager;
 import javax.swing.text.DefaultEditorKit;
 
 import ij.astro.AstroImageJ;
-import ij.astro.gui.FontLoader;
 import ij.astro.logging.ConsoleLogging;
 import ij.gui.GUI;
 import ij.gui.GenericDialog;
@@ -142,11 +141,9 @@ public class ImageJ extends Frame implements ActionListener,
 	public static final String BUILD = ""; //14
 	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
-	@AstroImageJ(reason = "Replace default fonts", modified = true)
-	public static final Font SansSerif12 = FontLoader.SANSERIF;
+	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** SansSerif, 14-point, plain font. */
-	@AstroImageJ(reason = "Replace default fonts", modified = true)
-	public static final Font SansSerif14 = FontLoader.SANSERIF.deriveFont(14f);
+	public static final Font SansSerif14 = new Font("SansSerif", Font.PLAIN, 14);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
 	@AstroImageJ(reason = "Add astroversion")
@@ -220,7 +217,6 @@ public class ImageJ extends Frame implements ActionListener,
             Set mac to use screen menubar
             Update keymapping on mac for copy/paste
             Set window icon on linux as well as windows
-            Change font of status bar
             """, modified = true)
 	@Deprecated(since = "IJ XX; Java 26")
 	public ImageJ(Applet applet, int mode) {
@@ -258,7 +254,6 @@ public class ImageJ extends Frame implements ActionListener,
 		statusLine = new JLabel();
 		double scale = Prefs.getGuiScale();
 		statusLine.setFont(new Font("SansSerif", Font.PLAIN, (int)(13*scale)));
-		statusLine.setFont(FontLoader.replaceFont(statusLine.getFont()));
 		statusLine.addKeyListener(this);
 		statusLine.addMouseListener(this);
 		statusBar.add("Center", statusLine);
@@ -1044,12 +1039,10 @@ public class ImageJ extends Frame implements ActionListener,
 		commandName = name;
 	}
 
-	@AstroImageJ(reason = "Replace default fonts", modified = true)
 	public void resize() {
 		double scale = Prefs.getGuiScale();
 		toolbar.init();
 		statusLine.setFont(new Font("SansSerif", Font.PLAIN, (int)(13*scale)));
-		statusLine.setFont(FontLoader.replaceFont(statusLine.getFont()));
 		progressBar.init((int)(ProgressBar.WIDTH*scale), (int)(ProgressBar.HEIGHT*scale));
 		pack();
 	}

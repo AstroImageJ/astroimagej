@@ -30,12 +30,13 @@ public final class WaylandMonitors {
     );
 
     private static volatile List<Monitor> MONITORS = List.of();
+    private static boolean triedWaylandMonitors = false;
 
     private WaylandMonitors() {
     }
 
     public static synchronized List<Monitor> query() {
-        if (!MONITORS.isEmpty()) {
+        if (!MONITORS.isEmpty() || triedWaylandMonitors) {
             return MONITORS;
         }
 
@@ -46,6 +47,7 @@ public final class WaylandMonitors {
         }
 
         IO.println("No Wayland outputs available, using default monitor");
+        triedWaylandMonitors = true;
         return MONITORS;
     }
 
@@ -66,6 +68,10 @@ public final class WaylandMonitors {
                 centerOn(window, out.bounds());
                 return;
             }
+        }
+
+        if (monitors.isEmpty()) {
+            return;
         }
 
         centerOn(window, nearestOutput(monitors, cx, cy).bounds());

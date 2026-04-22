@@ -14,6 +14,8 @@ import static ij.IJ.showMessage;
 
 public class UIHelper {
     private static boolean lookAndFeelSet = false;
+    private static final boolean IS_WAYLAND = "wayland".equalsIgnoreCase(System.getenv("XDG_SESSION_TYPE")) ||
+            System.getenv("WAYLAND_DISPLAY") != null;
 
     public static void setLookAndFeel() {
         if (lookAndFeelSet) return;
@@ -64,10 +66,25 @@ public class UIHelper {
     }
 
     public static void setCenteredOnScreen(Container window, Container referenceWindow) {
+        if (IJ.isLinux() && IS_WAYLAND) {
+            if (window instanceof Window window1 && referenceWindow instanceof Window referenceWindow1) {
+                WaylandMonitors.centerOnReferenceMonitor(window1, referenceWindow1);
+            }
+
+            return;
+        }
         setCenteredOnScreen(getScreen(referenceWindow), window);
     }
 
     public static void setCenteredOnScreen(int screen, Container window) {
+        if (IJ.isLinux() && IS_WAYLAND) {
+            if (window instanceof Window window1) {
+                WaylandMonitors.centerOnMonitor(window1, screen);
+            }
+
+            return;
+        }
+
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gd = ge.getScreenDevices();
         int width = 0, height = 0;

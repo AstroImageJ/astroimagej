@@ -1865,10 +1865,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         pack();
 
         if (rememberWindowLocation) {
-            Dimension mainScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
             if (!Prefs.isLocationOnScreen(new Point(frameLocationX, frameLocationY))) {
-                frameLocationX = mainScreenSize.width / 2 - getWidth() / 2;
-                frameLocationY = mainScreenSize.height / 2 - getHeight() / 2;
+                UIHelper.setCenteredOnScreen(0, this);
+                frameLocationX = getLocation().x;
+                frameLocationY = getLocation().y;
             }
             this.setLocation(frameLocationX, frameLocationY);
         }

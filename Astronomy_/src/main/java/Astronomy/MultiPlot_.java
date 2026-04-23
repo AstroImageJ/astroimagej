@@ -10753,12 +10753,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         phasefoldpanel.add(twoxPeriodCB);
 
-        oddNotEvenCB = new JCheckBox("odd/even", oddNotEven);
-        oddNotEvenCB.setToolTipText("Select to show odd transits. Deselect to show even transits.");
+        oddNotEvenCB = new JCheckBox((oddNotEven?"<html>Even<font color='gray'>/Odd</font></html>":"<html><font color='gray'>Even/</font>Odd</html>"), oddNotEven);
+        oddNotEvenCB.setToolTipText("""
+                <html>Deselect to show odd transits (which correspond to the Tc epoch phase).<br>
+                Select to show even transits (which correspond to the opposite phase of Tc)<br>
+                This notation is the same as the notation used in SPOC and QLP DVR reports.</html>.""");
         oddNotEvenCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
+                oddNotEvenCB.setText("<html><font color='gray'>Even/</font>Odd</html>");
                 oddNotEven = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) oddNotEven = true;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) {
+                oddNotEvenCB.setText("<html>Even<font color='gray'>/Odd</font></html>");
+                oddNotEven = true;
+            }
             Prefs.set("plot.oddNotEven", oddNotEven);
             updatePlot(updateAllFits());
         });

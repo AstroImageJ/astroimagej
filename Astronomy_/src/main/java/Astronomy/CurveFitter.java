@@ -27,7 +27,6 @@ import static Astronomy.MultiPlot_.duration;
 import static Astronomy.MultiPlot_.dx;
 import static Astronomy.MultiPlot_.eccentricity;
 import static Astronomy.MultiPlot_.errcolumn;
-import static Astronomy.MultiPlot_.evenNotOdd;
 import static Astronomy.MultiPlot_.excluded;
 import static Astronomy.MultiPlot_.excludedHeadSamples;
 import static Astronomy.MultiPlot_.excludedTailSamples;
@@ -66,6 +65,7 @@ import static Astronomy.MultiPlot_.nn;
 import static Astronomy.MultiPlot_.nnr;
 import static Astronomy.MultiPlot_.normIndex;
 import static Astronomy.MultiPlot_.numAps;
+import static Astronomy.MultiPlot_.oddNotEven;
 import static Astronomy.MultiPlot_.oldUnfilteredColumns;
 import static Astronomy.MultiPlot_.omega;
 import static Astronomy.MultiPlot_.opcolumn;
@@ -319,7 +319,7 @@ public class CurveFitter {
         excluded = excludedHeadSamples + excludedTailSamples;
 
         var aliasedPeriod = period / periodAlias.get();
-        netT0 = (twoxPeriod && evenNotOdd) ? T0 - aliasedPeriod : T0;
+        netT0 = (twoxPeriod && oddNotEven) ? T0 - aliasedPeriod : T0;
         netPeriod = twoxPeriod ? 2 * aliasedPeriod : aliasedPeriod;
 
         int magSign = negateMag ? 1 : -1;

@@ -84,7 +84,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
     static {
         HTTP_CLIENT = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }
 

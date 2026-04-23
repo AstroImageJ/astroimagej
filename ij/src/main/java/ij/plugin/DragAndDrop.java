@@ -1,9 +1,31 @@
 package ij.plugin;
 
+import java.awt.Point;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Macro;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.util.SwingConstantUtil;
 import ij.gui.Toolbar;
@@ -11,19 +33,6 @@ import ij.io.OpenDialog;
 import ij.io.Opener;
 import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
-
-import java.awt.*;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.dnd.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.List;
 
 /** This class opens images, roi's, luts and text files dragged and dropped on  the "ImageJ" window.
      It is based on the Draw_And_Drop plugin by Eric Kischell (keesh@ieee.org).
@@ -189,7 +198,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 	}
 
 	/** Open a file. If it's a directory, ask to open all images as a sequence in a stack or individually. */
-	@AstroImageJ(reason = "Skip Folder Opener dialog in some cases", modified = true)
+	@AstroImageJ(reason = "Skip Folder Opener dialog in some cases; Set FolderOpener directory", modified = true)
 	public void openFile(File f) {
 		if (IJ.debugMode) IJ.log("DragAndDrop.openFile: "+f);
 		try {
@@ -217,6 +226,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 					OpenDialog.setLastDirectory(f.getParent()+File.separator);
 					OpenDialog.setLastName(f.getName());
 					OpenDialog.setDefaultDirectory(f.getParent());
+					Prefs.set("import.sequence.dir", f.getParent());
 				}
 			} else {
 				IJ.log("File not found: " + path);

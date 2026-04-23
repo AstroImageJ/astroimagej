@@ -1,116 +1,5 @@
 package Astronomy;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.Label;
-import java.awt.Panel;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.geom.GeneralPath;
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Vector;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JRadioButton;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.MutableComboBoxModel;
-import javax.swing.SpinnerListModel;
-import javax.swing.SpinnerModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SpringLayout;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.ToolTipManager;
-import javax.swing.WindowConstants;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-
 import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.PlotDraggableShape;
 import Astronomy.multiplot.gui.ConstantColSubset;
@@ -121,23 +10,8 @@ import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
 import Jama.Matrix;
-import astroj.ApertureRoi;
-import astroj.AstroCanvas;
-import astroj.AstroConverter;
-import astroj.AstroStackWindow;
-import astroj.FileDrop;
-import astroj.FreeformPixelApertureRoi;
-import astroj.HelpPanel;
-import astroj.IJU;
-import astroj.MeasurementTable;
-import astroj.OverlayCanvas;
-import astroj.ShapedApertureRoi;
-import astroj.SpringUtil;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.Prefs;
-import ij.WindowManager;
+import astroj.*;
+import ij.*;
 import ij.astro.accessors.TransferablePlot;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.ToolTipRenderer;
@@ -151,16 +25,7 @@ import ij.astro.types.Pair;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
-import ij.gui.GUI;
-import ij.gui.GenericDialog;
-import ij.gui.ImageCanvas;
-import ij.gui.ImageWindow;
-import ij.gui.Plot;
-import ij.gui.PlotCanvas;
-import ij.gui.PlotVirtualStack;
-import ij.gui.PlotWindow;
-import ij.gui.Roi;
-import ij.gui.ShapeRoi;
+import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.Minimizer;
@@ -176,6 +41,38 @@ import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.stat.regression.OLSMultipleLinearRegression;
 import util.ColorUtil;
 import util.PlotDataBinning;
+
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.*;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.URL;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 /**
  * This plugin plots any number of columns from a Results or MeasurementTable.  This plugin
@@ -270,7 +167,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     public static double netT0;
     public static double netPeriod;
     static boolean twoxPeriod;
-    static boolean oddNotEven;
+    static boolean evenNotOdd;
     static boolean periodSync;
     static int[] smoothLen;
     static boolean showXScaleInfo;
@@ -723,7 +620,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JSpinner T0stepspinner, periodstepspinner, durationstepspinner;
     static JSpinner T0spinner, periodspinner, durationspinner;
 
-    static JCheckBox showVMarker1CB, showVMarker2CB, twoxPeriodCB, oddNotEvenCB, periodSyncCB;
+    static JCheckBox showVMarker1CB, showVMarker2CB, twoxPeriodCB, evenNotOddCB, periodSyncCB;
     static JCheckBox showMFMarkersCB, showDMarkersCB, useDMarker1CB, useDMarker4CB;
 
     static JButton moreybutton, closebutton, grabautoxbutton, grabautoybutton, updateplotbutton, addastrodatabutton, refStarButton, OKbutton;
@@ -2461,7 +2358,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         excluded = excludedHeadSamples + excludedTailSamples;
 
         var aliasedPeriod = period / periodAlias.get();
-        netT0 = (twoxPeriod && oddNotEven) ? T0 - aliasedPeriod : T0;
+        netT0 = (twoxPeriod && evenNotOdd) ? T0 - aliasedPeriod : T0;
         netPeriod = twoxPeriod ? 2 * aliasedPeriod : aliasedPeriod;
         if (!showXAxisNormal && periodSync) {
             for (int c = 0; c < maxCurves; c++) {
@@ -6585,7 +6482,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         netT0 = 0;
         netPeriod = 1;
         twoxPeriod = false;
-        oddNotEven = false;
+        evenNotOdd = true;
         periodSync = true;
         showXScaleInfo = true;
         showYScaleInfo = true;
@@ -10400,7 +10297,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodspinner.setEnabled(false);
             durationspinner.setEnabled(false);
             twoxPeriodCB.setEnabled(false);
-            oddNotEvenCB.setEnabled(false);
+            evenNotOddCB.setEnabled(false);
             t0panel.setEnabled(false);
             periodpanel.setEnabled(false);
             durationpanel.setEnabled(false);
@@ -10454,7 +10351,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodspinner.setEnabled(true);
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
-            oddNotEvenCB.setEnabled(twoxPeriod);
+            evenNotOddCB.setEnabled(twoxPeriod);
             Prefs.set("plot.showXAxisNormal", showXAxisNormal);
             Prefs.set("plot.showXAxisAsPhase", showXAxisAsPhase);
             Prefs.set("plot.showXAxisAsHoursSinceTc", showXAxisAsHoursSinceTc);
@@ -10492,7 +10389,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodspinner.setEnabled(true);
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
-            oddNotEvenCB.setEnabled(twoxPeriod);
+            evenNotOddCB.setEnabled(twoxPeriod);
             int xRawOffset = (int)xFirstRawMin;
             skipPlotUpdate = true;
             double vMarker1Fold = (((vMarker1Value + xRawOffset - T0) / period) - Math.floor((vMarker1Value + xRawOffset - T0) / period));
@@ -10550,7 +10447,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodspinner.setEnabled(true);
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
-            oddNotEvenCB.setEnabled(twoxPeriod);
+            evenNotOddCB.setEnabled(twoxPeriod);
             int xRawOffset = (int)xFirstRawMin;
             skipPlotUpdate = true;
             double vMarker1Fold = (((vMarker1Value + xRawOffset - T0) / period) - Math.floor((vMarker1Value + xRawOffset - T0) / period));
@@ -10747,22 +10644,25 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 twoxPeriod = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) twoxPeriod = true;
-            oddNotEvenCB.setEnabled(twoxPeriod);
+            evenNotOddCB.setEnabled(twoxPeriod);
             Prefs.set("plot.twoxPeriod", twoxPeriod);
             updatePlot(updateAllFits());
         });
         phasefoldpanel.add(twoxPeriodCB);
 
-        oddNotEvenCB = new JCheckBox("odd/even", oddNotEven);
-        oddNotEvenCB.setToolTipText("Select to show odd transits. Deselect to show even transits.");
-        oddNotEvenCB.addItemListener(e -> {
+        evenNotOddCB = new JCheckBox("Odd/Even", evenNotOdd);
+        evenNotOddCB.setToolTipText("""
+                <html>Select to show odd transits (which correspond to the Tc epoch phase).<br>
+                Deselect to show even transits (which correspond to the opposite phase of Tc)<br>
+                This notation is the same as the notation used in SPOC and QLP DVR reports.</html>.""");
+        evenNotOddCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
-                oddNotEven = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) oddNotEven = true;
-            Prefs.set("plot.oddNotEven", oddNotEven);
+                evenNotOdd = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) evenNotOdd = true;
+            Prefs.set("plot.oddNotEven", !evenNotOdd);
             updatePlot(updateAllFits());
         });
-        phasefoldpanel.add(oddNotEvenCB);
+        phasefoldpanel.add(evenNotOddCB);
 
         if (showXAxisNormal) {
             T0spinner.setEnabled(false);
@@ -10770,13 +10670,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodspinner.setEnabled(false);
             durationspinner.setEnabled(false);
             twoxPeriodCB.setEnabled(false);
-            oddNotEvenCB.setEnabled(false);
+            evenNotOddCB.setEnabled(false);
             t0panel.setEnabled(false);
             periodpanel.setEnabled(false);
             durationpanel.setEnabled(false);
         }
         if (!twoxPeriod) {
-            oddNotEvenCB.setEnabled(false);
+            evenNotOddCB.setEnabled(false);
         }
 
         SpringUtil.makeCompactGrid(phasefoldpanel, 1, phasefoldpanel.getComponentCount(), 2, 2, 0, 0);
@@ -18501,7 +18401,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         periodStep = Prefs.get("plot.periodStep", periodStep);
         durationStep = Prefs.get("plot.durationStep", durationStep);
         twoxPeriod = Prefs.get("plot.twoxPeriod", twoxPeriod);
-        oddNotEven = Prefs.get("plot.oddNotEven", oddNotEven);
+        evenNotOdd = !Prefs.get("plot.oddNotEven", evenNotOdd);
         periodSync = Prefs.get("plot.periodSync", periodSync);
         yMaxStep = Prefs.get("plot.yMaxStep", yMaxStep);
         yMinStep = Prefs.get("plot.yMinStep", yMinStep);
@@ -18883,7 +18783,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot.periodStep", periodStep);
         Prefs.set("plot.durationStep", durationStep);
         Prefs.set("plot.twoxPeriod", twoxPeriod);
-        Prefs.set("plot.oddNotEven", oddNotEven);
+        Prefs.set("plot.oddNotEven", !evenNotOdd);
         Prefs.set("plot.periodSync", periodSync);
         Prefs.set("plot.showXScaleInfo", showXScaleInfo);
         Prefs.set("plot.showYScaleInfo", showYScaleInfo);

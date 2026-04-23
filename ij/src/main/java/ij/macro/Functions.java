@@ -4807,7 +4807,9 @@ public class Functions implements MacroConstants, Measurements {
 					argClasses[i] = args[i].getClass();
 			}
 			m = c.getDeclaredMethod(methodName,argClasses);
-			m.trySetAccessible();
+			if (c.getPackageName().startsWith("Astronomy.")) {
+				m.trySetAccessible();
+			}
 		} catch(Exception ex) {
 			m = null;
 		}
@@ -4823,8 +4825,10 @@ public class Functions implements MacroConstants, Measurements {
 						argClasses[i] = args[i].getClass();
 				}
 				m = c.getDeclaredMethod(methodName,argClasses);
-				m.trySetAccessible();
-			} catch(Exception ex) {
+                if (c.getPackageName().startsWith("Astronomy.")) {
+                    m.trySetAccessible();
+                }
+            } catch(Exception ex) {
 				m = null;
 			}
 		}

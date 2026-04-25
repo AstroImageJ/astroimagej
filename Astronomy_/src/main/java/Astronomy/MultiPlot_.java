@@ -15277,6 +15277,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         setNewStars(n);
                     }
+                    multiUpdate = false;
                 }
             });
             allNonePanel.add(cycleEnabledStarsLess1Button);

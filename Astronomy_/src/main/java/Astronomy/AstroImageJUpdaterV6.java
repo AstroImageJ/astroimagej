@@ -162,26 +162,14 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
         var appFolder = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
         Path baseDir;
-        if (!isLegacyMigration()) {
-            if (IJ.isWindows()) {
-                baseDir = appFolder.getParent();
-            } else if (IJ.isMacOSX()) {
-                baseDir = appFolder.getParent().getParent();
-            } else if (IJ.isLinux()) {
-                baseDir = appFolder.getParent().getParent();
-            } else {
-                throw new IllegalStateException("Unknown OS - could not find installation directory");
-            }
+        if (IJ.isWindows()) {
+            baseDir = appFolder.getParent();
+        } else if (IJ.isMacOSX()) {
+            baseDir = appFolder.getParent().getParent();
+        } else if (IJ.isLinux()) {
+            baseDir = appFolder.getParent().getParent();
         } else {
-            if (IJ.isWindows()) {
-                baseDir = appFolder;
-            } else if (IJ.isMacOSX()) {
-                baseDir = appFolder.getParent().getParent();
-            } else if (IJ.isLinux()) {
-                baseDir = appFolder;
-            } else {
-                throw new IllegalStateException("Unknown OS - could not find installation directory");
-            }
+            throw new IllegalStateException("Unknown OS - could not find installation directory");
         }
 
         if (!Files.exists(baseDir)) {
@@ -189,21 +177,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             return;
         }
 
-        if (!isLegacyMigration()) {
-            if (!ManifestVerifier.check(baseDir, appFolder.resolve("manifest.json"), 50)) {
-                return;
-            }
-        } else {
-            if (!IJ.showMessageWithCancel("Updater", """
-                   Migrating to AstroImageJ 6.
-                   AstroImageJ 6 has a new installation directory structure.
-                   AstroImageJ update will OVERWRITE or REMOVE the files in its install directory.
-                   Please make sure AIJ has a dedicated install directory, not shared with other software.
-                   \s
-                   Install directory: %s
-                   """.formatted(baseDir.toAbsolutePath()))) {
-                return;
-            }
+        if (!ManifestVerifier.check(baseDir, appFolder.resolve("manifest.json"), 50)) {
+            return;
         }
 
         if (IJ.isMacOSX()) {
@@ -246,7 +221,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         Files.deleteIfExists(elevator);
 
         // Copy script to location for execution
-        Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())), elevator, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(Objects.requireNonNull(AstroImageJUpdaterV6.class.getClassLoader().getResourceAsStream(getScriptPath())),
+                elevator, StandardCopyOption.REPLACE_EXISTING);
 
         var ext = fileEntry.name().substring(fileEntry.name().lastIndexOf('.'));
 
@@ -267,30 +243,6 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         Prefs.savePreferences();
 
         Files.write(inst, installerBytes);
-
-        if (isLegacyMigration()) {
-            var s = Files.readString(appFolder.resolve("AstroImageJ.cfg"));
-            var m = Pattern.compile("(-Xmx[\\w\\d]+)").matcher(s);
-            if (m.matches()) {
-                ConfigHandler.setOption(ConfigHandler.readOptions(), "JavaOptions", "java-options=-Xmx", "java-options=-Xmx" + m.group(1));
-            }
-
-            var observatories = appFolder.resolve("observatories.txt");
-            var newObs = Path.of(Prefs.getPrefsDir()).resolve("observatories.txt");
-            if (IJ.isMacOSX()) {
-                observatories = Path.of(System.getProperty("user.home")).resolve("Library/Preferences/observatories.txt");
-            } else if (IJ.isLinux()) {
-                observatories = Path.of(System.getProperty("user.home")).resolve(".astrocc/observatories.txt");
-            }
-
-            if (Files.exists(observatories) && Files.notExists(newObs)) {
-                try {
-                    Files.copy(observatories, newObs);
-                } catch (IOException e) {
-                    AIJLogger.log("Failed to migrate observatories.txt");
-                }
-            }
-        }
 
         if (IJ.isWindows()) {
             ProcessBuilder pb = new ProcessBuilder(
@@ -343,7 +295,7 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     Long.toString(pid),
                     inst.toAbsolutePath().toString(),
                     baseDir.toAbsolutePath().toString(),
-                    (new SemanticVersion(IJ.getAstroVersion()).compareTo(entry.version()) >= 0 ? "true" : "false")
+                    Boolean.toString(new SemanticVersion(IJ.getAstroVersion()).compareTo(entry.version()) >= 0)
             );
             try {
                 Process p = pb.start();
@@ -830,18 +782,9 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         update();
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private static boolean isLegacyMigration() {
-        return new SemanticVersion(IJ.getAstroVersion()).compareTo(new SemanticVersion("6.0.0.00")) < 0;
-    }
-
     private static String getScriptPath() {
         if (IJ.isWindows()) {
-            if (isLegacyMigration()) {
-                return "Astronomy/updater/windowsMigration.bat";
-            } else {
-                return "Astronomy/updater/windows.bat";
-            }
+            return "Astronomy/updater/windows.bat";
         }
 
         if (IJ.isLinux()) {

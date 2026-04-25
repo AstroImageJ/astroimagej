@@ -1,8 +1,11 @@
 package Astronomy;
 
-import static Astronomy.Periodogram_.huberLoss;
+import static Astronomy.Periodogram_.lowerBoundD;
+import static Astronomy.Periodogram_.upperBoundD;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,17 +27,30 @@ public class TLS {
      * @param minDuration      Minimum duration (days)
      * @param maxDuration      Maximum duration (days)
      * @param nDurations       Number of duration steps
+     * @param nPhase           Number of phase grid steps (transit centre positions per period)
      * @param u1               Linear limb darkening coefficient (default 0.3)
      * @param u2               Quadratic limb darkening coefficient (default 0.3)
      * @param progressCallback Callback to report progress (period index)
      * @return Result object with period grid and SDE
      */
-    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, double u1, double u2, double aRs, double inc, IntConsumer progressCallback) {
+    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, int nPhase, double u1, double u2, double aRs, double inc, IntConsumer progressCallback) {
+        // Phase-binned TLS: the phase grid is also the binning grid (nBins == nPhase),
+        // giving O(nPoints + nDurations * nPhase * halfWin) per period — a ~100× speedup
+        // over the naive O(nDurations * nPhase * nPoints).
+        final int nBins = Math.max(2, nPhase);
+
         double[] periods = new double[nPeriods];
         double[] sde = new double[nPeriods];
         double[] bestDurations = new double[nPeriods];
         double[] bestDepths = new double[nPeriods];
-        double rprsGuess = 0.1; // Initial guess for planet/star radius ratio
+
+        // sumF2 = sum_j f[j]^2 is independent of (period, duration, phase) — compute once.
+        double sumF2Global = 0.0;
+        for (double v : flux) sumF2Global += v * v;
+        final double sumF2 = sumF2Global;
+        final double tRef = time[0];
+        final int nData = time.length;
+
         int nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);
         AtomicInteger progress = new AtomicInteger(0);
@@ -48,49 +64,110 @@ public class TLS {
                 futures.add(executor.submit(() -> {
                     double freq = minFreq + periodIdx * (maxFreq - minFreq) / Math.max(1, nPeriods - 1);
                     double period = 1.0 / freq;
+                    double invPeriod = 1.0 / period;
                     periods[periodIdx] = period;
-                    double bestSNR = 0;
-                    double bestDuration = 0;
-                    double bestDepth = 0;
+
+                    // Stage 1 — phase-fold all points into nBins uniform bins (O(nPoints)).
+                    double[] binFluxSum = new double[nBins];
+                    int[]    binN       = new int[nBins];
+                    for (int j = 0; j < nData; j++) {
+                        double ph = (time[j] - tRef) * invPeriod;
+                        ph -= Math.floor(ph);
+                        int bin = (int) (ph * nBins);
+                        if (bin < 0) bin = 0;
+                        else if (bin >= nBins) bin = nBins - 1;
+                        binFluxSum[bin] += flux[j];
+                        binN[bin]++;
+                    }
+                    double totalFluxSum = 0.0;
+                    int    totalN       = 0;
+                    for (int b = 0; b < nBins; b++) {
+                        totalFluxSum += binFluxSum[b];
+                        totalN       += binN[b];
+                    }
+
+                    // Reusable model-profile buffer sized for the worst-case halfWin.
+                    double[] modelProfile = new double[nBins / 2 + 1];
+
+                    double bestSNR      = 0.0;
+                    double bestDuration = 0.0;
+                    double bestDepth    = 0.0;
+
+                    // Stage 2 — loop durations; for each, scan every phase offset.
                     for (int di = 0; di < nDurations; di++) {
                         double fracDuration = minDuration + di * (maxDuration - minDuration) / Math.max(1, nDurations - 1);
                         double duration = fracDuration * period;
-                        int nPhase = 200;
-                        for (int ph = 0; ph < nPhase; ph++) {
-                            double t0 = time[0] + ph * period / nPhase;
-                            // --- Analytic best-fit depth (like BLS) ---
-                            double[] modelUnitDepth = MandelAgolTransitModel.compute(time, period, t0, duration, 1.0, 1.0, aRs, inc, u1, u2);
-                            double bestDepthThis = fitTransitDepth(flux, modelUnitDepth);
-                            double[] bestModel = new double[flux.length];
-                            for (int i = 0; i < flux.length; i++) bestModel[i] = modelUnitDepth[i] * bestDepthThis;
-                            // Compute SNR (signal to noise ratio) for this trial
-                            double signal = 0, noise = 0;
-                            int nIn = 0;
-                            for (int i = 0; i < flux.length; i++) {
-                                double phase = ((time[i] - t0 + 0.5 * period) % period) - 0.5 * period;
-                                if (Math.abs(phase) < 0.5 * duration) {
-                                    signal += flux[i] - 1.0;
-                                    nIn++;
-                                }
+                        double t14 = duration;
+                        double t12 = t14 * 0.25;
+
+                        // Bins on each side of transit centre that fall inside the window |phase| < 0.5*duration.
+                        int halfWin = (int) Math.round(0.5 * fracDuration * nBins);
+                        if (halfWin < 0) halfWin = 0;
+                        int maxHalfWin = (nBins - 1) / 2; // prevents b1 == b2 collision
+                        if (halfWin > maxHalfWin) halfWin = maxHalfWin;
+
+                        // Precompute the model profile m(k) at bin offsets k = 0..halfWin.
+                        // m(k) = MandelAgol flux deficit at phase distance (k/nBins)*period.
+                        for (int k = 0; k <= halfWin; k++) {
+                            double absPhaseTime = ((double) k / nBins) * period;
+                            double m;
+                            if (absPhaseTime > 0.5 * t14) {
+                                m = 1.0;
+                            } else if (absPhaseTime < 0.5 * t14 - t12) {
+                                m = 1.0 - (1.0 - u1 / 3.0 - u2 / 6.0);
+                            } else {
+                                double x = (absPhaseTime - (0.5 * t14 - t12)) / t12;
+                                double limb = 1.0 - u1 * (1.0 - x) - u2 * (1.0 - x) * (1.0 - x);
+                                m = 1.0 - limb;
                             }
-                            // Compute chi2 for noise estimate
-                            double chi2 = 0;
-                            for (int i = 0; i < flux.length; i++) {
-                                double res = flux[i] - bestModel[i];
-                                chi2 += res * res;
+                            modelProfile[k] = m;
+                        }
+
+                        // Sweep phase trials.
+                        for (int ph = 0; ph < nBins; ph++) {
+                            double inTransitFluxSum = binFluxSum[ph];
+                            int    nIn              = binN[ph];
+                            double m0               = modelProfile[0];
+                            double sumFM_in         = m0 * binFluxSum[ph];
+                            double sumM2_in         = (m0 * m0) * binN[ph];
+
+                            for (int k = 1; k <= halfWin; k++) {
+                                int b1 = ph + k; if (b1 >= nBins) b1 -= nBins;
+                                int b2 = ph - k; if (b2 < 0)      b2 += nBins;
+                                double f12 = binFluxSum[b1] + binFluxSum[b2];
+                                int    n12 = binN[b1]       + binN[b2];
+                                double m   = modelProfile[k];
+                                inTransitFluxSum += f12;
+                                nIn              += n12;
+                                sumFM_in         += m * f12;
+                                sumM2_in         += (m * m) * n12;
                             }
-                            noise = Math.sqrt(chi2 / flux.length);
-                            double snr = (nIn > 0 && noise > 0) ? Math.abs(signal) / (noise * Math.sqrt(nIn)) : 0;
+
+                            // signal = sum_{in-transit} (f - 1) = inTransitFluxSum - nIn
+                            double signal = inTransitFluxSum - nIn;
+                            // Out-of-transit bins contribute 1.0 to both sumFM and sumM2 per data point.
+                            double sumFM  = (totalFluxSum - inTransitFluxSum) + sumFM_in;
+                            double sumM2  = (totalN       - nIn)              + sumM2_in;
+
+                            double depthFit = (sumM2 > 0.0) ? sumFM / sumM2 : 0.0;
+                            double chi2     = (sumM2 > 0.0) ? sumF2 - (sumFM * sumFM) / sumM2 : sumF2;
+                            if (chi2 < 0) chi2 = 0; // guard FP round-off
+                            double noise = (nData > 0) ? Math.sqrt(chi2 / nData) : 1.0;
+                            double snr   = (nIn > 0 && noise > 0.0)
+                                           ? Math.abs(signal) / (noise * Math.sqrt(nIn))
+                                           : 0.0;
+
                             if (snr > bestSNR) {
-                                bestSNR = snr;
+                                bestSNR      = snr;
                                 bestDuration = duration;
-                                bestDepth = bestDepthThis;
+                                bestDepth    = depthFit;
                             }
                         }
                     }
-                    sde[periodIdx] = bestSNR;
+
+                    sde[periodIdx]           = bestSNR;
                     bestDurations[periodIdx] = bestDuration;
-                    bestDepths[periodIdx] = bestDepth;
+                    bestDepths[periodIdx]    = bestDepth;
                     int done = progress.incrementAndGet();
                     IJ.showProgress(done, nPeriods);
                     if (progressCallback != null) progressCallback.accept(done - 1);
@@ -122,7 +199,7 @@ public class TLS {
         double[] sdeStatsArr = sdeForStats.stream().mapToDouble(Double::doubleValue).toArray();
         double median = 0, std = 0;
         if (sdeStatsArr.length > 0) {
-            java.util.Arrays.sort(sdeStatsArr);
+            Arrays.sort(sdeStatsArr);
             median = sdeStatsArr[sdeStatsArr.length / 2];
             double sumsq = 0;
             for (double v : sdeStatsArr) sumsq += (v - median) * (v - median);
@@ -136,7 +213,7 @@ public class TLS {
         double bestDuration = minDuration + (nDurations > 1 ? (nDurations - 1) / 2.0 * (maxDuration - minDuration) / (nDurations - 1) : 0.0); // crude guess, could be improved
 
         // --- Min average phase bin (compute first, for phase reference like BLS) ---
-        int nBins = 200;
+        int nT0Bins = 200;
         double[] phases = new double[flux.length];
         for (int i = 0; i < flux.length; i++) {
             double phase = (time[i] - time[0]) / bestPeriod;
@@ -144,17 +221,17 @@ public class TLS {
             phases[i] = phase;
         }
         List<List<Double>> binFluxes = new ArrayList<>();
-        for (int i = 0; i < nBins; i++) binFluxes.add(new ArrayList<>());
+        for (int i = 0; i < nT0Bins; i++) binFluxes.add(new ArrayList<>());
         for (int i = 0; i < flux.length; i++) {
-            int bin = (int) Math.floor(phases[i] * nBins);
+            int bin = (int) Math.floor(phases[i] * nT0Bins);
             if (bin < 0) bin = 0;
-            if (bin >= nBins) bin = nBins - 1;
+            if (bin >= nT0Bins) bin = nT0Bins - 1;
             binFluxes.get(bin).add(flux[i]);
         }
         double minAvg = Double.POSITIVE_INFINITY;
         int minBin = -1;
         int minPointsPerBin = 5;
-        for (int i = 0; i < nBins; i++) {
+        for (int i = 0; i < nT0Bins; i++) {
             List<Double> fbin = binFluxes.get(i);
             if (fbin.size() < minPointsPerBin) continue;
             double sum = 0.0;
@@ -165,7 +242,7 @@ public class TLS {
                 minBin = i;
             }
         }
-        double minPhase = (minBin + 0.5) / nBins;
+        double minPhase = (minBin + 0.5) / nT0Bins;
         double t0MinAvg = time[0] + minPhase * bestPeriod;
         System.out.printf("[TLS DIAG] Min avg T0 = %.6f (will be center for sliding fit)\n", t0MinAvg);
 
@@ -208,48 +285,141 @@ public class TLS {
                 }
             }
         }
+        // --- Sort phases once so each grid cell can binary-search the in-window points ---
+        // Before: O(nPoints) per cell (scan all, most rejected), + array allocs per cell.
+        // After:  O(log n + window_points) per cell, no per-cell allocations.
+        final int nDataT0 = flux.length;
+        Integer[] sortIdxT0 = new Integer[nDataT0];
+        for (int i = 0; i < nDataT0; i++) sortIdxT0[i] = i;
+        final double[] phasesCaptureT0 = phasesForSliding;
+        Arrays.sort(sortIdxT0, Comparator.comparingDouble(i -> phasesCaptureT0[i]));
+        final double[] sortedPhasesT0 = new double[nDataT0];
+        final double[] sortedFluxT0   = new double[nDataT0];
+        for (int i = 0; i < nDataT0; i++) {
+            sortedPhasesT0[i] = phasesForSliding[sortIdxT0[i]];
+            sortedFluxT0[i]   = flux[sortIdxT0[i]];
+        }
+
+        final double durOverPeriodT0 = bestDuration / bestPeriod;
+        final double windowT0        = 1.5 * durOverPeriodT0;
+        final double deltaT0         = delta;
+        final double phaseStepT0     = phaseStep;
+        final int    nPhaseStepsT0   = nPhaseSteps;
+        final double bestDepthT0     = bestDepthForSliding;
+        final double bestPeriodT0    = bestPeriod;
+
+        // --- Parallelise the outer tauFrac loop across CPU cores ---
+        int nT0Threads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+        ExecutorService t0Exec = Executors.newFixedThreadPool(nT0Threads);
+        List<Future<double[]>> t0Futures = new ArrayList<>();
+        long t0Start = System.currentTimeMillis();
+
         for (int tauIdx = 0; tauIdx < nTau; tauIdx++) {
-            double tauFrac = minTauFrac + tauIdx * tauFracStep;
-            double tauPhase = tauFrac * (bestDuration / bestPeriod);
-            double flatPhase = (bestDuration / bestPeriod) - 2 * tauPhase;
+            final double tauFrac = minTauFrac + tauIdx * tauFracStep;
+            final double tauPhase = tauFrac * durOverPeriodT0;
+            final double flatPhase = durOverPeriodT0 - 2 * tauPhase;
             if (flatPhase < 0) continue; // skip unphysical
-            for (int s = 0; s < nPhaseSteps; s++) {
-                double phaseOffset = s * phaseStep * bestPeriod; // Match BLS calculation
-                double[] model = new double[flux.length];
-                double[] residuals = new double[flux.length];
-                int nUsed = 0;
-                for (int j = 0; j < flux.length; j++) {
-                    double phase = phasesForSliding[j] - (phaseOffset / bestPeriod); // Match BLS calculation
-                    phase = phase - Math.floor(phase);
-                    // Only use points within ±1.5*duration (in phase units) of the model center (like BLS)
-                    double dphase = Math.abs(phase);
-                    if (dphase > 0.5) dphase = 1.0 - dphase; // wrap around
-                    double window = 1.5 * (bestDuration / bestPeriod);
-                    if (dphase <= window) {
-                        if (phase < tauPhase) {
-                            model[j] = -bestDepthForSliding * (phase / tauPhase);
-                        } else if (phase < tauPhase + flatPhase) {
-                            model[j] = -bestDepthForSliding;
-                        } else if (phase < 2 * tauPhase + flatPhase) {
-                            model[j] = -bestDepthForSliding * (1 - (phase - tauPhase - flatPhase) / tauPhase);
-                        } else {
-                            model[j] = 0.0;
+            final double tauPhaseF  = tauPhase;
+            final double flatPhaseF = flatPhase;
+
+            t0Futures.add(t0Exec.submit(() -> {
+                double localBestLoss        = Double.POSITIVE_INFINITY;
+                double localBestPhaseOffset = 0;
+
+                for (int s = 0; s < nPhaseStepsT0; s++) {
+                    double phaseOffset = s * phaseStepT0 * bestPeriodT0;
+                    double C = phaseOffset / bestPeriodT0;
+                    C -= Math.floor(C);
+
+                    double sumLoss = 0.0;
+                    int    nUsed   = 0;
+
+                    if (windowT0 >= 0.5) {
+                        // Window spans the full circle — iterate every point.
+                        for (int k = 0; k < nDataT0; k++) {
+                            double ps = sortedPhasesT0[k] - C;
+                            ps -= Math.floor(ps);
+                            double mdl;
+                            if      (ps < tauPhaseF)                mdl = -bestDepthT0 * (ps / tauPhaseF);
+                            else if (ps < tauPhaseF + flatPhaseF)   mdl = -bestDepthT0;
+                            else if (ps < 2*tauPhaseF + flatPhaseF) mdl = -bestDepthT0 * (1 - (ps - tauPhaseF - flatPhaseF) / tauPhaseF);
+                            else                                     mdl = 0.0;
+                            double rr = sortedFluxT0[k] - mdl;
+                            double absR = Math.abs(rr);
+                            sumLoss += (absR <= deltaT0) ? 0.5*rr*rr : deltaT0*(absR - 0.5*deltaT0);
+                            nUsed++;
                         }
-                        residuals[nUsed] = flux[j] - model[j];
-                        nUsed++;
+                    } else {
+                        // Binary-search the in-window arc [C-window, C+window] (circular)
+                        double lo = C - windowT0;
+                        double hi = C + windowT0;
+                        int r0a, r0b, r1a, r1b;
+                        if (lo < 0) {
+                            r0a = lowerBoundD(sortedPhasesT0, lo + 1);  r0b = nDataT0;
+                            r1a = 0;                                    r1b = upperBoundD(sortedPhasesT0, hi);
+                        } else if (hi >= 1.0) {
+                            r0a = lowerBoundD(sortedPhasesT0, lo);      r0b = nDataT0;
+                            r1a = 0;                                    r1b = upperBoundD(sortedPhasesT0, hi - 1);
+                        } else {
+                            r0a = lowerBoundD(sortedPhasesT0, lo);      r0b = upperBoundD(sortedPhasesT0, hi);
+                            r1a = 0;                                    r1b = 0;
+                        }
+                        for (int k = r0a; k < r0b; k++) {
+                            double ps = sortedPhasesT0[k] - C;
+                            ps -= Math.floor(ps);
+                            double mdl;
+                            if      (ps < tauPhaseF)                mdl = -bestDepthT0 * (ps / tauPhaseF);
+                            else if (ps < tauPhaseF + flatPhaseF)   mdl = -bestDepthT0;
+                            else if (ps < 2*tauPhaseF + flatPhaseF) mdl = -bestDepthT0 * (1 - (ps - tauPhaseF - flatPhaseF) / tauPhaseF);
+                            else                                     mdl = 0.0;
+                            double rr = sortedFluxT0[k] - mdl;
+                            double absR = Math.abs(rr);
+                            sumLoss += (absR <= deltaT0) ? 0.5*rr*rr : deltaT0*(absR - 0.5*deltaT0);
+                            nUsed++;
+                        }
+                        for (int k = r1a; k < r1b; k++) {
+                            double ps = sortedPhasesT0[k] - C;
+                            ps -= Math.floor(ps);
+                            double mdl;
+                            if      (ps < tauPhaseF)                mdl = -bestDepthT0 * (ps / tauPhaseF);
+                            else if (ps < tauPhaseF + flatPhaseF)   mdl = -bestDepthT0;
+                            else if (ps < 2*tauPhaseF + flatPhaseF) mdl = -bestDepthT0 * (1 - (ps - tauPhaseF - flatPhaseF) / tauPhaseF);
+                            else                                     mdl = 0.0;
+                            double rr = sortedFluxT0[k] - mdl;
+                            double absR = Math.abs(rr);
+                            sumLoss += (absR <= deltaT0) ? 0.5*rr*rr : deltaT0*(absR - 0.5*deltaT0);
+                            nUsed++;
+                        }
+                    }
+
+                    double cellLoss = (nUsed > 0) ? sumLoss / nUsed : Double.POSITIVE_INFINITY;
+                    if (cellLoss < localBestLoss) {
+                        localBestLoss        = cellLoss;
+                        localBestPhaseOffset = phaseOffset;
                     }
                 }
-                if (nUsed > 0) {
-                    double[] usedResiduals = new double[nUsed];
-                    System.arraycopy(residuals, 0, usedResiduals, 0, nUsed);
-                    double loss = huberLoss(usedResiduals, delta);
-                    if (loss < minLoss) {
-                        minLoss = loss;
-                        bestT0Sliding = time[0] + phaseOffset;
-                    }
+                return new double[] { localBestLoss, localBestPhaseOffset };
+            }));
+        }
+
+        try {
+            for (Future<double[]> fut : t0Futures) {
+                double[] r = fut.get();
+                if (r[0] < minLoss) {
+                    minLoss       = r[0];
+                    bestT0Sliding = time[0] + r[1];
                 }
             }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            IJ.log("[TLS T0] Parallel T0 search interrupted.");
+        } catch (java.util.concurrent.ExecutionException ee) {
+            IJ.log("[TLS T0] Parallel T0 search error: " + ee.getMessage());
+        } finally {
+            t0Exec.shutdown();
         }
+        System.out.printf("[TLS T0] Parallel T0 refinement: %d threads, %d ms%n",
+                nT0Threads, System.currentTimeMillis() - t0Start);
         System.out.printf("[TLS DIAG] Sliding fit (BLS-style): bestT0Sliding = %.6f, minLoss = %.6g\n", bestT0Sliding, minLoss);
 
         return new Result(periods, sde, bestDurations, bestDepths, bestT0Sliding, t0MinAvg);

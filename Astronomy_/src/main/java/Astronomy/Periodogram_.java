@@ -6,6 +6,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Panel;
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
@@ -21,14 +24,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntConsumer;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.JTableHeader;
@@ -57,7 +65,7 @@ public class Periodogram_ implements PlugIn {
     private static final Property<Double> MIN_FRACTIONAL_DURATION = new Property<>(0.01, Periodogram_.class);
     private static final Property<Double> MAX_FRACTIONAL_DURATION = new Property<>(0.1, Periodogram_.class);
     private static final Property<Double> DURATION_STEPS = new Property<>(200.0, Periodogram_.class);
-    private static final Property<Double> PEAK_WIDTH_CUTOFF = new Property<>(0.2, Periodogram_.class);
+    private static final Property<Double> PEAK_WIDTH_CUTOFF = new Property<>(0.25, Periodogram_.class);
     private static final Property<Double> PEAK_COUNT = new Property<>(1.0, Periodogram_.class);
     private static final Property<Double> PLANET_COUNT = new Property<>(1.0, Periodogram_.class);
     private static final Property<Double> TRANSIT_MASK_FACTOR = new Property<>(3.0, Periodogram_.class);
@@ -69,6 +77,9 @@ public class Periodogram_ implements PlugIn {
     private static final Property<Double> TLS_A_RS = new Property<>(15.0, Periodogram_.class);
     private static final Property<Double> TLS_INC = new Property<>(90.0, Periodogram_.class);
     private static final Property<String> PLOT_X_SCALE = new Property<>("Linear", Periodogram_.class);
+    private static final Property<String> COMPUTE_BACKEND = new Property<>("CPU", Periodogram_.class);
+    // Shared between BLS and TLS — both use this for phase-grid resolution during search.
+    private static final Property<Double> PHASE_BINS = new Property<>(1000.0, Periodogram_.class);
 
     @Override
     public void run(String arg) {
@@ -133,6 +144,7 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addNumericField("Min fractional duration (0-1)", MIN_FRACTIONAL_DURATION.get(), 3);
                     gdCol.addNumericField("Max fractional duration (0-1)", MAX_FRACTIONAL_DURATION.get(), 3);
                     gdCol.addNumericField("Duration steps", DURATION_STEPS.get(), 0);
+                    gdCol.addNumericField("Phase bins (resolution = P / bins)", PHASE_BINS.get(), 0);
                     gdCol.addNumericField("Peak width cutoff (0-1)", PEAK_WIDTH_CUTOFF.get(), 2, 6, null);
                     gdCol.addNumericField("Number of peaks", PEAK_COUNT.get(), 0, 6, null);
                     gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
@@ -141,6 +153,53 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
                     gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
                     gdCol.addRadioButtonGroup("X Axis Scale:", new String[]{"Linear", "Log"}, 1, 2, PLOT_X_SCALE.get());
+                    { Panel sp = new Panel(); sp.setPreferredSize(new Dimension(1, 7)); gdCol.addPanel(sp); }
+                    String[] blsBackends = PeriodogramGpuContext.getAvailableBackends();
+                    String blsDefaultBackend = PeriodogramGpuContext.isGpu(COMPUTE_BACKEND.get())
+                            && Arrays.asList(blsBackends).contains(COMPUTE_BACKEND.get())
+                            ? COMPUTE_BACKEND.get() : PeriodogramGpuContext.CPU_BACKEND;
+                    gdCol.addChoice("Compute backend", blsBackends, blsDefaultBackend);
+
+                    // --- Per-field hover tooltips (yellow bubble help) ---
+                    applyTooltips(gdCol.getChoices(), new String[] {
+                            "Data-table column holding observation times (usually BJD_TDB).",
+                            "Data-table column holding the relative/normalised flux (typically ~1.0 out of transit).",
+                            "How to determine transit centre T0 when masking a detected planet:" +
+                                    "  \u2022 \"Model center\" runs a sliding-trapezoid Huber fit (more accurate for noisy data)." +
+                                    "  \u2022 \"Min average\" picks the phase bin with the lowest mean flux (faster).",
+                            "Where to run the periodogram computation. " +
+                                    "GPU entries require an OpenCL device with double-precision (cl_khr_fp64) support; " +
+                                    "devices without FP64 are filtered out at startup."
+                    });
+                    applyTooltips(gdCol.getNumericFields(), new String[] {
+                            "Shortest orbital period to search, in days. " +
+                                    "Enter 0 for automatic (data_span / 20).",
+                            "Longest orbital period to search, in days. " +
+                                    "Enter 0 for automatic (0.8 \u00d7 data_span).",
+                            "Number of trial periods in the frequency grid. " +
+                                    "Higher = finer period resolution but slower (cost is O(steps)).",
+                            "Minimum transit duration expressed as a fraction of the orbital period " +
+                                    "(e.g. 0.005 = 0.5% of period).",
+                            "Maximum transit duration expressed as a fraction of the orbital period " +
+                                    "(e.g. 0.1 = 10% of period).",
+                            "Number of trial durations sampled between min and max. " +
+                                    "More = finer transit-shape scan, linear cost.",
+                            "Phase-fold resolution. Time resolution per cell = period / bins. " +
+                                    "Example: 1000 bins at P=1 day \u2248 1.44 min per cell; at P=100 days \u2248 2.4 hr per cell. " +
+                                    "Valid range 50\u20132000.",
+                            "Minimum fractional drop from the main peak (0\u20131) required to report a secondary peak. " +
+                                    "0.25 = secondary peaks must be within 25% of the main peak height.",
+                            "Number of secondary peaks to annotate on the periodogram plot.",
+                            "How many planet candidates to detect iteratively. " +
+                                    "After each detection the found transit is masked and BLS re-runs on the residual.",
+                            "When masking a detected planet, multiply the fitted transit duration by this factor " +
+                                    "to widen the mask window (e.g. 3.0 masks \u00b11.5 durations around T0).",
+                            "User-supplied T0 (BJD days) to use when the \"Lock T0\" checkbox above is ticked."
+                    });
+                    applyTooltips(gdCol.getCheckboxes(), new String[] {
+                            "Skip the automatic sliding-trapezoid T0 fit and use the value entered below."
+                    });
+
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -151,6 +210,7 @@ public class Periodogram_ implements PlugIn {
                     double minFracDur = gdCol.getNextNumber();
                     double maxFracDur = gdCol.getNextNumber();
                     int nDurations = (int) gdCol.getNextNumber();
+                    int nBinsCfg = (int) gdCol.getNextNumber();
                     double userCutoff = gdCol.getNextNumber();
                     int userNumPeaks = (int) gdCol.getNextNumber();
                     int nPlanets = (int) gdCol.getNextNumber();
@@ -159,6 +219,12 @@ public class Periodogram_ implements PlugIn {
                     boolean lockT0 = gdCol.getNextBoolean();
                     double lockedT0Value = gdCol.getNextNumber();
                     String plotXScale = gdCol.getNextRadioButton();
+                    String blsComputeBackend = gdCol.getNextChoice();
+                    // Validate bin count: 50 minimum (meaningful resolution), 2000 maximum
+                    // (cap on GPU private memory per thread: 2000 * 8 bytes = 16 KB).
+                    if (nBinsCfg < 50)   nBinsCfg = 50;
+                    if (nBinsCfg > 2000) nBinsCfg = 2000;
+                    final int nBinsUser = nBinsCfg;
                     TIME_COL.set(timeCol);
                     FLUX_COL.set(fluxCol);
                     MIN_PERIOD.set(minPeriodUser);
@@ -167,13 +233,16 @@ public class Periodogram_ implements PlugIn {
                     MIN_FRACTIONAL_DURATION.set(minFracDur);
                     MAX_FRACTIONAL_DURATION.set(maxFracDur);
                     DURATION_STEPS.set((double) nDurations);
-                    PEAK_WIDTH_CUTOFF.set((double) userNumPeaks);
+                    PHASE_BINS.set((double) nBinsUser);
+                    PEAK_WIDTH_CUTOFF.set(userCutoff);
+                    PEAK_COUNT.set((double) userNumPeaks);
                     PLANET_COUNT.set((double) nPlanets);
                     TRANSIT_MASK_FACTOR.set(maskFactor);
                     T0_MASK.set(t0MaskingChoice);
                     LOCK_T0.set(lockT0);
                     LOCKED_T0_VALUE.set(lockedT0Value);
                     PLOT_X_SCALE.set(plotXScale);
+                    COMPUTE_BACKEND.set(blsComputeBackend);
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;
@@ -226,6 +295,24 @@ public class Periodogram_ implements PlugIn {
                     buttonPanel.add(stopButton);
                     progressWin.add(buttonPanel, BorderLayout.SOUTH);
                     progressWin.pack();
+                    // Pre-compile GPU kernel before the planet loop.
+                    // NVIDIA's OpenCL JIT can take 30–90 s on the first run; doing it here
+                    // lets us show a clear message instead of silently stalling at "Running on GPU…".
+                    if (PeriodogramGpuContext.isGpu(blsComputeBackend)) {
+                        progressWin.getTextPanel().append(
+                                "Compiling GPU kernel (first run may take 30–90 s — watch the Log window)...\n");
+                        try {
+                            BLSGpu.warmUp(blsComputeBackend, nBinsUser);
+                            progressWin.getTextPanel().append("GPU kernel ready.\n");
+                        } catch (Exception warmEx) {
+                            IJ.log("[GPU BLS] Kernel compile failed: " + warmEx.getMessage()
+                                    + " — falling back to CPU.");
+                            blsComputeBackend = PeriodogramGpuContext.CPU_BACKEND;
+                            progressWin.getTextPanel().append(
+                                    "GPU kernel compile failed — falling back to CPU (see Log).\n");
+                        }
+                    }
+
                     for (int planet = 0; planet < nPlanets; planet++) {
                         if (blsCancelled.get()) break;
                         // Append a line for this planet
@@ -263,126 +350,180 @@ public class Periodogram_ implements PlugIn {
                             double freq = minFreq + i * (maxFreq - minFreq) / (nPeriods - 1);
                             periods[i] = 1.0 / freq;
                         }
-                        // Prepare thread pool
-                        int nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
-                        ExecutorService executor = Executors.newFixedThreadPool(nThreads);
-                        List<Future<double[]>> futures = new ArrayList<>();
-                        for (int i = 0; i < nPeriods; i++) {
-                            final int periodIdx = i;
-                            futures.add(executor.submit(() -> {
-                                double period = periods[periodIdx];
-                                double maxThisPower = 0, bestThisDuration = 0, bestThisDepth = 0, bestThisPhase = 0;
-                                for (int d = 0; d < nDurations; d++) {
-                                    double duration = minFracDur * period + d * (maxFracDur - minFracDur) * period / Math.max(1, nDurations - 1);
-                                    int nPhase = 200;
-                                    for (int p = 0; p < nPhase; p++) {
-                                        double phase = p * period / nPhase;
-                                        double sumIn = 0, sumOut = 0;
-                                        int nIn = 0, nOut = 0;
-                                        for (int j = 0; j < t.length; j++) {
-                                            double tmod = ((t[j] - phase) % period + period) % period;
-                                            if (tmod < duration) {
-                                                sumIn += f[j];
-                                                nIn++;
-                                            } else {
-                                                sumOut += f[j];
-                                                nOut++;
-                                            }
-                                        }
-                                        if (nIn < 2 || nOut < 2) continue;
-                                        double meanIn = sumIn / nIn;
-                                        double meanOut = sumOut / nOut;
-                                        double depth = meanOut - meanIn;
-                                        double thisPower = depth * depth * nIn * nOut / (nIn + nOut);
-                                        if (thisPower > maxThisPower) {
-                                            maxThisPower = thisPower;
-                                            bestThisDuration = duration;
-                                            bestThisDepth = depth;
-                                            bestThisPhase = phase;
-                                        }
-                                    }
-                                }
-                                return new double[]{maxThisPower, bestThisDuration, bestThisDepth, bestThisPhase};
-                            }));
-                        }
-
-                        // Collect results
+                        // --- BLS Grid Search: GPU or CPU ---
                         double bestPower = 0;
                         double bestPeriod = 0;
                         double bestDuration = 0;
                         double bestDepth = 0;
                         double bestPhase = 0;
-                        int progressStars = 0;
-                        int progressStep = Math.max(1, nPeriods / 100); // 50 steps for 2% increments
-                        int barLength = 50; // total length of the bar
-                        long startTime = System.currentTimeMillis(); // Start time for ETA
-                        //TextWindow progressWin = new TextWindow("Periodogram Progress", "Progress\n", 600, 150); // moved outside loop
-                        System.out.print("BLS Progress: [");
-                        for (int i = 0; i < nPeriods; i++) {
-                            if (blsCancelled.get()) {
-                                // Shutdown executor immediately when cancelled
-                                executor.shutdownNow();
+
+                        boolean blsUseGpu = PeriodogramGpuContext.isGpu(blsComputeBackend);
+                        BLSGpu.BLSResult blsGpuResult = null;
+                        if (blsUseGpu) {
+                            progressWin.getTextPanel().setLine(progressLine,
+                                    String.format("Planet %d: Running on GPU (%s)...", planet + 1, blsComputeBackend));
+                            try {
+                                blsGpuResult = BLSGpu.search(t, f, periods, nDurations,
+                                        minFracDur, maxFracDur, nBinsUser, blsComputeBackend);
+                            } catch (Exception gpuEx) {
+                                IJ.log("[GPU BLS] Error: " + gpuEx.getMessage() + " \u2014 falling back to CPU.");
+                                blsUseGpu = false;
+                            }
+                        }
+                        if (blsUseGpu && blsGpuResult != null) {
+                            System.arraycopy(blsGpuResult.power,         0, power,         0, nPeriods);
+                            System.arraycopy(blsGpuResult.bestDurations, 0, bestDurations, 0, nPeriods);
+                            System.arraycopy(blsGpuResult.bestDepths,    0, bestDepths,    0, nPeriods);
+                            System.arraycopy(blsGpuResult.bestPhases,    0, bestPhases,    0, nPeriods);
+                            for (int i = 0; i < nPeriods; i++) {
+                                if (power[i] > bestPower) {
+                                    bestPower    = power[i];
+                                    bestPeriod   = periods[i];
+                                    bestDuration = bestDurations[i];
+                                    bestDepth    = bestDepths[i];
+                                    bestPhase    = bestPhases[i];
+                                }
+                            }
+                            IJ.showProgress(1.0);
+                        } else {
+                            // CPU path
+                            int nThreads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+                            ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+                            List<Future<double[]>> futures = new ArrayList<>();
+                            for (int i = 0; i < nPeriods; i++) {
+                                final int periodIdx = i;
+                                futures.add(executor.submit(() -> {
+                                    double period = periods[periodIdx];
+                                    final int nBins = nBinsUser;
+                                    final double invPeriod = 1.0 / period;
+
+                                    // Stage 1: phase-fold all points into nBins uniform bins.
+                                    // Each point is visited exactly once — O(nPoints).
+                                    double[] binFluxSum = new double[nBins];
+                                    int[]    binN       = new int[nBins];
+                                    for (int j = 0; j < t.length; j++) {
+                                        double ph = t[j] * invPeriod;
+                                        ph -= Math.floor(ph);          // fractional phase in [0, 1)
+                                        int bin = (int)(ph * nBins);
+                                        if (bin >= nBins) bin = nBins - 1;
+                                        binFluxSum[bin] += f[j];
+                                        binN[bin]++;
+                                    }
+
+                                    // Stage 2: sliding-window BLS on the binned data — O(nDurations × nBins).
+                                    // The data-point loop is gone; in/out sums update with 4 array ops per step.
+                                    double maxThisPower = 0, bestThisDuration = 0, bestThisDepth = 0, bestThisPhase = 0;
+                                    int nDurM1 = Math.max(1, nDurations - 1);
+                                    double fracRange = maxFracDur - minFracDur;
+
+                                    for (int d = 0; d < nDurations; d++) {
+                                        double fracDur  = minFracDur + (double) d * fracRange / nDurM1;
+                                        int    durBins  = Math.max(1, (int)(fracDur * nBins + 0.5));
+                                        if (durBins >= nBins) durBins = nBins - 1;
+                                        double duration = fracDur * period;
+
+                                        // Build initial window: bins [0, durBins) are "in-transit"
+                                        double sumIn  = 0, sumOut = 0;
+                                        double nIn    = 0, nOut  = 0;
+                                        for (int k = 0; k < durBins; k++) {
+                                            sumIn += binFluxSum[k];
+                                            nIn   += binN[k];
+                                        }
+                                        for (int k = durBins; k < nBins; k++) {
+                                            sumOut += binFluxSum[k];
+                                            nOut   += binN[k];
+                                        }
+
+                                        // Slide the window one bin at a time around the full circle
+                                        for (int p = 0; p < nBins; p++) {
+                                            if (nIn >= 2 && nOut >= 2) {
+                                                double meanIn  = sumIn  / nIn;
+                                                double meanOut = sumOut / nOut;
+                                                double depth   = meanOut - meanIn;
+                                                double thisPower = depth * depth * nIn * nOut / (nIn + nOut);
+                                                if (thisPower > maxThisPower) {
+                                                    maxThisPower     = thisPower;
+                                                    bestThisDuration = duration;
+                                                    bestThisDepth    = depth;
+                                                    // Phase = centre of the transit box
+                                                    bestThisPhase = ((double) p + durBins * 0.5) / nBins * period;
+                                                }
+                                            }
+                                            // Slide: bin p leaves, bin (p + durBins) % nBins enters
+                                            int addBin = p + durBins;
+                                            if (addBin >= nBins) addBin -= nBins;
+                                            sumIn  -= binFluxSum[p];       nIn  -= binN[p];
+                                            sumIn  += binFluxSum[addBin];  nIn  += binN[addBin];
+                                            sumOut += binFluxSum[p];       nOut += binN[p];
+                                            sumOut -= binFluxSum[addBin];  nOut -= binN[addBin];
+                                        }
+                                    }
+                                    return new double[]{maxThisPower, bestThisDuration, bestThisDepth, bestThisPhase};
+                                }));
+                            }
+                            int progressStep = Math.max(1, nPeriods / 100);
+                            int barLength = 50;
+                            long startTime = System.currentTimeMillis();
+                            System.out.print("BLS Progress: [");
+                            for (int i = 0; i < nPeriods; i++) {
+                                if (blsCancelled.get()) {
+                                    executor.shutdownNow();
+                                    try {
+                                        executor.awaitTermination(1, TimeUnit.SECONDS);
+                                    } catch (InterruptedException e) {
+                                        // Ignore interruption
+                                    }
+                                    break;
+                                }
                                 try {
-                                    // Wait a short time for tasks to cancel
-                                    executor.awaitTermination(1, TimeUnit.SECONDS);
+                                    double[] result = futures.get(i).get();
+                                    power[i] = result[0];
+                                    bestDurations[i] = result[1];
+                                    bestDepths[i] = result[2];
+                                    bestPhases[i] = result[3];
+                                    if (result[0] > bestPower) {
+                                        bestPower    = result[0];
+                                        bestPeriod   = periods[i];
+                                        bestDuration = result[1];
+                                        bestDepth    = result[2];
+                                        bestPhase    = result[3];
+                                    }
+                                    if ((i + 1) % progressStep == 0 || i == nPeriods - 1) {
+                                        int percent = (int) Math.round(100.0 * (i + 1) / nPeriods);
+                                        int nStars = (int) Math.round(barLength * (i + 1) / (double) nPeriods);
+                                        StringBuilder bar = new StringBuilder();
+                                        bar.append("BLS Progress: [");
+                                        for (int s = 0; s < nStars; s++) bar.append("*");
+                                        for (int s = nStars; s < barLength; s++) bar.append(" ");
+                                        long elapsed = System.currentTimeMillis() - startTime;
+                                        double fractionDone = (i + 1) / (double) nPeriods;
+                                        long estTotal = (long) (elapsed / (fractionDone > 0 ? fractionDone : 1e-6));
+                                        long estRemaining = estTotal - elapsed;
+                                        String timeStr = String.format(" | ETA: %ds", estRemaining / 1000);
+                                        bar.append("] ").append(percent).append("%").append(timeStr);
+                                        System.out.print("\r" + bar.toString());
+                                        IJ.showProgress((i + 1) / (double) nPeriods);
+                                        int totalLines = progressWin.getTextPanel().getLineCount();
+                                        progressWin.getTextPanel().setLine(progressLine, String.format("Planet %d: %s", planet + 1, bar.toString()));
+                                    }
+                                } catch (Exception e) {
+                                    power[i] = Double.NaN;
+                                    bestDurations[i] = Double.NaN;
+                                    bestDepths[i] = Double.NaN;
+                                    bestPhases[i] = Double.NaN;
+                                }
+                            }
+                            if (!executor.isShutdown()) {
+                                executor.shutdown();
+                                try {
+                                    executor.awaitTermination(5, TimeUnit.SECONDS);
                                 } catch (InterruptedException e) {
-                                    // Ignore interruption
+                                    executor.shutdownNow();
                                 }
-                                break;
                             }
-                            try {
-                                double[] result = futures.get(i).get();
-                                power[i] = result[0];
-                                bestDurations[i] = result[1];
-                                bestDepths[i] = result[2];
-                                bestPhases[i] = result[3];
-                                if (result[0] > bestPower) {
-                                    bestPower = result[0];
-                                    bestPeriod = periods[i];
-                                    bestDuration = result[1];
-                                    bestDepth = result[2];
-                                    bestPhase = result[3];
-                                }
-                                if ((i + 1) % progressStep == 0 || i == nPeriods - 1) {
-                                    int percent = (int) Math.round(100.0 * (i + 1) / nPeriods);
-                                    int nStars = (int) Math.round(barLength * (i + 1) / (double) nPeriods);
-                                    StringBuilder bar = new StringBuilder();
-                                    bar.append("BLS Progress: [");
-                                    for (int s = 0; s < nStars; s++) bar.append("*");
-                                    for (int s = nStars; s < barLength; s++) bar.append(" ");
-                                    long elapsed = System.currentTimeMillis() - startTime;
-                                    double fractionDone = (i + 1) / (double) nPeriods;
-                                    long estTotal = (long) (elapsed / (fractionDone > 0 ? fractionDone : 1e-6));
-                                    long estRemaining = estTotal - elapsed;
-                                    String timeStr = String.format(" | ETA: %ds", estRemaining / 1000);
-                                    bar.append("] ").append(percent).append("%").append(timeStr);
-                                    System.out.print("\r" + bar.toString());
-                                    // Update ImageJ progress bar
-                                    IJ.showProgress((i + 1) / (double) nPeriods);
-                                    // Update only the last line for this planet
-                                    int totalLines = progressWin.getTextPanel().getLineCount();
-                                    progressWin.getTextPanel().setLine(progressLine, String.format("Planet %d: %s", planet + 1, bar.toString()));
-                                }
-                            } catch (Exception e) {
-                                power[i] = Double.NaN;
-                                bestDurations[i] = Double.NaN;
-                                bestDepths[i] = Double.NaN;
-                                bestPhases[i] = Double.NaN;
-                            }
+                            IJ.showProgress(1.0);
+                            System.out.println();
                         }
-
-                        // Properly shutdown executor if not already done
-                        if (!executor.isShutdown()) {
-                            executor.shutdown();
-                            try {
-                                executor.awaitTermination(5, TimeUnit.SECONDS);
-                            } catch (InterruptedException e) {
-                                executor.shutdownNow();
-                            }
-                        }
-
-                        IJ.showProgress(1.0); // Clear progress bar at end
-                        System.out.println();
                         // Mark this planet as done
                         progressWin.getTextPanel().setLine(progressLine, String.format("Planet %d: Done!", planet + 1));
                         // Update overall progress bar
@@ -448,87 +589,189 @@ public class Periodogram_ implements PlugIn {
                             double minTauFrac = 0.01; // allow sharper transits
                             double maxTauFrac = 0.99;  // allow broader transits (changed from 0.9)
                             double tauFracStep = 0.01; // finer tauFrac grid
-                            int nTau = (int) Math.round((maxTauFrac - minTauFrac) / tauFracStep) + 1;
+                            final int nTau = (int) Math.round((maxTauFrac - minTauFrac) / tauFracStep) + 1;
+                            // Phase step size: (duration/200) in phase units
+                            final double phaseStep = (bestDuration / bestPeriod) / 200.0;
+                            final int nPhaseSteps = (int) Math.ceil(1.0 / phaseStep);
+                            double[] bestModel = new double[t.length];
+                            final double[] lossGrid        = new double[nTau * nPhaseSteps];
+                            final double[] tauFracGrid     = new double[nTau * nPhaseSteps];
+                            final double[] phaseOffsetGrid = new double[nTau * nPhaseSteps];
+                            double delta = 0.002; // Huber loss parameter (slightly less robust)
+
+                            // --- Sort phases once so each grid cell can binary-search the in-window points ---
+                            // Before: O(nPoints) per cell (scan all, most rejected).
+                            // After:  O(log n + window_points) per cell (only the relevant arc).
+                            final int nData = t.length;
+                            Integer[] sortIdxT0 = new Integer[nData];
+                            for (int i = 0; i < nData; i++) sortIdxT0[i] = i;
+                            final double[] phasesCapture = phases;
+                            Arrays.sort(sortIdxT0, Comparator.comparingDouble(i -> phasesCapture[i]));
+                            final double[] sortedPhasesT0 = new double[nData];
+                            final double[] sortedFluxT0   = new double[nData];
+                            for (int i = 0; i < nData; i++) {
+                                sortedPhasesT0[i] = phases[sortIdxT0[i]];
+                                sortedFluxT0[i]   = f[sortIdxT0[i]];
+                            }
+
+                            final double durOverPeriodT0 = bestDuration / bestPeriod;
+                            final double windowT0        = 1.5 * durOverPeriodT0;
+                            final double deltaT0         = delta;
+                            final double phaseStepT0     = phaseStep;
+                            final int    nPhaseStepsT0   = nPhaseSteps;
+                            final double bestDepthT0     = bestDepth;
+                            final double bestPeriodT0    = bestPeriod;
+
+                            // --- Parallelise the outer tauFrac loop across CPU cores ---
+                            int nT0Threads = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
+                            ExecutorService t0Exec = Executors.newFixedThreadPool(nT0Threads);
+                            List<Future<double[]>> t0Futures = new ArrayList<>();
+                            long t0Start = System.currentTimeMillis();
+
+                            for (int tauIdx = 0; tauIdx < nTau; tauIdx++) {
+                                final int tauIdxF = tauIdx;
+                                final double tauFrac = minTauFrac + tauIdxF * tauFracStep;
+                                final double tauPhase = tauFrac * durOverPeriodT0;
+                                final double flatPhase = durOverPeriodT0 - 2 * tauPhase;
+                                if (flatPhase < 0) continue; // skip unphysical (same as original)
+                                final double tauFracF = tauFrac;
+                                final double tauPhaseF = tauPhase;
+                                final double flatPhaseF = flatPhase;
+
+                                t0Futures.add(t0Exec.submit(() -> {
+                                    double localBestLoss        = Double.POSITIVE_INFINITY;
+                                    double localBestPhaseOffset = 0;
+
+                                    for (int s = 0; s < nPhaseStepsT0; s++) {
+                                        if (blsCancelled.get()) break;
+                                        double phaseOffset = s * phaseStepT0 * bestPeriodT0;
+                                        double C = phaseOffset / bestPeriodT0;
+                                        C -= Math.floor(C); // wrap to [0, 1)
+
+                                        double sumLoss = 0.0;
+                                        int    nUsed   = 0;
+
+                                        if (windowT0 >= 0.5) {
+                                            // Window spans the full circle — iterate every point.
+                                            for (int k = 0; k < nData; k++) {
+                                                double ps = sortedPhasesT0[k] - C;
+                                                ps -= Math.floor(ps);
+                                                double mdl;
+                                                if      (ps < tauPhaseF)                  mdl = -bestDepthT0 * (ps / tauPhaseF);
+                                                else if (ps < tauPhaseF + flatPhaseF)     mdl = -bestDepthT0;
+                                                else if (ps < 2*tauPhaseF + flatPhaseF)   mdl = -bestDepthT0 * (1 - (ps - tauPhaseF - flatPhaseF) / tauPhaseF);
+                                                else                                       mdl = 0.0;
+                                                double rr = sortedFluxT0[k] - mdl;
+                                                double absR = Math.abs(rr);
+                                                sumLoss += (absR <= deltaT0) ? 0.5*rr*rr : deltaT0*(absR - 0.5*deltaT0);
+                                                nUsed++;
+                                            }
+                                        } else {
+                                            // Binary-search the in-window arc [C-window, C+window] (circular)
+                                            double lo = C - windowT0;
+                                            double hi = C + windowT0;
+                                            int r0a, r0b, r1a, r1b;
+                                            if (lo < 0) {
+                                                // Two arcs: [lo+1, 1) and [0, hi]
+                                                r0a = lowerBoundD(sortedPhasesT0, lo + 1);  r0b = nData;
+                                                r1a = 0;                                    r1b = upperBoundD(sortedPhasesT0, hi);
+                                            } else if (hi >= 1.0) {
+                                                // Two arcs: [lo, 1) and [0, hi-1]
+                                                r0a = lowerBoundD(sortedPhasesT0, lo);      r0b = nData;
+                                                r1a = 0;                                    r1b = upperBoundD(sortedPhasesT0, hi - 1);
+                                            } else {
+                                                // Single arc [lo, hi]
+                                                r0a = lowerBoundD(sortedPhasesT0, lo);      r0b = upperBoundD(sortedPhasesT0, hi);
+                                                r1a = 0;                                    r1b = 0;
+                                            }
+                                            // Arc 1
+                                            for (int k = r0a; k < r0b; k++) {
+                                                double ps = sortedPhasesT0[k] - C;
+                                                ps -= Math.floor(ps);
+                                                double mdl;
+                                                if      (ps < tauPhaseF)                  mdl = -bestDepthT0 * (ps / tauPhaseF);
+                                                else if (ps < tauPhaseF + flatPhaseF)     mdl = -bestDepthT0;
+                                                else if (ps < 2*tauPhaseF + flatPhaseF)   mdl = -bestDepthT0 * (1 - (ps - tauPhaseF - flatPhaseF) / tauPhaseF);
+                                                else                                       mdl = 0.0;
+                                                double rr = sortedFluxT0[k] - mdl;
+                                                double absR = Math.abs(rr);
+                                                sumLoss += (absR <= deltaT0) ? 0.5*rr*rr : deltaT0*(absR - 0.5*deltaT0);
+                                                nUsed++;
+                                            }
+                                            // Arc 2 (empty when not wrapping)
+                                            for (int k = r1a; k < r1b; k++) {
+                                                double ps = sortedPhasesT0[k] - C;
+                                                ps -= Math.floor(ps);
+                                                double mdl;
+                                                if      (ps < tauPhaseF)                  mdl = -bestDepthT0 * (ps / tauPhaseF);
+                                                else if (ps < tauPhaseF + flatPhaseF)     mdl = -bestDepthT0;
+                                                else if (ps < 2*tauPhaseF + flatPhaseF)   mdl = -bestDepthT0 * (1 - (ps - tauPhaseF - flatPhaseF) / tauPhaseF);
+                                                else                                       mdl = 0.0;
+                                                double rr = sortedFluxT0[k] - mdl;
+                                                double absR = Math.abs(rr);
+                                                sumLoss += (absR <= deltaT0) ? 0.5*rr*rr : deltaT0*(absR - 0.5*deltaT0);
+                                                nUsed++;
+                                            }
+                                        }
+
+                                        double cellLoss = (nUsed > 0) ? sumLoss / nUsed : Double.POSITIVE_INFINITY;
+                                        int gi = tauIdxF * nPhaseStepsT0 + s;
+                                        lossGrid[gi]        = cellLoss;
+                                        tauFracGrid[gi]     = tauFracF;
+                                        phaseOffsetGrid[gi] = phaseOffset;
+
+                                        if (cellLoss < localBestLoss) {
+                                            localBestLoss        = cellLoss;
+                                            localBestPhaseOffset = phaseOffset;
+                                        }
+                                    }
+                                    return new double[] { localBestLoss, localBestPhaseOffset, tauFracF };
+                                }));
+                            }
+
                             double bestLoss = Double.POSITIVE_INFINITY;
                             double bestPhaseOffset = 0;
                             double bestTauFrac = 0;
-                            // Phase step size: (duration/200) in phase units
-                            double phaseStep = (bestDuration / bestPeriod) / 200.0;
-                            int nPhaseSteps = (int) Math.ceil(1.0 / phaseStep);
-                            double[] bestModel = new double[t.length];
-                            double[] lossGrid = new double[nTau * nPhaseSteps];
-                            double[] tauFracGrid = new double[nTau * nPhaseSteps];
-                            double[] phaseOffsetGrid = new double[nTau * nPhaseSteps];
-                            int gridIdx = 0;
-                            double delta = 0.002; // Huber loss parameter (slightly less robust)
-                            for (int tauIdx = 0; tauIdx < nTau; tauIdx++) {
-                                if (blsCancelled.get()) break;
-                                double tauFrac = minTauFrac + tauIdx * tauFracStep;
-                                double tauPhase = tauFrac * (bestDuration / bestPeriod);
-                                double flatPhase = (bestDuration / bestPeriod) - 2 * tauPhase;
-                                if (flatPhase < 0) continue; // skip unphysical
-                                for (int s = 0; s < nPhaseSteps; s++) {
-                                    if (blsCancelled.get()) break;
-                                    double phaseOffset = s * phaseStep * bestPeriod;
-                                    double[] model = new double[t.length];
-                                    double[] residuals = new double[t.length];
-                                    int nUsed = 0;
-                                    for (int j = 0; j < t.length; j++) {
-                                        double phase = phases[j] - (phaseOffset / bestPeriod);
-                                        phase = phase - Math.floor(phase);
-                                        // Only use points within ±1.5*duration (in phase units) of the model center
-                                        double dphase = Math.abs(phase);
-                                        if (dphase > 0.5) dphase = 1.0 - dphase; // wrap around
-                                        double window = 1.5 * (bestDuration / bestPeriod);
-                                        if (dphase <= window) {
-                                            if (phase < tauPhase) {
-                                                model[j] = -bestDepth * (phase / tauPhase);
-                                            } else if (phase < tauPhase + flatPhase) {
-                                                model[j] = -bestDepth;
-                                            } else if (phase < 2 * tauPhase + flatPhase) {
-                                                model[j] = -bestDepth * (1 - (phase - tauPhase - flatPhase) / tauPhase);
-                                            } else {
-                                                model[j] = 0.0;
-                                            }
-                                            residuals[nUsed] = f[j] - model[j];
-                                            nUsed++;
-                                        }
+                            try {
+                                for (Future<double[]> fut : t0Futures) {
+                                    double[] r = fut.get();
+                                    if (r[0] < bestLoss) {
+                                        bestLoss        = r[0];
+                                        bestPhaseOffset = r[1];
+                                        bestTauFrac     = r[2];
                                     }
-                                    if (nUsed > 0) {
-                                        double[] usedResiduals = new double[nUsed];
-                                        System.arraycopy(residuals, 0, usedResiduals, 0, nUsed);
-                                        double loss = huberLoss(usedResiduals, delta);
-                                        lossGrid[gridIdx] = loss;
-                                        tauFracGrid[gridIdx] = tauFrac;
-                                        phaseOffsetGrid[gridIdx] = phaseOffset;
-                                        if (loss < bestLoss) {
-                                            bestLoss = loss;
-                                            bestPhaseOffset = phaseOffset;
-                                            bestTauFrac = tauFrac;
-                                            // Save the best model for plotting (for all points, not just window)
-                                            for (int j = 0; j < t.length; j++) {
-                                                double phaseForPlot = phases[j] - (bestPhaseOffset / bestPeriod);
-                                                phaseForPlot = phaseForPlot - Math.floor(phaseForPlot);
-                                                if (phaseForPlot < bestTauFrac * (bestDuration / bestPeriod)) {
-                                                    bestModel[j] = -bestDepth * (phaseForPlot / (bestTauFrac * (bestDuration / bestPeriod)));
-                                                } else if (phaseForPlot < bestTauFrac * (bestDuration / bestPeriod) + (bestDuration / bestPeriod) - 2 * bestTauFrac * (bestDuration / bestPeriod)) {
-                                                    bestModel[j] = -bestDepth;
-                                                } else if (phaseForPlot < 2 * bestTauFrac * (bestDuration / bestPeriod) + (bestDuration / bestPeriod) - 2 * bestTauFrac * (bestDuration / bestPeriod)) {
-                                                    bestModel[j] = -bestDepth * (1 - (phaseForPlot - bestTauFrac * (bestDuration / bestPeriod) - ((bestDuration / bestPeriod) - 2 * bestTauFrac * (bestDuration / bestPeriod))) / (bestTauFrac * (bestDuration / bestPeriod)));
-                                                } else {
-                                                    bestModel[j] = 0.0;
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        lossGrid[gridIdx] = Double.POSITIVE_INFINITY;
-                                        tauFracGrid[gridIdx] = tauFrac;
-                                        phaseOffsetGrid[gridIdx] = phaseOffset;
-                                    }
-                                    gridIdx++;
                                 }
-                                if (blsCancelled.get()) break;
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                IJ.log("[T0] Parallel T0 search interrupted.");
+                            } catch (java.util.concurrent.ExecutionException ee) {
+                                IJ.log("[T0] Parallel T0 search error: " + ee.getMessage());
+                            } finally {
+                                t0Exec.shutdown();
                             }
+                            System.out.printf("[T0] Parallel T0 refinement: %d threads, %d ms%n",
+                                    nT0Threads, System.currentTimeMillis() - t0Start);
+
+                            // Fill bestModel once using the final winning parameters.
+                            if (bestLoss < Double.POSITIVE_INFINITY) {
+                                double durOP = bestDuration / bestPeriod;
+                                double tauPh = bestTauFrac * durOP;
+                                double flatPh = durOP - 2 * tauPh;
+                                for (int j = 0; j < t.length; j++) {
+                                    double phaseForPlot = phases[j] - (bestPhaseOffset / bestPeriod);
+                                    phaseForPlot -= Math.floor(phaseForPlot);
+                                    if      (phaseForPlot < tauPh)                bestModel[j] = -bestDepth * (phaseForPlot / tauPh);
+                                    else if (phaseForPlot < tauPh + flatPh)       bestModel[j] = -bestDepth;
+                                    else if (phaseForPlot < 2 * tauPh + flatPh)   bestModel[j] = -bestDepth * (1 - (phaseForPlot - tauPh - flatPh) / tauPh);
+                                    else                                          bestModel[j] = 0.0;
+                                }
+                            }
+
+                            // Plot code below checks `gridIndex < gridIdx`; we filled the full array
+                            // using direct (tauIdx * nPhaseSteps + s) indexing, so set gridIdx to the
+                            // full size.  Slots for skipped tauIdxs (flatPhase < 0) keep default 0
+                            // and are filtered out by the `tauFracGrid[gi] == bestTauFrac` check.
+                            int gridIdx = nTau * nPhaseSteps;
                             // Convert phase offset back to T0 (using t[0] as reference)
                             double bestT0 = phaseRef + bestPhaseOffset;
                             System.out.printf("Phase-folded sliding trapezoid Huber loss T0 refinement: best phase offset = %.6f, best tauFrac = %.3f, best T0 = %.6f, Huber loss = %.6g\n", bestPhaseOffset, bestTauFrac, bestT0, bestLoss);
@@ -923,7 +1166,8 @@ public class Periodogram_ implements PlugIn {
                 MIN_PERIOD.set(minPeriodUser);
                 MAX_PERIOD.set(maxPeriodUser);
                 STEPS.set((double) nPeriods);
-                PEAK_WIDTH_CUTOFF.set((double) userNumPeaks);
+                PEAK_WIDTH_CUTOFF.set(userCutoff);
+                PEAK_COUNT.set((double) userNumPeaks);
                 PLANET_COUNT.set((double) nPlanets);
                 MASK_FACTOR_PERIOD.set(maskFactor);
 
@@ -1240,6 +1484,7 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addNumericField("Min fractional duration (0-1)", MIN_FRACTIONAL_DURATION.get(), 3);
                     gdCol.addNumericField("Max fractional duration (0-1)", MAX_FRACTIONAL_DURATION.get(), 3);
                     gdCol.addNumericField("Duration steps", DURATION_STEPS.get(), 0);
+                    gdCol.addNumericField("Phase bins (resolution = P / bins)", PHASE_BINS.get(), 0);
                     gdCol.addNumericField("Peak width cutoff (0-1)", PEAK_WIDTH_CUTOFF.get(), 2, 6, null);
                     gdCol.addNumericField("Number of peaks", PEAK_COUNT.get(), 0, 6, null);
                     gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
@@ -1252,6 +1497,64 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
                     gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
                     gdCol.addRadioButtonGroup("X Axis Scale:", new String[]{"Linear", "Log"}, 1, 2, PLOT_X_SCALE.get());
+                    { Panel sp = new Panel(); sp.setPreferredSize(new Dimension(1, 7)); gdCol.addPanel(sp); }
+                    String[] tlsBackends = PeriodogramGpuContext.getAvailableBackends();
+                    String tlsDefaultBackend = PeriodogramGpuContext.isGpu(COMPUTE_BACKEND.get())
+                            && Arrays.asList(tlsBackends).contains(COMPUTE_BACKEND.get())
+                            ? COMPUTE_BACKEND.get() : PeriodogramGpuContext.CPU_BACKEND;
+                    gdCol.addChoice("Compute backend", tlsBackends, tlsDefaultBackend);
+
+                    // --- Per-field hover tooltips (yellow bubble help) ---
+                    applyTooltips(gdCol.getChoices(), new String[] {
+                            "Data-table column holding observation times (usually BJD_TDB).",
+                            "Data-table column holding the relative/normalised flux (typically ~1.0 out of transit).",
+                            "How to determine transit centre T0 when masking a detected planet:" +
+                                    "  \u2022 \"Model center\" runs a sliding-trapezoid Huber fit (more accurate for noisy data)." +
+                                    "  \u2022 \"Min average\" picks the phase bin with the lowest mean flux (faster).",
+                            "Where to run the periodogram computation. " +
+                                    "GPU entries require an OpenCL device with double-precision (cl_khr_fp64) support; " +
+                                    "devices without FP64 are filtered out at startup."
+                    });
+                    applyTooltips(gdCol.getNumericFields(), new String[] {
+                            "Shortest orbital period to search, in days. " +
+                                    "Enter 0 for automatic (data_span / 20).",
+                            "Longest orbital period to search, in days. " +
+                                    "Enter 0 for automatic (0.8 \u00d7 data_span).",
+                            "Number of trial periods in the frequency grid. " +
+                                    "Higher = finer period resolution but slower (cost is O(steps)).",
+                            "Minimum transit duration expressed as a fraction of the orbital period " +
+                                    "(e.g. 0.005 = 0.5% of period). " +
+                                    "Setting this very small lets TLS latch onto narrow noise features \u2014 raise it " +
+                                    "if spurious short-period peaks appear.",
+                            "Maximum transit duration expressed as a fraction of the orbital period " +
+                                    "(e.g. 0.1 = 10% of period). Also sizes the GPU kernel's model-profile array.",
+                            "Number of trial durations sampled between min and max. " +
+                                    "More = finer transit-shape scan, linear cost.",
+                            "Phase-fold resolution. Time resolution per cell = period / bins. " +
+                                    "Example: 1000 bins at P=1 day \u2248 1.44 min per cell; at P=100 days \u2248 2.4 hr per cell. " +
+                                    "Valid range 50\u20132000.",
+                            "Minimum fractional drop from the main peak (0\u20131) required to report a secondary peak. " +
+                                    "0.25 = secondary peaks must be within 25% of the main peak height.",
+                            "Number of secondary peaks to annotate on the periodogram plot.",
+                            "How many planet candidates to detect iteratively. " +
+                                    "After each detection the found transit is masked and TLS re-runs on the residual.",
+                            "When masking a detected planet, multiply the fitted transit duration by this factor " +
+                                    "to widen the mask window (e.g. 3.0 masks \u00b11.5 durations around T0).",
+                            "Linear limb-darkening coefficient u1 (Mandel \u0026 Agol 2002 model). " +
+                                    "Typical range 0.1\u20130.6; pick a value matching the host-star spectral type for best results.",
+                            "Quadratic limb-darkening coefficient u2 (Mandel \u0026 Agol 2002 model). " +
+                                    "Typical range 0.1\u20130.4. Together with u1, a poor match to the true star limb darkening " +
+                                    "can steer TLS toward the wrong period.",
+                            "Scaled semi-major axis a/Rs (orbit radius in units of stellar radii). " +
+                                    "Used only for the post-search T0 refinement fit.",
+                            "Orbital inclination in degrees (90\u00b0 = edge-on). " +
+                                    "Used only for the post-search T0 refinement fit.",
+                            "User-supplied T0 (BJD days) to use when the \"Lock T0\" checkbox above is ticked."
+                    });
+                    applyTooltips(gdCol.getCheckboxes(), new String[] {
+                            "Skip the automatic sliding-trapezoid T0 fit and use the value entered below."
+                    });
+
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
                     String timeCol = gdCol.getNextChoice();
@@ -1262,6 +1565,7 @@ public class Periodogram_ implements PlugIn {
                     double minFracDur = gdCol.getNextNumber();
                     double maxFracDur = gdCol.getNextNumber();
                     int nDurations = (int) gdCol.getNextNumber();
+                    int nBinsCfg = (int) gdCol.getNextNumber();
                     double userCutoff = gdCol.getNextNumber();
                     int userNumPeaks = (int) gdCol.getNextNumber();
                     int nPlanets = (int) gdCol.getNextNumber();
@@ -1274,6 +1578,11 @@ public class Periodogram_ implements PlugIn {
                     boolean lockT0 = gdCol.getNextBoolean();
                     double lockedT0Value = gdCol.getNextNumber();
                     String plotXScale = gdCol.getNextRadioButton();
+                    String tlsComputeBackend = gdCol.getNextChoice();
+                    // Validate bin count: 50 minimum, 2000 maximum (same as BLS).
+                    if (nBinsCfg < 50)   nBinsCfg = 50;
+                    if (nBinsCfg > 2000) nBinsCfg = 2000;
+                    final int nBinsUser = nBinsCfg;
                     TIME_COL.set(timeCol);
                     FLUX_COL.set(fluxCol);
                     MIN_PERIOD.set(minPeriod);
@@ -1282,7 +1591,9 @@ public class Periodogram_ implements PlugIn {
                     MIN_FRACTIONAL_DURATION.set(minFracDur);
                     MAX_FRACTIONAL_DURATION.set(maxFracDur);
                     DURATION_STEPS.set((double) nDurations);
-                    PEAK_WIDTH_CUTOFF.set((double) userNumPeaks);
+                    PHASE_BINS.set((double) nBinsUser);
+                    PEAK_WIDTH_CUTOFF.set(userCutoff);
+                    PEAK_COUNT.set((double) userNumPeaks);
                     PLANET_COUNT.set((double) nPlanets);
                     TRANSIT_MASK_FACTOR.set(maskFactor);
                     T0_MASK.set(t0MaskingChoice);
@@ -1293,6 +1604,7 @@ public class Periodogram_ implements PlugIn {
                     TLS_A_RS.set(aRs);
                     TLS_INC.set(inc);
                     PLOT_X_SCALE.set(plotXScale);
+                    COMPUTE_BACKEND.set(tlsComputeBackend);
 
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
@@ -1364,6 +1676,22 @@ public class Periodogram_ implements PlugIn {
                     tlsButtonPanel.add(tlsStopButton);
                     tlsProgressWin.add(tlsButtonPanel, BorderLayout.SOUTH);
                     tlsProgressWin.pack();
+                    // Pre-compile GPU kernel before the planet loop (same rationale as BLS).
+                    if (PeriodogramGpuContext.isGpu(tlsComputeBackend)) {
+                        tlsProgressWin.getTextPanel().append(
+                                "Compiling GPU kernel (first run may take 30–90 s — watch the Log window)...\n");
+                        try {
+                            TLSGpu.warmUp(tlsComputeBackend, nBinsUser, maxFracDur);
+                            tlsProgressWin.getTextPanel().append("GPU kernel ready.\n");
+                        } catch (Exception warmEx) {
+                            IJ.log("[GPU TLS] Kernel compile failed: " + warmEx.getMessage()
+                                    + " — falling back to CPU.");
+                            tlsComputeBackend = PeriodogramGpuContext.CPU_BACKEND;
+                            tlsProgressWin.getTextPanel().append(
+                                    "GPU kernel compile failed — falling back to CPU (see Log).\n");
+                        }
+                    }
+
                     for (int planet = 0; planet < nPlanets; planet++) {
                         if (tlsCancelled.get()) break;
                         // Append a line for this planet
@@ -1390,9 +1718,10 @@ public class Periodogram_ implements PlugIn {
                         // TLS progress bar setup
                         int barLength = 50;
                         long tlsStartTime = System.currentTimeMillis(); // Start time for ETA
-                        //TextWindow tlsProgressWin = new TextWindow("Periodogram Progress", "Progress\n", 600, 200); // moved outside loop
                         System.out.print("TLS Progress: [");
-                        TLS.Result tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods, minFracDur, maxFracDur, nDurations, u1, u2, aRs, inc, (pi) -> {
+
+                        // --- TLS Grid Search: GPU or CPU ---
+                        IntConsumer tlsProgressCallback = (pi) -> {
                             if (tlsCancelled.get()) return;
                             int nStars = (int) Math.round(barLength * (pi + 1) / (double) nPeriods);
                             StringBuilder bar = new StringBuilder();
@@ -1407,12 +1736,33 @@ public class Periodogram_ implements PlugIn {
                             String timeStr = String.format(" | ETA: %ds", estRemaining / 1000);
                             bar.append("] ").append(percent).append("%").append(timeStr);
                             System.out.print("\r" + bar.toString());
-                            // Update ImageJ progress bar
                             IJ.showProgress((pi + 1) / (double) nPeriods);
-                            // Update only the last line for this planet
                             int totalLines = tlsProgressWin.getTextPanel().getLineCount();
                             tlsProgressWin.getTextPanel().setLine(progressLine, String.format("Planet %d: %s", planetFinal + 1, bar.toString()));
-                        });
+                        };
+
+                        TLS.Result tlsResult;
+                        if (PeriodogramGpuContext.isGpu(tlsComputeBackend)) {
+                            tlsProgressWin.getTextPanel().setLine(progressLine,
+                                    String.format("Planet %d: Running on GPU (%s)...", planetFinal + 1, tlsComputeBackend));
+                            TLS.Result gpuTlsResult = null;
+                            try {
+                                gpuTlsResult = TLSGpu.search(t, f, minPeriod, maxPeriod, nPeriods,
+                                        minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
+                                        tlsProgressCallback, tlsComputeBackend);
+                            } catch (Exception gpuEx) {
+                                IJ.log("[GPU TLS] Error: " + gpuEx.getMessage() + " \u2014 falling back to CPU.");
+                            }
+                            if (gpuTlsResult != null) {
+                                tlsResult = gpuTlsResult;
+                            } else {
+                                tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods,
+                                        minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc, tlsProgressCallback);
+                            }
+                        } else {
+                            tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods,
+                                    minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc, tlsProgressCallback);
+                        }
 
                         // Check if cancelled after TLS search
                         if (tlsCancelled.get()) {
@@ -1828,6 +2178,84 @@ public class Periodogram_ implements PlugIn {
     }
 
     // Huber loss helper
+    /** First index i where a[i] &gt;= value (or a.length if none). Assumes a is sorted ascending. */
+    static int lowerBoundD(double[] a, double value) {
+        int lo = 0, hi = a.length;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (a[mid] < value) lo = mid + 1;
+            else                hi = mid;
+        }
+        return lo;
+    }
+
+    /** First index i where a[i] &gt; value (or a.length if none). Assumes a is sorted ascending. */
+    static int upperBoundD(double[] a, double value) {
+        int lo = 0, hi = a.length;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (a[mid] <= value) lo = mid + 1;
+            else                 hi = mid;
+        }
+        return lo;
+    }
+
+    // -------------------------------------------------------------------------
+    // AWT tooltip helpers for the BLS / TLS settings dialogs.
+    //
+    // ImageJ's GenericDialog uses pure AWT components (TextField, Choice,
+    // Checkbox) which have no setToolTipText.  These helpers attach a small
+    // yellow pop-up "bubble" to any AWT Component, so users can hover over a
+    // field to see per-field help, mirroring the Swing tooltip UX.
+    // -------------------------------------------------------------------------
+
+    /** Attaches a delayed hover-tooltip (yellow bubble) to an AWT Component. */
+    private static void setAwtTooltip(Component c, String text) {
+        if (c == null || text == null || text.isEmpty()) return;
+        c.addMouseListener(new MouseAdapter() {
+            Popup popup;
+            javax.swing.Timer timer;
+
+            @Override public void mouseEntered(MouseEvent e) {
+                final Point screen = e.getLocationOnScreen();
+                timer = new javax.swing.Timer(600, ev -> {
+                    JLabel lbl = new JLabel(text);
+                    lbl.setOpaque(true);
+                    lbl.setBackground(new Color(255, 255, 225));
+                    lbl.setForeground(Color.BLACK);
+                    lbl.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(Color.BLACK),
+                            BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+                    popup = PopupFactory.getSharedInstance()
+                            .getPopup(c, lbl, screen.x + 14, screen.y + 18);
+                    popup.show();
+                });
+                timer.setRepeats(false);
+                timer.start();
+            }
+
+            @Override public void mouseExited(MouseEvent e) {
+                if (timer != null) { timer.stop(); timer = null; }
+                if (popup != null) { popup.hide(); popup = null; }
+            }
+        });
+    }
+
+    /**
+     * Applies per-index tooltips to every component of a GenericDialog field
+     * vector (e.g. the vector returned by {@link GenericDialog#getNumericFields()}).
+     * Safely no-ops when the vector or a tooltip entry is null / empty, and stops
+     * at the shorter of the two lengths so it tolerates future dialog edits.
+     */
+    private static void applyTooltips(java.util.Vector<?> components, String[] tooltips) {
+        if (components == null || tooltips == null) return;
+        int n = Math.min(components.size(), tooltips.length);
+        for (int i = 0; i < n; i++) {
+            Object c = components.get(i);
+            if (c instanceof Component) setAwtTooltip((Component) c, tooltips[i]);
+        }
+    }
+
     public static double huberLoss(double[] residuals, double delta) {
         double sum = 0.0;
         for (int i = 0; i < residuals.length; i++) {

@@ -12,6 +12,7 @@ dependencies {
     api("dev.sigstore:sigstore-java:2.0.0")
     implementation("ch.randelshofer:fastdoubleparser:2.0.1")
     api("org.hipparchus:hipparchus-stat:3.1")
+    api("org.jocl:jocl:2.0.5")
 }
 
 artifacts {

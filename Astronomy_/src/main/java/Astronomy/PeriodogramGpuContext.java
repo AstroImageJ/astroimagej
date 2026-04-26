@@ -124,7 +124,7 @@ public class PeriodogramGpuContext {
                         IJ.log("[GPU Periodogram] Skipping " + name + ": no double-precision support (cl_khr_fp64).");
                         continue;
                     }
-                    backends.add("GPU \u2014 " + name + " (OpenCL)");
+                    backends.add("GPU - " + name + " (OpenCL)");
                 }
             }
         } catch (Throwable t) {

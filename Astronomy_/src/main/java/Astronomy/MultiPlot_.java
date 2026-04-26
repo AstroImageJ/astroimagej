@@ -1757,7 +1757,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
 
 
-                    yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+                    if (converged[curve]) {
+                        yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4],
+                                bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve],
+                                forceCircularOrbit[curve] ? 0.0 : eccentricity[curve],
+                                forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6],
+                                useLonAscNode[curve], lonAscNode[curve], true);
+                    } else {
+                        yModel2[curve] = new double[]{priorCenter[curve][0], priorCenter[curve][0]};
+                        xModel2[curve] = new double[]{fitMin[curve], fitMax[curve]};
+                    }
+
 
                     if (normIndex[curve] != 0) {
                         if (yModel2[curve] != null) {

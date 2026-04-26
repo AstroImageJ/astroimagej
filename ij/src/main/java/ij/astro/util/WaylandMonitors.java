@@ -1,6 +1,7 @@
 package ij.astro.util;
 
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -96,7 +97,8 @@ public final class WaylandMonitors {
 
     public static Monitor defaultMonitor(List<Monitor> monitors) {
         if (monitors.isEmpty()) {
-            throw new IllegalArgumentException("No outputs available");
+            var s = Toolkit.getDefaultToolkit().getScreenSize();
+            return new Monitor("default", new Rectangle(0, 0, s.width, s.height));
         }
 
         for (var out : monitors) {

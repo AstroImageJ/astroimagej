@@ -125,6 +125,11 @@ public class Periodogram_ implements PlugIn {
         if (algorithm.equals("BLS")) {
             if (isMeasurementTable) {
                 new Thread(() -> {
+                    // Top-level safety net: anything uncaught in this background thread
+                    // would otherwise kill the thread silently — leaving the user with a
+                    // "Planet N: Done!" message and no plots/results.  Catch Throwable so
+                    // both RuntimeExceptions and (unlikely) Errors are surfaced.
+                    try {
                     MeasurementTable table = MeasurementTable.getTable(dataSource);
                     if (table == null) {
                         IJ.showMessage("Periodogram", "Could not open table.");
@@ -156,7 +161,7 @@ public class Periodogram_ implements PlugIn {
                     { Panel sp = new Panel(); sp.setPreferredSize(new Dimension(1, 7)); gdCol.addPanel(sp); }
                     String[] blsBackends = PeriodogramGpuContext.getAvailableBackends();
                     String blsDefaultBackend = PeriodogramGpuContext.isGpu(COMPUTE_BACKEND.get())
-                            && Arrays.asList(blsBackends).contains(COMPUTE_BACKEND.get())
+                            && java.util.Arrays.asList(blsBackends).contains(COMPUTE_BACKEND.get())
                             ? COMPUTE_BACKEND.get() : PeriodogramGpuContext.CPU_BACKEND;
                     gdCol.addChoice("Compute backend", blsBackends, blsDefaultBackend);
 
@@ -268,15 +273,40 @@ public class Periodogram_ implements PlugIn {
                     // Prepare for iterative search
                     boolean[] masked = new boolean[n]; // true = masked/ignored
                     List<PeakResult> allPeaks = new ArrayList<>();
+                    // BJD reference for converting (phase, duration) into an absolute BJD.
+                    //
+                    // Historically this was looked up from a hardcoded "Measurements" table,
+                    // which silently failed when the user loaded a saved table via
+                    // Read_MeasurementTable (the loaded table is named after the file, not
+                    // "Measurements").  That left bjdOffset = NaN, which propagated into
+                    // minAverageT0 and later tripped a `minIdx = -1` / `t[minIdx]` path
+                    // (ArrayIndexOutOfBoundsException) that killed the background thread
+                    // silently — "Planet N: Done!" appeared but no plots ever materialised.
+                    //
+                    // Fallback chain:
+                    //   1) the user's selected table (always present here)
+                    //   2) a table literally named "Measurements" (legacy behaviour)
+                    //   3) sortedTime[0] as a last resort so bjdOffset is never NaN
                     double bjdOffset = Double.NaN;
                     try {
-                        MeasurementTable measTable = MeasurementTable.getTable("Measurements");
-                        int bjdCol = measTable.getColumnIndex("BJD_TDB");
-                        if (bjdCol != MeasurementTable.COLUMN_NOT_FOUND && measTable.getCounter() > 0) {
-                            bjdOffset = measTable.getValueAsDouble(bjdCol, 0);
+                        int bjdCol = table.getColumnIndex("BJD_TDB");
+                        if (bjdCol != MeasurementTable.COLUMN_NOT_FOUND && table.getCounter() > 0) {
+                            bjdOffset = table.getValueAsDouble(bjdCol, 0);
                         }
-                    } catch (Exception e) {
-                        // Ignore, leave bjdOffset as NaN
+                    } catch (Exception ignored) { /* fall through */ }
+                    if (Double.isNaN(bjdOffset)) {
+                        try {
+                            MeasurementTable measTable = MeasurementTable.getTable("Measurements");
+                            if (measTable != null) {
+                                int bjdCol = measTable.getColumnIndex("BJD_TDB");
+                                if (bjdCol != MeasurementTable.COLUMN_NOT_FOUND && measTable.getCounter() > 0) {
+                                    bjdOffset = measTable.getValueAsDouble(bjdCol, 0);
+                                }
+                            }
+                        } catch (Exception ignored) { /* fall through */ }
+                    }
+                    if (Double.isNaN(bjdOffset) && sortedTime.length > 0) {
+                        bjdOffset = sortedTime[0];
                     }
                     // Create a single progress window for all planet searches
                     TextWindow progressWin = new TextWindow("Periodogram Progress", "", 600, 600);
@@ -363,8 +393,12 @@ public class Periodogram_ implements PlugIn {
                             progressWin.getTextPanel().setLine(progressLine,
                                     String.format("Planet %d: Running on GPU (%s)...", planet + 1, blsComputeBackend));
                             try {
+                                // Pass the same AtomicBoolean the Stop button flips so the
+                                // GPU kernel can be aborted between dispatch slices instead
+                                // of running to completion (CPU mode already honours it).
                                 blsGpuResult = BLSGpu.search(t, f, periods, nDurations,
-                                        minFracDur, maxFracDur, nBinsUser, blsComputeBackend);
+                                        minFracDur, maxFracDur, nBinsUser, blsComputeBackend,
+                                        blsCancelled::get);
                             } catch (Exception gpuEx) {
                                 IJ.log("[GPU BLS] Error: " + gpuEx.getMessage() + " \u2014 falling back to CPU.");
                                 blsUseGpu = false;
@@ -565,19 +599,29 @@ public class Periodogram_ implements PlugIn {
                                 minAverageT0 = (bjdOffset + bestPhase + 0.5 * bestDuration) + minPhase * bestPeriod;
                             }
                             System.out.printf("[DIAG] minAverageT0 = %.6f\n", minAverageT0);
-                            // Print the phase for the time closest to minAverageT0 (using robust formula)
+                            // Print the phase for the time closest to minAverageT0 (using robust formula).
+                            // Guard against minAverageT0 being NaN (or any future case where every
+                            // dt comparison is false) — without this guard `t[minIdx]` below would
+                            // hit `t[-1]` and throw ArrayIndexOutOfBoundsException, silently killing
+                            // the BLS background thread and suppressing all plots/results.
                             double minDt = Double.POSITIVE_INFINITY;
                             int minIdx = -1;
-                            for (int i = 0; i < t.length; i++) {
-                                double dt = Math.abs(t[i] - minAverageT0);
-                                if (dt < minDt) {
-                                    minDt = dt;
-                                    minIdx = i;
+                            if (!Double.isNaN(minAverageT0)) {
+                                for (int i = 0; i < t.length; i++) {
+                                    double dt = Math.abs(t[i] - minAverageT0);
+                                    if (dt < minDt) {
+                                        minDt = dt;
+                                        minIdx = i;
+                                    }
                                 }
                             }
-                            double phaseAtMinAverageT0 = (t[minIdx] - minAverageT0) / bestPeriod;
-                            phaseAtMinAverageT0 = phaseAtMinAverageT0 - Math.floor(phaseAtMinAverageT0);
-                            System.out.printf("[DIAG] Closest time to minAverageT0: t = %.6f, phase = %.6f\n", t[minIdx], phaseAtMinAverageT0);
+                            if (minIdx < 0) {
+                                System.out.printf("[DIAG] Closest time to minAverageT0: skipped (minAverageT0 = %.6f — no finite distances)%n", minAverageT0);
+                            } else {
+                                double phaseAtMinAverageT0 = (t[minIdx] - minAverageT0) / bestPeriod;
+                                phaseAtMinAverageT0 = phaseAtMinAverageT0 - Math.floor(phaseAtMinAverageT0);
+                                System.out.printf("[DIAG] Closest time to minAverageT0: t = %.6f, phase = %.6f\n", t[minIdx], phaseAtMinAverageT0);
+                            }
                             // Phase-fold the data using t[0] as reference (fully independent of minAverageT0)
                             double[] phases = new double[t.length];
                             double phaseRef = t[0];
@@ -1011,32 +1055,59 @@ public class Periodogram_ implements PlugIn {
                             // Reset color to black for other elements
                             plot.setColor(Color.BLACK);
 
-                            // Add orange vertical lines for harmonics/aliases
-                            plot.setColor(new Color(255, 165, 0)); // Orange
-                            // First harmonic (2x period)
-                            double harmonic1 = dominantPeriod * 2.0;
-                            if (harmonic1 >= minPeriod && harmonic1 <= maxPeriod) {
-                                plot.addPoints(new double[]{harmonic1, harmonic1}, new double[]{yMin, yMax}, Plot.LINE);
-                            }
-                            // Second harmonic (3x period)
-                            double harmonic2 = dominantPeriod * 3.0;
-                            if (harmonic2 >= minPeriod && harmonic2 <= maxPeriod) {
-                                plot.addPoints(new double[]{harmonic2, harmonic2}, new double[]{yMin, yMax}, Plot.LINE);
-                            }
-                            // Sub-harmonic (0.5x period)
-                            double subHarmonic = dominantPeriod * 0.5;
-                            if (subHarmonic >= minPeriod && subHarmonic <= maxPeriod) {
-                                plot.addPoints(new double[]{subHarmonic, subHarmonic}, new double[]{yMin, yMax}, Plot.LINE);
+                            // Orange vertical lines for harmonics/aliases — capped at
+                            // 5 multiples of the dominant period.  Only those that fall
+                            // inside [minPeriod, maxPeriod] are actually drawn, and the
+                            // legend below lists exactly the ones that became visible.
+                            double[] harmonicFactors = {0.5, 2.0, 3.0, 4.0, 5.0};
+                            List<String> visibleHarmonicLabels = new ArrayList<>();
+                            plot.setColor(new Color(255, 165, 0));
+                            for (double factor : harmonicFactors) {
+                                double p = dominantPeriod * factor;
+                                if (p >= minPeriod && p <= maxPeriod) {
+                                    plot.addPoints(new double[]{p, p}, new double[]{yMin, yMax}, Plot.LINE);
+                                    visibleHarmonicLabels.add(factor == (int) factor
+                                            ? "\u00D7" + (int) factor
+                                            : "\u00D7" + factor);
+                                }
                             }
 
-                            // Reset color to black
+                            // Gray vertical lines for the secondary peaks (Peak 2..N)
+                            // so the user can see where on the periodogram they sit.
+                            if (nLabelPeaks > 1) {
+                                plot.setColor(Color.GRAY);
+                                for (int si = 1; si < nLabelPeaks; si++) {
+                                    double sp = periods[sortedTopPeaks.get(si)];
+                                    plot.addPoints(new double[]{sp, sp}, new double[]{yMin, yMax}, Plot.LINE);
+                                }
+                            }
+
+                            // Legend — right-anchored (Plot.RIGHT) so the text is
+                            // guaranteed to stay inside the plot frame regardless of
+                            // how wide the user resizes the window.  Label colour is
+                            // set per line so it matches the line it describes.
+                            plot.setJustification(Plot.RIGHT);
+                            plot.setColor(Color.RED);
+                            plot.addLabel(0.99, 0.06, "\u2014 dominant period");
+                            if (!visibleHarmonicLabels.isEmpty()) {
+                                plot.setColor(new Color(255, 165, 0));
+                                plot.addLabel(0.99, 0.11,
+                                        "\u2014 harmonics/aliases (" + String.join(", ", visibleHarmonicLabels) + ")");
+                            }
+                            if (nLabelPeaks > 1) {
+                                plot.setColor(Color.GRAY);
+                                plot.addLabel(0.99, 0.16, "\u2014 secondary peaks");
+                            }
+                            plot.setJustification(Plot.LEFT);
                             plot.setColor(Color.BLACK);
                         }
 
-                        // Label top peaks with T0 for the dominant peak
+                        // Label top peaks — Peak 1 (dominant) in red, Peak 2..N in gray,
+                        // matching the vertical line colours above.
                         for (int i = 0; i < nLabelPeaks; i++) {
                             int peakIdx = sortedTopPeaks.get(i);
                             double peakPeriod = periods[peakIdx];
+                            plot.setColor(i == 0 ? Color.RED : Color.GRAY);
                             if (i == 0 && peakIdx == bestIdx) {
                                 String t0Value = "";
                                 if (t0MaskingChoice.equals("Min average (phase bin)")) {
@@ -1049,6 +1120,7 @@ public class Periodogram_ implements PlugIn {
                                 plot.addLabel(0.01, 0.06 + i * 0.05, String.format("Peak %d: P=%.4f", i + 1, peakPeriod));
                             }
                         }
+                        plot.setColor(Color.BLACK);
                         plot.show();
                         plot.update();
                     }
@@ -1086,6 +1158,18 @@ public class Periodogram_ implements PlugIn {
                                             "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts"
                                     },
                                     resultMsg, "BLS Multi-Planet Results"));
+                    } catch (Throwable th) {
+                        IJ.log("[BLS] Unhandled error in background thread: " + th);
+                        java.io.StringWriter sw = new java.io.StringWriter();
+                        th.printStackTrace(new java.io.PrintWriter(sw));
+                        IJ.log(sw.toString());
+                        final String msg = th.getClass().getSimpleName()
+                                + (th.getMessage() != null ? (": " + th.getMessage()) : "");
+                        SwingUtilities.invokeLater(() -> IJ.showMessage(
+                                "Periodogram",
+                                "BLS failed with an unexpected error:\n" + msg
+                                        + "\n\nSee the Log window for the full stack trace."));
+                    }
                 }).start();
             } else {
                 IJ.showMessage("Periodogram", "BLS is only implemented for Measurements Table.");
@@ -1342,32 +1426,53 @@ public class Periodogram_ implements PlugIn {
                         // Reset color to black for other elements
                         plot.setColor(Color.BLACK);
 
-                        // Add orange vertical lines for harmonics/aliases of the dominant peak only
-                        plot.setColor(new Color(255, 165, 0)); // Orange
-                        // First harmonic (2x period)
-                        double harmonic1 = dominantPeriod * 2.0;
-                        if (harmonic1 >= minPeriod && harmonic1 <= maxPeriod) {
-                            plot.addPoints(new double[]{harmonic1, harmonic1}, new double[]{yMin, yMax}, Plot.LINE);
-                        }
-                        // Second harmonic (3x period)
-                        double harmonic2 = dominantPeriod * 3.0;
-                        if (harmonic2 >= minPeriod && harmonic2 <= maxPeriod) {
-                            plot.addPoints(new double[]{harmonic2, harmonic2}, new double[]{yMin, yMax}, Plot.LINE);
-                        }
-                        // Sub-harmonic (0.5x period)
-                        double subHarmonic = dominantPeriod * 0.5;
-                        if (subHarmonic >= minPeriod && subHarmonic <= maxPeriod) {
-                            plot.addPoints(new double[]{subHarmonic, subHarmonic}, new double[]{yMin, yMax}, Plot.LINE);
+                        // Orange vertical lines for harmonics/aliases — up to 5 multiples.
+                        double[] harmonicFactors = {0.5, 2.0, 3.0, 4.0, 5.0};
+                        List<String> visibleHarmonicLabels = new ArrayList<>();
+                        plot.setColor(new Color(255, 165, 0));
+                        for (double factor : harmonicFactors) {
+                            double p = dominantPeriod * factor;
+                            if (p >= minPeriod && p <= maxPeriod) {
+                                plot.addPoints(new double[]{p, p}, new double[]{yMin, yMax}, Plot.LINE);
+                                visibleHarmonicLabels.add(factor == (int) factor
+                                        ? "\u00D7" + (int) factor
+                                        : "\u00D7" + factor);
+                            }
                         }
 
-                        // Reset color to black
+                        // Gray vertical lines for secondary peaks (Peak 2..N).
+                        if (nLabelPeaks > 1) {
+                            plot.setColor(Color.GRAY);
+                            for (int si = 1; si < nLabelPeaks; si++) {
+                                double sp = periods[sortedTopPeaks.get(si)];
+                                plot.addPoints(new double[]{sp, sp}, new double[]{yMin, yMax}, Plot.LINE);
+                            }
+                        }
+
+                        // Legend — right-anchored so text stays inside the plot frame.
+                        plot.setJustification(Plot.RIGHT);
+                        plot.setColor(Color.RED);
+                        plot.addLabel(0.99, 0.06, "\u2014 dominant period");
+                        if (!visibleHarmonicLabels.isEmpty()) {
+                            plot.setColor(new Color(255, 165, 0));
+                            plot.addLabel(0.99, 0.11,
+                                    "\u2014 harmonics/aliases (" + String.join(", ", visibleHarmonicLabels) + ")");
+                        }
+                        if (nLabelPeaks > 1) {
+                            plot.setColor(Color.GRAY);
+                            plot.addLabel(0.99, 0.16, "\u2014 secondary peaks");
+                        }
+                        plot.setJustification(Plot.LEFT);
                         plot.setColor(Color.BLACK);
                     }
 
                     plot.addPoints(periods, power, Plot.LINE);
+                    // Peak 1 in red, secondary peaks in gray — colour matches the
+                    // vertical lines drawn on the plot.
                     for (int i = 0; i < nLabelPeaks; i++) {
                         int peakIdx = sortedTopPeaks.get(i);
                         double peakPeriod = periods[peakIdx];
+                        plot.setColor(i == 0 ? Color.RED : Color.GRAY);
                         if (i == 0 && peakIdx == bestIdx) {
                             // For the dominant peak (Peak 1), add power information
                             plot.addLabel(0.01, 0.06 + i * 0.05, String.format("Peak %d: P=%.4f Power=%.4f", i + 1, peakPeriod, power[peakIdx]));
@@ -1375,6 +1480,7 @@ public class Periodogram_ implements PlugIn {
                             plot.addLabel(0.01, 0.06 + i * 0.05, String.format("Peak %d: P=%.4f", i + 1, peakPeriod));
                         }
                     }
+                    plot.setColor(Color.BLACK);
                     plot.show();
                     plot.update();
 
@@ -1465,6 +1571,8 @@ public class Periodogram_ implements PlugIn {
         if (algorithm.equals("TLS")) {
             if (isMeasurementTable) {
                 new Thread(() -> {
+                    // Top-level safety net — see the matching comment in the BLS block.
+                    try {
                     MeasurementTable table = MeasurementTable.getTable(dataSource);
                     if (table == null) {
                         IJ.showMessage("Periodogram", "Could not open table.");
@@ -1500,7 +1608,7 @@ public class Periodogram_ implements PlugIn {
                     { Panel sp = new Panel(); sp.setPreferredSize(new Dimension(1, 7)); gdCol.addPanel(sp); }
                     String[] tlsBackends = PeriodogramGpuContext.getAvailableBackends();
                     String tlsDefaultBackend = PeriodogramGpuContext.isGpu(COMPUTE_BACKEND.get())
-                            && Arrays.asList(tlsBackends).contains(COMPUTE_BACKEND.get())
+                            && java.util.Arrays.asList(tlsBackends).contains(COMPUTE_BACKEND.get())
                             ? COMPUTE_BACKEND.get() : PeriodogramGpuContext.CPU_BACKEND;
                     gdCol.addChoice("Compute backend", tlsBackends, tlsDefaultBackend);
 
@@ -1631,15 +1739,30 @@ public class Periodogram_ implements PlugIn {
                     // Prepare for iterative search
                     boolean[] masked = new boolean[n]; // true = masked/ignored
                     List<TLSResult> allResults = new ArrayList<>();
+                    // BJD reference — same fallback chain as the BLS block above.  Currently
+                    // unused in the TLS code path, but kept populated and non-NaN so that any
+                    // future TLS code that reuses it can't resurface the BLS-era silent-crash
+                    // bug caused by the hardcoded "Measurements" table lookup.
                     double bjdOffset = Double.NaN;
                     try {
-                        MeasurementTable measTable = MeasurementTable.getTable("Measurements");
-                        int bjdCol = measTable.getColumnIndex("BJD_TDB");
-                        if (bjdCol != MeasurementTable.COLUMN_NOT_FOUND && measTable.getCounter() > 0) {
-                            bjdOffset = measTable.getValueAsDouble(bjdCol, 0);
+                        int bjdCol = table.getColumnIndex("BJD_TDB");
+                        if (bjdCol != MeasurementTable.COLUMN_NOT_FOUND && table.getCounter() > 0) {
+                            bjdOffset = table.getValueAsDouble(bjdCol, 0);
                         }
-                    } catch (Exception e) {
-                        // Ignore, leave bjdOffset as NaN
+                    } catch (Exception ignored) { /* fall through */ }
+                    if (Double.isNaN(bjdOffset)) {
+                        try {
+                            MeasurementTable measTable = MeasurementTable.getTable("Measurements");
+                            if (measTable != null) {
+                                int bjdCol = measTable.getColumnIndex("BJD_TDB");
+                                if (bjdCol != MeasurementTable.COLUMN_NOT_FOUND && measTable.getCounter() > 0) {
+                                    bjdOffset = measTable.getValueAsDouble(bjdCol, 0);
+                                }
+                            }
+                        } catch (Exception ignored) { /* fall through */ }
+                    }
+                    if (Double.isNaN(bjdOffset) && sortedTime.length > 0) {
+                        bjdOffset = sortedTime[0];
                     }
                     // If minPeriod or maxPeriod is 0.0, use auto logic (same as BLS)
                     double tMin = sortedTime[0], tMax = sortedTime[n-1];
@@ -1747,21 +1870,31 @@ public class Periodogram_ implements PlugIn {
                                     String.format("Planet %d: Running on GPU (%s)...", planetFinal + 1, tlsComputeBackend));
                             TLS.Result gpuTlsResult = null;
                             try {
+                                // Pass the same AtomicBoolean the Stop button flips so the
+                                // GPU kernel can be aborted between dispatch slices instead
+                                // of running to completion (CPU mode already honours it).
                                 gpuTlsResult = TLSGpu.search(t, f, minPeriod, maxPeriod, nPeriods,
                                         minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
-                                        tlsProgressCallback, tlsComputeBackend);
+                                        tlsProgressCallback, tlsComputeBackend,
+                                        tlsCancelled::get);
                             } catch (Exception gpuEx) {
                                 IJ.log("[GPU TLS] Error: " + gpuEx.getMessage() + " \u2014 falling back to CPU.");
                             }
                             if (gpuTlsResult != null) {
                                 tlsResult = gpuTlsResult;
                             } else {
+                                // Pass the Stop flag so the CPU fallback honours it too.
                                 tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods,
-                                        minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc, tlsProgressCallback);
+                                        minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
+                                        tlsProgressCallback, tlsCancelled::get);
                             }
                         } else {
+                            // Pass the Stop flag so the grid-search worker pool, the
+                            // outer futures drain, and the T0-refinement pool all
+                            // abort promptly on a user Stop (matches BLS CPU / TLS GPU).
                             tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods,
-                                    minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc, tlsProgressCallback);
+                                    minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
+                                    tlsProgressCallback, tlsCancelled::get);
                         }
 
                         // Check if cancelled after TLS search
@@ -1828,6 +1961,17 @@ public class Periodogram_ implements PlugIn {
                             topPeaks.add(bestIdx);
                         }
                         topPeaks.sort((a, b) -> Double.compare(tlsResult.sde[b], tlsResult.sde[a]));
+                        // The safety-net add above can push topPeaks to userNumPeaks+1
+                        // when findPeaks() excluded bestIdx (happens whenever another
+                        // local maximum sits within minSeparation = 1% of nPeriods of
+                        // the global max — common on TLS SDE curves).  Cap here so
+                        // the downstream results table, console print-out, and plot
+                        // labels all agree on exactly N = userNumPeaks entries.
+                        // bestIdx is guaranteed to survive the trim because it has
+                        // the highest SDE and therefore leads the sorted list.
+                        if (topPeaks.size() > userNumPeaks) {
+                            topPeaks = new ArrayList<>(topPeaks.subList(0, userNumPeaks));
+                        }
 
                         // Compute odd/even transit depths for this TLS iteration
                         double tlsT0ForOE = t0MaskingChoice.equals("Min average (phase bin)")
@@ -1912,34 +2056,55 @@ public class Periodogram_ implements PlugIn {
                             // Reset color to black for other elements
                             plot.setColor(Color.BLACK);
 
-                            // Add orange vertical lines for harmonics/aliases
-                            plot.setColor(new Color(255, 165, 0)); // Orange
-                            // First harmonic (2x period)
-                            double harmonic1 = dominantPeriod * 2.0;
-                            if (harmonic1 >= minPeriod && harmonic1 <= maxPeriod) {
-                                plot.addPoints(new double[]{harmonic1, harmonic1}, new double[]{yMin, yMax}, Plot.LINE);
-                            }
-                            // Second harmonic (3x period)
-                            double harmonic2 = dominantPeriod * 3.0;
-                            if (harmonic2 >= minPeriod && harmonic2 <= maxPeriod) {
-                                plot.addPoints(new double[]{harmonic2, harmonic2}, new double[]{yMin, yMax}, Plot.LINE);
-                            }
-                            // Sub-harmonic (0.5x period)
-                            double subHarmonic = dominantPeriod * 0.5;
-                            if (subHarmonic >= minPeriod && subHarmonic <= maxPeriod) {
-                                plot.addPoints(new double[]{subHarmonic, subHarmonic}, new double[]{yMin, yMax}, Plot.LINE);
+                            // Orange vertical lines for harmonics/aliases — up to 5 multiples.
+                            double[] harmonicFactors = {0.5, 2.0, 3.0, 4.0, 5.0};
+                            List<String> visibleHarmonicLabels = new ArrayList<>();
+                            plot.setColor(new Color(255, 165, 0));
+                            for (double factor : harmonicFactors) {
+                                double p = dominantPeriod * factor;
+                                if (p >= minPeriod && p <= maxPeriod) {
+                                    plot.addPoints(new double[]{p, p}, new double[]{yMin, yMax}, Plot.LINE);
+                                    visibleHarmonicLabels.add(factor == (int) factor
+                                            ? "\u00D7" + (int) factor
+                                            : "\u00D7" + factor);
+                                }
                             }
 
-                            // Reset color to black
+                            // Gray vertical lines for secondary peaks (Peak 2..N).
+                            int tlsNLabelPeaks = Math.min(topPeaks.size(), userNumPeaks);
+                            if (tlsNLabelPeaks > 1) {
+                                plot.setColor(Color.GRAY);
+                                for (int si = 1; si < tlsNLabelPeaks; si++) {
+                                    double sp = tlsResult.periods[topPeaks.get(si)];
+                                    plot.addPoints(new double[]{sp, sp}, new double[]{yMin, yMax}, Plot.LINE);
+                                }
+                            }
+
+                            // Legend — right-anchored so text stays inside the plot frame.
+                            plot.setJustification(Plot.RIGHT);
+                            plot.setColor(Color.RED);
+                            plot.addLabel(0.99, 0.06, "\u2014 dominant period");
+                            if (!visibleHarmonicLabels.isEmpty()) {
+                                plot.setColor(new Color(255, 165, 0));
+                                plot.addLabel(0.99, 0.11,
+                                        "\u2014 harmonics/aliases (" + String.join(", ", visibleHarmonicLabels) + ")");
+                            }
+                            if (tlsNLabelPeaks > 1) {
+                                plot.setColor(Color.GRAY);
+                                plot.addLabel(0.99, 0.16, "\u2014 secondary peaks");
+                            }
+                            plot.setJustification(Plot.LEFT);
                             plot.setColor(Color.BLACK);
                         }
 
                         plot.addLabel(0.01, 0.95, String.format("Best: P=%.4f, SDE=%.2f", bestPeriod, bestSDE));
 
-                        // Label top peaks on plot with T0 for the dominant peak
+                        // Label top peaks on plot — Peak 1 (dominant) in red, Peak 2..N
+                        // in gray, matching the vertical line colours above.
                         for (int i = 0; i < Math.min(topPeaks.size(), userNumPeaks); i++) {
                             int peakIdx = topPeaks.get(i);
                             double peakPeriod = tlsResult.periods[peakIdx];
+                            plot.setColor(i == 0 ? Color.RED : Color.GRAY);
                             if (i == 0 && peakIdx == bestIdx) {
                                 String t0Value = "";
                                 if (t0MaskingChoice.equals("Min average (phase bin)")) {
@@ -1952,6 +2117,7 @@ public class Periodogram_ implements PlugIn {
                                 plot.addLabel(0.01, 0.06 + i * 0.05, String.format("Peak %d: P=%.4f", i + 1, peakPeriod));
                             }
                         }
+                        plot.setColor(Color.BLACK);
                         plot.show();
                         plot.update();
                     }
@@ -1988,6 +2154,18 @@ public class Periodogram_ implements PlugIn {
                                     "T0 (masking, Model center)",
                                     "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts"
                             }, resultMsg, "TLS Multi-Planet Results"));
+                    } catch (Throwable th) {
+                        IJ.log("[TLS] Unhandled error in background thread: " + th);
+                        java.io.StringWriter sw = new java.io.StringWriter();
+                        th.printStackTrace(new java.io.PrintWriter(sw));
+                        IJ.log(sw.toString());
+                        final String msg = th.getClass().getSimpleName()
+                                + (th.getMessage() != null ? (": " + th.getMessage()) : "");
+                        SwingUtilities.invokeLater(() -> IJ.showMessage(
+                                "Periodogram",
+                                "TLS failed with an unexpected error:\n" + msg
+                                        + "\n\nSee the Log window for the full stack trace."));
+                    }
                 }).start();
             } else {
                 IJ.showMessage("Periodogram", "TLS is only implemented for Measurements Table.");

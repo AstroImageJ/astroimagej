@@ -16,6 +16,8 @@ import static org.jocl.CL.clSetKernelArg;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.function.BooleanSupplier;
 
 import ij.IJ;
 import org.jocl.CL;
@@ -101,6 +103,29 @@ public class BLSGpu {
     public static BLSResult search(double[] t, double[] f, double[] periods,
                                    int nDurations, double minFracDur, double maxFracDur,
                                    int nBins, String backend) {
+        return search(t, f, periods, nDurations, minFracDur, maxFracDur,
+                nBins, backend, () -> false);
+    }
+
+    /**
+     * Cancellable variant of {@link #search(double[], double[], double[], int, double, double, int, String)}.
+     *
+     * <p>{@code cancelCheck} is polled between GPU dispatch slices (the total
+     * work is split into ~16 slices via {@code global_work_offset}, each
+     * followed by a {@code clFinish} + poll).  When it returns {@code true},
+     * the remaining unprocessed periods are filled with {@link Double#NaN}
+     * in the returned arrays — matching the CPU path's behaviour on a user
+     * Stop — so downstream plotting / reductions simply ignore them.
+     *
+     * <p>Without chunking a single {@code clEnqueueNDRangeKernel} spans the
+     * whole period grid, which means the Stop button cannot interrupt the
+     * GPU until the whole kernel finishes.  Splitting into slices adds a
+     * handful of milliseconds of queue-flush overhead total, but makes the
+     * Stop button feel instant for the user.
+     */
+    public static BLSResult search(double[] t, double[] f, double[] periods,
+                                   int nDurations, double minFracDur, double maxFracDur,
+                                   int nBins, String backend, BooleanSupplier cancelCheck) {
         int nPoints  = t.length;
         int nPeriods = periods.length;
 
@@ -171,6 +196,9 @@ public class BLSGpu {
         cl_mem dScratchBinN       = clCreateBuffer(ctx.context, CL_MEM_READ_WRITE,
                 scratchSlots * Sizeof.cl_int,    null, null);
 
+        boolean cancelled = false;
+        int     processedPeriods = nPeriods;
+
         try {
             cl_kernel kernel = clCreateKernel(ctx.program, KERNEL_NAME, null);
             try {
@@ -190,13 +218,33 @@ public class BLSGpu {
                 clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{minFracDur}));
                 clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{maxFracDur}));
 
-                long[] globalSize = {roundUpToMultiple(nPeriods, 64)};
-                long[] localSize  = {64};
+                long paddedTotal = roundUpToMultiple(nPeriods, 64);
+                // Aim for ~16 slices: enough that a Stop is typically noticed
+                // within a few % of the total kernel time, but few enough
+                // that per-slice dispatch overhead stays negligible.
+                long targetChunk = Math.max(64L, roundUpToMultiple(
+                        Math.max(1, nPeriods / 16), 64));
+                long[] localSize = {64};
                 long t0 = System.currentTimeMillis();
-                clEnqueueNDRangeKernel(ctx.queue, kernel, 1,
-                        null, globalSize, localSize, 0, null, null);
-                clFinish(ctx.queue);
-                IJ.log("[BLS GPU] Kernel finished in " + (System.currentTimeMillis() - t0) + " ms.");
+                long dispatched = 0;
+                for (long chunkStart = 0; chunkStart < paddedTotal; chunkStart += targetChunk) {
+                    long thisChunk = Math.min(targetChunk, paddedTotal - chunkStart);
+                    long[] gOffset = {chunkStart};
+                    long[] gSize   = {thisChunk};
+                    clEnqueueNDRangeKernel(ctx.queue, kernel, 1,
+                            gOffset, gSize, localSize, 0, null, null);
+                    clFinish(ctx.queue);
+                    dispatched = Math.min(chunkStart + thisChunk, nPeriods);
+                    if (cancelCheck.getAsBoolean()) {
+                        IJ.log("[BLS GPU] Cancelled after ~" + dispatched + "/" + nPeriods + " periods.");
+                        break;
+                    }
+                }
+                cancelled = dispatched < nPeriods;
+                processedPeriods = (int) dispatched;
+                IJ.log("[BLS GPU] Kernel finished in "
+                        + (System.currentTimeMillis() - t0) + " ms"
+                        + (cancelled ? " (cancelled)" : "") + ".");
 
             } finally {
                 clReleaseKernel(kernel);
@@ -210,6 +258,16 @@ public class BLSGpu {
                     (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDepth),    0, null, null);
             clEnqueueReadBuffer(ctx.queue, dPhase,    CL_TRUE, 0,
                     (long) nPeriods * Sizeof.cl_double, Pointer.to(hostPhase),    0, null, null);
+
+            // Mark unprocessed tail with NaN so the caller's bestPower
+            // reduction ignores it (the write-only output buffers contain
+            // uninitialised garbage for gid >= dispatched).
+            if (cancelled && processedPeriods < nPeriods) {
+                Arrays.fill(hostPower,    processedPeriods, nPeriods, Double.NaN);
+                Arrays.fill(hostDuration, processedPeriods, nPeriods, Double.NaN);
+                Arrays.fill(hostDepth,    processedPeriods, nPeriods, Double.NaN);
+                Arrays.fill(hostPhase,    processedPeriods, nPeriods, Double.NaN);
+            }
 
         } finally {
             clReleaseMemObject(dT);

@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
 
 import ij.IJ;
@@ -34,6 +36,23 @@ public class TLS {
      * @return Result object with period grid and SDE
      */
     public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, int nPhase, double u1, double u2, double aRs, double inc, IntConsumer progressCallback) {
+        return search(time, flux, minPeriod, maxPeriod, nPeriods, minDuration, maxDuration,
+                nDurations, nPhase, u1, u2, aRs, inc, progressCallback, () -> false);
+    }
+
+    /**
+     * Cancellable variant of the {@code search} method above.
+     *
+     * <p>{@code cancelCheck} is polled at the start of every per-period task
+     * and once per duration inside each task, so a user Stop is noticed
+     * within a handful of milliseconds even in the middle of the grid search.
+     * When cancelled, unfinished per-period slots are filled with
+     * {@link Double#NaN} so the downstream SDE reduction and T0 refinement
+     * simply skip them (matching the behaviour of the GPU Stop path and of
+     * BLS CPU Stop).  The executor is also {@code shutdownNow()}'d so queued
+     * tasks never start.
+     */
+    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, int nPhase, double u1, double u2, double aRs, double inc, IntConsumer progressCallback, BooleanSupplier cancelCheck) {
         // Phase-binned TLS: the phase grid is also the binning grid (nBins == nPhase),
         // giving O(nPoints + nDurations * nPhase * halfWin) per period — a ~100× speedup
         // over the naive O(nDurations * nPhase * nPoints).
@@ -67,6 +86,19 @@ public class TLS {
                     double invPeriod = 1.0 / period;
                     periods[periodIdx] = period;
 
+                    // Early-out if the user pressed Stop before this task started
+                    // running.  Queued tasks picked up after a shutdownNow() call
+                    // on the executor are already skipped by the framework, but
+                    // checking here covers the gap between cancel-set and
+                    // shutdownNow() and also handles tasks that started just
+                    // before shutdownNow fired.
+                    if (cancelCheck.getAsBoolean()) {
+                        sde[periodIdx]           = Double.NaN;
+                        bestDurations[periodIdx] = Double.NaN;
+                        bestDepths[periodIdx]    = Double.NaN;
+                        return null;
+                    }
+
                     // Stage 1 — phase-fold all points into nBins uniform bins (O(nPoints)).
                     double[] binFluxSum = new double[nBins];
                     int[]    binN       = new int[nBins];
@@ -95,6 +127,15 @@ public class TLS {
 
                     // Stage 2 — loop durations; for each, scan every phase offset.
                     for (int di = 0; di < nDurations; di++) {
+                        // Poll once per duration so a long-running task (e.g. the
+                        // user dataset with 200 durations × 1000 bins) aborts
+                        // within a few ms of a Stop instead of running to end.
+                        if (cancelCheck.getAsBoolean()) {
+                            sde[periodIdx]           = Double.NaN;
+                            bestDurations[periodIdx] = Double.NaN;
+                            bestDepths[periodIdx]    = Double.NaN;
+                            return null;
+                        }
                         double fracDuration = minDuration + di * (maxDuration - minDuration) / Math.max(1, nDurations - 1);
                         double duration = fracDuration * period;
                         double t14 = duration;
@@ -174,7 +215,46 @@ public class TLS {
                     return null;
                 }));
             }
-            for (Future<Void> f : futures) f.get();
+            // Drain the futures one-by-one, but check the cancel flag between
+            // each so the Stop button reacts promptly.  If cancelled we
+            // shutdownNow() the executor (discards queued tasks, interrupts
+            // running ones) and mark any still-pending periods as NaN so the
+            // downstream SDE / T0 code can recognise and skip them — mirrors
+            // the BLS CPU Stop behaviour and the TLS GPU Stop behaviour.
+            boolean searchCancelled = false;
+            for (int pi = 0; pi < nPeriods; pi++) {
+                if (cancelCheck.getAsBoolean()) {
+                    searchCancelled = true;
+                    executor.shutdownNow();
+                    try { executor.awaitTermination(1, TimeUnit.SECONDS); }
+                    catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                    break;
+                }
+                try {
+                    futures.get(pi).get();
+                } catch (java.util.concurrent.CancellationException
+                         | InterruptedException ie) {
+                    sde[pi]           = Double.NaN;
+                    bestDurations[pi] = Double.NaN;
+                    bestDepths[pi]    = Double.NaN;
+                } catch (java.util.concurrent.ExecutionException ee) {
+                    IJ.log("[TLS] Period " + pi + " failed: " + ee.getCause());
+                    sde[pi]           = Double.NaN;
+                    bestDurations[pi] = Double.NaN;
+                    bestDepths[pi]    = Double.NaN;
+                }
+            }
+            if (searchCancelled) {
+                // Backfill NaN for any slots the workers never got to write.
+                for (int j = 0; j < nPeriods; j++) {
+                    if (sde[j] == 0.0 && bestDurations[j] == 0.0 && bestDepths[j] == 0.0) {
+                        sde[j]           = Double.NaN;
+                        bestDurations[j] = Double.NaN;
+                        bestDepths[j]    = Double.NaN;
+                    }
+                }
+                IJ.log("[TLS CPU] Cancelled by user.");
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -191,15 +271,19 @@ public class TLS {
         int sdeWindow = Math.max(1, nPeriods / 100);
         List<Double> sdeForStats = new ArrayList<>();
         for (int i = 0; i < nPeriods; i++) {
+            double v = sde[i];
+            // Skip the NaN tail left behind by a user Stop so median/std below
+            // describe only real work.
+            if (Double.isNaN(v)) continue;
             if (Math.abs(i - bestPeriodIdx) > sdeWindow) {
-                sdeForStats.add(sde[i]);
+                sdeForStats.add(v);
             }
         }
         // Compute median and stddev
         double[] sdeStatsArr = sdeForStats.stream().mapToDouble(Double::doubleValue).toArray();
         double median = 0, std = 0;
         if (sdeStatsArr.length > 0) {
-            Arrays.sort(sdeStatsArr);
+            java.util.Arrays.sort(sdeStatsArr);
             median = sdeStatsArr[sdeStatsArr.length / 2];
             double sumsq = 0;
             for (double v : sdeStatsArr) sumsq += (v - median) * (v - median);
@@ -208,6 +292,15 @@ public class TLS {
         for (int i = 0; i < sde.length; i++) {
             sde[i] = (std > 0) ? (sde[i] - median) / std : 0;
         }
+        // If the user cancelled during the grid search there is no point
+        // running T0 refinement on mostly-NaN data — the outer caller checks
+        // tlsCancelled right after this returns and breaks the planet loop
+        // before touching bestT0Sliding / t0MinAvg, so a stub result is fine
+        // and saves a few hundred ms of extra compute after the Stop.
+        if (cancelCheck.getAsBoolean()) {
+            return new Result(periods, sde, bestDurations, bestDepths, Double.NaN, Double.NaN);
+        }
+
         // After main grid search, do BLS-style T0 refinement for best period
         double bestPeriod = periods[bestPeriodIdx];
         double bestDuration = minDuration + (nDurations > 1 ? (nDurations - 1) / 2.0 * (maxDuration - minDuration) / (nDurations - 1) : 0.0); // crude guess, could be improved
@@ -327,6 +420,8 @@ public class TLS {
                 double localBestPhaseOffset = 0;
 
                 for (int s = 0; s < nPhaseStepsT0; s++) {
+                    // Poll so a Stop during T0 refinement aborts promptly too.
+                    if (cancelCheck.getAsBoolean()) break;
                     double phaseOffset = s * phaseStepT0 * bestPeriodT0;
                     double C = phaseOffset / bestPeriodT0;
                     C -= Math.floor(C);
@@ -404,10 +499,20 @@ public class TLS {
 
         try {
             for (Future<double[]> fut : t0Futures) {
-                double[] r = fut.get();
-                if (r[0] < minLoss) {
-                    minLoss       = r[0];
-                    bestT0Sliding = time[0] + r[1];
+                if (cancelCheck.getAsBoolean()) {
+                    t0Exec.shutdownNow();
+                    try { t0Exec.awaitTermination(1, TimeUnit.SECONDS); }
+                    catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                    break;
+                }
+                try {
+                    double[] r = fut.get();
+                    if (r[0] < minLoss) {
+                        minLoss       = r[0];
+                        bestT0Sliding = time[0] + r[1];
+                    }
+                } catch (java.util.concurrent.CancellationException ce) {
+                    // task was cancelled by shutdownNow() — ignore
                 }
             }
         } catch (InterruptedException ie) {

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
 
 import ij.IJ;
@@ -91,6 +92,30 @@ public class TLSGpu {
                                     int nDurations, int nBins, double u1, double u2,
                                     double aRs, double inc,
                                     IntConsumer progressCallback, String backend) {
+        return search(time, flux, minPeriod, maxPeriod, nPeriods, minFracDur, maxFracDur,
+                nDurations, nBins, u1, u2, aRs, inc, progressCallback, backend, () -> false);
+    }
+
+    /**
+     * Cancellable variant of {@link #search(double[], double[], double, double, int, double, double, int, int, double, double, double, double, IntConsumer, String)}.
+     *
+     * <p>{@code cancelCheck} is polled between GPU dispatch slices (the period
+     * grid is split into ~16 chunks via {@code global_work_offset}, each
+     * followed by a {@code clFinish} + poll).  When it returns {@code true},
+     * the unprocessed tail of every per-period output array is filled with
+     * {@link Double#NaN} so downstream plotting / reductions ignore them.
+     *
+     * <p>Without this chunking the single {@code clEnqueueNDRangeKernel} call
+     * runs to completion before the host can react, so the Stop button has
+     * no effect until the whole kernel finishes.
+     */
+    public static TLS.Result search(double[] time, double[] flux,
+                                    double minPeriod, double maxPeriod,
+                                    int nPeriods, double minFracDur, double maxFracDur,
+                                    int nDurations, int nBins, double u1, double u2,
+                                    double aRs, double inc,
+                                    IntConsumer progressCallback, String backend,
+                                    BooleanSupplier cancelCheck) {
 
         // --- Build period grid (uniform frequency, same as TLS.java line 44-50) ---
         double minFreq = 1.0 / maxPeriod;
@@ -107,7 +132,7 @@ public class TLSGpu {
         double[] bestDepths    = new double[nPeriods];
         gpuGridSearch(time, flux, periods, nPeriods, nDurations, nBins,
                       minFracDur, maxFracDur, u1, u2,
-                      rawSnr, bestDurations, bestDepths, backend);
+                      rawSnr, bestDurations, bestDepths, backend, cancelCheck);
 
         // Report progress in one sweep (GPU finishes in a burst)
         IJ.showProgress(1.0);
@@ -123,7 +148,11 @@ public class TLSGpu {
         int sdeWindow = Math.max(1, nPeriods / 100);
         List<Double> sdeForStats = new ArrayList<>();
         for (int i = 0; i < nPeriods; i++) {
-            if (Math.abs(i - bestPeriodIdx) > sdeWindow) sdeForStats.add(rawSnr[i]);
+            double v = rawSnr[i];
+            // Skip the NaN-padded tail left behind by a user Stop so the
+            // median / std below describe only real work.
+            if (Double.isNaN(v)) continue;
+            if (Math.abs(i - bestPeriodIdx) > sdeWindow) sdeForStats.add(v);
         }
         double[] sdeArr = sdeForStats.stream().mapToDouble(Double::doubleValue).toArray();
         double median = 0, std = 0;
@@ -330,7 +359,8 @@ public class TLSGpu {
                                       double minFracDur, double maxFracDur,
                                       double u1, double u2,
                                       double[] outSnr, double[] outBestDurations,
-                                      double[] outBestDepths, String backend) {
+                                      double[] outBestDepths, String backend,
+                                      BooleanSupplier cancelCheck) {
         int nPoints = t.length;
 
         // Time normalisation (t[0] = 0) — keeps phase fold accurate for large BJD
@@ -399,6 +429,9 @@ public class TLSGpu {
         long scratchBytes = scratchSlots * (Sizeof.cl_double + Sizeof.cl_int);
         IJ.log("[TLS GPU] Global scratch: " + (scratchBytes / (1024 * 1024)) + " MB");
 
+        boolean cancelled = false;
+        int     processedPeriods = nPeriods;
+
         try {
             cl_kernel kernel = clCreateKernel(ctx.program, KERNEL_NAME, null);
             try {
@@ -420,13 +453,35 @@ public class TLSGpu {
                 clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{u2}));
                 clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{sumF2}));
 
-                long[] globalSize = {roundUpToMultiple(nPeriods, 64)};
-                long[] localSize  = {64};
+                long paddedTotal = roundUpToMultiple(nPeriods, 64);
+                // Aim for ~16 dispatch slices so the Stop button is noticed
+                // within a few % of total kernel time while keeping per-slice
+                // overhead negligible.  Each slice uses global_work_offset to
+                // target its period sub-range; the kernel is unchanged (each
+                // period's work is fully independent).
+                long targetChunk = Math.max(64L, roundUpToMultiple(
+                        Math.max(1, nPeriods / 16), 64));
+                long[] localSize = {64};
                 long t0 = System.currentTimeMillis();
-                clEnqueueNDRangeKernel(ctx.queue, kernel, 1,
-                        null, globalSize, localSize, 0, null, null);
-                clFinish(ctx.queue);
-                IJ.log("[TLS GPU] Kernel finished in " + (System.currentTimeMillis() - t0) + " ms.");
+                long dispatched = 0;
+                for (long chunkStart = 0; chunkStart < paddedTotal; chunkStart += targetChunk) {
+                    long thisChunk = Math.min(targetChunk, paddedTotal - chunkStart);
+                    long[] gOffset = {chunkStart};
+                    long[] gSize   = {thisChunk};
+                    clEnqueueNDRangeKernel(ctx.queue, kernel, 1,
+                            gOffset, gSize, localSize, 0, null, null);
+                    clFinish(ctx.queue);
+                    dispatched = Math.min(chunkStart + thisChunk, nPeriods);
+                    if (cancelCheck.getAsBoolean()) {
+                        IJ.log("[TLS GPU] Cancelled after ~" + dispatched + "/" + nPeriods + " periods.");
+                        break;
+                    }
+                }
+                cancelled = dispatched < nPeriods;
+                processedPeriods = (int) dispatched;
+                IJ.log("[TLS GPU] Kernel finished in "
+                        + (System.currentTimeMillis() - t0) + " ms"
+                        + (cancelled ? " (cancelled)" : "") + ".");
             } finally {
                 clReleaseKernel(kernel);
             }
@@ -437,6 +492,16 @@ public class TLSGpu {
                     (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDepth),    0, null, null);
             clEnqueueReadBuffer(ctx.queue, dDuration, CL_TRUE, 0,
                     (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDuration), 0, null, null);
+
+            // Unprocessed tail of the write-only output buffers contains
+            // uninitialised garbage — fill with NaN so downstream plotting
+            // and the bestSDE reduction skip past it (mirrors the CPU Stop
+            // behaviour where unfinished cells stay untouched / ignored).
+            if (cancelled && processedPeriods < nPeriods) {
+                Arrays.fill(hostSnr,      processedPeriods, nPeriods, Double.NaN);
+                Arrays.fill(hostDepth,    processedPeriods, nPeriods, Double.NaN);
+                Arrays.fill(hostDuration, processedPeriods, nPeriods, Double.NaN);
+            }
 
         } finally {
             clReleaseMemObject(dT);

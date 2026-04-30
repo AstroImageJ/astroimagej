@@ -6200,7 +6200,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     button2Drag = SwingUtilities.isMiddleMouseButton(e); // and save to results window when mouse released
                     plotbottompanel = (Panel) plotWindow.getComponent(1);
                     plotbottompanel.setSize(600, 30);
-                    plotcoordlabel = (Label) plotbottompanel.getComponent(4);
+                    plotcoordlabel = (Label) plotbottompanel.getComponent(5);
                     plotcoordlabel.setSize(400, 20);
                     plotcoordlabel.setText("x=" + fourPlaces.format(x+xOffset) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
                     IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));

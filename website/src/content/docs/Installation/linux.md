@@ -124,6 +124,6 @@ Have questions or want to contribute? Reach out to us!
 
 AstroImageJ User Technical Support: [Historical Nabble User Forum](http://astroimagej.170.s1.nabble.com/)
 
-GitHub Discussions: [Github AIJ User Discussions](https://github.com/AstroImageJ/astroimagej/discussions)
+GitHub Discussions: [Github AIJ User Discussions](https://github.com/AstroImageJ/astroimagej/discussions?discussions_q=)
 
 GitHub Issues: [Report a confirmed bug or new development request](https://github.com/AstroImageJ/AstroImageJ/issues)

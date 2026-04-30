@@ -1,4 +1,4 @@
-import { defineConfig } from 'astro/config';
+import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 import markdoc from '@astrojs/markdoc';
@@ -12,7 +12,7 @@ export default defineConfig({
         tableOfContents: { minHeadingLevel: 1, maxHeadingLevel: 4 },
         social: [
             { icon: 'github', label: 'GitHub', href: 'https://github.com/AstroImageJ/astroimagej' },
-            { icon: 'comment', label: 'Github Discussions', href: 'https://github.com/AstroImageJ/astroimagej/discussions' },
+            { icon: 'comment', label: 'Github Discussions', href: 'https://github.com/AstroImageJ/astroimagej/discussions?discussions_q=' },
             { icon: 'comment-alt', label: 'Historical Nabble Forum', href: 'http://astroimagej.170.s1.nabble.com/' },
         ],
         editLink: {

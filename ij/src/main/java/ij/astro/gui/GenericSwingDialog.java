@@ -1034,15 +1034,17 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         addLocal(b, c);
         x.getAndIncrement();
 
-        if (Recorder.record || macro)
+        if (Recorder.record || macro) {
+            double finalDefaultValue = defaultValue;
             saveLabel(tf, label, s -> {
                 getTextFieldFromSpinner(tf).ifPresent(field -> field.setText(s));
                 consumer.accept(Double.parseDouble(s));
             }, () -> {
                 if (recorderOn) {
-                    recordOption(tf, getTextFieldFromSpinner(tf).get().getText());
+                    recordOption(tf, Double.toString(tf.getValue() instanceof Number d ? d.doubleValue() : finalDefaultValue));
                 }
             });
+        }
 
         return new ComponentPair(tf, out);
     }
@@ -1610,9 +1612,22 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private void saveLabel(Object component, String label, Consumer<String> consumer, Runnable finalizer) {
         if (labels==null)
             labels = new LinkedHashMap<>();
-        if (label.length()>0)
+        if (!label.isEmpty())
             label = Macro.trimKey(label.trim());
-        if (label.length()>0 && hasLabel(label)) {                      // not a unique label?
+        if (!label.isEmpty()) {
+            label = label.replace("₀", "_0")
+                    .replace("₁", "_1")
+                    .replace("₂", "_2")
+                    .replace("₃", "_3")
+                    .replace("₄", "_4")
+                    .replace("₅", "_5")
+                    .replace("₆", "_6")
+                    .replace("₇", "_7")
+                    .replace("₈", "_8")
+                    .replace("₉", "_9")
+                    .replace("½", "_half");
+        }
+        if (!label.isEmpty() && hasLabel(label)) {                      // not a unique label?
             label += "_0";
             for (int n=1; hasLabel(label); n++) {   // while still not a unique label
                 label = label.substring(0, label.lastIndexOf('_')); //remove counter

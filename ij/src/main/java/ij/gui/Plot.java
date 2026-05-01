@@ -1,9 +1,35 @@
 package ij.gui;
 
-import ij.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Vector;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.IPlotObject;
 import ij.astro.accessors.IPlotProperties;
+import ij.astro.util.VectorPlotDrawing;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
@@ -15,15 +41,6 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.util.FontUtil;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.geom.Rectangle2D;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Vector;
 
 /** This class creates an image that line graphs, scatter plots and plots of vector fields
  *	(arrows) can be drawn on and displayed.
@@ -1666,13 +1683,16 @@ public class Plot implements Cloneable {
 	 *  Does nothing if imp is unchanged and has the ImageProcessor of this plot.
 	 *  'imp' may be null to disconnect the plot from its ImagePlus.
 	 *	Does nothing for Plot Stacks. */
+	@AstroImageJ(reason = "Support vectorized plot drawing", modified = true)
 	public void setImagePlus(ImagePlus imp) {
 		if (imp != null && imp == this.imp && imp.getProcessor() == ip)
 			return;
 		if (stack != null)
 			return;
-		if (this.imp != null)
+		if (this.imp != null) {
 			this.imp.setProperty(PROPERTY_KEY, null);
+			this.imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, null);
+		}
 		this.imp = imp;
 		if (imp != null) {
 			imp.setIgnoreGlobalCalibration(true);
@@ -1861,9 +1881,12 @@ public class Plot implements Cloneable {
 	/** Releases the ImageProcessor and ImagePlus associated with the plot.
 	 *	May help garbage collection because some garbage collectors
 	 *	are said to be inefficient with circular references. */
+	@AstroImageJ(reason = "Support vectorized plot drawing", modified = true)
 	public void dispose() {
-		if (imp != null)
+		if (imp != null) {
 			imp.setProperty(PROPERTY_KEY, null);
+			imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, null);
+		}
 		imp = null;
 		ip = null;
 	}
@@ -2053,6 +2076,23 @@ public class Plot implements Cloneable {
 			drawPlotObject(pp.legend, ip);
 
 		plotDrawn = true;
+	}
+
+	public BufferedImage getBufferedImage(int width, int height) {
+        draw();
+
+		var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		var bufferGraphics = buffer.createGraphics();
+
+		bufferGraphics.setColor(Color.WHITE);
+		bufferGraphics.fillRect(0, 0, width, height);
+
+		var vectorPlotDrawing = new VectorPlotDrawing(this);
+		vectorPlotDrawing.drawVectorForm(bufferGraphics);
+
+		bufferGraphics.dispose();
+
+		return buffer;
 	}
 
 	/** Creates the processor if not existing, clears the background and prepares

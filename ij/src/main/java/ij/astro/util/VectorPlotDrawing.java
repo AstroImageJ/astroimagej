@@ -68,6 +68,7 @@ import ij.util.Java2;
 import ij.util.Tools;
 
 public class VectorPlotDrawing {
+    public static final String PROPERTY_KEY = "aijVectorPlot";
     protected final Vector<? extends IPlotObject> allPlotObjects;
     protected final Plot plot;
     protected final double frameWidth;

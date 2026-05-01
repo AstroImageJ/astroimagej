@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.Vector;
 
 import ij.astro.AstroImageJ;
+import ij.astro.util.VectorPlotDrawing;
 import ij.gui.Arrow;
 import ij.gui.EllipseRoi;
 import ij.gui.FreehandRoi;
@@ -515,11 +516,18 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	/** ImageCanvas.paint() calls this method when the
 	 * ImageProcessor has generated a new image.
 	*/
+	@AstroImageJ(reason = "Support for Vectorized and Scaled plots", modified = true)
 	public void updateImage() {
 		if (win==null) {
 			img = null;
 			return;
 		}
+
+		if (getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null && win instanceof PlotWindow) {
+			Plot plot = (Plot)(getProperty(VectorPlotDrawing.PROPERTY_KEY));
+			img = plot.getBufferedImage(width, height);
+		}
+
 		if (ip!=null)
 			img = ip.createImage();
 	}
@@ -666,7 +674,13 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	}
 
 	/** Returns this image as a AWT image. */
+	@AstroImageJ(reason = "Support for Vectorized and Scaled plots", modified = true)
 	public Image getImage() {
+		if (getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null && win instanceof PlotWindow) {
+			Plot plot = (Plot)(getProperty(VectorPlotDrawing.PROPERTY_KEY));
+			img = plot.getBufferedImage(width, height);
+			return img;
+		}
 		if (img==null && ip!=null)
 			img = ip.createImage();
 		return img;

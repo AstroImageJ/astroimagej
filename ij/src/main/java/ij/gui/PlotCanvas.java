@@ -1,12 +1,18 @@
 package ij.gui;
 
-import ij.ImagePlus;
-import ij.astro.AstroImageJ;
-import ij.astro.util.UIHelper;
-
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.function.BooleanSupplier;
+
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.AstroImageJ;
+import ij.astro.util.UIHelper;
+import ij.astro.util.VectorPlotDrawing;
 
 
 /** This subclass of ImageCanvas has special provisions for plots:
@@ -33,13 +39,17 @@ public class PlotCanvas extends ImageCanvas {
 	}
 
 	@Override
-	@AstroImageJ(reason = "Support custom zoom indicator for MP")
+	@AstroImageJ(reason = """
+            Support custom zoom indicator for MP
+            Support vectorized plot and plot scaling
+            """)
 	public void paint(Graphics g) {
+		imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, plot);
 		super.paint(g);
 		if (zoomed.getAsBoolean()) {
 			g.drawImage(ZOOM_INDICATOR, 0, 0, null);
 		}
-	}
+    }
 
 	@AstroImageJ(reason = "Support custom zoom indicator for MP")
 	public void setZoomed(BooleanSupplier zoomed) {

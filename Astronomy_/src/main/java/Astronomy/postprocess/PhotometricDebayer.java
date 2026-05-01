@@ -1,5 +1,15 @@
 package Astronomy.postprocess;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import astroj.AstroStackWindow;
 import astroj.FitsJ;
 import astroj.IJU;
@@ -13,20 +23,11 @@ import ij.astro.util.FitsExtensionUtil;
 import ij.plugin.FITS_Writer;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.frame.Recorder;
 import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import ij.process.IntProcessor;
 import ij.process.ShortProcessor;
-
-import java.io.File;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class PhotometricDebayer implements ExtendedPlugInFilter {
     private static final String ENABLE_COLOR_BASE = ".photomatric.debayer_color_";
@@ -36,7 +37,11 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
-        var gd = new GenericSwingDialog("Debayer");
+        if (Recorder.record) {
+            Recorder.setCommand("Photometric Debayer");
+        }
+
+        var gd = new GenericSwingDialog("Photometric Debayer");
 
         AtomicReference<Pallete> pallet = new AtomicReference<>(Pallete.RGGB);
 

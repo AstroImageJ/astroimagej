@@ -1,12 +1,18 @@
 package ij.gui;
 
-import ij.ImagePlus;
-import ij.astro.AstroImageJ;
-import ij.astro.util.UIHelper;
-
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.function.BooleanSupplier;
+
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.AstroImageJ;
+import ij.astro.util.UIHelper;
+import ij.astro.util.VectorPlotDrawing;
 
 
 /** This subclass of ImageCanvas has special provisions for plots:
@@ -33,13 +39,26 @@ public class PlotCanvas extends ImageCanvas {
 	}
 
 	@Override
-	@AstroImageJ(reason = "Support custom zoom indicator for MP")
+	@AstroImageJ(reason = """
+            Support custom zoom indicator for MP
+            Support vectorized plot and plot scaling
+            """)
 	public void paint(Graphics g) {
-		super.paint(g);
+		if (plot == null) {
+			imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, null);
+			super.paint(g);
+			if (zoomed.getAsBoolean()) {
+				g.drawImage(ZOOM_INDICATOR, 0, 0, null);
+			}
+			return;
+		}
+
+		imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, plot);
+		ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> super.paint(g));
 		if (zoomed.getAsBoolean()) {
 			g.drawImage(ZOOM_INDICATOR, 0, 0, null);
 		}
-	}
+    }
 
 	@AstroImageJ(reason = "Support custom zoom indicator for MP")
 	public void setZoomed(BooleanSupplier zoomed) {
@@ -162,6 +181,7 @@ public class PlotCanvas extends ImageCanvas {
 	/** Resizes the canvas when the user resizes the window. To avoid a race condition while creating
 	 *	a new window, this is ignored if no window exists or the window has not been activated yet.
      */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	void resizeCanvas(int width, int height) {
 		if (plot == null || plot.isFrozen()) {
 			super.resizeCanvas(width, height);
@@ -177,6 +197,10 @@ public class PlotCanvas extends ImageCanvas {
 		Dimension minSize = plot.getMinimumSize();
 		int plotWidth  =  width < minSize.width	 ? minSize.width  : width;
 		int plotHeight = height < minSize.height ? minSize.height : height;
+        if (plot.isAijPlot()) {
+			plotWidth = (int) (plotWidth / Prefs.getGuiScale());
+			plotHeight = (int) (plotHeight / Prefs.getGuiScale());
+        }
 		plot.setSize(plotWidth, plotHeight);
 		setSize(width, height);
 		oldWidth = width;
@@ -260,14 +284,86 @@ public class PlotCanvas extends ImageCanvas {
 
     /** Returns the index of the arrow for modifying the range when the mouse click was
      *  at such an arrow, otherwise -1 */
-    int getRangeArrowIndex(MouseEvent e) {
-        ImageWindow win = imp.getWindow();
-        int rangeArrowIndex = -1;
-        if (win instanceof PlotWindow) {
-            int x = e.getX();
-		    int y = e.getY();
-            rangeArrowIndex = ((PlotWindow)win).getRangeArrowIndex(x, y);
+	int getRangeArrowIndex(MouseEvent e) {
+		ImageWindow win = imp.getWindow();
+		int rangeArrowIndex = -1;
+		if (win instanceof PlotWindow) {
+			int x = e.getX();
+			int y = e.getY();
+			rangeArrowIndex = ((PlotWindow)win).getRangeArrowIndex(x, y);
+		}
+		return rangeArrowIndex;
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int offScreenX(int sx) {
+        if (plot.isAijPlot()) {
+            return super.offScreenX((int) (sx / Prefs.getGuiScale()));
         }
-        return rangeArrowIndex;
-    }
+		return super.offScreenX(sx);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int offScreenY(int sy) {
+		if (plot.isAijPlot()) {
+			return super.offScreenY((int) (sy / Prefs.getGuiScale()));
+		}
+		return super.offScreenY(sy);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int offScreenX2(int sx) {
+		if (plot.isAijPlot()) {
+			return super.offScreenX2((int) (sx / Prefs.getGuiScale()));
+		}
+		return super.offScreenX2(sx);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int offScreenY2(int sy) {
+		if (plot.isAijPlot()) {
+			return super.offScreenY2((int) (sy / Prefs.getGuiScale()));
+		}
+		return super.offScreenY2(sy);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public double offScreenXD(int sx) {
+		return super.offScreenXD((int) (sx /*/ Prefs.getGuiScale()*/));
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public double offScreenYD(int sy) {
+		return super.offScreenYD((int) (sy /*/ Prefs.getGuiScale()*/));
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int screenX(int ox) {
+		return super.screenX(ox);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int screenY(int oy) {
+		return super.screenY(oy);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int screenXD(double ox) {
+		return super.screenXD(ox);
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
+	public int screenYD(double oy) {
+		return super.screenYD(oy);
+	}
 }

@@ -1,22 +1,49 @@
 package ij.gui;
 
-import ij.*;
+import java.awt.Button;
+import java.awt.CheckboxMenuItem;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.LayoutManager;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Properties;
+
+import ij.IJ;
+import ij.ImageListener;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.TransferablePlot;
 import ij.astro.util.PdfPlotOutput;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
+import ij.plugin.RoiScaler;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.Transferable;
-import java.awt.event.*;
-import java.io.IOException;
-import java.util.Properties;
 
 /** This class implements the Analyze/Plot Profile command.
 * @author Michael Schmid
@@ -540,14 +567,19 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	 *
 	 * @see ij.gui.ImageWindow#mouseMoved
 	 */
+	@AstroImageJ(reason = "Support scaled plots", modified = true)
 	public void mouseMoved(int x, int y) {
+		if (plot != null && plot.isAijPlot()) {
+			x = (int)(x * Prefs.getGuiScale());
+			y = (int)(y * Prefs.getGuiScale());
+		}
 		super.mouseMoved(x, y);
 		if (plot == null)
 			return;
 		String statusText = null; //coordinate readout, status or tooltip, will be shown in coordinate&status line
 
 		//arrows and other symbols for modifying the plot range
-		if (x < plot.leftMargin || y > plot.topMargin + plot.frameHeight) {
+		if (x < (plot.leftMargin * Prefs.getGuiScale()) || y > plot.topMargin + (plot.frameHeight * Prefs.getGuiScale())) {
 			if (!rangeArrowsVisible && !plot.isFrozen())
 				showRangeArrows();
 			if (activeRangeArrow < 0)       //mouse is not on one of the symbols, ignore (nothing to display)
@@ -627,6 +659,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
      * Creates an overlay with triangular buttons and othr symbols for changing the axis range
      * limits and shows it
      */
+	@AstroImageJ(reason = "Support scaled plots", modified = true)
     void showRangeArrows() {
         if (imp == null)
             return;
@@ -634,6 +667,9 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
         rangeArrowRois = new Roi[4 * 2 + 2 + 4 + 2]; //4 arrows per axis, + 'Reset' and 'Fit All' icons, + 4 numerical input boxes + 2 axes
         int i = 0;
         int height = imp.getHeight();
+		if (plot.isAijPlot()) {
+			height = (int) (height / Prefs.getGuiScale());
+		}
         int arrowH = plot.topMargin < 14 ? 6 : 8; //height of arrows and distance between them; base is twice that value
         float[] yP = new float[]{height - arrowH / 2, height - 3 * arrowH / 2, height - 5 * arrowH / 2 - 0.1f};
 
@@ -671,11 +707,17 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
         rangeArrowRois[15] = new Roi(leftMargin-2*arrowH-2, topMargin,  // area to click for y axis options
 				2*arrowH, bottomMargin - topMargin + 1);
 
+		for (int i1 = 0; plot.isAijPlot() && i1 < rangeArrowRois.length; i1++) {
+			var isRect = rangeArrowRois[i1].type == Roi.RECTANGLE;
+			rangeArrowRois[i1] = RoiScaler.scale(rangeArrowRois[i1], Prefs.getGuiScale(), Prefs.getGuiScale(), false);
+			rangeArrowRois[i1].setProperty("aijScaledRect", "" + isRect);
+		}
+
         Overlay ovly = imp.getOverlay();
         if (ovly == null)
             ovly = new Overlay();
         for (Roi roi : rangeArrowRois) {
-            if (roi instanceof PolygonRoi)
+            if (roi instanceof PolygonRoi && !Objects.equals(roi.getProperty("aijScaledRect"), "true"))
                    roi.setFillColor(inactiveRangeArrowColor);
 			else if (roi instanceof TextRoi) {
                 roi.setStrokeColor(Color.WHITE);

@@ -1,9 +1,35 @@
 package ij.gui;
 
-import ij.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Vector;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.Undo;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.IPlotObject;
 import ij.astro.accessors.IPlotProperties;
+import ij.astro.util.VectorPlotDrawing;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
@@ -15,15 +41,6 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.util.FontUtil;
 import ij.util.Tools;
-
-import java.awt.*;
-import java.awt.geom.Rectangle2D;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Vector;
 
 /** This class creates an image that line graphs, scatter plots and plots of vector fields
  *	(arrows) can be drawn on and displayed.
@@ -259,6 +276,7 @@ public class Plot implements Cloneable {
 	private int objectToReplace = -1;               // index in allPlotObjects, for replace
 	//private Point2D.Double textLoc;                 // remembers position of previous addLabel call (replaces text if at the same position)
 	//private int textIndex;                          // remembers index of previous addLabel call (for replacing if at the same position)
+	private boolean isAijPlot;
 
 	/** Constructs a new Plot with the default options.
 	 * Use add(shape,xvalues,yvalues) to add curves.
@@ -495,12 +513,18 @@ public class Plot implements Cloneable {
 	 * @see #setFrameSize(int,int)
 	 * @see #setWindowSize(int,int)
 	*/
+	@AstroImageJ(reason = "Scale plot size", modified = true)
 	public void setSize(int width, int height) {
 		if (ip != null && width == ip.getWidth() && height == ip.getHeight())
 			return;
 		Dimension minSize = getMinimumSize();
-		pp.width = Math.max(width, minSize.width);
-		pp.height = Math.max(height, minSize.height);
+		if (isAijPlot) {
+			pp.width = (int) (Math.max(width, minSize.width) * Prefs.getGuiScale());
+			pp.height = (int) (Math.max(height, minSize.height) * Prefs.getGuiScale());
+		} else {
+			pp.width = Math.max(width, minSize.width);
+			pp.height = Math.max(height, minSize.height);
+		}
 		scale = 1.0f;
 		ip = null;
 		if (plotDrawn) updateImage();
@@ -1666,13 +1690,16 @@ public class Plot implements Cloneable {
 	 *  Does nothing if imp is unchanged and has the ImageProcessor of this plot.
 	 *  'imp' may be null to disconnect the plot from its ImagePlus.
 	 *	Does nothing for Plot Stacks. */
+	@AstroImageJ(reason = "Support vectorized plot drawing", modified = true)
 	public void setImagePlus(ImagePlus imp) {
 		if (imp != null && imp == this.imp && imp.getProcessor() == ip)
 			return;
 		if (stack != null)
 			return;
-		if (this.imp != null)
+		if (this.imp != null) {
 			this.imp.setProperty(PROPERTY_KEY, null);
+			this.imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, null);
+		}
 		this.imp = imp;
 		if (imp != null) {
 			imp.setIgnoreGlobalCalibration(true);
@@ -1858,30 +1885,64 @@ public class Plot implements Cloneable {
 		return hiresImp;
 	}
 
+	@AstroImageJ(reason = "Support scalable plots")
+	public Plot duplicate() {
+		try {
+			var p = (Plot)clone();	//shallow clone, thus arrays&objects are not cloned, but they will be used only now
+			p.ip = null;
+			p.imp = null;
+			p.pp = pp.clone();
+            if (isAijPlot && !VectorPlotDrawing.SCALED_PLOT.orElse(true)) {
+                p.pp.width = (int)(pp.width / Prefs.getGuiScale());
+				p.pp.height = (int)(pp.height / Prefs.getGuiScale());
+            }
+			if (!plotDrawn) p.getInitialMinAndMax();
+			//scaledPlot.setScale(scale);
+			//scaledPlot.setAntialiasedText(antialiasedText);
+			p.defaultMinMax = currentMinMax.clone();
+			p.plotDrawn = false;
+
+			return p;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	/** Releases the ImageProcessor and ImagePlus associated with the plot.
 	 *	May help garbage collection because some garbage collectors
 	 *	are said to be inefficient with circular references. */
+	@AstroImageJ(reason = "Support vectorized plot drawing", modified = true)
 	public void dispose() {
-		if (imp != null)
+		if (imp != null) {
 			imp.setProperty(PROPERTY_KEY, null);
+			imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, null);
+		}
 		imp = null;
 		ip = null;
 	}
 
 	/** Converts pixels to calibrated coordinates. In contrast to the image calibration, also
 	 *	works with log axes and inverted x axes */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double descaleX(int x) {
 		if (xMin == xMax) return xMin;
-		double xv = (x-xBasePxl)/xScale + xMin;
+        if (isAijPlot) {
+            x = (int) (x / Prefs.getGuiScale());
+        }
+        double xv = (x-xBasePxl)/xScale + xMin;
 		if (logXAxis) xv = Math.pow(10, xv);
 		return xv;
 	}
 
 	/** Converts pixels to calibrated coordinates. In contrast to the image calibration, also
 	 *	works with log axes */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double descaleY(int y) {
 		if (yMin == yMax) return yMin;
-		double yv = (yBasePxl-y)/yScale +yMin;
+        if (isAijPlot) {
+            y = (int) (y / Prefs.getGuiScale());
+        }
+        double yv = (yBasePxl-y)/yScale +yMin;
 		if (logYAxis) yv = Math.pow(10, yv);
 		return yv;
 	}
@@ -2055,8 +2116,34 @@ public class Plot implements Cloneable {
 		plotDrawn = true;
 	}
 
+	public BufferedImage getBufferedImage(int width, int height) {
+        if (isAijPlot) {
+			draw();
+
+			var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			var bufferGraphics = buffer.createGraphics();
+
+			if (VectorPlotDrawing.SCALED_PLOT.orElse(true)) {
+				bufferGraphics.scale(Prefs.getGuiScale(), Prefs.getGuiScale());
+			}
+
+			bufferGraphics.setColor(Color.WHITE);
+			bufferGraphics.fillRect(0, 0, width, height);
+
+			var vectorPlotDrawing = new VectorPlotDrawing(this);
+			vectorPlotDrawing.drawVectorForm(bufferGraphics);
+
+			bufferGraphics.dispose();
+
+			return buffer;
+        }
+
+		return getProcessor().getBufferedImage();
+	}
+
 	/** Creates the processor if not existing, clears the background and prepares
 	 *	it for plotting. Also called by the PlotWindow class to prepare the window. */
+	@AstroImageJ(reason = "Support scaling plots")
 	ImageProcessor getBlankProcessor() {
 		makeMarginValues();
 		//IJ.log("Plot.getBlankPr preferredH="+preferredPlotHeight+" pp.h="+pp.height);
@@ -2066,6 +2153,7 @@ public class Plot implements Cloneable {
 		}
 		frameWidth = pp.width - (leftMargin + rightMargin);
 		frameHeight = pp.height - (topMargin + bottomMargin);
+		scaleFrame();
 		boolean isColored = isColored();	//color, not grayscale required?
 		if (ip == null || pp.width != ip.getWidth() || pp.height != ip.getHeight() || (isColored != (ip instanceof ColorProcessor))) {
 			if (isColored) {
@@ -2095,6 +2183,17 @@ public class Plot implements Cloneable {
 		}
 		ip.setColor(Color.black);
 		return ip;
+	}
+
+	@AstroImageJ(reason = "Support scaling plots")
+	void scaleFrame() {
+		if (!VectorPlotDrawing.SCALED_PLOT.orElse(true) || !isAijPlot) {
+			return;
+		}
+
+		var v = Prefs.getGuiScale();
+		frameWidth = (int) (pp.width / v) - (leftMargin + rightMargin);
+		frameHeight = (int) (pp.height / v) - (topMargin + bottomMargin);
 	}
 
 	/** Calculates the margin sizes and sets the class variables accordingly */
@@ -4316,7 +4415,14 @@ public class Plot implements Cloneable {
 	public void changeFont(Font font) {
 		setFont(font);
 	}
-	
+
+    public boolean isAijPlot() {
+        return isAijPlot;
+    }
+
+    public void setAijPlot(boolean aijPlot) {
+        isAijPlot = aijPlot;
+    }
 }
 
 /** This class contains the properties of the plot, such as size, format, range, etc, except for the data+format (plot contents).

@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.Vector;
 
 import ij.IJ;
+import ij.Prefs;
 import ij.astro.accessors.IPlotObject;
 import ij.astro.accessors.IPlotProperties;
 import ij.gui.Plot;
@@ -68,6 +69,8 @@ import ij.util.Java2;
 import ij.util.Tools;
 
 public class VectorPlotDrawing {
+    public static final String PROPERTY_KEY = "aijVectorPlot";
+    public static final ScopedValue<Boolean> SCALED_PLOT = ScopedValue.newInstance();
     protected final Vector<? extends IPlotObject> allPlotObjects;
     protected final Plot plot;
     protected final double frameWidth;
@@ -879,13 +882,11 @@ public class VectorPlotDrawing {
         int descent = g.getFontMetrics().getDescent();
 
         // Removed this check as ImageProcessor#drawString2 still draws even when false
-        if (cxx >= 0 /*&& cy - h >= 0*/) {
-            Java2.setAntialiasedText(g, true);
-            int baselineY = (h - descent) + cy - h;
-            var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
-            g.fill(gv.getOutline(cxx, baselineY));
-            cy += h;
-        }
+        Java2.setAntialiasedText(g, true);
+        int baselineY = (h - descent) + cy - h;
+        var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
+        g.fill(gv.getOutline(cxx, baselineY));
+        cy += h;
     }
 
     /**
@@ -894,13 +895,21 @@ public class VectorPlotDrawing {
      * including all whitespace at the right.
      */
     public int getStringWidth(Graphics2D g, String s) {
+        var scaled = SCALED_PLOT.orElse(false);
+        if (scaled) {
+            g.scale(1/Prefs.getGuiScale(), 1/Prefs.getGuiScale());//todo improve to avoid the constant scaling
+        }
         // Note that fontMetrics.getStringBounds often underestimates the width (worst for italic fonts on Macs)
         // On the other hand, GlyphVector.getPixelBounds (returned by this.getStringBounds)
         // does not include the full character width of e.g. the '1' character, which would make
         // lists of right-justified numbers such as the y axis of plots look ugly.
         // Thus, the maximum of both methods is returned.
         Rectangle2D rect = getStringBounds(g, s);
-        return (int) Math.max(g.getFontMetrics().getStringBounds(s, g).getWidth(), rect.getX() + rect.getWidth());
+        int max = (int) Math.max(g.getFontMetrics().getStringBounds(s, g).getWidth(), rect.getX() + rect.getWidth());
+        if (scaled) {
+            g.scale(Prefs.getGuiScale(), Prefs.getGuiScale());
+        }
+        return max;
     }
 
     /**

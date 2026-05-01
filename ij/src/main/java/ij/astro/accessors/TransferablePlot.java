@@ -1,15 +1,16 @@
 package ij.astro.accessors;
 
-import ij.Prefs;
-import ij.gui.Plot;
-import ij.measure.ResultsTable;
-
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+
+import ij.Prefs;
+import ij.astro.util.VectorPlotDrawing;
+import ij.gui.Plot;
+import ij.measure.ResultsTable;
 
 public record TransferablePlot(Plot plot) implements Transferable {
     private static final DataFlavor[] flavors;
@@ -23,7 +24,7 @@ public record TransferablePlot(Plot plot) implements Transferable {
         }
     }
 
-    public TransferablePlot {//todo Can the copy button be added to the seeing profile stack display as well (would copy the currently displayed image)?
+    public TransferablePlot {
         if (plot == null) {
             throw new IllegalArgumentException("Plot may not be null");
         }
@@ -47,8 +48,16 @@ public record TransferablePlot(Plot plot) implements Transferable {
     @Override
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
         if (flavor.equals(DataFlavor.imageFlavor)) {
-            plot.updateImage();
-            return plot.getImagePlus().getBufferedImage();
+            if (!plot.isAijPlot()) {
+                plot.updateImage();
+                return plot.getImagePlus().getBufferedImage();
+            }
+
+            return ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, false).call(() -> {
+                var scaledPlot = plot.duplicate();
+                scaledPlot.draw();
+                return scaledPlot.getImagePlus().getBufferedImage();
+            });
         } else if (flavor.equals(flavors[1]) || flavor.equals(flavors[2])) {
             ResultsTable rt = plot.getResultsTableWithLabels();
             if (rt == null) return "";

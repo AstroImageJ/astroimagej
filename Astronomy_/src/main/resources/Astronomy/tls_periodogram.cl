@@ -105,6 +105,7 @@ __kernel void tls_compute(
     const double maxFracDur,
     const double u1,
     const double u2,
+    const double ingressFrac,         /* t12 / t14  (ingress/total) — blind grid */
     const double sumF2                /* sum_j f[j]^2, host-side double          */
 ) {
     int gid = get_global_id(0);
@@ -155,7 +156,11 @@ __kernel void tls_compute(
         const double fracDur  = minFracDur + (double)d * fracRange / (double)nDurM1;
         const double duration = fracDur * period;
         const double t14      = duration;
-        const double t12      = t14 * 0.25;
+        /* Previously t12 was hard-coded as t14 * 0.25 (≈ b=0.85, a fairly
+         * V-shaped transit).  In blind mode the host sweeps ingressFrac over
+         * a grid {0.05 ... 0.45} so central (flat-bottomed) → grazing (pure
+         * V) are all covered. */
+        const double t12      = t14 * ingressFrac;
 
         int halfWin = (int)(0.5 * fracDur * (double)TLS_BINS + 0.5);
         if (halfWin < 0)          halfWin = 0;

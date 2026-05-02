@@ -19,49 +19,80 @@ import ij.IJ;
 
 public class TLS {
     /**
-     * Perform a parallel TLS search using the Mandel & Agol model.
+     * Perform a parallel TLS BLIND-SEARCH using the simple limb-darkened
+     * trapezoid template.  Instead of a single (u1, u2, ingress) template
+     * the outer grid loop sweeps all combinations of {@code u1Grid} ×
+     * {@code u2Grid} × {@code ingressGrid} inside every per-period task,
+     * and the running-best SNR is kept for each period.  Any axis can be
+     * collapsed to a single value (length-1 array) if the user has a known
+     * stellar LD or just doesn't want to sweep that axis.
      *
      * @param time             Time array
      * @param flux             Flux array
      * @param minPeriod        Minimum period (days)
      * @param maxPeriod        Maximum period (days)
      * @param nPeriods         Number of period steps
-     * @param minDuration      Minimum duration (days)
-     * @param maxDuration      Maximum duration (days)
+     * @param minDuration      Minimum fractional duration (0–1 of period)
+     * @param maxDuration      Maximum fractional duration
      * @param nDurations       Number of duration steps
-     * @param nPhase           Number of phase grid steps (transit centre positions per period)
-     * @param u1               Linear limb darkening coefficient (default 0.3)
-     * @param u2               Quadratic limb darkening coefficient (default 0.3)
-     * @param progressCallback Callback to report progress (period index)
-     * @return Result object with period grid and SDE
+     * @param nPhase           Number of phase grid steps = phase bin count
+     * @param u1Grid           Quadratic LD u1 values (length ≥ 1)
+     * @param u2Grid           Quadratic LD u2 values (length ≥ 1)
+     * @param ingressGrid      Ingress-fraction values t12/t14 in (0, 0.5]
+     * @param progressCallback Callback to report progress (period index, 0..nPeriods-1)
+     * @return Result object with period grid, SDE, and per-period winning (u1, u2, ingress)
      */
-    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, int nPhase, double u1, double u2, double aRs, double inc, IntConsumer progressCallback) {
+    public static Result search(double[] time, double[] flux,
+                                double minPeriod, double maxPeriod, int nPeriods,
+                                double minDuration, double maxDuration, int nDurations,
+                                int nPhase,
+                                double[] u1Grid, double[] u2Grid, double[] ingressGrid,
+                                IntConsumer progressCallback) {
         return search(time, flux, minPeriod, maxPeriod, nPeriods, minDuration, maxDuration,
-                nDurations, nPhase, u1, u2, aRs, inc, progressCallback, () -> false);
+                nDurations, nPhase, u1Grid, u2Grid, ingressGrid,
+                progressCallback, () -> false);
     }
 
     /**
      * Cancellable variant of the {@code search} method above.
      *
-     * <p>{@code cancelCheck} is polled at the start of every per-period task
-     * and once per duration inside each task, so a user Stop is noticed
-     * within a handful of milliseconds even in the middle of the grid search.
-     * When cancelled, unfinished per-period slots are filled with
+     * <p>{@code cancelCheck} is polled at the start of every per-period task,
+     * once per grid cell, and once per duration inside each cell — so a user
+     * Stop is noticed within a handful of milliseconds even in the middle of
+     * a dense blind sweep.  Unfinished per-period slots are filled with
      * {@link Double#NaN} so the downstream SDE reduction and T0 refinement
-     * simply skip them (matching the behaviour of the GPU Stop path and of
-     * BLS CPU Stop).  The executor is also {@code shutdownNow()}'d so queued
-     * tasks never start.
+     * skip them (matching GPU Stop / BLS CPU Stop semantics).  The executor
+     * is also {@code shutdownNow()}'d so queued tasks never start.
      */
-    public static Result search(double[] time, double[] flux, double minPeriod, double maxPeriod, int nPeriods, double minDuration, double maxDuration, int nDurations, int nPhase, double u1, double u2, double aRs, double inc, IntConsumer progressCallback, BooleanSupplier cancelCheck) {
+    public static Result search(double[] time, double[] flux,
+                                double minPeriod, double maxPeriod, int nPeriods,
+                                double minDuration, double maxDuration, int nDurations,
+                                int nPhase,
+                                double[] u1Grid, double[] u2Grid, double[] ingressGrid,
+                                IntConsumer progressCallback, BooleanSupplier cancelCheck) {
         // Phase-binned TLS: the phase grid is also the binning grid (nBins == nPhase),
         // giving O(nPoints + nDurations * nPhase * halfWin) per period — a ~100× speedup
         // over the naive O(nDurations * nPhase * nPoints).
         final int nBins = Math.max(2, nPhase);
 
-        double[] periods = new double[nPeriods];
-        double[] sde = new double[nPeriods];
-        double[] bestDurations = new double[nPeriods];
-        double[] bestDepths = new double[nPeriods];
+        // Sanity — every axis needs at least one value so the outer grid loops run.
+        if (u1Grid      == null || u1Grid.length      == 0) u1Grid      = new double[]{0.3};
+        if (u2Grid      == null || u2Grid.length      == 0) u2Grid      = new double[]{0.3};
+        if (ingressGrid == null || ingressGrid.length == 0) ingressGrid = new double[]{0.25};
+        final double[] u1GridF      = u1Grid;
+        final double[] u2GridF      = u2Grid;
+        final double[] ingressGridF = ingressGrid;
+        IJ.log("[TLS CPU] Blind grid " + u1Grid.length + "x" + u2Grid.length
+                + "x" + ingressGrid.length + " = "
+                + (u1Grid.length * u2Grid.length * ingressGrid.length) + " cells");
+
+        double[] periods        = new double[nPeriods];
+        double[] sde            = new double[nPeriods];
+        double[] bestDurations  = new double[nPeriods];
+        double[] bestDepths     = new double[nPeriods];
+        double[] bestU1Arr      = new double[nPeriods];
+        double[] bestU2Arr      = new double[nPeriods];
+        double[] bestIngressArr = new double[nPeriods];
 
         // sumF2 = sum_j f[j]^2 is independent of (period, duration, phase) — compute once.
         double sumF2Global = 0.0;
@@ -121,94 +152,124 @@ public class TLS {
                     // Reusable model-profile buffer sized for the worst-case halfWin.
                     double[] modelProfile = new double[nBins / 2 + 1];
 
-                    double bestSNR      = 0.0;
-                    double bestDuration = 0.0;
-                    double bestDepth    = 0.0;
+                    double bestSNR         = 0.0;
+                    double bestDuration    = 0.0;
+                    double bestDepth       = 0.0;
+                    double bestU1Cell      = u1GridF[0];
+                    double bestU2Cell      = u2GridF[0];
+                    double bestIngressCell = ingressGridF[0];
 
-                    // Stage 2 — loop durations; for each, scan every phase offset.
-                    for (int di = 0; di < nDurations; di++) {
-                        // Poll once per duration so a long-running task (e.g. the
-                        // user dataset with 200 durations × 1000 bins) aborts
-                        // within a few ms of a Stop instead of running to end.
-                        if (cancelCheck.getAsBoolean()) {
-                            sde[periodIdx]           = Double.NaN;
-                            bestDurations[periodIdx] = Double.NaN;
-                            bestDepths[periodIdx]    = Double.NaN;
-                            return null;
-                        }
-                        double fracDuration = minDuration + di * (maxDuration - minDuration) / Math.max(1, nDurations - 1);
-                        double duration = fracDuration * period;
-                        double t14 = duration;
-                        double t12 = t14 * 0.25;
+                    // Stage 2 — outer grid sweep over (u1, u2, ingressFrac).
+                    // Stage-1 bin arrays are shared across all cells so we
+                    // only pay the O(nPoints) fold once per period; the inner
+                    // (durations × phases) cost still dominates and is
+                    // multiplied by totalCells.
+                    for (double u1v : u1GridF) {
+                        for (double u2v : u2GridF) {
+                            for (double ingressFrac : ingressGridF) {
+                                // Per-cell cancel poll — still cheap relative
+                                // to a full cell's (durations × phases) scan.
+                                if (cancelCheck.getAsBoolean()) {
+                                    sde[periodIdx]            = Double.NaN;
+                                    bestDurations[periodIdx]  = Double.NaN;
+                                    bestDepths[periodIdx]     = Double.NaN;
+                                    bestU1Arr[periodIdx]      = Double.NaN;
+                                    bestU2Arr[periodIdx]      = Double.NaN;
+                                    bestIngressArr[periodIdx] = Double.NaN;
+                                    return null;
+                                }
 
-                        // Bins on each side of transit centre that fall inside the window |phase| < 0.5*duration.
-                        int halfWin = (int) Math.round(0.5 * fracDuration * nBins);
-                        if (halfWin < 0) halfWin = 0;
-                        int maxHalfWin = (nBins - 1) / 2; // prevents b1 == b2 collision
-                        if (halfWin > maxHalfWin) halfWin = maxHalfWin;
+                                for (int di = 0; di < nDurations; di++) {
+                                    // Poll once per duration so a single cell's
+                                    // long tail still aborts within a few ms.
+                                    if (cancelCheck.getAsBoolean()) {
+                                        sde[periodIdx]            = Double.NaN;
+                                        bestDurations[periodIdx]  = Double.NaN;
+                                        bestDepths[periodIdx]     = Double.NaN;
+                                        bestU1Arr[periodIdx]      = Double.NaN;
+                                        bestU2Arr[periodIdx]      = Double.NaN;
+                                        bestIngressArr[periodIdx] = Double.NaN;
+                                        return null;
+                                    }
+                                    double fracDuration = minDuration + di * (maxDuration - minDuration) / Math.max(1, nDurations - 1);
+                                    double duration = fracDuration * period;
+                                    double t14 = duration;
+                                    double t12 = t14 * ingressFrac;
 
-                        // Precompute the model profile m(k) at bin offsets k = 0..halfWin.
-                        // m(k) = MandelAgol flux deficit at phase distance (k/nBins)*period.
-                        for (int k = 0; k <= halfWin; k++) {
-                            double absPhaseTime = ((double) k / nBins) * period;
-                            double m;
-                            if (absPhaseTime > 0.5 * t14) {
-                                m = 1.0;
-                            } else if (absPhaseTime < 0.5 * t14 - t12) {
-                                m = 1.0 - (1.0 - u1 / 3.0 - u2 / 6.0);
-                            } else {
-                                double x = (absPhaseTime - (0.5 * t14 - t12)) / t12;
-                                double limb = 1.0 - u1 * (1.0 - x) - u2 * (1.0 - x) * (1.0 - x);
-                                m = 1.0 - limb;
-                            }
-                            modelProfile[k] = m;
-                        }
+                                    int halfWin = (int) Math.round(0.5 * fracDuration * nBins);
+                                    if (halfWin < 0) halfWin = 0;
+                                    int maxHalfWin = (nBins - 1) / 2;
+                                    if (halfWin > maxHalfWin) halfWin = maxHalfWin;
 
-                        // Sweep phase trials.
-                        for (int ph = 0; ph < nBins; ph++) {
-                            double inTransitFluxSum = binFluxSum[ph];
-                            int    nIn              = binN[ph];
-                            double m0               = modelProfile[0];
-                            double sumFM_in         = m0 * binFluxSum[ph];
-                            double sumM2_in         = (m0 * m0) * binN[ph];
+                                    // Precompute m(k) for bin offsets 0..halfWin.
+                                    // m(k) = MandelAgol flux deficit at phase distance (k/nBins)*period
+                                    // under the linear-ingress/quadratic-LD-plateau approximation.
+                                    for (int k = 0; k <= halfWin; k++) {
+                                        double absPhaseTime = ((double) k / nBins) * period;
+                                        double m;
+                                        if (absPhaseTime > 0.5 * t14) {
+                                            m = 1.0;
+                                        } else if (absPhaseTime < 0.5 * t14 - t12) {
+                                            m = 1.0 - (1.0 - u1v / 3.0 - u2v / 6.0);
+                                        } else {
+                                            double x = (absPhaseTime - (0.5 * t14 - t12)) / t12;
+                                            double limb = 1.0 - u1v * (1.0 - x) - u2v * (1.0 - x) * (1.0 - x);
+                                            m = 1.0 - limb;
+                                        }
+                                        modelProfile[k] = m;
+                                    }
 
-                            for (int k = 1; k <= halfWin; k++) {
-                                int b1 = ph + k; if (b1 >= nBins) b1 -= nBins;
-                                int b2 = ph - k; if (b2 < 0)      b2 += nBins;
-                                double f12 = binFluxSum[b1] + binFluxSum[b2];
-                                int    n12 = binN[b1]       + binN[b2];
-                                double m   = modelProfile[k];
-                                inTransitFluxSum += f12;
-                                nIn              += n12;
-                                sumFM_in         += m * f12;
-                                sumM2_in         += (m * m) * n12;
-                            }
+                                    for (int ph = 0; ph < nBins; ph++) {
+                                        double inTransitFluxSum = binFluxSum[ph];
+                                        int    nIn              = binN[ph];
+                                        double m0               = modelProfile[0];
+                                        double sumFM_in         = m0 * binFluxSum[ph];
+                                        double sumM2_in         = (m0 * m0) * binN[ph];
 
-                            // signal = sum_{in-transit} (f - 1) = inTransitFluxSum - nIn
-                            double signal = inTransitFluxSum - nIn;
-                            // Out-of-transit bins contribute 1.0 to both sumFM and sumM2 per data point.
-                            double sumFM  = (totalFluxSum - inTransitFluxSum) + sumFM_in;
-                            double sumM2  = (totalN       - nIn)              + sumM2_in;
+                                        for (int k = 1; k <= halfWin; k++) {
+                                            int b1 = ph + k; if (b1 >= nBins) b1 -= nBins;
+                                            int b2 = ph - k; if (b2 < 0)      b2 += nBins;
+                                            double f12 = binFluxSum[b1] + binFluxSum[b2];
+                                            int    n12 = binN[b1]       + binN[b2];
+                                            double m   = modelProfile[k];
+                                            inTransitFluxSum += f12;
+                                            nIn              += n12;
+                                            sumFM_in         += m * f12;
+                                            sumM2_in         += (m * m) * n12;
+                                        }
 
-                            double depthFit = (sumM2 > 0.0) ? sumFM / sumM2 : 0.0;
-                            double chi2     = (sumM2 > 0.0) ? sumF2 - (sumFM * sumFM) / sumM2 : sumF2;
-                            if (chi2 < 0) chi2 = 0; // guard FP round-off
-                            double noise = (nData > 0) ? Math.sqrt(chi2 / nData) : 1.0;
-                            double snr   = (nIn > 0 && noise > 0.0)
-                                           ? Math.abs(signal) / (noise * Math.sqrt(nIn))
-                                           : 0.0;
+                                        double signal = inTransitFluxSum - nIn;
+                                        double sumFM  = (totalFluxSum - inTransitFluxSum) + sumFM_in;
+                                        double sumM2  = (totalN       - nIn)              + sumM2_in;
 
-                            if (snr > bestSNR) {
-                                bestSNR      = snr;
-                                bestDuration = duration;
-                                bestDepth    = depthFit;
+                                        double depthFit = (sumM2 > 0.0) ? sumFM / sumM2 : 0.0;
+                                        double chi2     = (sumM2 > 0.0) ? sumF2 - (sumFM * sumFM) / sumM2 : sumF2;
+                                        if (chi2 < 0) chi2 = 0;
+                                        double noise = (nData > 0) ? Math.sqrt(chi2 / nData) : 1.0;
+                                        double snr   = (nIn > 0 && noise > 0.0)
+                                                       ? Math.abs(signal) / (noise * Math.sqrt(nIn))
+                                                       : 0.0;
+
+                                        if (snr > bestSNR) {
+                                            bestSNR         = snr;
+                                            bestDuration    = duration;
+                                            bestDepth       = depthFit;
+                                            bestU1Cell      = u1v;
+                                            bestU2Cell      = u2v;
+                                            bestIngressCell = ingressFrac;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
 
-                    sde[periodIdx]           = bestSNR;
-                    bestDurations[periodIdx] = bestDuration;
-                    bestDepths[periodIdx]    = bestDepth;
+                    sde[periodIdx]            = bestSNR;
+                    bestDurations[periodIdx]  = bestDuration;
+                    bestDepths[periodIdx]     = bestDepth;
+                    bestU1Arr[periodIdx]      = bestU1Cell;
+                    bestU2Arr[periodIdx]      = bestU2Cell;
+                    bestIngressArr[periodIdx] = bestIngressCell;
                     int done = progress.incrementAndGet();
                     IJ.showProgress(done, nPeriods);
                     if (progressCallback != null) progressCallback.accept(done - 1);
@@ -248,9 +309,12 @@ public class TLS {
                 // Backfill NaN for any slots the workers never got to write.
                 for (int j = 0; j < nPeriods; j++) {
                     if (sde[j] == 0.0 && bestDurations[j] == 0.0 && bestDepths[j] == 0.0) {
-                        sde[j]           = Double.NaN;
-                        bestDurations[j] = Double.NaN;
-                        bestDepths[j]    = Double.NaN;
+                        sde[j]            = Double.NaN;
+                        bestDurations[j]  = Double.NaN;
+                        bestDepths[j]     = Double.NaN;
+                        bestU1Arr[j]      = Double.NaN;
+                        bestU2Arr[j]      = Double.NaN;
+                        bestIngressArr[j] = Double.NaN;
                     }
                 }
                 IJ.log("[TLS CPU] Cancelled by user.");
@@ -283,7 +347,7 @@ public class TLS {
         double[] sdeStatsArr = sdeForStats.stream().mapToDouble(Double::doubleValue).toArray();
         double median = 0, std = 0;
         if (sdeStatsArr.length > 0) {
-            java.util.Arrays.sort(sdeStatsArr);
+            Arrays.sort(sdeStatsArr);
             median = sdeStatsArr[sdeStatsArr.length / 2];
             double sumsq = 0;
             for (double v : sdeStatsArr) sumsq += (v - median) * (v - median);
@@ -298,7 +362,9 @@ public class TLS {
         // before touching bestT0Sliding / t0MinAvg, so a stub result is fine
         // and saves a few hundred ms of extra compute after the Stop.
         if (cancelCheck.getAsBoolean()) {
-            return new Result(periods, sde, bestDurations, bestDepths, Double.NaN, Double.NaN);
+            return new Result(periods, sde, bestDurations, bestDepths,
+                    bestU1Arr, bestU2Arr, bestIngressArr,
+                    Double.NaN, Double.NaN);
         }
 
         // After main grid search, do BLS-style T0 refinement for best period
@@ -360,13 +426,23 @@ public class TLS {
             phasesForSliding[i] = (time[i] - phaseRef) / bestPeriod;
             phasesForSliding[i] = phasesForSliding[i] - Math.floor(phasesForSliding[i]);
         }
-        // Use bestDepth from the periodogram grid search (approximate as the depth from the SDE grid search)
+        // Use bestDepth from the periodogram grid search (approximate as the depth from the SDE grid search).
+        // a/Rs and inc are no longer user inputs — they only seeded this depth guess and had zero
+        // effect on the SDE periodogram itself, so hard-coded defaults are adequate.  The winning
+        // (u1, u2) at bestPeriod is used so the depth seed matches the template that actually won.
+        final double aRsDefaultCpu = 10.0;
+        final double incDefaultCpu = 89.0;
+        double winningU1 = bestU1Arr[bestPeriodIdx];
+        double winningU2 = bestU2Arr[bestPeriodIdx];
+        if (Double.isNaN(winningU1)) winningU1 = u1GridF[0];
+        if (Double.isNaN(winningU2)) winningU2 = u2GridF[0];
         double bestDepthForSliding = 0.0;
         {
-            // Recompute bestDepth using the best period and best duration
             double bestChi2 = Double.POSITIVE_INFINITY;
             for (double depthTest : new double[]{0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1}) {
-                double[] model = MandelAgolTransitModel.compute(time, bestPeriod, t0MinAvg, bestDuration, depthTest, Math.sqrt(depthTest), aRs, inc, u1, u2);
+                double[] model = MandelAgolTransitModel.compute(time, bestPeriod, t0MinAvg, bestDuration,
+                        depthTest, Math.sqrt(depthTest),
+                        aRsDefaultCpu, incDefaultCpu, winningU1, winningU2);
                 double chi2 = 0;
                 for (int i = 0; i < flux.length; i++) {
                     double res = flux[i] - model[i];
@@ -527,7 +603,9 @@ public class TLS {
                 nT0Threads, System.currentTimeMillis() - t0Start);
         System.out.printf("[TLS DIAG] Sliding fit (BLS-style): bestT0Sliding = %.6f, minLoss = %.6g\n", bestT0Sliding, minLoss);
 
-        return new Result(periods, sde, bestDurations, bestDepths, bestT0Sliding, t0MinAvg);
+        return new Result(periods, sde, bestDurations, bestDepths,
+                bestU1Arr, bestU2Arr, bestIngressArr,
+                bestT0Sliding, t0MinAvg);
     }
 
     // Add static helper methods for T0 refinement
@@ -571,16 +649,28 @@ public class TLS {
         public double[] sde;
         public double[] bestDurations;
         public double[] bestDepths;
+        /** Per-period winning limb-darkening u1 from the blind grid. */
+        public double[] bestU1;
+        /** Per-period winning limb-darkening u2 from the blind grid. */
+        public double[] bestU2;
+        /** Per-period winning ingress fraction (t12/t14) from the blind grid. */
+        public double[] bestIngressFrac;
         public double t0_sliding;
         public double t0_minavg;
 
-        public Result(double[] periods, double[] sde, double[] bestDurations, double[] bestDepths, double t0_sliding, double t0_minavg) {
-            this.periods = periods;
-            this.sde = sde;
-            this.bestDurations = bestDurations;
-            this.bestDepths = bestDepths;
-            this.t0_sliding = t0_sliding;
-            this.t0_minavg = t0_minavg;
+        public Result(double[] periods, double[] sde,
+                      double[] bestDurations, double[] bestDepths,
+                      double[] bestU1, double[] bestU2, double[] bestIngressFrac,
+                      double t0_sliding, double t0_minavg) {
+            this.periods        = periods;
+            this.sde            = sde;
+            this.bestDurations  = bestDurations;
+            this.bestDepths     = bestDepths;
+            this.bestU1         = bestU1;
+            this.bestU2         = bestU2;
+            this.bestIngressFrac= bestIngressFrac;
+            this.t0_sliding     = t0_sliding;
+            this.t0_minavg      = t0_minavg;
         }
     }
 } 

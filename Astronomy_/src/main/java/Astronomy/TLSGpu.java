@@ -67,53 +67,45 @@ public class TLSGpu {
     }
 
     /**
-     * GPU equivalent of {@link TLS#search} — phase-binned, FP32.
+     * GPU TLS in BLIND-SEARCH mode.  Instead of a single (u1, u2, ingress)
+     * template the host sweeps a 3-D grid of values; for each (u1, u2,
+     * ingressFrac) combination the existing phase-binned kernel is launched
+     * over the full period grid and the running-best SNR per period is
+     * accumulated on the host.  This is the GPU equivalent of the outer
+     * grid loop in {@link TLS#search}.
      *
-     * @param time             Time array (sorted ascending)
-     * @param flux             Flux array (normalised to ~1.0)
-     * @param minPeriod        Minimum period (days)
-     * @param maxPeriod        Maximum period (days)
-     * @param nPeriods         Number of period grid steps
-     * @param minFracDur       Minimum fractional duration (0–1)
-     * @param maxFracDur       Maximum fractional duration (0–1)
-     * @param nDurations       Number of duration steps
-     * @param nBins            Phase bin count (50–2000).  Resolution = period / nBins.
-     * @param u1               Linear limb darkening coefficient
-     * @param u2               Quadratic limb darkening coefficient
-     * @param aRs              Scaled semi-major axis (a/Rs) — kept for T0 refinement
-     * @param inc              Inclination (degrees)         — kept for T0 refinement
-     * @param progressCallback Called once per period as the GPU result is processed (may be null)
-     * @param backend          Backend label from {@link PeriodogramGpuContext#getAvailableBackends()}
-     * @return TLS result with SDE-normalised signal and refined T0
+     * <p>The grid arrays can each be length 1 to collapse an axis (e.g. if
+     * the user has a catalog-sourced u1, u2 they can set steps=1 for those
+     * two axes and only sweep ingressFrac).  Total work scales as
+     * {@code u1Grid.length × u2Grid.length × ingressGrid.length × nPeriods}.
+     *
+     * @param u1Grid       Array of u1 values to try (1 or more).
+     * @param u2Grid       Array of u2 values to try (1 or more).
+     * @param ingressGrid  Array of t12/t14 ingress fractions, in (0, 0.5].
      */
     public static TLS.Result search(double[] time, double[] flux,
                                     double minPeriod, double maxPeriod,
                                     int nPeriods, double minFracDur, double maxFracDur,
-                                    int nDurations, int nBins, double u1, double u2,
-                                    double aRs, double inc,
+                                    int nDurations, int nBins,
+                                    double[] u1Grid, double[] u2Grid, double[] ingressGrid,
                                     IntConsumer progressCallback, String backend) {
         return search(time, flux, minPeriod, maxPeriod, nPeriods, minFracDur, maxFracDur,
-                nDurations, nBins, u1, u2, aRs, inc, progressCallback, backend, () -> false);
+                nDurations, nBins, u1Grid, u2Grid, ingressGrid,
+                progressCallback, backend, () -> false);
     }
 
     /**
-     * Cancellable variant of {@link #search(double[], double[], double, double, int, double, double, int, int, double, double, double, double, IntConsumer, String)}.
-     *
-     * <p>{@code cancelCheck} is polled between GPU dispatch slices (the period
-     * grid is split into ~16 chunks via {@code global_work_offset}, each
-     * followed by a {@code clFinish} + poll).  When it returns {@code true},
-     * the unprocessed tail of every per-period output array is filled with
-     * {@link Double#NaN} so downstream plotting / reductions ignore them.
-     *
-     * <p>Without this chunking the single {@code clEnqueueNDRangeKernel} call
-     * runs to completion before the host can react, so the Stop button has
-     * no effect until the whole kernel finishes.
+     * Cancellable variant of the blind-grid {@link #search}.  The
+     * {@code cancelCheck} flag is polled between GPU dispatch slices
+     * (the period grid is split into ~16 chunks) AND between grid cells,
+     * so a user Stop is noticed within a small fraction of a single
+     * cell's runtime.  Unfinished period slots are filled with NaN.
      */
     public static TLS.Result search(double[] time, double[] flux,
                                     double minPeriod, double maxPeriod,
                                     int nPeriods, double minFracDur, double maxFracDur,
-                                    int nDurations, int nBins, double u1, double u2,
-                                    double aRs, double inc,
+                                    int nDurations, int nBins,
+                                    double[] u1Grid, double[] u2Grid, double[] ingressGrid,
                                     IntConsumer progressCallback, String backend,
                                     BooleanSupplier cancelCheck) {
 
@@ -126,19 +118,23 @@ public class TLSGpu {
             periods[i] = 1.0 / freq;
         }
 
-        // --- GPU grid search ------------------------------------------------
+        // --- GPU blind-grid search -----------------------------------------
         double[] rawSnr        = new double[nPeriods];
         double[] bestDurations = new double[nPeriods];
         double[] bestDepths    = new double[nPeriods];
+        double[] bestU1s       = new double[nPeriods];
+        double[] bestU2s       = new double[nPeriods];
+        double[] bestIngress   = new double[nPeriods];
         gpuGridSearch(time, flux, periods, nPeriods, nDurations, nBins,
-                      minFracDur, maxFracDur, u1, u2,
-                      rawSnr, bestDurations, bestDepths, backend, cancelCheck);
+                      minFracDur, maxFracDur, u1Grid, u2Grid, ingressGrid,
+                      rawSnr, bestDurations, bestDepths,
+                      bestU1s, bestU2s, bestIngress,
+                      progressCallback, backend, cancelCheck);
 
-        // Report progress in one sweep (GPU finishes in a burst)
+        // Final progress sweep — gpuGridSearch already updates progress per
+        // grid cell, but IJ.showProgress(1.0) is idempotent and cheap and
+        // guarantees the small bottom-of-screen bar clears.
         IJ.showProgress(1.0);
-        if (progressCallback != null) {
-            for (int i = 0; i < nPeriods; i++) progressCallback.accept(i);
-        }
 
         // --- SDE normalisation (copy of TLS.java lines 107-133) --------------
         int bestPeriodIdx = 0;
@@ -214,7 +210,19 @@ public class TLSGpu {
             phasesForSliding[i] = ph - Math.floor(ph);
         }
 
-        double bestDepthForSliding = findBestDepth(time, flux, bestPeriod, t0MinAvg, bestDuration, aRs, inc, u1, u2);
+        // a/Rs and inc are no longer user-supplied — they only seeded the
+        // Mandel–Agol depth guess below and had zero effect on the SDE
+        // search.  Defaults here cover typical transit geometries; the
+        // Huber fit downstream re-fits depth anyway, so the exact values
+        // don't matter.
+        final double aRsDefault = 10.0;
+        final double incDefault = 89.0;
+        // Use the (u1, u2) the grid picked at this period so the depth
+        // seed matches the template that actually won.
+        double winningU1 = bestU1s[bestPeriodIdx];
+        double winningU2 = bestU2s[bestPeriodIdx];
+        double bestDepthForSliding = findBestDepth(time, flux, bestPeriod, t0MinAvg,
+                bestDuration, aRsDefault, incDefault, winningU1, winningU2);
 
         // --- Sort phases once so each grid cell can binary-search the in-window points ---
         final int nDataT0 = flux.length;
@@ -347,7 +355,9 @@ public class TLSGpu {
         System.out.printf("[TLS GPU T0] Parallel T0 refinement: %d threads, %d ms%n",
                 nT0Threads, System.currentTimeMillis() - t0Start);
 
-        return new TLS.Result(periods, sde, bestDurations, bestDepths, bestT0Sliding, t0MinAvg);
+        return new TLS.Result(periods, sde, bestDurations, bestDepths,
+                bestU1s, bestU2s, bestIngress,
+                bestT0Sliding, t0MinAvg);
     }
 
     // -------------------------------------------------------------------------
@@ -357,11 +367,15 @@ public class TLSGpu {
     private static void gpuGridSearch(double[] t, double[] f,
                                       double[] periods, int nPeriods, int nDurations, int nBins,
                                       double minFracDur, double maxFracDur,
-                                      double u1, double u2,
+                                      double[] u1Grid, double[] u2Grid, double[] ingressGrid,
                                       double[] outSnr, double[] outBestDurations,
-                                      double[] outBestDepths, String backend,
+                                      double[] outBestDepths,
+                                      double[] outBestU1, double[] outBestU2,
+                                      double[] outBestIngress,
+                                      IntConsumer progressCallback, String backend,
                                       BooleanSupplier cancelCheck) {
         int nPoints = t.length;
+        int totalCells = u1Grid.length * u2Grid.length * ingressGrid.length;
 
         // Time normalisation (t[0] = 0) — keeps phase fold accurate for large BJD
         // by avoiding wasted precision on the integer part.  Full FP64 end-to-end.
@@ -381,7 +395,10 @@ public class TLSGpu {
         int maxHalfWin = computeMaxHalfWin(nBins, maxFracDur);
         IJ.log("[TLS GPU] search() — nPoints=" + nPoints + ", nPeriods=" + nPeriods
                 + ", nDurations=" + nDurations + ", bins=" + nBins
-                + ", maxHalfWin=" + maxHalfWin + " (FP64)");
+                + ", maxHalfWin=" + maxHalfWin
+                + ", blind grid=" + u1Grid.length + "x" + u2Grid.length
+                + "x" + ingressGrid.length + "=" + totalCells + " cells"
+                + " (FP64)");
 
         String kernelSrc = buildKernelSource(nBins, maxHalfWin);
         PeriodogramGpuContext.ContextHolder ctx =
@@ -400,6 +417,8 @@ public class TLSGpu {
                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                 (long) nPeriods * Sizeof.cl_double, Pointer.to(periodsD), null);
 
+        // Output buffers — reused across all grid cells.  After each cell we
+        // read them into host memory and merge into the running-best arrays.
         double[] hostSnr      = new double[nPeriods];
         double[] hostDepth    = new double[nPeriods];
         double[] hostDuration = new double[nPeriods];
@@ -429,12 +448,24 @@ public class TLSGpu {
         long scratchBytes = scratchSlots * (Sizeof.cl_double + Sizeof.cl_int);
         IJ.log("[TLS GPU] Global scratch: " + (scratchBytes / (1024 * 1024)) + " MB");
 
+        // Running best-per-period across all grid cells — we write NEGATIVE
+        // INFINITY as the initial value (instead of 0) so the first cell
+        // always "wins" for every period even when its SNR is tiny.
+        Arrays.fill(outSnr,           Double.NEGATIVE_INFINITY);
+        Arrays.fill(outBestDurations, 0.0);
+        Arrays.fill(outBestDepths,    0.0);
+        Arrays.fill(outBestU1,        Double.NaN);
+        Arrays.fill(outBestU2,        Double.NaN);
+        Arrays.fill(outBestIngress,   Double.NaN);
+
         boolean cancelled = false;
-        int     processedPeriods = nPeriods;
+        int     completedCells = 0;
+        int     cellsProcessed = 0;
 
         try {
             cl_kernel kernel = clCreateKernel(ctx.program, KERNEL_NAME, null);
             try {
+                // Static kernel args — unchanged across grid cells.
                 int arg = 0;
                 clSetKernelArg(kernel, arg++, Sizeof.cl_mem,    Pointer.to(dT));
                 clSetKernelArg(kernel, arg++, Sizeof.cl_mem,    Pointer.to(dF));
@@ -449,58 +480,95 @@ public class TLSGpu {
                 clSetKernelArg(kernel, arg++, Sizeof.cl_int,    Pointer.to(new int[]   {nDurations}));
                 clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{minFracDur}));
                 clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{maxFracDur}));
-                clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{u1}));
-                clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{u2}));
-                clSetKernelArg(kernel, arg++, Sizeof.cl_double, Pointer.to(new double[]{sumF2}));
+                // Slots 13–15 are (u1, u2, ingressFrac) — set per cell below.
+                final int ARG_U1  = 13;
+                final int ARG_U2  = 14;
+                final int ARG_ING = 15;
+                final int ARG_SUMF2 = 16;
+                clSetKernelArg(kernel, ARG_SUMF2, Sizeof.cl_double, Pointer.to(new double[]{sumF2}));
 
                 long paddedTotal = roundUpToMultiple(nPeriods, 64);
-                // Aim for ~16 dispatch slices so the Stop button is noticed
-                // within a few % of total kernel time while keeping per-slice
-                // overhead negligible.  Each slice uses global_work_offset to
-                // target its period sub-range; the kernel is unchanged (each
-                // period's work is fully independent).
+                // Aim for ~16 dispatch slices per grid cell so the Stop
+                // button is noticed within a few % of a single cell's run,
+                // not only between cells.
                 long targetChunk = Math.max(64L, roundUpToMultiple(
                         Math.max(1, nPeriods / 16), 64));
                 long[] localSize = {64};
-                long t0 = System.currentTimeMillis();
-                long dispatched = 0;
-                for (long chunkStart = 0; chunkStart < paddedTotal; chunkStart += targetChunk) {
-                    long thisChunk = Math.min(targetChunk, paddedTotal - chunkStart);
-                    long[] gOffset = {chunkStart};
-                    long[] gSize   = {thisChunk};
-                    clEnqueueNDRangeKernel(ctx.queue, kernel, 1,
-                            gOffset, gSize, localSize, 0, null, null);
-                    clFinish(ctx.queue);
-                    dispatched = Math.min(chunkStart + thisChunk, nPeriods);
-                    if (cancelCheck.getAsBoolean()) {
-                        IJ.log("[TLS GPU] Cancelled after ~" + dispatched + "/" + nPeriods + " periods.");
-                        break;
+                long cellStartT = System.currentTimeMillis();
+
+                outer:
+                for (double u1v : u1Grid) {
+                    for (double u2v : u2Grid) {
+                        for (double ingFrac : ingressGrid) {
+                            if (cancelCheck.getAsBoolean()) { cancelled = true; break outer; }
+                            clSetKernelArg(kernel, ARG_U1,  Sizeof.cl_double, Pointer.to(new double[]{u1v}));
+                            clSetKernelArg(kernel, ARG_U2,  Sizeof.cl_double, Pointer.to(new double[]{u2v}));
+                            clSetKernelArg(kernel, ARG_ING, Sizeof.cl_double, Pointer.to(new double[]{ingFrac}));
+
+                            long dispatched = 0;
+                            for (long chunkStart = 0; chunkStart < paddedTotal; chunkStart += targetChunk) {
+                                long thisChunk = Math.min(targetChunk, paddedTotal - chunkStart);
+                                long[] gOffset = {chunkStart};
+                                long[] gSize   = {thisChunk};
+                                clEnqueueNDRangeKernel(ctx.queue, kernel, 1,
+                                        gOffset, gSize, localSize, 0, null, null);
+                                clFinish(ctx.queue);
+                                dispatched = Math.min(chunkStart + thisChunk, nPeriods);
+                                if (cancelCheck.getAsBoolean()) {
+                                    IJ.log("[TLS GPU] Cancelled mid-cell (" + (cellsProcessed + 1)
+                                            + "/" + totalCells + ") after ~" + dispatched + "/" + nPeriods + " periods.");
+                                    cancelled = true;
+                                    break;
+                                }
+                            }
+
+                            // Read this cell's results and merge into the
+                            // running best even if cancelled — partial data
+                            // is better than none, and any unfinished period
+                            // slots still have garbage so we filter those
+                            // below using the dispatched count.
+                            int processedThisCell = (int) Math.min(dispatched, nPeriods);
+                            clEnqueueReadBuffer(ctx.queue, dSnr,      CL_TRUE, 0,
+                                    (long) nPeriods * Sizeof.cl_double, Pointer.to(hostSnr),      0, null, null);
+                            clEnqueueReadBuffer(ctx.queue, dDepth,    CL_TRUE, 0,
+                                    (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDepth),    0, null, null);
+                            clEnqueueReadBuffer(ctx.queue, dDuration, CL_TRUE, 0,
+                                    (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDuration), 0, null, null);
+
+                            for (int pi = 0; pi < processedThisCell; pi++) {
+                                double s = hostSnr[pi];
+                                if (s > outSnr[pi]) {
+                                    outSnr[pi]           = s;
+                                    outBestDepths[pi]    = hostDepth[pi];
+                                    outBestDurations[pi] = hostDuration[pi];
+                                    outBestU1[pi]        = u1v;
+                                    outBestU2[pi]        = u2v;
+                                    outBestIngress[pi]   = ingFrac;
+                                }
+                            }
+
+                            cellsProcessed++;
+                            if (!cancelled) completedCells = cellsProcessed;
+
+                            // Scale progress so 0..nPeriods-1 represents
+                            // overall work (cells × periods), not just this
+                            // cell's periods.  The display code multiplies
+                            // by (pi+1)/nPeriods to get a fraction.
+                            if (progressCallback != null) {
+                                int scaled = (int) (((long) cellsProcessed * nPeriods) / totalCells) - 1;
+                                if (scaled < 0) scaled = 0;
+                                progressCallback.accept(scaled);
+                            }
+
+                            if (cancelled) break outer;
+                        }
                     }
                 }
-                cancelled = dispatched < nPeriods;
-                processedPeriods = (int) dispatched;
-                IJ.log("[TLS GPU] Kernel finished in "
-                        + (System.currentTimeMillis() - t0) + " ms"
+                IJ.log("[TLS GPU] Blind grid finished: " + completedCells + "/" + totalCells
+                        + " cells in " + (System.currentTimeMillis() - cellStartT) + " ms"
                         + (cancelled ? " (cancelled)" : "") + ".");
             } finally {
                 clReleaseKernel(kernel);
-            }
-
-            clEnqueueReadBuffer(ctx.queue, dSnr,      CL_TRUE, 0,
-                    (long) nPeriods * Sizeof.cl_double, Pointer.to(hostSnr),      0, null, null);
-            clEnqueueReadBuffer(ctx.queue, dDepth,    CL_TRUE, 0,
-                    (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDepth),    0, null, null);
-            clEnqueueReadBuffer(ctx.queue, dDuration, CL_TRUE, 0,
-                    (long) nPeriods * Sizeof.cl_double, Pointer.to(hostDuration), 0, null, null);
-
-            // Unprocessed tail of the write-only output buffers contains
-            // uninitialised garbage — fill with NaN so downstream plotting
-            // and the bestSDE reduction skip past it (mirrors the CPU Stop
-            // behaviour where unfinished cells stay untouched / ignored).
-            if (cancelled && processedPeriods < nPeriods) {
-                Arrays.fill(hostSnr,      processedPeriods, nPeriods, Double.NaN);
-                Arrays.fill(hostDepth,    processedPeriods, nPeriods, Double.NaN);
-                Arrays.fill(hostDuration, processedPeriods, nPeriods, Double.NaN);
             }
 
         } finally {
@@ -514,10 +582,13 @@ public class TLSGpu {
             clReleaseMemObject(dScratchBinN);
         }
 
-        for (int pi = 0; pi < nPeriods; pi++) {
-            outSnr[pi]           = hostSnr[pi];
-            outBestDepths[pi]    = hostDepth[pi];
-            outBestDurations[pi] = hostDuration[pi];
+        // If the user cancelled before any cell completed, every period
+        // slot still holds NEGATIVE_INFINITY — replace with NaN so the SDE
+        // normalisation and downstream plotting treat them as "no data".
+        if (completedCells == 0) {
+            Arrays.fill(outSnr,           Double.NaN);
+            Arrays.fill(outBestDurations, Double.NaN);
+            Arrays.fill(outBestDepths,    Double.NaN);
         }
     }
 
@@ -578,13 +649,14 @@ public class TLSGpu {
     }
 
     private static String programCacheKey(int nBins, int maxHalfWin) {
-        // v8: bin-major layout for scratchBinFluxSum / scratchBinN.  All
-        // Stage-2 bin reads (ph, b1, b2) now coalesce across warp lanes
-        // because every lane shares the same bin index per iteration.
-        // Stage-1 histogram scatter is the only remaining non-coalesced
-        // access, but it's dominated by Stage-2 load volume.
-        // (v7: thread-major __global scratch; modelProfile private, hw-sized.)
-        return "tls_binned_v8_binmajor_bins" + nBins + "_hw" + maxHalfWin;
+        // v9: added ingressFrac kernel arg (replaces the hard-coded t12=0.25*t14)
+        //     for blind-mode sweep over ingress fraction.  Kernel signature change
+        //     → cache-key bump required or the cached v8 program would be loaded
+        //     and clSetKernelArg at slot 15 would fail.
+        // v8: bin-major layout for scratchBinFluxSum / scratchBinN.  Stage-2
+        //     bin reads coalesce across warp lanes.
+        // v7: thread-major __global scratch; modelProfile private, hw-sized.
+        return "tls_binned_v9_ingress_bins" + nBins + "_hw" + maxHalfWin;
     }
 
     private static long roundUpToMultiple(long value, long multiple) {

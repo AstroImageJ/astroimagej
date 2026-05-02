@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
 import javax.swing.BorderFactory;
@@ -69,13 +70,23 @@ public class Periodogram_ implements PlugIn {
     private static final Property<Double> PEAK_COUNT = new Property<>(1.0, Periodogram_.class);
     private static final Property<Double> PLANET_COUNT = new Property<>(1.0, Periodogram_.class);
     private static final Property<Double> TRANSIT_MASK_FACTOR = new Property<>(3.0, Periodogram_.class);
-    private static final Property<Double> MASK_FACTOR_PERIOD = new Property<>(0.1, Periodogram_.class);
-    private static final Property<Double> LIMB_U1 = new Property<>(0.3, Periodogram_.class);
-    private static final Property<Double> LIMB_U2 = new Property<>(0.3, Periodogram_.class);
-    private static final Property<Boolean> LOCK_T0 = new Property<>(false, Periodogram_.class);
-    private static final Property<Double> LOCKED_T0_VALUE = new Property<>(0.0, Periodogram_.class);
-    private static final Property<Double> TLS_A_RS = new Property<>(15.0, Periodogram_.class);
-    private static final Property<Double> TLS_INC = new Property<>(90.0, Periodogram_.class);
+    // TLS blind-search grid — the periodogram search sweeps every combination
+    // of (u1, u2, ingressFrac) and keeps the running-best SNR per period.
+    // Defaults cover most FGK host stars (u1,u2 ≈ 0.2–0.6 / 0.0–0.4) and
+    // transit geometries from central flat-bottomed (ingressFrac ≈ 0.05)
+    // through grazing V-shaped (ingressFrac ≈ 0.5).  A 3×3×5 = 45-cell grid
+    // is cheap on GPU and tolerable on CPU.
+    private static final Property<Double>  LIMB_U1_MIN    = new Property<>(0.20, Periodogram_.class);
+    private static final Property<Double>  LIMB_U1_MAX    = new Property<>(0.60, Periodogram_.class);
+    private static final Property<Double>  LIMB_U1_STEPS  = new Property<>(3.0,  Periodogram_.class);
+    private static final Property<Double>  LIMB_U2_MIN    = new Property<>(0.00, Periodogram_.class);
+    private static final Property<Double>  LIMB_U2_MAX    = new Property<>(0.40, Periodogram_.class);
+    private static final Property<Double>  LIMB_U2_STEPS  = new Property<>(3.0,  Periodogram_.class);
+    private static final Property<Double>  INGRESS_MIN    = new Property<>(0.05, Periodogram_.class);
+    private static final Property<Double>  INGRESS_MAX    = new Property<>(0.45, Periodogram_.class);
+    private static final Property<Double>  INGRESS_STEPS  = new Property<>(5.0,  Periodogram_.class);
+    private static final Property<Boolean> LOCK_T0         = new Property<>(false, Periodogram_.class);
+    private static final Property<Double>  LOCKED_T0_VALUE = new Property<>(0.0,   Periodogram_.class);
     private static final Property<String> PLOT_X_SCALE = new Property<>("Linear", Periodogram_.class);
     private static final Property<String> COMPUTE_BACKEND = new Property<>("CPU", Periodogram_.class);
     // Shared between BLS and TLS — both use this for phase-grid resolution during search.
@@ -161,7 +172,7 @@ public class Periodogram_ implements PlugIn {
                     { Panel sp = new Panel(); sp.setPreferredSize(new Dimension(1, 7)); gdCol.addPanel(sp); }
                     String[] blsBackends = PeriodogramGpuContext.getAvailableBackends();
                     String blsDefaultBackend = PeriodogramGpuContext.isGpu(COMPUTE_BACKEND.get())
-                            && java.util.Arrays.asList(blsBackends).contains(COMPUTE_BACKEND.get())
+                            && Arrays.asList(blsBackends).contains(COMPUTE_BACKEND.get())
                             ? COMPUTE_BACKEND.get() : PeriodogramGpuContext.CPU_BACKEND;
                     gdCol.addChoice("Compute backend", blsBackends, blsDefaultBackend);
 
@@ -1161,7 +1172,7 @@ public class Periodogram_ implements PlugIn {
                     } catch (Throwable th) {
                         IJ.log("[BLS] Unhandled error in background thread: " + th);
                         java.io.StringWriter sw = new java.io.StringWriter();
-                        th.printStackTrace(new java.io.PrintWriter(sw));
+                        th.printStackTrace(new PrintWriter(sw));
                         IJ.log(sw.toString());
                         final String msg = th.getClass().getSimpleName()
                                 + (th.getMessage() != null ? (": " + th.getMessage()) : "");
@@ -1227,13 +1238,10 @@ public class Periodogram_ implements PlugIn {
                 GenericDialog gdCol = new GenericDialog("Lomb-Scargle Settings");
                 gdCol.addChoice("Time column", columns, TIME_COL.get().isEmpty() ? columns[0] : TIME_COL.get());
                 gdCol.addChoice("Flux column", columns, FLUX_COL.get().isEmpty() ? columns[1] : FLUX_COL.get());
-                gdCol.addNumericField("Min period", MIN_PERIOD.get(), 6, 12, null); // 0 means auto
-                gdCol.addNumericField("Max period", MAX_PERIOD.get(), 6, 12, null); // 0 means auto
+                gdCol.addNumericField("Min period", MIN_PERIOD.get(), 6, 12, null);
+                gdCol.addNumericField("Max period", MAX_PERIOD.get(), 6, 12, null);
                 gdCol.addNumericField("Steps", STEPS.get(), 0, 6, null);
-                gdCol.addNumericField("Peak width cutoff (0-1)", PEAK_WIDTH_CUTOFF.get(), 2, 6, null);
-                gdCol.addNumericField("Number of peaks", PEAK_COUNT.get(), 0, 6, null);
-                gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
-                gdCol.addNumericField("Masking factor (in period phase)", MASK_FACTOR_PERIOD.get(), 3);
+                gdCol.addNumericField("Peaks to label", PEAK_COUNT.get(), 0, 6, null);
                 gdCol.showDialog();
                 if (gdCol.wasCanceled()) return;
                 String timeCol = gdCol.getNextChoice();
@@ -1241,19 +1249,13 @@ public class Periodogram_ implements PlugIn {
                 double minPeriodUser = gdCol.getNextNumber();
                 double maxPeriodUser = gdCol.getNextNumber();
                 int nPeriods = (int) gdCol.getNextNumber();
-                double userCutoff = gdCol.getNextNumber();
                 int userNumPeaks = (int) gdCol.getNextNumber();
-                int nPlanets = (int) gdCol.getNextNumber();
-                double maskFactor = gdCol.getNextNumber();
                 TIME_COL.set(timeCol);
                 FLUX_COL.set(fluxCol);
                 MIN_PERIOD.set(minPeriodUser);
                 MAX_PERIOD.set(maxPeriodUser);
                 STEPS.set((double) nPeriods);
-                PEAK_WIDTH_CUTOFF.set(userCutoff);
                 PEAK_COUNT.set((double) userNumPeaks);
-                PLANET_COUNT.set((double) nPlanets);
-                MASK_FACTOR_PERIOD.set(maskFactor);
 
                 time = table.getDoubleColumn(table.getColumnIndex(timeCol));
                 flux = table.getDoubleColumn(table.getColumnIndex(fluxCol));
@@ -1265,256 +1267,232 @@ public class Periodogram_ implements PlugIn {
                 int n = time.length;
                 double[] sortedTime = new double[n];
                 double[] sortedFlux = new double[n];
-                Integer[] idx = new Integer[n];
-                for (int i = 0; i < n; i++) idx[i] = i;
+                Integer[] sortIdx = new Integer[n];
+                for (int i = 0; i < n; i++) sortIdx[i] = i;
                 final double[] timeToSort = time;
-                Arrays.sort(idx, Comparator.comparingDouble(i2 -> timeToSort[i2]));
+                Arrays.sort(sortIdx, Comparator.comparingDouble(i2 -> timeToSort[i2]));
                 for (int i = 0; i < n; i++) {
-                    sortedTime[i] = time[idx[i]];
-                    sortedFlux[i] = flux[idx[i]];
+                    sortedTime[i] = time[sortIdx[i]];
+                    sortedFlux[i] = flux[sortIdx[i]];
                 }
-                // Prepare for iterative search
-                boolean[] masked = new boolean[n];
-                List<LSResult> allResults = new ArrayList<>();
-                TextWindow progressWin = new TextWindow("Lomb-Scargle Progress", "", 600, 600);
-                progressWin.getTextPanel().append(String.format("Lomb-Scargle Multi-Planet Progress (%d planets)\n", nPlanets));
-                progressWin.getTextPanel().append(String.format("Overall Progress: [%s] %d%% (0/%d planets finished)\n", "                    ", 0, nPlanets));
-                int overallProgressLine = progressWin.getTextPanel().getLineCount() - 1;
-                // Add ability to cancel Lomb-Scargle run
+                double[] t = sortedTime;
+                double[] f = sortedFlux;
+
+                // Period / frequency grid
+                double tMin = t[0], tMax = t[t.length - 1];
+                double minPeriod = minPeriodUser > 0 ? minPeriodUser : (tMax - tMin) / 20.0;
+                double maxPeriod = maxPeriodUser > 0 ? maxPeriodUser : (tMax - tMin) * 0.8;
+                if (minPeriod <= 0 || maxPeriod <= 0 || minPeriod >= maxPeriod || nPeriods < 2) {
+                    IJ.showMessage("Periodogram", "Invalid period range or step count.");
+                    return;
+                }
+                double minFreq = 1.0 / maxPeriod;
+                double maxFreq = 1.0 / minPeriod;
+                double[] freq = new double[nPeriods];
+                double[] power = new double[nPeriods];
+                for (int i = 0; i < nPeriods; i++) {
+                    freq[i] = minFreq + i * (maxFreq - minFreq) / (nPeriods - 1);
+                }
+
+                // Mean, variance, and mean-subtracted flux (pre-computed once, outside parallel tasks)
+                double mean = 0.0, var = 0.0;
+                for (double v : f) mean += v;
+                mean /= f.length;
+                for (double v : f) var += (v - mean) * (v - mean);
+                var /= f.length;
+                final double[] fCentered = new double[f.length];
+                for (int j = 0; j < f.length; j++) fCentered[j] = f[j] - mean;
+
+                // Tier-1: parallelize over frequencies using all available CPU cores.
+                // Tier-2: for each frequency, precompute cos(w·t[j]) and sin(w·t[j]) once,
+                //         then derive the double-angle tau sums and the shifted-basis power
+                //         terms via multiplications only — halving trig-call count vs the
+                //         naive four-call-per-point formulation.
+                final double[] tFinal   = t;
+                final double   varFinal = var;
                 final AtomicBoolean lsCancelled = new AtomicBoolean(false);
-                Button lsStopButton = new Button("Stop");
-                lsStopButton.addActionListener(e -> {
-                    lsCancelled.set(true);
-                    progressWin.getTextPanel().append("\nLomb-Scargle run cancelled by user.\n");
-                });
-                Panel lsButtonPanel = new Panel();
-                lsButtonPanel.add(lsStopButton);
-                progressWin.add(lsButtonPanel, BorderLayout.SOUTH);
-                progressWin.pack();
-                for (int planet = 0; planet < nPlanets; planet++) {
-                    if (lsCancelled.get()) break;
-                    progressWin.getTextPanel().append(String.format("Planet %d: Starting...\n", planet + 1));
-                    int progressLine = progressWin.getTextPanel().getLineCount() - 1;
-                    // Build unmasked arrays for this run
-                    List<Integer> unmaskedIdx = new ArrayList<>();
-                    for (int i = 0; i < n; i++) if (!masked[i]) unmaskedIdx.add(i);
-                    double[] t = new double[unmaskedIdx.size()];
-                    double[] f = new double[unmaskedIdx.size()];
-                    for (int i = 0; i < t.length; i++) {
-                        t[i] = sortedTime[unmaskedIdx.get(i)];
-                        f[i] = sortedFlux[unmaskedIdx.get(i)];
-                    }
-                    if (t.length < 10) break;
-                    // Set period/frequency grid
-                    double tMin = t[0], tMax = t[t.length-1];
-                    double minPeriod = minPeriodUser > 0 ? minPeriodUser : (tMax - tMin) / 20.0;
-                    double maxPeriod = maxPeriodUser > 0 ? maxPeriodUser : (tMax - tMin) * 0.8;
-                    if (minPeriod <= 0 || maxPeriod <= 0 || minPeriod >= maxPeriod || nPeriods < 2) break;
-                    double minFreq = 1.0 / maxPeriod;
-                    double maxFreq = 1.0 / minPeriod;
-                    double[] freq = new double[nPeriods];
-                    double[] power = new double[nPeriods];
-                    for (int i = 0; i < nPeriods; i++) {
-                        freq[i] = minFreq + i * (maxFreq - minFreq) / (nPeriods - 1);
-                    }
-                    double mean = 0, var = 0;
-                    for (double v : f) mean += v;
-                    mean /= f.length;
-                    for (double v : f) var += (v - mean) * (v - mean);
-                    var /= f.length;
-                    for (int i = 0; i < nPeriods; i++) {
-                        if (lsCancelled.get()) break;
-                        double w = 2 * Math.PI * freq[i];
-                        double tau = 0.0;
+                final AtomicInteger lsDone      = new AtomicInteger(0);
+                int nThreads = Runtime.getRuntime().availableProcessors();
+                ExecutorService lsPool = Executors.newFixedThreadPool(nThreads);
+                List<Future<?>> lsFutures = new ArrayList<>(nPeriods);
+                IJ.showStatus("Lomb-Scargle: " + nPeriods + " frequencies on " + nThreads + " threads…");
+
+                for (int i = 0; i < nPeriods; i++) {
+                    final int fi = i;
+                    lsFutures.add(lsPool.submit(() -> {
+                        if (lsCancelled.get() || IJ.escapePressed()) {
+                            lsCancelled.set(true);
+                            return;
+                        }
+                        final double w  = 2.0 * Math.PI * freq[fi];
+                        final int    np = tFinal.length;
+
+                        // One cos+sin pair per time point covers both tau and power.
+                        double[] C = new double[np];
+                        double[] S = new double[np];
+                        for (int j = 0; j < np; j++) {
+                            double wt = w * tFinal[j];
+                            C[j] = Math.cos(wt);
+                            S[j] = Math.sin(wt);
+                        }
+
+                        // tau via double-angle identities — no additional trig calls
                         double s2wt = 0.0, c2wt = 0.0;
-                        for (double tt : t) {
-                            s2wt += Math.sin(2 * w * tt);
-                            c2wt += Math.cos(2 * w * tt);
+                        for (int j = 0; j < np; j++) {
+                            s2wt += 2.0 * S[j] * C[j];          // sin(2wt) = 2 sin(wt)cos(wt)
+                            c2wt += C[j] * C[j] - S[j] * S[j];  // cos(2wt) = cos²(wt) − sin²(wt)
                         }
-                        tau = Math.atan2(s2wt, c2wt) / (2 * w);
+                        double tau  = Math.atan2(s2wt, c2wt) / (2.0 * w);
+                        double cTau = Math.cos(w * tau);
+                        double sTau = Math.sin(w * tau);
+
+                        // Power in the tau-shifted orthogonal basis
                         double cosTerm = 0.0, sinTerm = 0.0, cos2Term = 0.0, sin2Term = 0.0;
-                        for (int j = 0; j < t.length; j++) {
-                            double theta = w * (t[j] - tau);
-                            double c = Math.cos(theta);
-                            double s = Math.sin(theta);
-                            cosTerm += (f[j] - mean) * c;
-                            sinTerm += (f[j] - mean) * s;
-                            cos2Term += c * c;
-                            sin2Term += s * s;
+                        for (int j = 0; j < np; j++) {
+                            double cj = C[j] * cTau + S[j] * sTau;  // cos(w(t−tau))
+                            double sj = S[j] * cTau - C[j] * sTau;  // sin(w(t−tau))
+                            cosTerm  += fCentered[j] * cj;
+                            sinTerm  += fCentered[j] * sj;
+                            cos2Term += cj * cj;
+                            sin2Term += sj * sj;
                         }
-                        power[i] = (cosTerm * cosTerm / cos2Term + sinTerm * sinTerm / sin2Term) / (2 * var);
-                    }
-                    double[] periods = new double[nPeriods];
-                    for (int i = 0; i < nPeriods; i++) periods[i] = 1.0 / freq[i];
-                    // Find peaks
-                    int bestIdx = 0;
-                    for (int i = 1; i < power.length; i++) {
-                        if (power[i] > power[bestIdx]) bestIdx = i;
-                    }
-                    double peakPower = power[bestIdx];
-                    double cutoff = peakPower * userCutoff;
-                    int left = bestIdx, right = bestIdx;
-                    while (left > 0 && power[left] > cutoff) left--;
-                    while (right < power.length - 1 && power[right] > cutoff) right++;
-                    int peakWidth = right - left;
-                    int minSeparation = Math.max(1, peakWidth);
-                    List<Integer> peakIndices = findPeaks(power, minSeparation);
-                    peakIndices.sort((a, b) -> Double.compare(power[b], power[a]));
-                    int nTopPeaks = Math.min(userNumPeaks, peakIndices.size());
-                    List<Integer> topPeaks = peakIndices.subList(0, nTopPeaks);
-                    if (bestIdx != -1 && (topPeaks.isEmpty() || topPeaks.get(topPeaks.size() - 1) != bestIdx)) {
-                        topPeaks.add(bestIdx);
-                    }
-                    List<Integer> uniqueTopPeaks = new ArrayList<>();
-                    for (int i = 0; i < topPeaks.size(); i++) {
-                        int idx2 = topPeaks.get(i);
-                        if (!uniqueTopPeaks.contains(idx2)) uniqueTopPeaks.add(idx2);
-                    }
-                    topPeaks = uniqueTopPeaks;
-                    int nLabelPeaks = Math.min(userNumPeaks, topPeaks.size());
-                    List<Integer> sortedTopPeaks = new ArrayList<>(topPeaks.subList(topPeaks.size() - nLabelPeaks, topPeaks.size()));
-                    sortedTopPeaks.sort((a, b) -> Double.compare(power[b], power[a]));
-                    // Save all peaks for this iteration
-                    for (int i = 0; i < nLabelPeaks; i++) {
-                        int peakIdx = sortedTopPeaks.get(i);
-                        double maskCenter = periods[peakIdx];
-                        allResults.add(new LSResult(planet + 1, i + 1, periods[peakIdx], power[peakIdx], maskCenter));
-                    }
-                    // Mask in-phase points for next iteration (around best period)
-                    if (!Double.isNaN(periods[bestIdx])) {
-                        double bestPeriod = periods[bestIdx];
-                        double bestPower = power[bestIdx];
-                        double halfMask = 0.5 * maskFactor * bestPeriod;
-                        for (int i = 0; i < n; i++) {
-                            if (masked[i]) continue;
-                            double phase = ((sortedTime[i] - t[0] + 0.5 * bestPeriod) % bestPeriod) - 0.5 * bestPeriod;
-                            if (Math.abs(phase) < halfMask) {
-                                masked[i] = true;
-                            }
-                        }
-                    }
-                    // Plot periodogram for this iteration
-                    Plot plot = new Plot("Lomb-Scargle Periodogram (Planet " + (planet + 1) + ")", "Period", "Power");
-                    plot.add("line", periods, power);
+                        power[fi] = (cosTerm * cosTerm / cos2Term
+                                   + sinTerm * sinTerm / sin2Term) / (2.0 * varFinal);
 
-                    // Highlight the most dominant peak with vertical shaded band
-                    if (bestIdx >= 0 && bestIdx < periods.length) {
-                        double dominantPeriod = periods[bestIdx];
-                        double dominantPower = power[bestIdx];
-
-                        // Calculate peak width for shading
-                        double highlightPeakPower = power[bestIdx];
-                        double highlightCutoff = highlightPeakPower * userCutoff;
-                        int highlightLeft = bestIdx, highlightRight = bestIdx;
-                        while (highlightLeft > 0 && power[highlightLeft] > highlightCutoff) {
-                            highlightLeft--;
-                        }
-                        while (highlightRight < power.length - 1 && power[highlightRight] > highlightCutoff) {
-                            highlightRight++;
-                        }
-
-                        // Create shaded vertical band around dominant peak
-                        double bandLeft = periods[highlightLeft];
-                        double bandRight = periods[highlightRight];
-                        double yMin = 0;
-                        double yMax = dominantPower * 1.1;
-
-                        // Draw a single vertical line at the dominant peak center instead of filled rectangle
-                        plot.setColor(Color.RED); // Red
-                        plot.addPoints(new double[]{dominantPeriod, dominantPeriod}, new double[]{yMin, yMax}, Plot.LINE);
-
-                        // Reset color to black for other elements
-                        plot.setColor(Color.BLACK);
-
-                        // Orange vertical lines for harmonics/aliases — up to 5 multiples.
-                        double[] harmonicFactors = {0.5, 2.0, 3.0, 4.0, 5.0};
-                        List<String> visibleHarmonicLabels = new ArrayList<>();
-                        plot.setColor(new Color(255, 165, 0));
-                        for (double factor : harmonicFactors) {
-                            double p = dominantPeriod * factor;
-                            if (p >= minPeriod && p <= maxPeriod) {
-                                plot.addPoints(new double[]{p, p}, new double[]{yMin, yMax}, Plot.LINE);
-                                visibleHarmonicLabels.add(factor == (int) factor
-                                        ? "\u00D7" + (int) factor
-                                        : "\u00D7" + factor);
-                            }
-                        }
-
-                        // Gray vertical lines for secondary peaks (Peak 2..N).
-                        if (nLabelPeaks > 1) {
-                            plot.setColor(Color.GRAY);
-                            for (int si = 1; si < nLabelPeaks; si++) {
-                                double sp = periods[sortedTopPeaks.get(si)];
-                                plot.addPoints(new double[]{sp, sp}, new double[]{yMin, yMax}, Plot.LINE);
-                            }
-                        }
-
-                        // Legend — right-anchored so text stays inside the plot frame.
-                        plot.setJustification(Plot.RIGHT);
-                        plot.setColor(Color.RED);
-                        plot.addLabel(0.99, 0.06, "\u2014 dominant period");
-                        if (!visibleHarmonicLabels.isEmpty()) {
-                            plot.setColor(new Color(255, 165, 0));
-                            plot.addLabel(0.99, 0.11,
-                                    "\u2014 harmonics/aliases (" + String.join(", ", visibleHarmonicLabels) + ")");
-                        }
-                        if (nLabelPeaks > 1) {
-                            plot.setColor(Color.GRAY);
-                            plot.addLabel(0.99, 0.16, "\u2014 secondary peaks");
-                        }
-                        plot.setJustification(Plot.LEFT);
-                        plot.setColor(Color.BLACK);
-                    }
-
-                    plot.addPoints(periods, power, Plot.LINE);
-                    // Peak 1 in red, secondary peaks in gray — colour matches the
-                    // vertical lines drawn on the plot.
-                    for (int i = 0; i < nLabelPeaks; i++) {
-                        int peakIdx = sortedTopPeaks.get(i);
-                        double peakPeriod = periods[peakIdx];
-                        plot.setColor(i == 0 ? Color.RED : Color.GRAY);
-                        if (i == 0 && peakIdx == bestIdx) {
-                            // For the dominant peak (Peak 1), add power information
-                            plot.addLabel(0.01, 0.06 + i * 0.05, String.format("Peak %d: P=%.4f Power=%.4f", i + 1, peakPeriod, power[peakIdx]));
-                        } else {
-                            plot.addLabel(0.01, 0.06 + i * 0.05, String.format("Peak %d: P=%.4f", i + 1, peakPeriod));
-                        }
-                    }
-                    plot.setColor(Color.BLACK);
-                    plot.show();
-                    plot.update();
-
-                    // Check if cancelled after calculation
-                    if (lsCancelled.get()) {
-                        System.out.println("\nLomb-Scargle calculation cancelled by user.");
-                        break;
-                    }
-
-                    // Update progress
-                    int planetsDone = planet + 1;
-                    int percent = (int) Math.round(100.0 * planetsDone / nPlanets);
-                    int nStars = (int) Math.round(50.0 * planetsDone / nPlanets);
-                    StringBuilder bar = new StringBuilder();
-                    for (int s = 0; s < nStars; s++) bar.append("*");
-                    for (int s = nStars; s < 50; s++) bar.append(" ");
-                    progressWin.getTextPanel().setLine(overallProgressLine, String.format("Overall Progress: [%s] %d%% (%d/%d planets finished)", bar.toString(), percent, planetsDone, nPlanets));
-                    progressWin.getTextPanel().setLine(progressLine, String.format("Planet %d: Done!", planet + 1));
+                        int d = lsDone.incrementAndGet();
+                        if (d % 500 == 0) IJ.showProgress(d, nPeriods);
+                    }));
                 }
-                progressWin.getTextPanel().append("\nAll planet searches complete.\n");
-                // Show results in a table
+                lsPool.shutdown();
+                try {
+                    lsPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                IJ.showProgress(1.0);
+                IJ.showStatus("");
+                if (lsCancelled.get()) {
+                    IJ.showMessage("Lomb-Scargle", "Computation cancelled.");
+                    return;
+                }
+
+                double[] periods = new double[nPeriods];
+                for (int i = 0; i < nPeriods; i++) periods[i] = 1.0 / freq[i];
+
+                // Find peaks (fixed alias-separation threshold)
+                int bestIdx = 0;
+                for (int i = 1; i < power.length; i++) {
+                    if (power[i] > power[bestIdx]) bestIdx = i;
+                }
+                final double peakCutoff = 0.25;
+                double peakPower = power[bestIdx];
+                double cutoff = peakPower * peakCutoff;
+                int left = bestIdx, right = bestIdx;
+                while (left > 0 && power[left] > cutoff) left--;
+                while (right < power.length - 1 && power[right] > cutoff) right++;
+                int peakWidth = right - left;
+                int minSeparation = Math.max(1, peakWidth);
+                List<Integer> peakIndices = findPeaks(power, minSeparation);
+                peakIndices.sort((a, b) -> Double.compare(power[b], power[a]));
+                int nTopPeaks = Math.min(userNumPeaks, peakIndices.size());
+                List<Integer> topPeaks = new ArrayList<>(peakIndices.subList(0, nTopPeaks));
+                if (bestIdx != -1 && (topPeaks.isEmpty() || topPeaks.get(topPeaks.size() - 1) != bestIdx)) {
+                    topPeaks.add(bestIdx);
+                }
+                List<Integer> uniqueTopPeaks = new ArrayList<>();
+                for (Integer idx2 : topPeaks) {
+                    if (!uniqueTopPeaks.contains(idx2)) uniqueTopPeaks.add(idx2);
+                }
+                int nLabelPeaks = Math.min(userNumPeaks, uniqueTopPeaks.size());
+                List<Integer> sortedTopPeaks = new ArrayList<>(
+                        uniqueTopPeaks.subList(uniqueTopPeaks.size() - nLabelPeaks, uniqueTopPeaks.size()));
+                sortedTopPeaks.sort((a, b) -> Double.compare(power[b], power[a]));
+
+                // Collect results
+                List<LSResult> allResults = new ArrayList<>();
+                for (int i = 0; i < nLabelPeaks; i++) {
+                    int peakIdx = sortedTopPeaks.get(i);
+                    allResults.add(new LSResult(i + 1, periods[peakIdx], power[peakIdx]));
+                }
+
+                // Plot
+                Plot plot = new Plot("Lomb-Scargle Periodogram", "Period", "Power");
+                plot.add("line", periods, power);
+
+                if (bestIdx >= 0 && bestIdx < periods.length) {
+                    double dominantPeriod = periods[bestIdx];
+                    double dominantPower  = power[bestIdx];
+                    double yMin = 0;
+                    double yMax = dominantPower * 1.1;
+
+                    plot.setColor(Color.RED);
+                    plot.addPoints(new double[]{dominantPeriod, dominantPeriod}, new double[]{yMin, yMax}, Plot.LINE);
+                    plot.setColor(Color.BLACK);
+
+                    double[] harmonicFactors = {0.5, 2.0, 3.0, 4.0, 5.0};
+                    List<String> visibleHarmonicLabels = new ArrayList<>();
+                    plot.setColor(new Color(255, 165, 0));
+                    for (double factor : harmonicFactors) {
+                        double p = dominantPeriod * factor;
+                        if (p >= minPeriod && p <= maxPeriod) {
+                            plot.addPoints(new double[]{p, p}, new double[]{yMin, yMax}, Plot.LINE);
+                            visibleHarmonicLabels.add(factor == (int) factor
+                                    ? "\u00D7" + (int) factor : "\u00D7" + factor);
+                        }
+                    }
+                    if (nLabelPeaks > 1) {
+                        plot.setColor(Color.GRAY);
+                        for (int si = 1; si < nLabelPeaks; si++) {
+                            double sp = periods[sortedTopPeaks.get(si)];
+                            plot.addPoints(new double[]{sp, sp}, new double[]{yMin, yMax}, Plot.LINE);
+                        }
+                    }
+
+                    plot.setJustification(Plot.RIGHT);
+                    plot.setColor(Color.RED);
+                    plot.addLabel(0.99, 0.06, "\u2014 dominant period");
+                    if (!visibleHarmonicLabels.isEmpty()) {
+                        plot.setColor(new Color(255, 165, 0));
+                        plot.addLabel(0.99, 0.11,
+                                "\u2014 harmonics/aliases (" + String.join(", ", visibleHarmonicLabels) + ")");
+                    }
+                    if (nLabelPeaks > 1) {
+                        plot.setColor(Color.GRAY);
+                        plot.addLabel(0.99, 0.16, "\u2014 secondary peaks");
+                    }
+                    plot.setJustification(Plot.LEFT);
+                    plot.setColor(Color.BLACK);
+                }
+
+                plot.addPoints(periods, power, Plot.LINE);
+                for (int i = 0; i < nLabelPeaks; i++) {
+                    int peakIdx = sortedTopPeaks.get(i);
+                    double peakPeriod = periods[peakIdx];
+                    plot.setColor(i == 0 ? Color.RED : Color.GRAY);
+                    if (i == 0 && peakIdx == bestIdx) {
+                        plot.addLabel(0.01, 0.06 + i * 0.05,
+                                String.format("Peak %d: P=%.4f Power=%.4f", i + 1, peakPeriod, power[peakIdx]));
+                    } else {
+                        plot.addLabel(0.01, 0.06 + i * 0.05,
+                                String.format("Peak %d: P=%.4f", i + 1, peakPeriod));
+                    }
+                }
+                plot.setColor(Color.BLACK);
+                plot.show();
+                plot.update();
+
+                // Results table
                 StringBuilder resultMsg = new StringBuilder();
-                String header = String.format("%-4s %-4s %-12s %-10s %-14s\n", "Iter", "Pk", "Period", "Power", "Mask Center");
-                String sep = String.format("%-4s %-4s %-12s %-10s %-14s\n", "----", "---", "------------", "----------", "--------------");
+                String header = String.format("%-4s %-12s %-10s\n", "Pk", "Period", "Power");
+                String sep    = String.format("%-4s %-12s %-10s\n", "---", "------------", "----------");
                 resultMsg.append(header).append(sep);
-                int lastIter = -1;
                 for (LSResult res : allResults) {
-                    if (lastIter != -1 && res.iteration != lastIter) resultMsg.append("\n");
-                    resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.6f\n", res.iteration, res.peakNumber, res.period, res.power, res.maskCenter));
-                    lastIter = res.iteration;
+                    resultMsg.append(String.format("%3d %12.6f %10.4f\n",
+                            res.peakNumber(), res.period(), res.power()));
                 }
                 SwingUtilities.invokeLater(() -> {
-                    createResultsTable(new String[]{"Iter", "Pk", "Period", "Power", "Mask Center"},
-                            resultMsg, "Lomb-Scargle Multi-Planet Results");
+                    createResultsTable(new String[]{"Pk", "Period", "Power"},
+                            resultMsg, "Lomb-Scargle Results");
                 });
                 return;
             }
@@ -1598,17 +1576,31 @@ public class Periodogram_ implements PlugIn {
                     gdCol.addNumericField("Number of planets to search", PLANET_COUNT.get(), 0);
                     gdCol.addNumericField("In-transit masking factor", TRANSIT_MASK_FACTOR.get(), 2);
                     gdCol.addChoice("T0 for masking", new String[]{"Model center (sliding fit)", "Min average (phase bin)"}, T0_MASK.get());
-                    gdCol.addNumericField("Limb darkening u1", LIMB_U1.get(), 3);
-                    gdCol.addNumericField("Limb darkening u2", LIMB_U2.get(), 3);
-                    gdCol.addNumericField("Semi-major axis (a/Rs)", TLS_A_RS.get(), 2);
-                    gdCol.addNumericField("Inclination (deg)", TLS_INC.get(), 2);
+                    // --- Blind-search grid: u1 × u2 × ingressFrac ---
+                    // The periodogram search tries every combination in this
+                    // 3-D grid and keeps the running-best SNR per period, so
+                    // users doing a TESS-style blind search don't have to
+                    // guess stellar limb darkening or transit geometry.
+                    // a/Rs and inclination were removed: they only seeded
+                    // the post-search depth guess and had zero effect on
+                    // the periodogram search itself.
+                    gdCol.addMessage("Blind-search grid (u1 \u00d7 u2 \u00d7 ingress fraction):");
+                    gdCol.addNumericField("u1 min", LIMB_U1_MIN.get(), 3);
+                    gdCol.addNumericField("u1 max", LIMB_U1_MAX.get(), 3);
+                    gdCol.addNumericField("u1 steps", LIMB_U1_STEPS.get(), 0);
+                    gdCol.addNumericField("u2 min", LIMB_U2_MIN.get(), 3);
+                    gdCol.addNumericField("u2 max", LIMB_U2_MAX.get(), 3);
+                    gdCol.addNumericField("u2 steps", LIMB_U2_STEPS.get(), 0);
+                    gdCol.addNumericField("Ingress frac min (t12/t14)", INGRESS_MIN.get(), 3);
+                    gdCol.addNumericField("Ingress frac max (t12/t14)", INGRESS_MAX.get(), 3);
+                    gdCol.addNumericField("Ingress frac steps", INGRESS_STEPS.get(), 0);
                     gdCol.addCheckbox("Lock T0 (skip auto-fit, use value below)", LOCK_T0.get());
                     gdCol.addNumericField("Locked T0 value (days)", LOCKED_T0_VALUE.get(), 6, 14, "days");
                     gdCol.addRadioButtonGroup("X Axis Scale:", new String[]{"Linear", "Log"}, 1, 2, PLOT_X_SCALE.get());
                     { Panel sp = new Panel(); sp.setPreferredSize(new Dimension(1, 7)); gdCol.addPanel(sp); }
                     String[] tlsBackends = PeriodogramGpuContext.getAvailableBackends();
                     String tlsDefaultBackend = PeriodogramGpuContext.isGpu(COMPUTE_BACKEND.get())
-                            && java.util.Arrays.asList(tlsBackends).contains(COMPUTE_BACKEND.get())
+                            && Arrays.asList(tlsBackends).contains(COMPUTE_BACKEND.get())
                             ? COMPUTE_BACKEND.get() : PeriodogramGpuContext.CPU_BACKEND;
                     gdCol.addChoice("Compute backend", tlsBackends, tlsDefaultBackend);
 
@@ -1648,15 +1640,19 @@ public class Periodogram_ implements PlugIn {
                                     "After each detection the found transit is masked and TLS re-runs on the residual.",
                             "When masking a detected planet, multiply the fitted transit duration by this factor " +
                                     "to widen the mask window (e.g. 3.0 masks \u00b11.5 durations around T0).",
-                            "Linear limb-darkening coefficient u1 (Mandel \u0026 Agol 2002 model). " +
-                                    "Typical range 0.1\u20130.6; pick a value matching the host-star spectral type for best results.",
-                            "Quadratic limb-darkening coefficient u2 (Mandel \u0026 Agol 2002 model). " +
-                                    "Typical range 0.1\u20130.4. Together with u1, a poor match to the true star limb darkening " +
-                                    "can steer TLS toward the wrong period.",
-                            "Scaled semi-major axis a/Rs (orbit radius in units of stellar radii). " +
-                                    "Used only for the post-search T0 refinement fit.",
-                            "Orbital inclination in degrees (90\u00b0 = edge-on). " +
-                                    "Used only for the post-search T0 refinement fit.",
+                            "Lower bound of the linear limb-darkening coefficient u1 (Mandel \u0026 Agol). " +
+                                    "Typical range 0.2\u20130.6 for FGK hosts.",
+                            "Upper bound of u1.  Set u1 min = u1 max and steps = 1 if you want to pin a known value.",
+                            "Number of u1 values tried (\u22651).  Total grid cost = u1 steps \u00d7 u2 steps \u00d7 ingress steps.",
+                            "Lower bound of the quadratic limb-darkening coefficient u2. " +
+                                    "Typical range 0.0\u20130.4.",
+                            "Upper bound of u2.",
+                            "Number of u2 values tried (\u22651).",
+                            "Lower bound of ingress fraction t12/t14  (ingress duration \u00f7 total transit duration). " +
+                                    "Values near 0 give flat-bottomed central transits; values near 0.5 give V-shaped " +
+                                    "grazing transits.  0.05\u20130.45 covers the full realistic range.",
+                            "Upper bound of ingress fraction.",
+                            "Number of ingress-fraction values tried (\u22651).  Default 5 covers central\u2192grazing well.",
                             "User-supplied T0 (BJD days) to use when the \"Lock T0\" checkbox above is ticked."
                     });
                     applyTooltips(gdCol.getCheckboxes(), new String[] {
@@ -1679,10 +1675,15 @@ public class Periodogram_ implements PlugIn {
                     int nPlanets = (int) gdCol.getNextNumber();
                     double maskFactor = gdCol.getNextNumber();
                     String t0MaskingChoice = gdCol.getNextChoice();
-                    double u1 = gdCol.getNextNumber();
-                    double u2 = gdCol.getNextNumber();
-                    double aRs = gdCol.getNextNumber();
-                    double inc = gdCol.getNextNumber();
+                    double u1Min    = gdCol.getNextNumber();
+                    double u1Max    = gdCol.getNextNumber();
+                    int    u1Steps  = (int) gdCol.getNextNumber();
+                    double u2Min    = gdCol.getNextNumber();
+                    double u2Max    = gdCol.getNextNumber();
+                    int    u2Steps  = (int) gdCol.getNextNumber();
+                    double ingMin   = gdCol.getNextNumber();
+                    double ingMax   = gdCol.getNextNumber();
+                    int    ingSteps = (int) gdCol.getNextNumber();
                     boolean lockT0 = gdCol.getNextBoolean();
                     double lockedT0Value = gdCol.getNextNumber();
                     String plotXScale = gdCol.getNextRadioButton();
@@ -1707,12 +1708,34 @@ public class Periodogram_ implements PlugIn {
                     T0_MASK.set(t0MaskingChoice);
                     LOCK_T0.set(lockT0);
                     LOCKED_T0_VALUE.set(lockedT0Value);
-                    LIMB_U1.set(u1);
-                    LIMB_U2.set(u2);
-                    TLS_A_RS.set(aRs);
-                    TLS_INC.set(inc);
+                    // Clamp grid steps \u2265 1 BEFORE persisting so a stray 0/negative
+                    // entry doesn't stick around between runs.
+                    if (u1Steps  < 1) u1Steps  = 1;
+                    if (u2Steps  < 1) u2Steps  = 1;
+                    if (ingSteps < 1) ingSteps = 1;
+                    // Clamp ingress fraction to a sane physical range (0, 0.5].
+                    if (ingMin <= 0.0) ingMin = 0.01;
+                    if (ingMax >  0.5) ingMax = 0.5;
+                    if (ingMax < ingMin) ingMax = ingMin;
+                    LIMB_U1_MIN.set(u1Min);
+                    LIMB_U1_MAX.set(u1Max);
+                    LIMB_U1_STEPS.set((double) u1Steps);
+                    LIMB_U2_MIN.set(u2Min);
+                    LIMB_U2_MAX.set(u2Max);
+                    LIMB_U2_STEPS.set((double) u2Steps);
+                    INGRESS_MIN.set(ingMin);
+                    INGRESS_MAX.set(ingMax);
+                    INGRESS_STEPS.set((double) ingSteps);
                     PLOT_X_SCALE.set(plotXScale);
                     COMPUTE_BACKEND.set(tlsComputeBackend);
+
+                    // Build the actual grid arrays the search methods accept.
+                    // linspace() below returns a length-`steps` array inclusive
+                    // of min and max; with steps == 1 it returns [min] so users
+                    // can "pin" an axis to a single value.
+                    final double[] u1Grid      = buildLinearGrid(u1Min, u1Max, u1Steps);
+                    final double[] u2Grid      = buildLinearGrid(u2Min, u2Max, u2Steps);
+                    final double[] ingressGrid = buildLinearGrid(ingMin, ingMax, ingSteps);
 
                     if (minFracDur <= 0 || maxFracDur <= 0 || minFracDur >= maxFracDur || nDurations < 1) {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
@@ -1874,7 +1897,8 @@ public class Periodogram_ implements PlugIn {
                                 // GPU kernel can be aborted between dispatch slices instead
                                 // of running to completion (CPU mode already honours it).
                                 gpuTlsResult = TLSGpu.search(t, f, minPeriod, maxPeriod, nPeriods,
-                                        minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
+                                        minFracDur, maxFracDur, nDurations, nBinsUser,
+                                        u1Grid, u2Grid, ingressGrid,
                                         tlsProgressCallback, tlsComputeBackend,
                                         tlsCancelled::get);
                             } catch (Exception gpuEx) {
@@ -1885,7 +1909,8 @@ public class Periodogram_ implements PlugIn {
                             } else {
                                 // Pass the Stop flag so the CPU fallback honours it too.
                                 tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods,
-                                        minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
+                                        minFracDur, maxFracDur, nDurations, nBinsUser,
+                                        u1Grid, u2Grid, ingressGrid,
                                         tlsProgressCallback, tlsCancelled::get);
                             }
                         } else {
@@ -1893,7 +1918,8 @@ public class Periodogram_ implements PlugIn {
                             // outer futures drain, and the T0-refinement pool all
                             // abort promptly on a user Stop (matches BLS CPU / TLS GPU).
                             tlsResult = TLS.search(t, f, minPeriod, maxPeriod, nPeriods,
-                                    minFracDur, maxFracDur, nDurations, nBinsUser, u1, u2, aRs, inc,
+                                    minFracDur, maxFracDur, nDurations, nBinsUser,
+                                    u1Grid, u2Grid, ingressGrid,
                                     tlsProgressCallback, tlsCancelled::get);
                         }
 
@@ -1984,7 +2010,24 @@ public class Periodogram_ implements PlugIn {
                         // Save all peaks for this iteration
                         for (int i = 0; i < topPeaks.size(); i++) {
                             int peakIdx = topPeaks.get(i);
-                            allResults.add(new TLSResult(planetFinal + 1, i + 1, tlsResult.periods[peakIdx], tlsResult.sde[peakIdx], bestDuration, bestDepth, tlsResult.t0_sliding, tlsResult.t0_minavg, tlsOddDepth, tlsEvenDepth, tlsOddEvenDiffPct, tlsNOddIn, tlsNEvenIn));
+                            // Per-peak grid winner.  If a peak landed in a
+                            // NaN-padded slot (cancelled mid-cell) we fall
+                            // back to the user-entered grid midpoint so the
+                            // results table shows a usable value instead of
+                            // NaN in the new columns.
+                            double peakU1  = tlsResult.bestU1         != null ? tlsResult.bestU1[peakIdx]          : Double.NaN;
+                            double peakU2  = tlsResult.bestU2         != null ? tlsResult.bestU2[peakIdx]          : Double.NaN;
+                            double peakIng = tlsResult.bestIngressFrac!= null ? tlsResult.bestIngressFrac[peakIdx] : Double.NaN;
+                            if (Double.isNaN(peakU1))  peakU1  = 0.5 * (u1Min + u1Max);
+                            if (Double.isNaN(peakU2))  peakU2  = 0.5 * (u2Min + u2Max);
+                            if (Double.isNaN(peakIng)) peakIng = 0.5 * (ingMin + ingMax);
+                            allResults.add(new TLSResult(planetFinal + 1, i + 1,
+                                    tlsResult.periods[peakIdx], tlsResult.sde[peakIdx],
+                                    bestDuration, bestDepth,
+                                    tlsResult.t0_sliding, tlsResult.t0_minavg,
+                                    tlsOddDepth, tlsEvenDepth, tlsOddEvenDiffPct,
+                                    tlsNOddIn, tlsNEvenIn,
+                                    peakU1, peakU2, peakIng));
                         }
 
                         // Print results to console for this iteration
@@ -1999,7 +2042,12 @@ public class Periodogram_ implements PlugIn {
                         System.out.printf("Found %d peaks above cutoff\n", topPeaks.size());
                         for (int i = 0; i < Math.min(topPeaks.size(), userNumPeaks); i++) {
                             int peakIdx = topPeaks.get(i);
-                            System.out.printf("Peak %d: P=%.6f, SDE=%.4f\n", i + 1, tlsResult.periods[peakIdx], tlsResult.sde[peakIdx]);
+                            double pu1  = tlsResult.bestU1         != null ? tlsResult.bestU1[peakIdx]          : Double.NaN;
+                            double pu2  = tlsResult.bestU2         != null ? tlsResult.bestU2[peakIdx]          : Double.NaN;
+                            double ping = tlsResult.bestIngressFrac!= null ? tlsResult.bestIngressFrac[peakIdx] : Double.NaN;
+                            System.out.printf("Peak %d: P=%.6f, SDE=%.4f, grid winner u1=%.3f u2=%.3f ingress=%.3f%n",
+                                    i + 1, tlsResult.periods[peakIdx], tlsResult.sde[peakIdx],
+                                    pu1, pu2, ping);
                         }
                         System.out.println("==================");
 
@@ -2126,12 +2174,14 @@ public class Periodogram_ implements PlugIn {
                     // Show results in a table
                     StringBuilder resultMsg = new StringBuilder();
                     String t0ColLabel = t0MaskingChoice.equals("Min average (phase bin)") ? "T0 (masking, Min avg)" : "T0 (masking, Model center)";
-                    String header = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s %-10s %-10s %-10s %-8s %-8s\n",
+                    String header = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s %-10s %-10s %-10s %-8s %-8s %-6s %-6s %-8s\n",
                             "Iter", "Pk", "Period", "SDE", "Duration (hr)", "Depth", t0ColLabel,
-                            "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts");
-                    String sep = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s %-10s %-10s %-10s %-8s %-8s\n",
+                            "Odd Depth", "Even Depth", "O-E Diff%", "#Odd pts", "#Even pts",
+                            "u1*", "u2*", "ingress*");
+                    String sep = String.format("%-4s %-4s %-12s %-10s %-14s %-10s %-24s %-10s %-10s %-10s %-8s %-8s %-6s %-6s %-8s\n",
                             "----", "---", "------------", "----------", "--------------", "----------", "------------------------",
-                            "----------", "----------", "----------", "--------", "--------");
+                            "----------", "----------", "----------", "--------", "--------",
+                            "------", "------", "--------");
                     resultMsg.append(header).append(sep);
                     int lastIter = -1;
                     for (TLSResult tr : allResults) {
@@ -2143,9 +2193,10 @@ public class Periodogram_ implements PlugIn {
                         String oddDepthStr  = Double.isNaN(tr.oddDepth)       ? "---" : String.format("%.4f", tr.oddDepth);
                         String evenDepthStr = Double.isNaN(tr.evenDepth)      ? "---" : String.format("%.4f", tr.evenDepth);
                         String diffPctStr   = Double.isNaN(tr.oddEvenDiffPct) ? "---" : String.format("%.1f", tr.oddEvenDiffPct);
-                        resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.4f %10.4f %24s %10s %10s %10s %8d %8d\n",
+                        resultMsg.append(String.format("%4d %3d %12.6f %10.4f %14.4f %10.4f %24s %10s %10s %10s %8d %8d %6.3f %6.3f %8.3f\n",
                                 tr.iteration, tr.peakNumber, tr.period, tr.sde, durationHours, tr.depth, t0Val,
-                                oddDepthStr, evenDepthStr, diffPctStr, tr.nOddIn, tr.nEvenIn));
+                                oddDepthStr, evenDepthStr, diffPctStr, tr.nOddIn, tr.nEvenIn,
+                                tr.bestU1, tr.bestU2, tr.bestIngressFrac));
                         lastIter = tr.iteration;
                     }
                     // Show results in a JTable with Save as CSV button
@@ -2157,7 +2208,7 @@ public class Periodogram_ implements PlugIn {
                     } catch (Throwable th) {
                         IJ.log("[TLS] Unhandled error in background thread: " + th);
                         java.io.StringWriter sw = new java.io.StringWriter();
-                        th.printStackTrace(new java.io.PrintWriter(sw));
+                        th.printStackTrace(new PrintWriter(sw));
                         IJ.log(sw.toString());
                         final String msg = th.getClass().getSimpleName()
                                 + (th.getMessage() != null ? (": " + th.getMessage()) : "");
@@ -2378,6 +2429,29 @@ public class Periodogram_ implements PlugIn {
         return lo;
     }
 
+    /**
+     * Builds an inclusive-both-ends linear grid from {@code min} to {@code max}
+     * with {@code steps} values.  Used by the TLS blind-search dialog to
+     * convert the three (min, max, steps) UI triples into the
+     * {@code double[]} arrays that {@link TLS#search} / {@link TLSGpu#search}
+     * expect.
+     *
+     * <p>Corner cases:
+     * <ul>
+     *   <li>{@code steps \u2264 1}     \u2192 {@code [min]}        (collapses the axis to one value)</li>
+     *   <li>{@code min == max}  \u2192 {@code [min]} * steps   (still fine, just redundant)</li>
+     * </ul>
+     */
+    static double[] buildLinearGrid(double min, double max, int steps) {
+        if (steps <= 1) return new double[]{min};
+        double[] g = new double[steps];
+        double span = max - min;
+        for (int i = 0; i < steps; i++) {
+            g[i] = min + i * span / (steps - 1);
+        }
+        return g;
+    }
+
     // -------------------------------------------------------------------------
     // AWT tooltip helpers for the BLS / TLS settings dialogs.
     //
@@ -2453,11 +2527,16 @@ public class Periodogram_ implements PlugIn {
                       double oddDepth, double evenDepth, double oddEvenDiffPct, int nOddIn, int nEvenIn) {
     }
 
-    private record LSResult(int iteration, int peakNumber, double period, double power, double maskCenter) {
+    private record LSResult(int peakNumber, double period, double power) {
     }
 
     private record TLSResult(int iteration, int peakNumber, double period, double sde, double duration,
                      double depth, double t0_sliding, double t0_minavg,
-                     double oddDepth, double evenDepth, double oddEvenDiffPct, int nOddIn, int nEvenIn) {
+                     double oddDepth, double evenDepth, double oddEvenDiffPct, int nOddIn, int nEvenIn,
+                     /* Grid-winning template parameters at this peak's period.
+                      * Useful for (a) diagnosing which limb-darkening cell
+                      * captured the signal and (b) seeding a follow-up
+                      * fixed-template refit outside AIJ. */
+                     double bestU1, double bestU2, double bestIngressFrac) {
     }
 }

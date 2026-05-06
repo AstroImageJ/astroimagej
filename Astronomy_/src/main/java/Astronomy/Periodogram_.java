@@ -77,6 +77,7 @@ public class Periodogram_ implements PlugIn {
     // through grazing V-shaped (ingressFrac ≈ 0.5).  A 3×3×5 = 45-cell grid
     // is cheap on GPU and tolerable on CPU.
     // test comment
+    // test comment 2
     private static final Property<Double>  LIMB_U1_MIN    = new Property<>(0.20, Periodogram_.class);
     private static final Property<Double>  LIMB_U1_MAX    = new Property<>(0.60, Periodogram_.class);
     private static final Property<Double>  LIMB_U1_STEPS  = new Property<>(3.0,  Periodogram_.class);

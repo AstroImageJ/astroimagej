@@ -1894,6 +1894,7 @@ public class Plot implements Cloneable {
 
 	/** Converts pixels to calibrated coordinates. In contrast to the image calibration, also
 	 *	works with log axes and inverted x axes */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double descaleX(int x) {
 		if (xMin == xMax) return xMin;
         if (isAijPlot) {
@@ -1906,6 +1907,7 @@ public class Plot implements Cloneable {
 
 	/** Converts pixels to calibrated coordinates. In contrast to the image calibration, also
 	 *	works with log axes */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double descaleY(int y) {
 		if (yMin == yMax) return yMin;
         if (isAijPlot) {
@@ -2086,11 +2088,11 @@ public class Plot implements Cloneable {
 	}
 
 	public BufferedImage getBufferedImage(int width, int height) {
-        draw();
 		if (plotDrawn && VectorPlotDrawing.SCALED_PLOT.orElse(false)
 				&& frameWidth != width && frameHeight != height) {
 			plotDrawn = false;
 		}
+        draw();//todo find way around this, it is a bit of a waste to draw it twice
 
 		var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		var bufferGraphics = buffer.createGraphics();

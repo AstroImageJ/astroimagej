@@ -270,6 +270,7 @@ public class PlotCanvas extends ImageCanvas {
 
     /** Returns the index of the arrow for modifying the range when the mouse click was
      *  at such an arrow, otherwise -1 */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
     int getRangeArrowIndex(MouseEvent e) {
         ImageWindow win = imp.getWindow();
         int rangeArrowIndex = -1;
@@ -283,51 +284,61 @@ public class PlotCanvas extends ImageCanvas {
     }
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenX(int sx) {
 		return super.offScreenX((int) (sx / Prefs.getGuiScale()));
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenY(int sy) {
 		return super.offScreenY((int) (sy / Prefs.getGuiScale()));
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenX2(int sx) {
 		return super.offScreenX2((int) (sx / Prefs.getGuiScale()));
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenY2(int sy) {
 		return super.offScreenY2((int) (sy / Prefs.getGuiScale()));
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double offScreenXD(int sx) {
 		return super.offScreenXD((int) (sx /*/ Prefs.getGuiScale()*/));
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double offScreenYD(int sy) {
 		return super.offScreenYD((int) (sy /*/ Prefs.getGuiScale()*/));
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int screenX(int ox) {
 		return super.screenX(ox);
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int screenY(int oy) {
 		return super.screenY(oy);
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int screenXD(double ox) {
 		return super.screenXD(ox);
 	}
 
 	@Override
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int screenYD(double oy) {
 		return super.screenYD(oy);
 	}

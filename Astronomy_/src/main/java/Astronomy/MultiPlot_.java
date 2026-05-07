@@ -1034,6 +1034,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static final Property<Boolean> saveTableAsFits = new Property<>(false, MultiPlot_.class);
     private static final Property<Boolean> savePlotAsPdf = new Property<>(false, MultiPlot_.class);
     private static final Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
+    private static final Property<String > dataSubset1Suffix = new Property<>("", "plot2.", "", MultiPlot_.class);
+    private static final Property<String > dataSubset2Suffix = new Property<>("", "plot2.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
     @PropertyKey(value = "plot.periodAlias", ignoreAffixes = true)
     static final Property<Integer> periodAlias = new Property<>(1, MultiPlot_.class);
@@ -17180,7 +17182,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             subsetColumnSuffix[i] = Prefs.get("plot2.subsetColumnSuffix" + i, subsetColumnSuffix[i]);
         }
 
-        gd.addTextField("Enter suffix to append at end of file name", dataSubsetSuffix, 10, true, s -> dataSubsetSuffix = s);
+        gd.addTextField("Enter a suffix to append at end of file 1's name", dataSubset1Suffix.get(), 10, true, dataSubset1Suffix::set);
+        gd.addTextField("Enter a suffix to append at end of file 2's name", dataSubset2Suffix.get(), 10, true, dataSubset2Suffix::set);
         gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
         gd.addSlider("Number of data selection boxes (next time):", 1, 50, maxSubsetColumns < 51 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
 
@@ -17189,7 +17192,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         cols.add("Meridian_Flip");
         cols.addAll(ConstantColSubset.constantCols().stream().map(ConstantColSubset.ConstantCol::name).toList());
         for (String column : columns) {
-            if (column == null || column.isEmpty() || column.isBlank())
+            if (column == null || column.isBlank())
                 continue;
             cols.add(column);
             if (column.contains("JD") || column.contains("J.D.")) {
@@ -17204,7 +17207,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             box.add(Box.createHorizontalStrut(75));
             gd.addMessage("Column");
             box.add(Box.createHorizontalStrut(130));
-            gd.addMessage("Suffix");
+            gd.addMessage("Suffixes");
             box.add(Box.createHorizontalStrut(65));
             gd.addMessage("Enable O1");
             box.add(Box.createHorizontalStrut(30));
@@ -17296,20 +17299,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             savePath = MeasurementTable.shorterName(table.shortTitle());
             int location = savePath.lastIndexOf('.');
             if (location >= 0) savePath = savePath.substring(0, location);
-            var savePathBuilder = new StringBuilder(savePath);
-            for (int i = 0; i < maxSubsetColumns; i++) {
-                savePathBuilder.append(subsetColumnSuffix[i].trim());
-            }
-            savePathBuilder.append(dataSubsetSuffix);
-            savePath = savePathBuilder.toString();
             savePath += ".dat";
-            SaveDialog sf = new SaveDialog("Save data subset", savePath, null);
+            SaveDialog sf = new SaveDialog("Save data subset (specify file name prefix)", savePath, ".dat");
             if (sf.getDirectory() == null || sf.getFileName() == null) {
                 IJ.beep();
                 IJ.showMessage("Error: No save file path returned. Aborting save subset.");
                 return;
             }
             savePath = sf.getDirectory() + sf.getFileName();
+            savePath = savePath.replace(".dat", "$SUBSET_SUFFIX.dat");
         }
         saveDataSubset(savePath);
     }
@@ -17388,7 +17386,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 suffixBuilder.append(Prefs.get("plot2.subsetColumnSuffix" + i, "").trim());
             }
         }
-        suffixBuilder.append(dataSubsetSuffix);
+        switch (fileIndex) {
+            case 0 -> suffixBuilder.append(dataSubset1Suffix.get().trim());
+            case 1 -> suffixBuilder.append(dataSubset2Suffix.get().trim());
+        }
         savePath = savePath.replace("$SUBSET_SUFFIX", suffixBuilder.toString());
 
         boolean saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", true);
@@ -18360,7 +18361,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
-        SaveDialog sf = new SaveDialog(saveAll ? "Save all" : "Save as " + format.toUpperCase(), imageFound ? iplus.getShortTitle() : MeasurementTable.shorterName(table.shortTitle()), "");
+        SaveDialog sf = new SaveDialog(saveAll ? "Save all (Set base file name for all files)" : "Save as " + format.toUpperCase(), imageFound ? iplus.getShortTitle() : MeasurementTable.shorterName(table.shortTitle()), "");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
         String outFileBase = sf.getFileName();
         int location = outFileBase.lastIndexOf('.');

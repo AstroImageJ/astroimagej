@@ -276,6 +276,7 @@ public class Plot implements Cloneable {
 	private int objectToReplace = -1;               // index in allPlotObjects, for replace
 	//private Point2D.Double textLoc;                 // remembers position of previous addLabel call (replaces text if at the same position)
 	//private int textIndex;                          // remembers index of previous addLabel call (for replacing if at the same position)
+	private boolean isAijPlot;
 
 	/** Constructs a new Plot with the default options.
 	 * Use add(shape,xvalues,yvalues) to add curves.
@@ -1895,7 +1896,10 @@ public class Plot implements Cloneable {
 	 *	works with log axes and inverted x axes */
 	public double descaleX(int x) {
 		if (xMin == xMax) return xMin;
-		double xv = (x-xBasePxl)/xScale + xMin;
+        if (isAijPlot) {
+            x = (int) (x / Prefs.getGuiScale());
+        }
+        double xv = (x-xBasePxl)/xScale + xMin;
 		if (logXAxis) xv = Math.pow(10, xv);
 		return xv;
 	}
@@ -1904,7 +1908,10 @@ public class Plot implements Cloneable {
 	 *	works with log axes */
 	public double descaleY(int y) {
 		if (yMin == yMax) return yMin;
-		double yv = (yBasePxl-y)/yScale +yMin;
+        if (isAijPlot) {
+            y = (int) (y / Prefs.getGuiScale());
+        }
+        double yv = (yBasePxl-y)/yScale +yMin;
 		if (logYAxis) yv = Math.pow(10, yv);
 		return yv;
 	}
@@ -2080,9 +2087,17 @@ public class Plot implements Cloneable {
 
 	public BufferedImage getBufferedImage(int width, int height) {
         draw();
+		if (plotDrawn && VectorPlotDrawing.SCALED_PLOT.orElse(false)
+				&& frameWidth != width && frameHeight != height) {
+			plotDrawn = false;
+		}
 
 		var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		var bufferGraphics = buffer.createGraphics();
+
+		if (VectorPlotDrawing.SCALED_PLOT.orElse(false) && isAijPlot) {
+			bufferGraphics.scale(Prefs.getGuiScale(), Prefs.getGuiScale());
+		}
 
 		bufferGraphics.setColor(Color.WHITE);
 		bufferGraphics.fillRect(0, 0, width, height);
@@ -2097,6 +2112,7 @@ public class Plot implements Cloneable {
 
 	/** Creates the processor if not existing, clears the background and prepares
 	 *	it for plotting. Also called by the PlotWindow class to prepare the window. */
+	@AstroImageJ(reason = "Support scaling plots")
 	ImageProcessor getBlankProcessor() {
 		makeMarginValues();
 		//IJ.log("Plot.getBlankPr preferredH="+preferredPlotHeight+" pp.h="+pp.height);
@@ -2106,6 +2122,7 @@ public class Plot implements Cloneable {
 		}
 		frameWidth = pp.width - (leftMargin + rightMargin);
 		frameHeight = pp.height - (topMargin + bottomMargin);
+		scaleFrame();
 		boolean isColored = isColored();	//color, not grayscale required?
 		if (ip == null || pp.width != ip.getWidth() || pp.height != ip.getHeight() || (isColored != (ip instanceof ColorProcessor))) {
 			if (isColored) {
@@ -2135,6 +2152,17 @@ public class Plot implements Cloneable {
 		}
 		ip.setColor(Color.black);
 		return ip;
+	}
+
+	@AstroImageJ(reason = "Support scaling plots")
+	void scaleFrame() {
+		if (!VectorPlotDrawing.SCALED_PLOT.orElse(false) || !isAijPlot) {
+			return;
+		}
+
+		var v = Prefs.getGuiScale();
+		frameWidth = (int) (pp.width / v) - (leftMargin + rightMargin);
+		frameHeight = (int) (pp.height / v) - (topMargin + bottomMargin);
 	}
 
 	/** Calculates the margin sizes and sets the class variables accordingly */
@@ -4356,7 +4384,14 @@ public class Plot implements Cloneable {
 	public void changeFont(Font font) {
 		setFont(font);
 	}
-	
+
+    public boolean isAijPlot() {
+        return isAijPlot;
+    }
+
+    public void setAijPlot(boolean aijPlot) {
+        isAijPlot = aijPlot;
+    }
 }
 
 /** This class contains the properties of the plot, such as size, format, range, etc, except for the data+format (plot contents).

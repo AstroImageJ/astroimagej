@@ -45,7 +45,7 @@ public class PlotCanvas extends ImageCanvas {
             """)
 	public void paint(Graphics g) {
 		imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, plot);
-		super.paint(g);
+		ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> super.paint(g));
 		if (zoomed.getAsBoolean()) {
 			g.drawImage(ZOOM_INDICATOR, 0, 0, null);
 		}
@@ -274,10 +274,61 @@ public class PlotCanvas extends ImageCanvas {
         ImageWindow win = imp.getWindow();
         int rangeArrowIndex = -1;
         if (win instanceof PlotWindow) {
-            int x = e.getX();
-		    int y = e.getY();
+            var scale = plot.isAijPlot() ? Prefs.getGuiScale() : 1;
+            var x = (int) (e.getX() / scale);
+		    var y = (int) (e.getY() / scale);
             rangeArrowIndex = ((PlotWindow)win).getRangeArrowIndex(x, y);
         }
         return rangeArrowIndex;
     }
+
+	@Override
+	public int offScreenX(int sx) {
+		return super.offScreenX((int) (sx / Prefs.getGuiScale()));
+	}
+
+	@Override
+	public int offScreenY(int sy) {
+		return super.offScreenY((int) (sy / Prefs.getGuiScale()));
+	}
+
+	@Override
+	public int offScreenX2(int sx) {
+		return super.offScreenX2((int) (sx / Prefs.getGuiScale()));
+	}
+
+	@Override
+	public int offScreenY2(int sy) {
+		return super.offScreenY2((int) (sy / Prefs.getGuiScale()));
+	}
+
+	@Override
+	public double offScreenXD(int sx) {
+		return super.offScreenXD((int) (sx /*/ Prefs.getGuiScale()*/));
+	}
+
+	@Override
+	public double offScreenYD(int sy) {
+		return super.offScreenYD((int) (sy /*/ Prefs.getGuiScale()*/));
+	}
+
+	@Override
+	public int screenX(int ox) {
+		return super.screenX(ox);
+	}
+
+	@Override
+	public int screenY(int oy) {
+		return super.screenY(oy);
+	}
+
+	@Override
+	public int screenXD(double ox) {
+		return super.screenXD(ox);
+	}
+
+	@Override
+	public int screenYD(double oy) {
+		return super.screenYD(oy);
+	}
 }

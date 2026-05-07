@@ -1,10 +1,15 @@
 package Astronomy.multiplot;
 
-import ij.gui.*;
-
-import java.awt.*;
+import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
+
+import ij.Prefs;
+import ij.gui.ImageCanvas;
+import ij.gui.Overlay;
+import ij.gui.Plot;
+import ij.gui.Roi;
+import ij.gui.ShapeRoi;
 
 public class PlotDraggableShape {
     private double startX;
@@ -57,6 +62,7 @@ public class PlotDraggableShape {
      */
     public double getStartX(Plot plot) {
         if (plot.xMin == plot.xMax) return plot.xMin;
+        var startX = this.startX / Prefs.getGuiScale();
         double xv = (startX-plot.xBasePxl)/plot.xScale + plot.xMin;
         if (plot.logXAxis) xv = Math.pow(10, xv);
         return xv;
@@ -67,6 +73,7 @@ public class PlotDraggableShape {
      */
     public double getStartY(Plot plot) {
         if (plot.yMin == plot.yMax) return plot.yMin;
+        var startY = this.startY / Prefs.getGuiScale();
         double yv = (plot.yBasePxl-startY)/plot.yScale + plot.yMin;
         if (plot.logYAxis) yv = Math.pow(10, yv);
         return yv;
@@ -77,6 +84,7 @@ public class PlotDraggableShape {
      */
     public double getEndX(Plot plot) {
         if (plot.xMin == plot.xMax) return plot.xMin;
+        var endX = this.endX / Prefs.getGuiScale();
         double xv = (endX-plot.xBasePxl)/plot.xScale + plot.xMin;
         if (plot.logXAxis) xv = Math.pow(10, xv);
         return xv;
@@ -87,6 +95,7 @@ public class PlotDraggableShape {
      */
     public double getEndY(Plot plot) {
         if (plot.yMin == plot.yMax) return plot.yMin;
+        var endY = this.endY / Prefs.getGuiScale();
         double yv = (plot.yBasePxl-endY)/plot.yScale + plot.yMin;
         if (plot.logYAxis) yv = Math.pow(10, yv);
         return yv;

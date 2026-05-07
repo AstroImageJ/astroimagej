@@ -17319,7 +17319,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             return "";
         }
 
-        s = s.replaceFirst("_[CT][0-9]+$", "").toLowerCase(Locale.ENGLISH);
+        s = s.replaceFirst("_[CT][0-9]+(_[dfn]+)?$", "").toLowerCase(Locale.ENGLISH);
 
         return switch (s) {
             case "rel_flux" -> "_flux";

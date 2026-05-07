@@ -17184,7 +17184,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         gd.addTextField("Enter a suffix to append at end of file 1's name", dataSubset1Suffix.get(), 10, true, dataSubset1Suffix::set);
         gd.addTextField("Enter a suffix to append at end of file 2's name", dataSubset2Suffix.get(), 10, true, dataSubset2Suffix::set);
-        gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
+        gd.addMessage("""
+                Select datasets in the order (left to right) desired in the output file.
+                No column will be output for blank selections.
+                No file will be output if all columns are blank or deselected.""");
         gd.addSlider("Number of data selection boxes (next time):", 1, 50, maxSubsetColumns < 51 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
 
         var cols = new ArrayList<String>();

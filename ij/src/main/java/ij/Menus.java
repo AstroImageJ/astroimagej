@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -767,6 +768,7 @@ public class Menus {
 	}
 
 	/** Install plugins located in JAR files. */
+	@AstroImageJ(reason = "Auto generate plugins list while still defining extra plugins", modified = true)
 	void installJarPlugins() {
 		if (jarFiles==null)
 			return;
@@ -782,6 +784,9 @@ public class Menus {
                 while(true) {
                     String s = lnr.readLine();
                     if (s==null) break;
+					if (readExtraPlugins(s)) {
+						readExtraJarPlugins(jar, entries);
+					}
 					if (s.length()>=3 && !s.startsWith("#"))
 						entries.add(s);
 	            }
@@ -794,6 +799,37 @@ public class Menus {
 			for (int j=0; j<entries.size(); j++)
 				installJarPlugin(jar, (String)entries.get(j));
 		}		
+	}
+
+	@AstroImageJ(reason = "Auto generate plugins list while still defining extra plugins")
+	private void readExtraJarPlugins(String jar, List jarPlugins) {
+		var is = autoGenerateConfigFile(jar);
+		if (is==null) {
+			return;
+		}
+
+		try (var lnr = new LineNumberReader(new InputStreamReader(is))) {
+			while (true) {
+				var s = lnr.readLine();
+				if (s == null) {
+					break;
+				}
+
+				if (s.length()>=3 && !s.startsWith("#")) {
+					jarPlugins.add(s);
+				}
+			}
+		} catch (IOException _) {}
+	}
+
+	@AstroImageJ(reason = "Auto generate plugins list while still defining extra plugins")
+	private boolean readExtraPlugins(String header) {
+        if (header.startsWith("#")) {
+            header = header.substring(1).trim();
+			return "AIJ-PLUGINS-EXT".equals(header);
+        }
+
+		return false;
 	}
     
     /** Install a plugin located in a JAR file. */

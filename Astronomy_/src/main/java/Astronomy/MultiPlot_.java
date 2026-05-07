@@ -17156,7 +17156,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         maxSubsetColumns = (int) Prefs.get("plot2.maxSubsetColumns", maxSubsetColumns);
         boolean[] subsetColumnEnable = new boolean[maxSubsetColumns];
+        boolean[] subsetColumnEnable2 = new boolean[maxSubsetColumns];
         String[] subsetColumn = new String[maxSubsetColumns];
+        String[] subsetColumnSuffix = new String[maxSubsetColumns];
         Holder.saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", Holder.saveColumnHeadings);
         Holder.saveHeadersAsComment = Prefs.get("plot2.saveHeadersAsComment", Holder.saveHeadersAsComment);
         Holder.saveRowNumbers = Prefs.get("plot2.saveRowNumbers", Holder.saveRowNumbers);
@@ -17164,16 +17166,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = true;
+            subsetColumnEnable2[i] = false;
             subsetColumn[i] = "";
+            subsetColumnSuffix[i] = "";
         }
 
         var gd = new GenericSwingDialog("Save data subset", mainFrame.getX() + 25, mainFrame.getY() + 50);
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = Prefs.get("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
+            subsetColumnEnable2[i] = Prefs.get("plot2.subsetColumnEnable_1" + i, subsetColumnEnable2[i]);
             subsetColumn[i] = Prefs.get("plot2.subsetColumn" + i, subsetColumn[i]);
+            subsetColumnSuffix[i] = Prefs.get("plot2.subsetColumnSuffix" + i, subsetColumnSuffix[i]);
         }
 
+        gd.addTextField("Enter suffix to append at end of file name", dataSubsetSuffix, 10, true, s -> dataSubsetSuffix = s);
         gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
         gd.addSlider("Number of data selection boxes (next time):", 1, 50, maxSubsetColumns < 51 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
 
@@ -17192,27 +17199,57 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var saveColumns = cols.toArray(String[]::new);
 
-        gd.addMessage("             Column                          Enabled");
-        gd.setOverridePosition(true);
-        gd.resetPositionOverride();
-        var size = new Dimension(180, 20);
+        var size = new Dimension(180, 25);
+        gd.buildRow((_, box) -> {
+            box.add(Box.createHorizontalStrut(75));
+            gd.addMessage("Column");
+            box.add(Box.createHorizontalStrut(130));
+            gd.addMessage("Suffix");
+            box.add(Box.createHorizontalStrut(65));
+            gd.addMessage("Enable O1");
+            box.add(Box.createHorizontalStrut(30));
+            gd.addMessage("Enable O2");
+        });
+
+        var tfs = new ArrayList<JTextField>(maxSubsetColumns);
         for (int i = 0; i < maxSubsetColumns; i++) {
             int finalI = i;
-            gd.setNewPosition(GridBagConstraints.WEST);
-            var x = gd.addChoice(IJ.pad((i + 1) + ":", 3), saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
-            x.c1().setMaximumSize(size);
-            x.c1().setPreferredSize(size);
-            x.c1().setSize(size);
-            x.c2().setMaximumSize(size);
-            x.c2().setPreferredSize(size);
-            x.c2().setSize(size);
-            gd.resetPositionOverride();
-            gd.setNewPosition(GridBagConstraints.CENTER);
-            gd.addToSameRow();
-            gd.addCheckbox("", subsetColumnEnable[i], b -> subsetColumnEnable[finalI] = b);
-            gd.resetPositionOverride();
+
+            gd.buildRow((_, box) -> {
+                gd.setNewPosition(GridBagConstraints.WEST);
+
+                var x = gd.addChoice(IJ.pad((finalI + 1) + ":", 3), saveColumns, subsetColumn[finalI],
+                        colName -> {
+                            subsetColumn[finalI] = colName;
+                            if (finalI < tfs.size()) {
+                                tfs.get(finalI).setText(mapColToSuffix(subsetColumn[finalI]));
+                            }
+                        });
+                x.c2().setMaximumSize(size);
+                x.c2().setPreferredSize(size);
+                x.c2().setSize(size);
+
+                box.add(Box.createHorizontalStrut(10));
+                var tf = gd.addTextField("suffix" + finalI, subsetColumnSuffix[finalI], 10,
+                        false, s -> subsetColumnSuffix[finalI] = s);
+                tf.setMaximumSize(size);
+                tf.setPreferredSize(size);
+                tf.setSize(size);
+                tfs.add(tf);
+
+                gd.setOverridePosition(true);
+                gd.setNewPosition(GridBagConstraints.CENTER);
+                box.add(Box.createHorizontalStrut(55));
+                gd.resetPositionOverride();
+                gd.addCheckbox("", subsetColumnEnable[finalI], b -> subsetColumnEnable[finalI] = b);
+
+                gd.setNewPosition(GridBagConstraints.CENTER);
+                box.add(Box.createHorizontalStrut(95));
+                gd.addCheckbox("", subsetColumnEnable2[finalI], b -> subsetColumnEnable2[finalI] = b);
+                gd.resetPositionOverride();
+                gd.setOverridePosition(false);
+            });
         }
-        gd.setOverridePosition(false);
         gd.enableYesNoCancel("Save", "Constant Col");
 
         String[] optionLabels = {"Save column headings", "Comment headings with '#'", "Save row numbers", "Save row labels"};
@@ -17242,7 +17279,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             Prefs.set("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
+            Prefs.set("plot2.subsetColumnEnable_1" + i, subsetColumnEnable2[i]);
             Prefs.set("plot2.subsetColumn" + i, subsetColumn[i]);
+            Prefs.set("plot2.subsetColumnSuffix" + i, subsetColumnSuffix[i]);
         }
         Prefs.set("plot2.saveColumnHeadings", Holder.saveColumnHeadings);
         Prefs.set("plot2.saveHeadersAsComment", Holder.saveHeadersAsComment);
@@ -17257,7 +17296,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             savePath = MeasurementTable.shorterName(table.shortTitle());
             int location = savePath.lastIndexOf('.');
             if (location >= 0) savePath = savePath.substring(0, location);
-            savePath += "_subset.dat";
+            var savePathBuilder = new StringBuilder(savePath);
+            for (int i = 0; i < maxSubsetColumns; i++) {
+                savePathBuilder.append(subsetColumnSuffix[i].trim());
+            }
+            savePathBuilder.append(dataSubsetSuffix);
+            savePath = savePathBuilder.toString();
+            savePath += ".dat";
             SaveDialog sf = new SaveDialog("Save data subset", savePath, null);
             if (sf.getDirectory() == null || sf.getFileName() == null) {
                 IJ.beep();
@@ -17269,15 +17314,83 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveDataSubset(savePath);
     }
 
+    private static String mapColToSuffix(String s) {
+        if (s == null || s.isEmpty()) {
+            return "";
+        }
+
+        s = s.replaceFirst("_[CT][0-9]+$", "").toLowerCase(Locale.ENGLISH);
+
+        return switch (s) {
+            case "rel_flux" -> "_flux";
+            case "rel_flux_err" -> "_err";
+            case "jd", "j.d." -> "_JDutc";
+            case "mjd" -> "_MJDutc";
+            case "bjd_tdb" -> "_BJDtdb";
+            case "hjd" -> "_HJDutc";
+            case "airmass", "air" -> "_am";
+            case "ra" -> "_ra";
+            case "dec" -> "_dec";
+            case "x(ij)", "x(fits)" -> "_xCen";
+            case "y(ij)", "y(fits)" -> "_yCen";
+            case "source-sky" -> "_src";
+            case "peak" -> "_peak";
+            case "mean" -> "_mean";
+            case "sky/pixel" -> "_sky";
+            case "fwhm", "width" -> "_fwhm";
+            case "x-width" -> "_xWidth";
+            case "y-width" -> "_yWidth";
+            case "angle" -> "_angle";
+            case "roundness" -> "_rnd";
+            case "wmshumid" -> "_humid";
+            case "ccdatemp", "ccd-temp" -> "_temp";
+            case "exposure", "exptime", "exp-time" -> "_expt";
+            case "foc" -> "_foc";
+            case "moonfrac" -> "_moonfrac";
+            case "source_radius" -> "_srcRad";
+            case "tot_c_cnts" -> "_totC";
+            case "tot_c_err" -> "_totCErr";
+            case "fjd", "fj.d.", "fbjd_tdb" -> "_fTime";
+            case "meridian_flip" -> "_mf";
+            default -> "";
+        };
+    }
+
     static void saveDataSubset(String savePath) {
-        PrintWriter pw = null;
+        saveDataSubset(savePath, 0);
+        saveDataSubset(savePath, 1);
+    }
+
+    static void saveDataSubset(String savePath, int fileIndex) {
+        var colEnablePrefix = "plot2.subsetColumnEnable";
+        if (fileIndex > 0) {
+            colEnablePrefix += "_" + fileIndex;
+        }
         maxSubsetColumns = (int) Prefs.get("plot2.maxSubsetColumns", maxSubsetColumns);
         boolean[] subsetColumnEnable = new boolean[maxSubsetColumns];
         String[] subsetColumn = new String[maxSubsetColumns];
+        var hasData = false;
         for (int i = 0; i < maxSubsetColumns; i++) {
-            subsetColumnEnable[i] = Prefs.get("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
+            subsetColumnEnable[i] = Prefs.get(colEnablePrefix + i, subsetColumnEnable[i]);
             subsetColumn[i] = Prefs.get("plot2.subsetColumn" + i, "");
+            if (!hasData) {
+                hasData = subsetColumnEnable[i] && !subsetColumn[i].isEmpty();
+            }
         }
+
+        if (!hasData && fileIndex != 0) {
+            return;
+        }
+
+        var suffixBuilder = new StringBuilder();
+        for (int i = 0; i < maxSubsetColumns; i++) {
+            if (subsetColumnEnable[i]) {
+                suffixBuilder.append(Prefs.get("plot2.subsetColumnSuffix" + i, "").trim());
+            }
+        }
+        suffixBuilder.append(dataSubsetSuffix);
+        savePath = savePath.replace("$SUBSET_SUFFIX", suffixBuilder.toString());
+
         boolean saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", true);
         boolean saveHeadersAsComment = Prefs.get("plot2.saveHeadersAsComment", true);
         boolean saveRowNumbers = Prefs.get("plot2.saveRowNumbers", true);
@@ -17287,7 +17400,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var mins = new double[maxSubsetColumns];
         int numColumns = 0;
         for (int i = 0; i < maxSubsetColumns; i++) {
-            if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
+            if (subsetColumnEnable[i] && !subsetColumn[i].trim().isEmpty()) {
                 if (!subsetColumn[i].equals(meridian_flip) &&
                         !(subsetColumn[i].startsWith("F") &&
                                 !table.columnExists(subsetColumn[i]) &&
@@ -17331,11 +17444,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int i = 0; i < MeasurementTable.DEFAULT_DECIMALS; i++)
             formatString.append("0");
         DecimalFormat output = new DecimalFormat(formatString.toString(), IJU.dfs);
-        try {
-            FileOutputStream fos = new FileOutputStream(savePath);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            pw = new PrintWriter(bos);
-            StringBuilder line = new StringBuilder();
+        try (var pw = new PrintWriter(new BufferedOutputStream(new FileOutputStream(savePath)))) {
+            StringBuilder line;
             String outText = "";
             double value = -1.0;
             boolean needDelimiter;
@@ -17343,7 +17453,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 line = new StringBuilder((saveHeadersAsComment ? "#" : "") + (saveRowNumbers ? delimiter : "") + (saveRowLabels ? "Label" + delimiter : ""));
                 needDelimiter = false;
                 for (int i = 0; i < maxSubsetColumns; i++) {
-                    if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
+                    if (subsetColumnEnable[i] && !subsetColumn[i].trim().isEmpty()) {
                         line.append(needDelimiter ? delimiter : "");
                         line.append(subsetColumn[i]);
                         needDelimiter = true;
@@ -17365,7 +17475,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 needDelimiter = true;
                             }
                         }
-                    } else if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
+                    } else if (subsetColumnEnable[i] && !subsetColumn[i].trim().isEmpty()) {
                         if (subsetColumn[i].equals(meridian_flip)) {
                             if (row - excludedHeadSamples >= 0) {
                                 if (row - excludedHeadSamples < xlen) {
@@ -17391,12 +17501,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 pw.println(line);
             }
         } catch (IOException ioe) {
+            ioe.printStackTrace();
             IJ.beep();
             IJ.showMessage("Error writing data subset file");
-        } finally {
-            pw.close();
         }
-
     }
 
     /**
@@ -18056,7 +18164,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         logSuffix = Prefs.get("Astronomy_Tool.logSuffix", logSuffix);
         fitPanelSuffix = Prefs.get("Astronomy_Tool.fitPanelSuffix", fitPanelSuffix);
         fitPanelTextSuffix = Prefs.get("Astronomy_Tool.fitPanelTextSuffix", fitPanelTextSuffix);
-        dataSubsetSuffix = Prefs.get("Astronomy_Tool.dataSubsetSuffix", dataSubsetSuffix);
         saveAllPNG = Prefs.get("Astronomy_Tool.saveAllPNG", saveAllPNG);
 
         GenericDialog gd = new GenericDialog("Save all settings", mainFrame.getX() + mainFrame.getWidth() / 2 - 300, mainFrame.getY() + mainFrame.getHeight() / 2 - 200);
@@ -18075,7 +18182,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.addStringField("Seeing Profile Stack suffix:", seeingProfileStackSuffix, 40);
         gd.addStringField("Plot config file suffix**:", configSuffix, 40);
         gd.addStringField("Full data table file suffix**:", dataSuffix, 40);
-        gd.addStringField("Data table subset file suffix:", dataSubsetSuffix, 40);
         gd.addStringField("Aperture file suffix:", aperSuffix, 40);
         gd.addStringField("Fit panel image suffix:", fitPanelSuffix, 40);
         gd.addStringField("Fit data text file suffix:", fitPanelTextSuffix, 40);
@@ -18110,7 +18216,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         seeingProfileStackSuffix = gd.getNextString();
         configSuffix = gd.getNextString();
         dataSuffix = gd.getNextString();
-        dataSubsetSuffix = gd.getNextString();
         aperSuffix = gd.getNextString();
         fitPanelSuffix = gd.getNextString();
         fitPanelTextSuffix = gd.getNextString();
@@ -18345,9 +18450,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (saveAll && saveDataSubset) {
             if (showDataSubsetPanel) {
                 IJ.beep();
-                saveDataSubsetDialog(outBase + dataSubsetSuffix + ".dat");
+                saveDataSubsetDialog(outBase + "$SUBSET_SUFFIX" + ".dat");
             } else {
-                saveDataSubset(outBase + dataSubsetSuffix + ".dat");
+                saveDataSubset(outBase + "$SUBSET_SUFFIX" + ".dat");
             }
         }
     }

@@ -80,6 +80,8 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 
@@ -696,6 +698,68 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.fill = GridBagConstraints.NONE;
 
         return theLabel;
+    }
+
+    public JTextField addTextField(String label, String text, int columns, boolean showLabel, Consumer<String> consumer) {
+        var c = getConstraints();
+        var x = getXPos();
+        Box b = Box.createHorizontalBox();
+        label = label.replace("_", " ");
+        Label fieldLabel = makeLabel(label);
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets(0, 0, 5, 0);
+        }
+
+        if (showLabel) {
+            c.anchor = GridBagConstraints.EAST;
+            c.gridwidth = 2;
+
+            b.add(fieldLabel);
+        }
+
+        var textField = new JTextField(text, columns);
+        textField.addKeyListener(this);
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                consumer.accept(textField.getText());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                consumer.accept(textField.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                consumer.accept(textField.getText());
+            }
+        });
+        c.gridx = GridBagConstraints.RELATIVE;
+        c.anchor = GridBagConstraints.WEST;
+        useCustomPosition();
+        if (overridePosition) c.gridx = x.get();
+        b.add(textField);
+        addLocal(b, c);
+        x.getAndIncrement();
+
+        if (Recorder.record || macro) {
+            saveLabel(textField, label, s -> {
+                textField.setText(s);
+                consumer.accept(s);
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(textField, textField.getText());
+                }
+            });
+        }
+
+        return textField;
     }
 
     /**

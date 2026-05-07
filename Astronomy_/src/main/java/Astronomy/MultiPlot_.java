@@ -7820,7 +7820,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savedataAndCfgfitsmenuitem.addActionListener(e -> saveData(true, true, true));
         filemenu.add(savedataAndCfgfitsmenuitem);
 
-        JMenuItem savedatasubsetmenuitem = new JMenuItem("Save data subset to file...");
+        JMenuItem savedatasubsetmenuitem = new JMenuItem("Save data subset(s) to file...");
         savedatasubsetmenuitem.setToolTipText("<html>" + "saves a subset of measurement table data to a user selected file" + "</html>");
         savedatasubsetmenuitem.addActionListener(e -> saveDataSubsetDialog(null));
         filemenu.add(savedatasubsetmenuitem);
@@ -17173,7 +17173,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             subsetColumnSuffix[i] = "";
         }
 
-        var gd = new GenericSwingDialog("Save data subset", mainFrame.getX() + 25, mainFrame.getY() + 50);
+        var gd = new GenericSwingDialog("Save data subset(s)", mainFrame.getX() + 25, mainFrame.getY() + 50);
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = Prefs.get("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
@@ -17208,10 +17208,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             gd.addMessage("Column");
             box.add(Box.createHorizontalStrut(130));
             gd.addMessage("Suffixes");
-            box.add(Box.createHorizontalStrut(65));
-            gd.addMessage("Enable O1");
             box.add(Box.createHorizontalStrut(30));
-            gd.addMessage("Enable O2");
+            gd.addMessage("Enable File 1");
+            box.add(Box.createHorizontalStrut(10));
+            gd.addMessage("Enable File 2");
         });
 
         var tfs = new ArrayList<JTextField>(maxSubsetColumns);
@@ -17242,12 +17242,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 gd.setOverridePosition(true);
                 gd.setNewPosition(GridBagConstraints.CENTER);
-                box.add(Box.createHorizontalStrut(55));
+                box.add(Box.createHorizontalStrut(45));
                 gd.resetPositionOverride();
                 gd.addCheckbox("", subsetColumnEnable[finalI], b -> subsetColumnEnable[finalI] = b);
 
                 gd.setNewPosition(GridBagConstraints.CENTER);
-                box.add(Box.createHorizontalStrut(95));
+                box.add(Box.createHorizontalStrut(85));
                 gd.addCheckbox("", subsetColumnEnable2[finalI], b -> subsetColumnEnable2[finalI] = b);
                 gd.resetPositionOverride();
                 gd.setOverridePosition(false);

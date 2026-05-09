@@ -1879,6 +1879,15 @@ public class Plot implements Cloneable {
 		return hiresImp;
 	}
 
+	@AstroImageJ(reason = "Support scalable plots")
+	public Plot duplicate() {
+		try {
+			return  (Plot)clone();	//shallow clone, thus arrays&objects are not cloned, but they will be used only now
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	/** Releases the ImageProcessor and ImagePlus associated with the plot.
 	 *	May help garbage collection because some garbage collectors
 	 *	are said to be inefficient with circular references. */
@@ -2088,28 +2097,38 @@ public class Plot implements Cloneable {
 	}
 
 	public BufferedImage getBufferedImage(int width, int height) {
-		if (plotDrawn && VectorPlotDrawing.SCALED_PLOT.orElse(false)
-				&& frameWidth != width && frameHeight != height) {
-			plotDrawn = false;
-		}
-        draw();//todo find way around this, it is a bit of a waste to draw it twice
+        if (VectorPlotDrawing.SCALED_PLOT.orElse(false) && isAijPlot) {
+            var scaledPlot = duplicate();
+			scaledPlot.ip = null;
+			scaledPlot.imp = null;
+			scaledPlot.pp = pp.clone();
+			if (!plotDrawn) scaledPlot.getInitialMinAndMax();
+			//scaledPlot.setScale(scale);
+			//scaledPlot.setAntialiasedText(antialiasedText);
+			scaledPlot.defaultMinMax = currentMinMax.clone();
 
-		var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		var bufferGraphics = buffer.createGraphics();
+			scaledPlot.plotDrawn = false;
+			scaledPlot.draw();
 
-		if (VectorPlotDrawing.SCALED_PLOT.orElse(false) && isAijPlot) {
-			bufferGraphics.scale(Prefs.getGuiScale(), Prefs.getGuiScale());
-		}
+			var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			var bufferGraphics = buffer.createGraphics();
 
-		bufferGraphics.setColor(Color.WHITE);
-		bufferGraphics.fillRect(0, 0, width, height);
+			if (VectorPlotDrawing.SCALED_PLOT.orElse(false) && isAijPlot) {
+				bufferGraphics.scale(Prefs.getGuiScale(), Prefs.getGuiScale());
+			}
 
-		var vectorPlotDrawing = new VectorPlotDrawing(this);
-		vectorPlotDrawing.drawVectorForm(bufferGraphics);
+			bufferGraphics.setColor(Color.WHITE);
+			bufferGraphics.fillRect(0, 0, width, height);
 
-		bufferGraphics.dispose();
+			var vectorPlotDrawing = new VectorPlotDrawing(scaledPlot);
+			vectorPlotDrawing.drawVectorForm(bufferGraphics);
 
-		return buffer;
+			bufferGraphics.dispose();
+
+			return buffer;
+        }
+
+		return getProcessor().getBufferedImage();
 	}
 
 	/** Creates the processor if not existing, clears the background and prepares

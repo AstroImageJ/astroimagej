@@ -1882,7 +1882,17 @@ public class Plot implements Cloneable {
 	@AstroImageJ(reason = "Support scalable plots")
 	public Plot duplicate() {
 		try {
-			return  (Plot)clone();	//shallow clone, thus arrays&objects are not cloned, but they will be used only now
+			var p = (Plot)clone();	//shallow clone, thus arrays&objects are not cloned, but they will be used only now
+			p.ip = null;
+			p.imp = null;
+			p.pp = pp.clone();
+			if (!plotDrawn) p.getInitialMinAndMax();
+			//scaledPlot.setScale(scale);
+			//scaledPlot.setAntialiasedText(antialiasedText);
+			p.defaultMinMax = currentMinMax.clone();
+			p.plotDrawn = false;
+
+			return p;
 		} catch (Exception e) {
 			return null;
 		}
@@ -2097,30 +2107,20 @@ public class Plot implements Cloneable {
 	}
 
 	public BufferedImage getBufferedImage(int width, int height) {
-        if (VectorPlotDrawing.SCALED_PLOT.orElse(false) && isAijPlot) {
-            var scaledPlot = duplicate();
-			scaledPlot.ip = null;
-			scaledPlot.imp = null;
-			scaledPlot.pp = pp.clone();
-			if (!plotDrawn) scaledPlot.getInitialMinAndMax();
-			//scaledPlot.setScale(scale);
-			//scaledPlot.setAntialiasedText(antialiasedText);
-			scaledPlot.defaultMinMax = currentMinMax.clone();
-
-			scaledPlot.plotDrawn = false;
-			scaledPlot.draw();
+        if (isAijPlot) {
+			draw();
 
 			var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 			var bufferGraphics = buffer.createGraphics();
 
-			if (VectorPlotDrawing.SCALED_PLOT.orElse(false) && isAijPlot) {
+			if (VectorPlotDrawing.SCALED_PLOT.orElse(true)) {
 				bufferGraphics.scale(Prefs.getGuiScale(), Prefs.getGuiScale());
 			}
 
 			bufferGraphics.setColor(Color.WHITE);
 			bufferGraphics.fillRect(0, 0, width, height);
 
-			var vectorPlotDrawing = new VectorPlotDrawing(scaledPlot);
+			var vectorPlotDrawing = new VectorPlotDrawing(this);
 			vectorPlotDrawing.drawVectorForm(bufferGraphics);
 
 			bufferGraphics.dispose();
@@ -2177,7 +2177,7 @@ public class Plot implements Cloneable {
 
 	@AstroImageJ(reason = "Support scaling plots")
 	void scaleFrame() {
-		if (!VectorPlotDrawing.SCALED_PLOT.orElse(false) || !isAijPlot) {
+		if (!VectorPlotDrawing.SCALED_PLOT.orElse(true) || !isAijPlot) {
 			return;
 		}
 

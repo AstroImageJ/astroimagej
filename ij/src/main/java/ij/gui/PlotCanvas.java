@@ -44,6 +44,15 @@ public class PlotCanvas extends ImageCanvas {
             Support vectorized plot and plot scaling
             """)
 	public void paint(Graphics g) {
+		if (plot == null) {
+			imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, null);
+			super.paint(g);
+			if (zoomed.getAsBoolean()) {
+				g.drawImage(ZOOM_INDICATOR, 0, 0, null);
+			}
+			return;
+		}
+
 		imp.setProperty(VectorPlotDrawing.PROPERTY_KEY, plot);
 		ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> super.paint(g));
 		if (zoomed.getAsBoolean()) {

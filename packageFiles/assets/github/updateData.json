@@ -10,6 +10,15 @@
       ]
     },
     {
+      "artifact": "AstroImageJ-$VERSION-linux-aarch64.tgz",
+      "arch": [
+        "ARM64"
+      ],
+      "os": [
+        "LINUX"
+      ]
+    },
+    {
       "artifact": "AstroImageJ-$VERSION-mac-x64.pkg",
       "arch": [
         "AMD64"

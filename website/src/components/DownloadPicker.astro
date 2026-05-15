@@ -76,7 +76,10 @@ const payloadJson = JSON.stringify(payload);
               <input type="radio" name="dl-platform" value="windows" /> Windows
             </label>
             <label style="margin-right:0.5rem;">
-              <input type="radio" name="dl-platform" value="linux" /> Linux
+              <input type="radio" name="dl-platform" value="linux-x64" /> Linux (x64)
+            </label>
+            <label style="margin-right:0.5rem;">
+              <input type="radio" name="dl-platform" value="linux-arm" /> Linux (Arm)
             </label>
             <label style="margin-right:0.5rem;">
               <input type="radio" name="dl-platform" value="mac-intel" /> Mac (Intel)
@@ -148,7 +151,10 @@ const payloadJson = JSON.stringify(payload);
         const architecture = (highEntropy.architecture || '').toLowerCase();
 
         if (/win/i.test(platform)) return "windows";
-        if (/linux/i.test(platform)) return "linux";
+        if (/linux/i.test(platform)) {
+          if (/arm|aarch|arm64/i.test(architecture)) return "linux-arm";
+          return "linux-x64";
+        }
         if (/mac/i.test(platform) || /darwin/i.test(platform)) {
           if (/arm|aarch|arm64/i.test(architecture)) return "mac-arm";
           return "mac-intel";
@@ -162,8 +168,11 @@ const payloadJson = JSON.stringify(payload);
     const ua = navigator.userAgent || "";
     // Simple heuristics:
     if (/windows/i.test(ua)) return "windows";
-    if (/linux/i.test(ua) && !/android/i.test(ua)) return "linux"; // avoid Android
-    if (/android/i.test(ua)) return "linux"; // map Android -> linux artifact generally
+    if (/linux/i.test(ua) && !/android/i.test(ua)) {
+      if (/arm|aarch64|arm64/i.test(ua)) return "linux-arm";
+      return "linux-x64";
+    }
+    if (/android/i.test(ua)) return "linux-arm";
     if (/macintosh|mac os x|darwin/i.test(ua)) {
       if (/arm|aarch64|apple silicon|arm64/i.test(ua)) return "mac-arm";
       return "mac-intel";
@@ -190,6 +199,8 @@ const payloadJson = JSON.stringify(payload);
     const matchers = {
       windows: a => isOS(a, "WINDOWS"),
       linux: a => isOS(a, "LINUX"),
+      "linux-x64": a => isOS(a, "LINUX") && isArch(a, /(x86|amd|intel|x64|x86_64)/i),
+      "linux-arm": a => isOS(a, "LINUX") && isArch(a, /(arm|aarch|arm64|aarch64)/i),
       "mac-intel": a => isOS(a, "MAC") && isArch(a, /(x86|amd|intel|x64|x86_64)/i),
       "mac-arm": a => isOS(a, "MAC") && isArch(a, /(arm|aarch|arm64|aarch64)/i)
     };
@@ -198,6 +209,10 @@ const payloadJson = JSON.stringify(payload);
     if (matcher) {
       const exact = artifacts.find(matcher);
       if (exact) return exact;
+    }
+
+    if (platformKey === "linux-x64" || platformKey === "linux-arm") {
+      return null;
     }
 
     // Fallback selection strategy
@@ -243,6 +258,8 @@ const payloadJson = JSON.stringify(payload);
   function platformLabelForKey(k) {
     if (k === "windows") return "Windows";
     if (k === "linux") return "Linux";
+    if (k === "linux-x64") return "Linux (x64)";
+    if (k === "linux-arm") return "Linux (Arm)";
     if (k === "mac-intel") return "Mac (Intel)";
     if (k === "mac-arm") return "Mac (Arm)";
     return "Unknown platform";

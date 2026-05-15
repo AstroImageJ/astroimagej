@@ -2,7 +2,13 @@
 
 **Please download the installer matching your operating system:**
 
-- **Linux (x64)**: [AstroImageJ-{{VERSION}}-linux-x64.tgz](https://github.com/{{REPO}}/releases/download/{{VERSION}}/AstroImageJ-{{VERSION}}-linux-x64.tgz)
+- **Linux**
+
+  - **x64**:
+    [AstroImageJ-{{VERSION}}-linux-x64.tgz](https://github.com/{{REPO}}/releases/download/{{VERSION}}/AstroImageJ-{{VERSION}}-linux-x64.tgz)
+
+  - **ARM64**:
+    [AstroImageJ-{{VERSION}}-linux-aarch64.tgz](https://github.com/{{REPO}}/releases/download/{{VERSION}}/AstroImageJ-{{VERSION}}-linux-aarch64.tgz)
 
 - **macOS**
 

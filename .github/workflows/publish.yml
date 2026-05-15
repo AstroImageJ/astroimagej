@@ -76,14 +76,18 @@ jobs:
 
       - name: Create app images
         run: |
-          ./gradlew createAppImageForLinux_x64 createAppImageForMac_aarch64 \
-            createAppImageForMac_x64 createAppImageForWindows_x64 \
+          ./gradlew createAppImageForLinux_x64 createAppImageForLinux_aarch64 \
+            createAppImageForMac_aarch64 createAppImageForMac_x64 \
+            createAppImageForWindows_x64 \
             -Pversion=${{ env.VERSION }} -PreleaseType=${{ env.RELEASE_TYPE }} \
             -PcrossBuildAppImage=${{ env.CROSSBUILD_APP_IMAGE }}
 
       # Need to tar the app image to preserve file permissions
       - name: Tar Linux x64
         run: tar -cvf astroimagej-linux-x64.tar -C build/distributions images/Linux_x64
+
+      - name: Tar Linux Arm
+        run: tar -cvf astroimagej-linux-arm64.tar -C build/distributions images/Linux_aarch64
 
       - name: Tar Mac x64
         run: tar -cvf astroimagej-mac-x64.tar -C build/distributions images/Mac_x64
@@ -101,6 +105,17 @@ jobs:
           retention-days: 1
           path: |
             astroimagej-linux-x64.tar
+
+      - name: Upload App Image For Linux Arm
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-linux-aarch64
+          if-no-files-found: error
+          # Needed to include .jpackage.xml
+          include-hidden-files: true
+          retention-days: 1
+          path: |
+            astroimagej-linux-arm64.tar
 
       - name: Upload App Image For Windows x64
         uses: actions/upload-artifact@v4
@@ -149,6 +164,13 @@ jobs:
             wrapper: ./gradlew
             appImageName: appimage-linux-X64
             sysId: LINUX_x64
+          - runner: ubuntu-latest
+            osName: linux-aarch64
+            gradleTask: packageAijForLinux_aarch64
+            artifactExt: tgz
+            wrapper: ./gradlew
+            appImageName: appimage-linux-aarch64
+            sysId: LINUX_AARCH64
           - runner: macos-latest
             osName: mac-aarch64
             gradleTask: packageAijForMac_aarch64
@@ -352,6 +374,12 @@ jobs:
           name: installer-linux-x64
         continue-on-error: true
 
+      - name: Download installer (linux-aarch64)
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-linux-aarch64
+        continue-on-error: true
+
       - name: Download installer (mac-aarch64)
         uses: actions/download-artifact@v4
         with:
@@ -385,6 +413,7 @@ jobs:
           mkdir -p release_assets
 
           mv Linux_x64/*.tgz release_assets/AstroImageJ-${VERSION}-linux-x64.tgz
+          mv Linux_aarch64/*.tgz release_assets/AstroImageJ-${VERSION}-linux-aarch64.tgz
           mv Mac_aarch64/*.pkg release_assets/AstroImageJ-${VERSION}-mac-aarch64.pkg
           mv Mac_x64/*.pkg release_assets/AstroImageJ-${VERSION}-mac-x64.pkg
           mv Windows_x64/*.msi release_assets/AstroImageJ-${VERSION}-windows-x64.msi

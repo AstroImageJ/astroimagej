@@ -125,6 +125,7 @@ val javaRuntimeSystems = mapOf(
     "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
     "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
     "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
+    "armLinux" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = LINUX),
     "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
 )
 

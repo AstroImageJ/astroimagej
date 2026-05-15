@@ -1,16 +1,16 @@
 package Astronomy.updater;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.Locale;
+import java.util.Objects;
+
 import Astronomy.AstroImageJUpdaterV6;
 import astroj.json.simple.JSONArray;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import astroj.json.simple.parser.ParseException;
 import ij.IJ;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.Locale;
-import java.util.Objects;
 
 public record SpecificVersion(SemanticVersion version, String message, FileEntry[] files) {
     public SpecificVersion {
@@ -126,16 +126,47 @@ public record SpecificVersion(SemanticVersion version, String message, FileEntry
         }
     }
 
+    // See JDK test for common architectures supported by java
+    // https://github.com/openjdk/jdk/blob/master/test/jdk/jdk/internal/util/ArchTest.java
     public enum Arch {
+        // x86 Family
         X86,
         AMD64,
-        ARM64;
+        // ARM Family
+        ARM,
+        ARM64,
+        // RISC-V Family
+        RISCV64,
+        // PowerPC Family
+        PPC,
+        PPC64,
+        PPC64LE,
+        // IBM Z Family
+        S390X,
+        // SPARC Family
+        SPARCV9,
+        // MIPS Family
+        MIPSEL,
+        MIPS64EL,
+        // LoongArch Family
+        LOONGARCH64,
+        ;
 
         public static Arch getArch() {
             return switch (System.getProperty("os.arch").toLowerCase(Locale.ENGLISH)) {
-                case "amd64", "x86_64", "x86-64", "x8664", "ia32e", "em64t", "x64" -> AMD64;
-                case "aarch64", "arm" -> ARM64;
                 case "x86", "i386", "i486", "i586", "i686", "x8632", "ia32", "x32" -> X86;
+                case "amd64", "x86_64", "x86-64", "x8664", "ia32e", "em64t", "x64" -> AMD64;
+                case "arm", "arm32" -> ARM;
+                case "aarch64", "arm64" -> ARM64;
+                case "riscv64" -> RISCV64;
+                case "ppc", "powerpc" -> PPC;
+                case "ppc64", "powerpc64" -> PPC64;
+                case "ppc64le", "powerpc64le" -> PPC64LE;
+                case "s390x", "s390" -> S390X;
+                case "sparcv9" -> SPARCV9;
+                case "mipsel" -> MIPSEL;
+                case "mips64el" -> MIPS64EL;
+                case "loongarch64" -> LOONGARCH64;
 
                 default -> throw new UnsupportedOperationException("Unknown architecture: " + System.getProperty("os.arch"));
             };

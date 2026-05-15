@@ -25,7 +25,8 @@ After clicking on it you will be offered an installation package for your operat
 
 ![](../../../assets/docs/installation/linux/image4.png)
 
-Github will provide a compressed tar file with a name such as `AstroImageJ-6.0.3.00-linux-x64.tgz`.
+Github will provide a compressed tar file with a name such as `AstroImageJ-6.0.3.00-linux-x64.tgz`
+for x64 systems or `AstroImageJ-6.0.3.00-linux-aarch64.tgz` for Arm systems.
 
 Move or copy this file to your preferred location, and unpack it
 

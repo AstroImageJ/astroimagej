@@ -2246,15 +2246,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.drawLine(dMarker2Value, preDmark2Ref - dashLength * dashCount, dMarker2Value, preDmark2Ref - dashLength * (dashCount + 1));
             }
             plot.setJustification(Plot.CENTER);
-            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 - (16.0 * Prefs.getGuiScale()) / plotSizeY, "Left");
-            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 + (4.0 * Prefs.getGuiScale()) / plotSizeY, threePlaces.format(dMarker2Value));
+            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 - (16.0 ) / plotSizeY, "Left");
+            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 + (4.0 ) / plotSizeY, threePlaces.format(dMarker2Value));
 
             numDashes = -10 + (postDMarker3Ref - plotMinY) / dashLength;     //plot dMarker3
             for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
                 plot.drawLine(dMarker3Value, postDMarker3Ref - dashLength * dashCount, dMarker3Value, postDMarker3Ref - dashLength * (dashCount + 1));
             }
-            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 - (16.0 * Prefs.getGuiScale()) / plotSizeY, "Right");
-            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 + (4.0 * Prefs.getGuiScale()) / plotSizeY, threePlaces.format(dMarker3Value));
+            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 - (16.0 ) / plotSizeY, "Right");
+            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 + (4.0 ) / plotSizeY, threePlaces.format(dMarker3Value));
 
             if (useDMarker1) { //plot dMarker1
                 if (nBefore1 + nAfter1 > 0) {
@@ -2265,9 +2265,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
                     plot.drawLine(dMarker1Value, preDmark1Ref - dashLength * dashCount, dMarker1Value, preDmark1Ref - dashLength * (dashCount + 1));
                 }
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 * Prefs.getGuiScale()) / plotSizeY, "Left");
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 * Prefs.getGuiScale()) / plotSizeY, "Trim");
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 * Prefs.getGuiScale()) / plotSizeY, threePlaces.format(dMarker1Value));
+                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 ) / plotSizeY, "Left");
+                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 ) / plotSizeY, "Trim");
+                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 ) / plotSizeY, threePlaces.format(dMarker1Value));
             }
             if (useDMarker4) { //plot dMarker4
                 if (nBefore4 + nAfter4 > 0) {
@@ -2278,9 +2278,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
                     plot.drawLine(dMarker4Value, postDMarker4Ref - dashLength * dashCount, dMarker4Value, postDMarker4Ref - dashLength * (dashCount + 1));
                 }
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 * Prefs.getGuiScale()) / plotSizeY, "Right");
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 * Prefs.getGuiScale()) / plotSizeY, "Trim");
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 * Prefs.getGuiScale()) / plotSizeY, threePlaces.format(dMarker4Value));
+                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 ) / plotSizeY, "Right");
+                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 ) / plotSizeY, "Trim");
+                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 ) / plotSizeY, threePlaces.format(dMarker4Value));
             }
         }
         if (showMFMarkers) drawVMarker(mfMarker1Value, "Meridian", "Flip", new Color(84, 201, 245));
@@ -2339,11 +2339,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     var y = plot.getSize().height;
                     var x = plot.getSize().width;
                     if (plotSizeX != x) {
+                    /*if (plotSizeX != x) {//todo make work with scaling
                         plotwidthspinner.setValue(x);
                     }
                     if (plotSizeY != y) {
                         plotheightspinner.setValue(y);
-                    }
+                    }*/
                     updatePlotEnabled = true;
                     supressDataProcessing();
                     updatePlot(updateNoFits());
@@ -4750,9 +4751,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.drawLine(vMarkerValue, preVmarkRef - dashLength * dashCount, vMarkerValue, preVmarkRef - dashLength * (dashCount + 1));
         }
         plot.setJustification(Plot.CENTER);
-        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 * Prefs.getGuiScale()) / plotSizeY, vMarkerTopText);
-        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 * Prefs.getGuiScale()) / plotSizeY, vMarkerBotText);
-        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 * Prefs.getGuiScale()) / plotSizeY, threePlaces.format(vMarkerValue));
+        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 ) / plotSizeY, vMarkerTopText);
+        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 ) / plotSizeY, vMarkerBotText);
+        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 ) / plotSizeY, threePlaces.format(vMarkerValue));
     }
 
     static boolean drawLegendSymbol(int marker, int width, Color color, double legPosY, String llab) {

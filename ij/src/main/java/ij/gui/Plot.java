@@ -513,12 +513,13 @@ public class Plot implements Cloneable {
 	 * @see #setFrameSize(int,int)
 	 * @see #setWindowSize(int,int)
 	*/
+	@AstroImageJ(reason = "Scale plot size", modified = true)
 	public void setSize(int width, int height) {
 		if (ip != null && width == ip.getWidth() && height == ip.getHeight())
 			return;
 		Dimension minSize = getMinimumSize();
-		pp.width = Math.max(width, minSize.width);
-		pp.height = Math.max(height, minSize.height);
+		pp.width = (int) (Math.max(width, minSize.width) * Prefs.getGuiScale());
+		pp.height = (int) (Math.max(height, minSize.height) * Prefs.getGuiScale());
 		scale = 1.0f;
 		ip = null;
 		if (plotDrawn) updateImage();

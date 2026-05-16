@@ -518,8 +518,13 @@ public class Plot implements Cloneable {
 		if (ip != null && width == ip.getWidth() && height == ip.getHeight())
 			return;
 		Dimension minSize = getMinimumSize();
-		pp.width = (int) (Math.max(width, minSize.width) * Prefs.getGuiScale());
-		pp.height = (int) (Math.max(height, minSize.height) * Prefs.getGuiScale());
+		if (isAijPlot) {
+			pp.width = (int) (Math.max(width, minSize.width) * Prefs.getGuiScale());
+			pp.height = (int) (Math.max(height, minSize.height) * Prefs.getGuiScale());
+		} else {
+			pp.width = Math.max(width, minSize.width);
+			pp.height = Math.max(height, minSize.height);
+		}
 		scale = 1.0f;
 		ip = null;
 		if (plotDrawn) updateImage();

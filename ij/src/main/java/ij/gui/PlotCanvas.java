@@ -181,6 +181,7 @@ public class PlotCanvas extends ImageCanvas {
 	/** Resizes the canvas when the user resizes the window. To avoid a race condition while creating
 	 *	a new window, this is ignored if no window exists or the window has not been activated yet.
      */
+	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	void resizeCanvas(int width, int height) {
 		if (plot == null || plot.isFrozen()) {
 			super.resizeCanvas(width, height);
@@ -196,6 +197,10 @@ public class PlotCanvas extends ImageCanvas {
 		Dimension minSize = plot.getMinimumSize();
 		int plotWidth  =  width < minSize.width	 ? minSize.width  : width;
 		int plotHeight = height < minSize.height ? minSize.height : height;
+        if (plot.isAijPlot()) {
+			plotWidth = (int) (plotWidth / Prefs.getGuiScale());
+			plotHeight = (int) (plotHeight / Prefs.getGuiScale());
+        }
 		plot.setSize(plotWidth, plotHeight);
 		setSize(width, height);
 		oldWidth = width;

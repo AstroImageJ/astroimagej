@@ -300,25 +300,37 @@ public class PlotCanvas extends ImageCanvas {
 	@Override
 	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenX(int sx) {
-		return super.offScreenX((int) (sx / Prefs.getGuiScale()));
+        if (plot.isAijPlot()) {
+            return super.offScreenX((int) (sx / Prefs.getGuiScale()));
+        }
+		return super.offScreenX(sx);
 	}
 
 	@Override
 	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenY(int sy) {
-		return super.offScreenY((int) (sy / Prefs.getGuiScale()));
+		if (plot.isAijPlot()) {
+			return super.offScreenY((int) (sy / Prefs.getGuiScale()));
+		}
+		return super.offScreenY(sy);
 	}
 
 	@Override
 	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenX2(int sx) {
-		return super.offScreenX2((int) (sx / Prefs.getGuiScale()));
+		if (plot.isAijPlot()) {
+			return super.offScreenX2((int) (sx / Prefs.getGuiScale()));
+		}
+		return super.offScreenX2(sx);
 	}
 
 	@Override
 	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public int offScreenY2(int sy) {
-		return super.offScreenY2((int) (sy / Prefs.getGuiScale()));
+		if (plot.isAijPlot()) {
+			return super.offScreenY2((int) (sy / Prefs.getGuiScale()));
+		}
+		return super.offScreenY2(sy);
 	}
 
 	@Override

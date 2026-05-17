@@ -1,5 +1,8 @@
 package ij.gui;
 
+import static ij.process.ImageProcessor.CENTER_JUSTIFY;
+import static ij.process.ImageProcessor.RIGHT_JUSTIFY;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -110,6 +113,10 @@ public class Plot implements Cloneable {
 	public static final int ARROW_SOUTH_WEST = 19;
 	@AstroImageJ(reason = "Custom plot shape")
 	public static final int ARROW_NORTH_WEST = 20;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int AIJ_LEGEND_ENTRY = 21;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int AIJ_V_MARKER = 22;
 
 	/** Names for the shapes as an array */
 	@AstroImageJ(reason = "Custom plot shape", modified = true)
@@ -3501,7 +3508,8 @@ public class Plot implements Cloneable {
 		int localLineWidth = lineWidth;
 		if (shape == DIAMOND)
 			size = (int)(size*1.21);
-		if (plotObject.offScreenDisplacementArrowControl.xEnable && pointIndex >= 0) {
+		if (plotObject.offScreenDisplacementArrowControl.xEnable && pointIndex >= 0 &&
+				!(shape == Plot.AIJ_V_MARKER || shape == Plot.AIJ_LEGEND_ENTRY)) {
 			if (x<frame.x) {
 				lineWidth = 2;
 				ip.setLineWidth(2);
@@ -3531,7 +3539,8 @@ public class Plot implements Cloneable {
 				x = frame.x+frame.width-1;
 			}
 		}
-		if (plotObject.offScreenDisplacementArrowControl.yEnable && pointIndex >= 0) {
+		if (plotObject.offScreenDisplacementArrowControl.yEnable && pointIndex >= 0 &&
+				!(shape == Plot.AIJ_V_MARKER || shape == Plot.AIJ_LEGEND_ENTRY)) {
 			if (y<frame.y) {
 				lineWidth = 2;
 				ip.setLineWidth(2);
@@ -3639,6 +3648,85 @@ public class Plot implements Cloneable {
 				ip.drawLine(x+sc(1),y-sc(1),x+sc(1),ybase-sc(size/2));
 				ip.drawLine(xend+sc(size/2), y-sc(1),x,y-sc(1));
 				ip.drawLine(xend+sc(size/2), y-sc(1), x+sc(1),ybase-sc(size/2));
+				break;
+			case AIJ_LEGEND_ENTRY:
+				ip.setClipRect(null);
+				var split = plotObject.getLabel().split("\n", 2);
+				var label = split[1];
+				var data = split[0].split(";");
+				var marker = Integer.parseInt(data[0]);
+				var justification = Integer.parseInt(data[1]);
+				var stroke = ip.getLineWidth();
+
+				// Draw Label
+				ip.setLineWidth(1);
+				ip.setJustification(justification);
+				if (plotObject.getFont() != null) {
+					ip.setFont(scFont(plotObject.getFont()));
+				}
+
+				var x0 = leftMargin + (int) (plotObject.getxValues()[0] * frameWidth);
+				var y0 = topMargin + (int) (plotObject.getyValues()[0] * frameHeight);
+				ip.drawString(label, x0, y0);
+				ip.setLineWidth(stroke);
+
+				// Draw Marker
+				var w = ip.getStringWidth(label);
+				var cxx = x0;
+				if (justification == CENTER_JUSTIFY) {
+					cxx -= w / 2;
+				} else if (justification == RIGHT_JUSTIFY) {
+					cxx -= w;
+				}
+				if (marker != Plot.LINE) {
+					var po = plotObject.clone();
+					po.setShape(marker);
+					drawShape(po, cxx - sc(7), (int)(y0 - ip.getFontMetrics().getHeight() / 2D), marker, po.getMarkerSize(), -1);
+				} else {
+					ip.drawLine(cxx - sc(10), (int) (y0 - ip.getFontMetrics().getHeight() / 2D),
+							cxx - sc(3), (int) (y0 - ip.getFontMetrics().getHeight() / 2D));
+				}
+
+				ip.setClipRect(frame);
+				break;
+			case AIJ_V_MARKER:
+				ip.setClipRect(null);
+				setJustification(Plot.CENTER);
+				var lines = plotObject.getLabel().split("\n");
+				var stringBounds = ip.getStringBounds(lines[0]);
+				var spacer = stringBounds.height;
+				var fm = ip.getFontMetrics();
+				spacer = fm.getAscent();
+				var xLabelY = topMargin + frameHeight + fm.getHeight() * 5 / 4f + sc(2);
+
+				if (lines.length == 3) {
+					var xt = leftMargin + (plotObject.getxValues()[0] * frameWidth);
+					var yt = topMargin + (plotObject.getyValues()[0] * frameHeight);
+
+					ip.drawString(lines[0], (int) xt, (int) (topMargin + frameHeight - sc(1) - spacer * 3));
+					ip.drawString(lines[1], (int) xt, (int) (topMargin + frameHeight - sc(2) - spacer));
+					ip.drawString(lines[2], (int) xt, (int) (xLabelY + spacer));
+				} else if (lines.length == 2) {
+					var xt = leftMargin + (plotObject.getxValues()[0] * frameWidth);
+					var yt = topMargin + (plotObject.getyValues()[0] * frameHeight);
+
+					ip.drawString(lines[0], (int) xt, (int) (topMargin + frameHeight - sc(1) - spacer * 2));
+					ip.drawString(lines[1], (int) xt, (int) (topMargin + frameHeight - sc(1)));
+				} else {
+					var xt = leftMargin + (plotObject.getxValues()[0] * frameWidth);
+					var yt = topMargin + (plotObject.getyValues()[0] * frameHeight) - (2 * spacer);
+
+					for (int i = 0; i < lines.length; i++) {
+						var l = lines[i];
+						if (l.isEmpty()) {
+							continue;
+						}
+
+						ip.drawString(l, (int) xt, (int) (yt + i * spacer));
+					}
+				}
+
+				ip.setClipRect(frame);
 				break;
 			case CUSTOM:
 				if (plotObject.macroCode==null || frame==null)
@@ -4677,7 +4765,8 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 				|| shape == Plot.CROSS || shape == Plot.DIAMOND || shape == Plot.DOT || shape == Plot.CONNECTED_CIRCLES
 				|| shape == Plot.CUSTOM || shape == Plot.ARROW_UP || shape == Plot.ARROW_DOWN ||
 				shape == Plot.ARROW_LEFT || shape == Plot.ARROW_RIGHT || shape == Plot.ARROW_NORTH_EAST ||
-				shape == Plot.ARROW_NORTH_WEST || shape == Plot.ARROW_SOUTH_EAST || shape == Plot.ARROW_SOUTH_WEST);
+				shape == Plot.ARROW_NORTH_WEST || shape == Plot.ARROW_SOUTH_EAST || shape == Plot.ARROW_SOUTH_WEST ||
+				shape == Plot.AIJ_V_MARKER || shape == Plot.AIJ_LEGEND_ENTRY);
 	}
 
 	/** Whether an XY_DATA object has markers that can be filled */

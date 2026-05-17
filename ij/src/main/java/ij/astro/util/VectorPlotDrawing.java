@@ -1,5 +1,7 @@
 package ij.astro.util;
 
+import static ij.gui.Plot.AIJ_LEGEND_ENTRY;
+import static ij.gui.Plot.AIJ_V_MARKER;
 import static ij.gui.Plot.ARROW_DOWN;
 import static ij.gui.Plot.ARROW_LEFT;
 import static ij.gui.Plot.ARROW_NORTH_EAST;
@@ -100,6 +102,7 @@ public class VectorPlotDrawing {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             initPlotDrawing(g2);
+            //todo draw legend
             for (IPlotObject plotObject : allPlotObjects) {
                 //todo mimic order of drawing, see drawContents
                 //  gonna ignore for now as this works
@@ -1042,7 +1045,7 @@ public class VectorPlotDrawing {
         if (shape == DIAMOND) size = (int) (size * 1.21);
         g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
         var localStroke = g.getStroke();
-        if (plotObject.offScreenDisplacementArrowX()) {
+        if (plotObject.offScreenDisplacementArrowX() && !(shape == Plot.AIJ_V_MARKER || shape == Plot.AIJ_LEGEND_ENTRY)) {
             if (x < plot.frame.x) {
                 lineWidth = 2;
                 g.setStroke(new BasicStroke(plot.sc(2)));
@@ -1072,7 +1075,7 @@ public class VectorPlotDrawing {
                 x = plot.frame.x + plot.frame.width - 1;
             }
         }
-        if (plotObject.offScreenDisplacementArrowY()) {
+        if (plotObject.offScreenDisplacementArrowY() && !(shape == Plot.AIJ_V_MARKER || shape == Plot.AIJ_LEGEND_ENTRY)) {
             if (y < plot.frame.y) {
                 lineWidth = 2;
                 g.setStroke(new BasicStroke(plot.sc(2)));
@@ -1171,6 +1174,86 @@ public class VectorPlotDrawing {
                 g.draw(new Line2D.Double(x + plot.sc(1), y - plot.sc(1), x + plot.sc(1), ybase - plot.sc(size / 2f)));
                 g.draw(new Line2D.Double(xend + plot.sc(size / 2f), y - plot.sc(1), x, y - plot.sc(1)));
                 g.draw(new Line2D.Double(xend + plot.sc(size / 2f), y - plot.sc(1), x + plot.sc(1), ybase - plot.sc(size / 2f)));
+                break;
+            case AIJ_LEGEND_ENTRY:
+                var clip = g.getClip();
+                g.setClip(null);
+                var split = plotObject.getLabel().split("\n", 2);
+                var label = split[1];
+                var data = split[0].split(";");
+                var marker = Integer.parseInt(data[0]);
+                var justification = Integer.parseInt(data[1]);
+                var stroke = g.getStroke();
+
+                // Draw Label
+                g.setStroke(new BasicStroke(plot.sc(1)));
+                setJustification(justification);
+                if (plotObject.getFont() != null) {
+                    g.setFont(plot.scFont(plotObject.getFont()));
+                }
+                var x0 = (int) leftMargin + (int) (plotObject.getxValues()[0] * frameWidth);
+                var y0 = (int) topMargin + (int) (plotObject.getyValues()[0] * frameHeight);
+                drawString(g, label, x0, y0);
+                g.setStroke(stroke);
+
+                // Draw Marker
+                var w = getStringWidth(g, label);
+                var cxx = cx;
+                if (justification == CENTER_JUSTIFY) {
+                    cxx -= w / 2;
+                } else if (justification == RIGHT_JUSTIFY) {
+                    cxx -= w;
+                }
+                if (marker != Plot.LINE) {
+                    var po = plotObject.clone();
+                    po.setShape(marker);
+                    drawShape(g, po, cxx - plot.sc(7), y0 - g.getFontMetrics().getHeight() / 2D, po.getMarkerSize(), -1);
+                } else {
+                    g.draw(new Line2D.Double(cxx - plot.sc(10), y0 - g.getFontMetrics().getHeight() / 2D,
+                            cxx - plot.sc(3), y0 - g.getFontMetrics().getHeight() / 2D));
+                }
+
+                g.setClip(clip);
+                break;
+            case AIJ_V_MARKER:
+                clip = g.getClip();
+                g.setClip(null);
+                setJustification(Plot.CENTER);
+                var lines = plotObject.getLabel().split("\n");
+                var stringBounds = getStringBounds(g, lines[0]);
+                var spacer = stringBounds.height;
+                var fm = g.getFontMetrics();
+                spacer = fm.getAscent();
+                var xLabelY = topMargin + frameHeight + fm.getHeight() * 5 / 4f + plot.sc(2);
+
+                if (lines.length == 3) {
+                    var xt = leftMargin + (plotObject.getxValues()[0] * frameWidth);
+                    var yt = topMargin + (plotObject.getyValues()[0] * frameHeight);
+
+                    drawString(g, lines[0], (int) xt, (int) (topMargin + frameHeight - plot.sc(1) - spacer * 3));
+                    drawString(g, lines[1], (int) xt, (int) (topMargin + frameHeight - plot.sc(2) - spacer));
+                    drawString(g, lines[2], (int) xt, (int) (xLabelY + spacer));
+                } else if (lines.length == 2) {
+                    var xt = leftMargin + (plotObject.getxValues()[0] * frameWidth);
+                    var yt = topMargin + (plotObject.getyValues()[0] * frameHeight);
+
+                    drawString(g, lines[0], (int) xt, (int) (topMargin + frameHeight - plot.sc(1) - spacer * 2));
+                    drawString(g, lines[1], (int) xt, (int) (topMargin + frameHeight - plot.sc(1)));
+                } else {
+                    var xt = leftMargin + (plotObject.getxValues()[0] * frameWidth);
+                    var yt = topMargin + (plotObject.getyValues()[0] * frameHeight) - (2 * spacer);
+
+                    for (int i = 0; i < lines.length; i++) {
+                        var l = lines[i];
+                        if (l.isEmpty()) {
+                            continue;
+                        }
+
+                        drawString(g, l, (int) xt, (int) (yt + i * spacer));
+                    }
+                }
+
+                g.setClip(clip);
                 break;
             /*case CUSTOM://todo implemnt
                 if (plotObject.macroCode==null || frame==null)

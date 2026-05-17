@@ -1,9 +1,10 @@
 package ij.astro.accessors;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 
-public interface IPlotObject {
+public interface IPlotObject extends Cloneable {
     //These constants are copied from PlotObject - they should match it!
 
     /** The serialVersionUID should not be modified, otherwise saved plots won't be readable any more */
@@ -126,4 +127,8 @@ public interface IPlotObject {
     boolean offScreenDisplacementArrowX();
 
     boolean offScreenDisplacementArrowY();
+
+    IPlotObject clone();
+
+    IPlotObject deepClone();
 }

@@ -5,7 +5,6 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
@@ -1941,8 +1940,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] > 0.0) {
                     llab = new StringBuilder(ylabel[curve] + " Residuals");
                     llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
-                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                    if (drawLegendEntry(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
                         legPosY += 18. / plotSizeY;
                     }
                 }
@@ -2072,8 +2070,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 if (useColumnName[curve] || useLegend[curve]) {
-                    if (drawLegendSymbol(marker[curve], (marker[curve] == Plot.DOT) ? 4 : 1, color[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                    if (drawLegendEntry(marker[curve], (marker[curve] == Plot.DOT) ? 4 : 1, color[curve], legPosY, llab.toString())) {
                         legPosY += 18. / plotSizeY;
                     }
                 }
@@ -2090,8 +2087,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
-                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                    if (drawLegendEntry(Plot.LINE, modelLineWidth[curve] + (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
                         legPosY += 18. / plotSizeY;
                     }
                 }
@@ -2099,8 +2095,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] <= 0.0) {
                     llab = new StringBuilder(ylabel[curve] + " Residuals");
                     llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
-                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                    if (drawLegendEntry(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
                         legPosY += 18. / plotSizeY;
                     }
                 }
@@ -2246,15 +2241,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.drawLine(dMarker2Value, preDmark2Ref - dashLength * dashCount, dMarker2Value, preDmark2Ref - dashLength * (dashCount + 1));
             }
             plot.setJustification(Plot.CENTER);
-            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 - (16.0 ) / plotSizeY, "Left");
-            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 + (4.0 ) / plotSizeY, threePlaces.format(dMarker2Value));
+            plot.addPoints(new float[]{(float) ((dMarker2Value - plotMinX) / (plotMaxX - plotMinX))}, new float[]{1}, null, Plot.AIJ_V_MARKER, "Left" + "\n" + threePlaces.format(dMarker2Value));
 
             numDashes = -10 + (postDMarker3Ref - plotMinY) / dashLength;     //plot dMarker3
             for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
                 plot.drawLine(dMarker3Value, postDMarker3Ref - dashLength * dashCount, dMarker3Value, postDMarker3Ref - dashLength * (dashCount + 1));
             }
-            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 - (16.0 ) / plotSizeY, "Right");
-            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 + (4.0 ) / plotSizeY, threePlaces.format(dMarker3Value));
+            plot.addPoints(new float[]{(float) ((dMarker3Value - plotMinX) / (plotMaxX - plotMinX))}, new float[]{1}, null, Plot.AIJ_V_MARKER, "Right" + "\n" + threePlaces.format(dMarker3Value));
 
             if (useDMarker1) { //plot dMarker1
                 if (nBefore1 + nAfter1 > 0) {
@@ -2265,9 +2258,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
                     plot.drawLine(dMarker1Value, preDmark1Ref - dashLength * dashCount, dMarker1Value, preDmark1Ref - dashLength * (dashCount + 1));
                 }
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 ) / plotSizeY, "Left");
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 ) / plotSizeY, "Trim");
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 ) / plotSizeY, threePlaces.format(dMarker1Value));
+                plot.addPoints(new float[]{(float) ((dMarker1Value - plotMinX) / (plotMaxX - plotMinX))}, new float[]{1}, null, Plot.AIJ_V_MARKER, "Left" + "\n" + "Trim" + "\n" + threePlaces.format(dMarker1Value));
             }
             if (useDMarker4) { //plot dMarker4
                 if (nBefore4 + nAfter4 > 0) {
@@ -2278,9 +2269,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
                     plot.drawLine(dMarker4Value, postDMarker4Ref - dashLength * dashCount, dMarker4Value, postDMarker4Ref - dashLength * (dashCount + 1));
                 }
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 ) / plotSizeY, "Right");
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 ) / plotSizeY, "Trim");
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 ) / plotSizeY, threePlaces.format(dMarker4Value));
+                plot.addPoints(new float[]{(float) ((dMarker4Value - plotMinX) / (plotMaxX - plotMinX))}, new float[]{1}, null, Plot.AIJ_V_MARKER, "Right" + "\n" + "Trim" + "\n" + threePlaces.format(dMarker4Value));
             }
         }
         if (showMFMarkers) drawVMarker(mfMarker1Value, "Meridian", "Flip", new Color(84, 201, 245));
@@ -4752,49 +4741,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.drawLine(vMarkerValue, preVmarkRef - dashLength * dashCount, vMarkerValue, preVmarkRef - dashLength * (dashCount + 1));
         }
         plot.setJustification(Plot.CENTER);
-        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 - (25.0 ) / plotSizeY, vMarkerTopText);
-        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 - (7.0 ) / plotSizeY, vMarkerBotText);
-        plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 + (33.0 ) / plotSizeY, threePlaces.format(vMarkerValue));
+        plot.addPoints(new float[]{(float) ((vMarkerValue - plotMinX) / (plotMaxX - plotMinX))}, new float[]{1}, null, Plot.AIJ_V_MARKER, vMarkerTopText + "\n" + vMarkerBotText + "\n" + threePlaces.format(vMarkerValue));
     }
 
-    static boolean drawLegendSymbol(int marker, int width, Color color, double legPosY, String llab) {
+    static boolean drawLegendEntry(int marker, int width, Color color, double legPosY, String llab) {
         if (color.getAlpha() == 0) return false;
-        double xShift = 6.0;
-        double yShift = 6.0;
-        Font font = new Font("Dialog", Font.PLAIN, 12);
-        int h = 0;
-        int w = 0;
-        if (mainpanel != null) {
-            Graphics g = mainpanel.getGraphics();
-            FontMetrics metrics = g.getFontMetrics(font);
-            h = metrics.getHeight();
-            w = (int) (metrics.stringWidth(llab) * 1.1) + 18;
-        }
         plot.setLineWidth(width);
-        if (legendRight) { xShift += w; } else if (!legendLeft) xShift += w / 2f;
         plot.setColor(color);
-        if (marker == Plot.DOT) {
-            xShift += 2;
-            yShift += 2;
-        } else if (marker == Plot.LINE) {
-            xShift += 7;
-            yShift += 2;
-        } else {
-            xShift += 3;
-            yShift += 3;
-        }
-        Dimension s = plot.getSize();
-        double x = plotMinX + (plotMaxX - plotMinX) * (legendPosX - xShift / (s.getWidth()));
-        double y = plotMinY + (plotMaxY - plotMinY) * (1 - legPosY + yShift / (s.getHeight()));
-        double[] xx = {x};
-        double[] yy = {y};
-        plot.setOffScreenDisplacementArrowControl(false, false);
-        if (marker != Plot.LINE) {
-            plot.addPoints(xx, yy, marker);
-        } else {
-            plot.drawLine(x, y, x + (plotMaxX - plotMinX) * 6.0 / (s.getWidth()), y);
-        }
-        plot.setOffScreenDisplacementArrowControl(drawOffscreenDisplacementArrowsX.get(),drawOffscreenDisplacementArrowsY.get());
+
+        var justification = legendRight ? Plot.RIGHT : (legendLeft ? Plot.LEFT : Plot.CENTER);
+        llab = marker + ";" + justification + "\n" + llab;
+        plot.setLineWidth(width);
+        plot.addPoints(new float[]{(float) (legendPosX)},
+                new float[]{(float) (legPosY)},
+                null, Plot.AIJ_LEGEND_ENTRY, llab);
         plot.setLineWidth(1);
         return true;
     }

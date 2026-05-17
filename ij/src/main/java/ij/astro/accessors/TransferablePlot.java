@@ -24,7 +24,7 @@ public record TransferablePlot(Plot plot) implements Transferable {
         }
     }
 
-    public TransferablePlot {//todo Can the copy button be added to the seeing profile stack display as well (would copy the currently displayed image)?
+    public TransferablePlot {
         if (plot == null) {
             throw new IllegalArgumentException("Plot may not be null");
         }

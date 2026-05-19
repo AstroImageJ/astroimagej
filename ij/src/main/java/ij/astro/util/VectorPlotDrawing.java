@@ -885,13 +885,11 @@ public class VectorPlotDrawing {
         int descent = g.getFontMetrics().getDescent();
 
         // Removed this check as ImageProcessor#drawString2 still draws even when false
-        if (cxx >= 0 /*&& cy - h >= 0*/) {
-            Java2.setAntialiasedText(g, true);
-            int baselineY = (h - descent) + cy - h;
-            var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
-            g.fill(gv.getOutline(cxx, baselineY));
-            cy += h;
-        }
+        Java2.setAntialiasedText(g, true);
+        int baselineY = (h - descent) + cy - h;
+        var gv = g.getFont().createGlyphVector(g.getFontRenderContext(), s);
+        g.fill(gv.getOutline(cxx, baselineY));
+        cy += h;
     }
 
     /**

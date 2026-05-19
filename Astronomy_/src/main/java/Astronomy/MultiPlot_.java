@@ -2297,7 +2297,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             var version = "AIJ " + IJ.getAstroVersion().split("[+]")[0];
             var pWid = plot.getSize().getWidth();
             var h = plot.getSize().getHeight();
-            plot.addLabel(1, (h + 43)/h, version);
+            plot.addLabel(1 - 10/pWid, (h + 43)/h, Plot.X_LABEL_V_ANCHOR + version);
         }
 
         if (showCleanedCount.get()) {
@@ -2306,7 +2306,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             var removedCount = FitOptimization.cleanedCount() + "/" + FitOptimization.oldestCleanedTableCount() + " Removed";
             var pWid = plot.getSize().getWidth();
             var h = plot.getSize().getHeight();
-            plot.addLabel(10/pWid, (h + 43)/h, removedCount);
+            plot.addLabel(10/pWid, (h + 43)/h, Plot.X_LABEL_V_ANCHOR + removedCount);
         }
 
         if (plotImage == null) {

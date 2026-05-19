@@ -773,7 +773,20 @@ public class VectorPlotDrawing {
                 int yt = (int) (type == IPlotObject.LABEL ? plot.scaleYtoPxl(plotObject.getY()) : topMargin + (int) (plotObject.getY() * frameHeight));
                 //todo bundle font to make it selectable/searchable, this is vectorized by default
                 // see https://github.com/rototor/pdfbox-graphics2d#rendering-text-using-fonts-vs-vectors
-                drawString(g, plotObject.getLabel(), xt, yt);
+                var label = plotObject.getLabel();
+
+                if (label.startsWith(Plot.X_LABEL_V_ANCHOR)) {
+                    label = label.substring(Plot.X_LABEL_V_ANCHOR.length());
+                    var pp = (IPlotProperties) plot.pp;
+                    var scFont = plot.scFont(pp.getFrame().getFont());
+                    var fm = g.getFontMetrics(pp.getxLabel().getFont() == null ? scFont.deriveFont(12f) : plot.scFont(pp.getxLabel().getFont()).deriveFont(12f));
+                    var y = topMargin + frameHeight + fm.getHeight() * 5 / 4f + plot.sc(2);
+                    y += plot.simpleXAxis() ? -fm.getHeight() : plot.sc(1);
+                    y += fm.getHeight() + fm.getDescent();
+                    yt = (int) (y);
+                }
+
+                drawString(g, label, xt, yt);
                 break;
             default:
                 break;

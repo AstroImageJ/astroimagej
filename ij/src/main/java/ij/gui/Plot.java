@@ -57,6 +57,8 @@ import ij.util.Tools;
  * @author Michael Schmid (axis grid/ticks, resizing/panning/changing range, high-resolution, serialization)
  */
 public class Plot implements Cloneable {
+	@AstroImageJ(reason = "Position labels vertically inline with the x label")
+	public static final String X_LABEL_V_ANCHOR = "$AIJ-xLabelVAnchor";
 
 	/** Text justification. */
 	public static final int LEFT=ImageProcessor.LEFT_JUSTIFY, CENTER=ImageProcessor.CENTER_JUSTIFY, RIGHT=ImageProcessor.RIGHT_JUSTIFY;
@@ -3217,7 +3219,11 @@ public class Plot implements Cloneable {
 		return n==Math.round(n);
 	}
 
-	@AstroImageJ(reason = "widen access; don't draw transparent objects", modified = true)
+	@AstroImageJ(reason = """
+            widen access
+            don't draw transparent objects
+            support drawing labels inline with x axis label
+            """, modified = true)
 	protected void drawPlotObject(PlotObject plotObject, ImageProcessor ip) {
 		//var plotObject = (PlotObject) iPlotObject;
 		//IJ.log("DRAWING type="+plotObject.type+" lineWidth="+plotObject.lineWidth+" shape="+plotObject.shape);
@@ -3439,7 +3445,23 @@ public class Plot implements Cloneable {
 					ip.setFont(scFont(plotObject.getFont()));
 				int xt = type==PlotObject.LABEL ? scaleX(plotObject.x) : leftMargin + (int)(plotObject.x*frameWidth);
 				int yt = type==PlotObject.LABEL ? scaleY(plotObject.y) : topMargin + (int)(plotObject.y*frameHeight);
-				ip.drawString(plotObject.label, xt, yt);
+				var label = plotObject.label;
+
+				if (label.startsWith(Plot.X_LABEL_V_ANCHOR)) {
+					label = label.substring(Plot.X_LABEL_V_ANCHOR.length());
+					var scFont = scFont(pp.getFrame().getFont());
+					var oFont = ip.getFont();
+					var xLabelFont = pp.getxLabel().getFont() == null ? scFont.deriveFont(12f) : scFont(pp.getxLabel().getFont()).deriveFont(12f);
+					ip.setFont(xLabelFont);
+					var fm = ip.getFontMetrics();
+					var y = topMargin + frameHeight + fm.getHeight() * 5 / 4f + sc(2);
+					y += simpleXAxis() ? -fm.getHeight() : sc(1);
+					y += fm.getHeight() + fm.getDescent();
+					yt = (int) (y);
+					ip.setFont(oFont);
+				}
+
+				ip.drawString(label, xt, yt);
 				break;
 			case PlotObject.LEGEND:
 				drawLegend(plotObject, ip);

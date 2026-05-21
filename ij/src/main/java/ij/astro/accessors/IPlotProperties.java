@@ -8,4 +8,6 @@ public interface IPlotProperties {
     IPlotObject getyLabel();
 
     IPlotObject getLegend();
+
+    boolean antialiasedText();
 }

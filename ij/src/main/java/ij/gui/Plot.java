@@ -67,7 +67,8 @@ public class Plot implements Cloneable {
 	//These are saved in the flags of the PlotObject class; thus bits up to 0x0f are reserved
 	public static final int TOP_LEFT=0x90, TOP_RIGHT=0xA0, BOTTOM_LEFT=0xB0, BOTTOM_RIGHT=0xC0, AUTO_POSITION=0x80;
 	/** Masks out bits for legend positions; if all these bits are off, the legend is turned off */
-	static final int LEGEND_POSITION_MASK = 0xf0;
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static final int LEGEND_POSITION_MASK = 0xf0;
 	/** Legend has its curves in bottom-to-top sequence (otherwise top to bottom) */
 	public static final int LEGEND_BOTTOM_UP = 0x100;
 	/** Legend erases background (otherwise transparent) */
@@ -212,8 +213,10 @@ public class Plot implements Cloneable {
 	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
 	public static final int MIN_Y_GRIDSPACING = 30;	//minimum distance between grid lines or ticks along y at plot height 0
 	private final double MIN_LOG_RATIO = 3;				//If max/min ratio is less than this, force linear axis even if log required. should be >2
-	private static final int LEGEND_PADDING = 4;		//pixels around legend text etc
-	private static final int LEGEND_LINELENGTH = 20;	//length of lines in legend
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static final int LEGEND_PADDING = 4;		//pixels around legend text etc
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static final int LEGEND_LINELENGTH = 20;	//length of lines in legend
 	private static final int USUALLY_ENLARGE = 1, ALWAYS_ENLARGE = 2; //enlargeRange settings
 	private static final double RELATIVE_ARROWHEAD_SIZE = 0.2; //arrow heads have 1/5 of vector length
 	private static final int MIN_ARROWHEAD_LENGTH = 3;
@@ -3958,7 +3961,8 @@ public class Plot implements Cloneable {
 	}
 
 	/** Returns only indexed and sorted plot objects, if at least one label is indexed like "1__MyLabel" */
-	Vector<PlotObject> getIndexedPlotObjects(){
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public Vector<PlotObject> getIndexedPlotObjects(){
 		boolean withIndex = false;
 		int len = allPlotObjects.size();
 		String[] labels = new String[len];
@@ -4535,6 +4539,11 @@ public class Plot implements Cloneable {
     public void setAijPlot(boolean aijPlot) {
         pp.isAijPlot = aijPlot;
     }
+
+	@AstroImageJ(reason = "Support vector plot drawing")
+    public float getScale() {
+        return scale;
+    }
 }
 
 /** This class contains the properties of the plot, such as size, format, range, etc, except for the data+format (plot contents).
@@ -4615,6 +4624,11 @@ class PlotProperties implements Cloneable, Serializable, IPlotProperties {
 		return legend;
 	}
 
+	@Override
+	@AstroImageJ(reason = "Implement IPlotProperties for Vector Plot saving")
+	public boolean antialiasedText() {
+		return antialiasedText;
+	}
 } // class PlotProperties
 
 /** This class contains the data and properties for displaying a curve, a set of arrows, a line or a label in a plot,

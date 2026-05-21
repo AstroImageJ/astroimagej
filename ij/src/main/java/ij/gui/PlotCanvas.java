@@ -284,18 +284,16 @@ public class PlotCanvas extends ImageCanvas {
 
     /** Returns the index of the arrow for modifying the range when the mouse click was
      *  at such an arrow, otherwise -1 */
-	@AstroImageJ(reason = "Support scalable plots", modified = true)
-    int getRangeArrowIndex(MouseEvent e) {
-        ImageWindow win = imp.getWindow();
-        int rangeArrowIndex = -1;
-        if (win instanceof PlotWindow) {
-            var scale = plot.isAijPlot() ? Prefs.getGuiScale() : 1;
-            var x = (int) (e.getX() / scale);
-		    var y = (int) (e.getY() / scale);
-            rangeArrowIndex = ((PlotWindow)win).getRangeArrowIndex(x, y);
-        }
-        return rangeArrowIndex;
-    }
+	int getRangeArrowIndex(MouseEvent e) {
+		ImageWindow win = imp.getWindow();
+		int rangeArrowIndex = -1;
+		if (win instanceof PlotWindow) {
+			int x = e.getX();
+			int y = e.getY();
+			rangeArrowIndex = ((PlotWindow)win).getRangeArrowIndex(x, y);
+		}
+		return rangeArrowIndex;
+	}
 
 	@Override
 	@AstroImageJ(reason = "Support scalable plots", modified = true)

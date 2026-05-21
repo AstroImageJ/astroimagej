@@ -90,6 +90,8 @@ a list ImageProcessors of same type and size.
 */
 
 public class ImagePlus implements ImageObserver, Measurements, Cloneable {
+	@AstroImageJ(reason = "Fix memory leak with virtual stacks and image listeners")
+	public static final ScopedValue<Boolean> TEMPORARY_IMAGE = ScopedValue.newInstance();
 
 	/** 8-bit grayscale (unsigned)*/
 	public static final int GRAY8 = 0;
@@ -3114,8 +3116,9 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 		Clipboard.copyToSystem(this);
 	}
 
+	@AstroImageJ(reason = "Fix memory leak with virtual stacks and image listeners", modified = true)
 	protected void notifyListeners(final int id) {
-		if (temporary)
+		if (temporary || TEMPORARY_IMAGE.orElse(false))
 			return;
 	    final ImagePlus imp = this;
 		EventQueue.invokeLater(new Runnable() {

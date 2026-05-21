@@ -1,6 +1,47 @@
 package ij.io;
 
-import ij.*;
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+
+import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.LookAndFeel;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.LookUpTable;
+import ij.Menus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FitsExtensionUtil;
@@ -8,7 +49,14 @@ import ij.astro.util.ZipOpenerUtil;
 import ij.gui.Roi;
 import ij.macro.Interpreter;
 import ij.measure.ResultsTable;
-import ij.plugin.*;
+import ij.plugin.AVI_Reader;
+import ij.plugin.DICOM;
+import ij.plugin.FolderOpener;
+import ij.plugin.HyperStackConverter;
+import ij.plugin.ImageInfo;
+import ij.plugin.LutLoader;
+import ij.plugin.PluginInstaller;
+import ij.plugin.TextReader;
 import ij.plugin.frame.Editor;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
@@ -18,24 +66,6 @@ import ij.process.ImageProcessor;
 import ij.process.LUT;
 import ij.text.TextWindow;
 import ij.util.Java2;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /** Opens tiff (and tiff stacks), dicom, fits, pgm, jpeg, bmp or
 	gif images, and look-up tables, using a file open dialog or a path.
@@ -430,9 +460,10 @@ public class Opener {
 				return null;
 		}
 	}
-	
+
+	@AstroImageJ(reason = "Fix memory leak with virtual stacks and image listeners", modified = true)
 	public ImagePlus openTempImage(String directory, String name) {
-		ImagePlus imp = openImage(directory, name);
+		ImagePlus imp = ScopedValue.where(ImagePlus.TEMPORARY_IMAGE, true).call(() -> openImage(directory, name));
 		if (imp!=null)
 			imp.setTemporary();
 		return imp;

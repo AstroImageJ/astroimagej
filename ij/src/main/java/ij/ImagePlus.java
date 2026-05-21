@@ -35,6 +35,7 @@ import ij.gui.Line;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.Plot;
+import ij.gui.PlotVirtualStack;
 import ij.gui.PlotWindow;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
@@ -526,6 +527,13 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 		if (getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null && win instanceof PlotWindow) {
 			Plot plot = (Plot)(getProperty(VectorPlotDrawing.PROPERTY_KEY));
 			img = plot.getBufferedImage(width, height);
+			return;
+		}
+
+		if (stack instanceof PlotVirtualStack plotVirtualStack) {
+			var plot = plotVirtualStack.getPlot(currentSlice);
+			img = plot.getBufferedImage(width, height);
+			return;
 		}
 
 		if (ip!=null)
@@ -676,8 +684,13 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	/** Returns this image as a AWT image. */
 	@AstroImageJ(reason = "Support for Vectorized and Scaled plots", modified = true)
 	public Image getImage() {
-		if (getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null && win instanceof PlotWindow) {
+		if (img==null && getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null && win instanceof PlotWindow) {
 			Plot plot = (Plot)(getProperty(VectorPlotDrawing.PROPERTY_KEY));
+			img = plot.getBufferedImage(width, height);
+			return img;
+		}
+		if (img==null && stack instanceof PlotVirtualStack plotVirtualStack) {
+			var plot = plotVirtualStack.getPlot(currentSlice);
 			img = plot.getBufferedImage(width, height);
 			return img;
 		}

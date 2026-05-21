@@ -10,7 +10,10 @@ import static ij.gui.Plot.ARROW_RIGHT;
 import static ij.gui.Plot.ARROW_SOUTH_EAST;
 import static ij.gui.Plot.ARROW_SOUTH_WEST;
 import static ij.gui.Plot.ARROW_UP;
+import static ij.gui.Plot.AUTO_POSITION;
 import static ij.gui.Plot.BAR;
+import static ij.gui.Plot.BOTTOM_LEFT;
+import static ij.gui.Plot.BOTTOM_RIGHT;
 import static ij.gui.Plot.BOX;
 import static ij.gui.Plot.CENTER;
 import static ij.gui.Plot.CIRCLE;
@@ -21,9 +24,16 @@ import static ij.gui.Plot.DIAMOND;
 import static ij.gui.Plot.DOT;
 import static ij.gui.Plot.FILLED;
 import static ij.gui.Plot.LEFT;
+import static ij.gui.Plot.LEGEND_BOTTOM_UP;
+import static ij.gui.Plot.LEGEND_LINELENGTH;
+import static ij.gui.Plot.LEGEND_PADDING;
+import static ij.gui.Plot.LEGEND_POSITION_MASK;
+import static ij.gui.Plot.LEGEND_TRANSPARENT;
 import static ij.gui.Plot.MIN_X_GRIDSPACING;
 import static ij.gui.Plot.RIGHT;
 import static ij.gui.Plot.SEPARATED_BAR;
+import static ij.gui.Plot.TOP_LEFT;
+import static ij.gui.Plot.TOP_RIGHT;
 import static ij.gui.Plot.TRIANGLE;
 import static ij.gui.Plot.X;
 import static ij.gui.Plot.X_GRID;
@@ -102,7 +112,6 @@ public class VectorPlotDrawing {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             initPlotDrawing(g2);
-            //todo draw legend
             for (IPlotObject plotObject : allPlotObjects) {
                 //todo mimic order of drawing, see drawContents
                 //  gonna ignore for now as this works
@@ -788,9 +797,204 @@ public class VectorPlotDrawing {
 
                 drawString(g, label, xt, yt);
                 break;
+            case IPlotObject.LEGEND:
+                drawLegend(plotObject, g);
             default:
                 break;
         }
+    }
+
+    /** Draw the legend */
+    void drawLegend(IPlotObject legendObject, Graphics2D g) {
+        var pp = (IPlotProperties) plot.pp;
+        g.setFont(plot.scFont(legendObject.getFont()));
+        int nLabels = 0;
+        int maxStringWidth = 0;
+        float maxLineThickness = 0;
+        Vector<? extends IPlotObject> usedPlotObjects = allPlotObjects;
+        Vector<? extends IPlotObject> indexedObjects = plot.getIndexedPlotObjects();
+        if(indexedObjects != null)
+            usedPlotObjects= indexedObjects;
+
+        for (IPlotObject plotObject : usedPlotObjects)
+            if (plotObject.getType() == IPlotObject.XY_DATA && !plotObject.hasFlag(IPlotObject.HIDDEN) && plotObject.getLabel() != null) {		//label exists: was set now or previously
+                nLabels++;
+                String label = plotObject.getLabel();
+                if (indexedObjects != null)
+                    label = label.substring(label.indexOf("__") + 2);
+                int w = getStringWidth(g, label);
+                if (w > maxStringWidth) maxStringWidth = w;
+                if (plotObject.getLineWidth() > maxLineThickness) maxLineThickness = plotObject.getLineWidth();
+            }
+        if (nLabels == 0) return;
+        if (pp.antialiasedText() && plot.getScale() > 1)		//fix incorrect width of large fonts
+            maxStringWidth = (int)((1 + 0.004*plot.getScale()) * maxStringWidth);
+        int frameThickness = plot.sc(legendObject.getLineWidth() > 0 ? legendObject.getLineWidth() : 1);
+        FontMetrics fm = g.getFontMetrics();
+        setJustification(LEFT);
+        int lineHeight = fm.getHeight();
+        int height = nLabels*lineHeight + 2*plot.sc(LEGEND_PADDING);
+        int width = maxStringWidth + plot.sc(3*LEGEND_PADDING + LEGEND_LINELENGTH + maxLineThickness);
+        int positionCode = legendObject.getFlags() & LEGEND_POSITION_MASK;
+        if (positionCode == AUTO_POSITION)
+            positionCode = autoLegendPosition(width, height, frameThickness);
+        Rectangle rect = legendRect(positionCode, width, height, frameThickness);
+        int x0 = rect.x;
+        int y0 = rect.y;
+
+        g.setColor(Color.white);
+        setLineWidth(1);
+        if (!legendObject.hasFlag(LEGEND_TRANSPARENT)) {
+            g.fillRect(x0, y0, width, height);
+        } else if (plot.hasFlag(X_GRID | Y_GRID)) {	//erase grid
+            var stroke = new BasicStroke(plot.sc(pp.getFrame().getLineWidth()));
+            g.setStroke(stroke);
+            g.setColor(pp.getFrame().getColor());
+
+            var oldClip = g.getClip();
+            var oldColor = g.getColor();
+            var oldStroke = g.getStroke();
+
+            g.clip(new Rectangle2D.Double(x0, y0, width, height));
+
+            // erase grid by overdrawing with background color
+            g.setColor(Color.white);
+            //g.setStroke(new BasicStroke(1f));
+
+            drawAxesTicksGridNumbers(g, plot.steps);
+
+            g.setColor(oldColor);
+            g.setStroke(oldStroke);
+            g.setClip(oldClip);
+        }
+        setLineWidth(frameThickness);
+        g.setColor(legendObject.getColor());
+        g.drawRect(x0-frameThickness/2, y0-frameThickness/2, width+frameThickness, height);
+        boolean bottomUp = legendObject.hasFlag(LEGEND_BOTTOM_UP);
+        int y = y0 + frameThickness/2 + plot.sc(LEGEND_PADDING) + lineHeight/2;
+        if (bottomUp) y += (nLabels-1) * lineHeight;
+        int xText = x0 + frameThickness/2 + plot.sc(2f*LEGEND_PADDING + LEGEND_LINELENGTH + maxLineThickness);
+        int xMarker = x0 + frameThickness/2 + plot.sc(LEGEND_PADDING + 0.5f*(LEGEND_LINELENGTH + maxLineThickness));
+        int xLine0 = x0 + frameThickness/2 + plot.sc(LEGEND_PADDING) + 1;
+        for (IPlotObject plotObject : usedPlotObjects)
+            if (plotObject.getType() == IPlotObject.XY_DATA && !plotObject.hasFlag(IPlotObject.HIDDEN) && plotObject.getLabel() != null) {		//label exists: was set now or previously
+                int shape = plotObject.getShape();
+                if (shape == SEPARATED_BAR) shape = BOX; //for bar plots, draw a square in the legend
+                int yShiftLine = 0;
+                if (shape == FILLED || shape == BAR && plotObject.getColor2() != null)  //shift line up to make space for fill pattern
+                    yShiftLine = plot.sc(0.1f*legendObject.getFontSize() + 0.3f*plotObject.getLineWidth());
+                int markerSize = plotObject.getMarkerSize();
+                if (plotObject.getShape() == SEPARATED_BAR && markerSize < 0.6*legendObject.getFontSize())
+                    markerSize = 2*(int)(0.3*legendObject.getFontSize()) + 1; // for 'separated bar', a larger box (an odd number, to have it centered)
+                if (plotObject.hasFilledMarker() || (plotObject.getShape() == SEPARATED_BAR && plotObject.getColor2() != null)) {
+                    g.setColor(plotObject.getColor2());
+                    fillShape(g, shape, xMarker, y, markerSize);
+                } else if (yShiftLine != 0) {  //fill area below line (shape=FILLED or BAR)
+                    g.setColor(plotObject.getColor2() == null ? plotObject.getColor() : plotObject.getColor2());
+                    g.fillRect(xLine0, y-yShiftLine, 2*(xMarker - xLine0)+1, yShiftLine+(int)(0.3*legendObject.getFontSize()));
+                }
+                int lineWidth = plot.sc(plotObject.getLineWidth());
+                if (lineWidth < 1) lineWidth = 1;
+                setLineWidth(lineWidth);
+                if (plotObject.hasCurve() || plotObject.getShape()==BAR) {
+                    Color c = plotObject.getShape() == CONNECTED_CIRCLES ?
+                            (plotObject.getColor2() == null ? Color.black : plotObject.getColor2()) :
+                            plotObject.getColor();
+                    g.setColor(c);
+                    g.fillRect(xLine0, y-lineWidth/2-yShiftLine, 2*(xMarker - xLine0)+1, lineWidth); //draw line as a rectangle
+                }
+                if (plotObject.hasMarker() || plotObject.getShape() == SEPARATED_BAR) {
+                    Font saveFont = g.getFont();
+                    g.setColor(plotObject.getColor());
+                    drawShape(g, plotObject, xMarker, y, markerSize, -1);
+                    if (plotObject.getShape()==CUSTOM) g.setFont(saveFont);
+                }
+                g.setColor(plotObject.getColor());
+                setLineWidth(frameThickness);
+                String label = plotObject.getLabel();
+                if (indexedObjects != null){
+                    int start = label.indexOf("__");
+                    if(start >=0)
+                        label = label.substring(start+2);
+                }
+                drawString(g, label, xText, y+ lineHeight/2);
+                y += bottomUp ? -lineHeight : lineHeight;
+            }
+    }
+
+    /** The legend area; positionCode should be TOP_LEFT, TOP_RIGHT, etc. */
+    Rectangle legendRect(int positionCode, int width, int height, int frameThickness)  {
+        boolean leftPosition = positionCode == TOP_LEFT || positionCode == BOTTOM_LEFT;
+        boolean topPosition	 = positionCode == TOP_LEFT || positionCode == TOP_RIGHT;
+        var x0 = (leftPosition) ?
+                leftMargin + plot.sc(2*LEGEND_PADDING) + frameThickness/2D :
+                leftMargin + frameWidth - width - plot.sc(2*LEGEND_PADDING) - frameThickness/2D;
+        var y0 = (topPosition) ?
+                topMargin + plot.sc(LEGEND_PADDING) + frameThickness/2D :
+                topMargin + frameHeight - height - plot.sc(LEGEND_PADDING) + frameThickness/2D;
+        if (plot.hasFlag(Y_TICKS))
+            x0 += (leftPosition ? 1 : -1) * plot.sc(plot.tickLength - LEGEND_PADDING);
+        if (plot.hasFlag(X_TICKS))
+            y0 += (topPosition ? 1 : -1) * plot.sc(plot.tickLength - LEGEND_PADDING/2F);
+        return new Rectangle((int) x0, (int) y0, width, height);
+    }
+
+    int autoLegendPosition(int width, int height, int frameThickness) {
+        int[] candidates = {TOP_RIGHT, TOP_LEFT, BOTTOM_RIGHT, BOTTOM_LEFT};
+        int bestPosition = TOP_RIGHT;
+        int minHits = Integer.MAX_VALUE;
+
+        for (int positionCode : candidates) {
+            Rectangle rect = legendRect(positionCode, width, height, frameThickness);
+            int hits = countPlotPointsInRect(rect);
+
+            if (hits < minHits) {
+                minHits = hits;
+                bestPosition = positionCode;
+            }
+        }
+
+        return bestPosition;
+    }
+
+    private int countPlotPointsInRect(Rectangle rect) {
+        int hits = 0;
+
+        Vector<? extends IPlotObject> usedPlotObjects = allPlotObjects;
+        Vector<? extends IPlotObject> indexedObjects = plot.getIndexedPlotObjects();
+        if (indexedObjects != null) usedPlotObjects = indexedObjects;
+
+        int pad = plot.sc(LEGEND_PADDING + 2);
+        Rectangle expanded = new Rectangle(rect);
+        expanded.grow(pad, pad);
+
+        for (IPlotObject plotObject : usedPlotObjects) {
+            if (plotObject.getType() != IPlotObject.XY_DATA || plotObject.hasFlag(IPlotObject.HIDDEN)) {
+                continue;
+            }
+
+            float[] xs = plotObject.getxValues();
+            float[] ys = plotObject.getyValues();
+            if (xs == null || ys == null) continue;
+
+            int n = Math.min(xs.length, ys.length);
+            for (int i = 0; i < n; i++) {
+                float x = xs[i];
+                float y = ys[i];
+                if (Float.isNaN(x) || Float.isNaN(y)) continue;
+                if (plot.logXAxis && x <= 0) continue;
+                if (plot.logYAxis && y <= 0) continue;
+
+                double px = plot.scaleXtoPxl(x);
+                double py = plot.scaleYtoPxl(y);
+
+                if (expanded.contains(px, py)) {
+                    hits++;
+                }
+            }
+        }
+
+        return hits;
     }
 
     private void drawArrow(Graphics2D g, double x1, double y1, double x2, double y2, double size) {

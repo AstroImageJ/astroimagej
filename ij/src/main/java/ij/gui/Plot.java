@@ -1901,6 +1901,10 @@ public class Plot implements Cloneable {
 			p.ip = null;
 			p.imp = null;
 			p.pp = pp.clone();
+            if (isAijPlot && !VectorPlotDrawing.SCALED_PLOT.orElse(true)) {
+                p.pp.width = (int)(pp.width / Prefs.getGuiScale());
+				p.pp.height = (int)(pp.height / Prefs.getGuiScale());
+            }
 			if (!plotDrawn) p.getInitialMinAndMax();
 			//scaledPlot.setScale(scale);
 			//scaledPlot.setAntialiasedText(antialiasedText);

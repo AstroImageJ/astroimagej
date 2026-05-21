@@ -100,7 +100,7 @@ public record WcsShape(List<WCSCurve> curves) {
     }
 
     public static WcsShape createCommonRegion(ImagePlus imp, Component ref) {
-        return createCommonRegion(imp, 1, imp.getStackSize()+1, ref);
+        return createCommonRegion(imp, 1, imp.getStackSize(), ref);
     }
 
     public static WcsShape createCommonRegion(ImagePlus imp, int start, int end) {
@@ -112,7 +112,7 @@ public record WcsShape(List<WCSCurve> curves) {
         WCS initial = null;
 
         var monitor = new ProgressMonitor(ref, "Calculating WCS Common Region", "", 0, end-start);
-        for (int i = start; i < end; i++) {
+        for (int i = start; i < end+1; i++) {
             if (monitor.isCanceled()) {
                 return null;
             }

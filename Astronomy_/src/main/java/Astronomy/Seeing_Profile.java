@@ -1,6 +1,15 @@
 package Astronomy;// Seeing_Profile.java
 
-import astroj.*;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.text.DecimalFormat;
+import java.util.Locale;
+
+import astroj.ApertureRoi;
+import astroj.AstroStackWindow;
+import astroj.Centroid;
+import astroj.IJU;
+import astroj.OverlayCanvas;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -11,10 +20,6 @@ import ij.gui.PlotWindow;
 import ij.measure.Calibration;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-
-import java.awt.*;
-import java.text.DecimalFormat;
-import java.util.Locale;
 
 /**
  * Plots radial profile of star-like object.
@@ -379,6 +384,7 @@ public class Seeing_Profile implements PlugInFilter
         plotOptions += ij.gui.Plot.X_NUMBERS;
         plotOptions += ij.gui.Plot.Y_NUMBERS;
         if (plot == null) plot = new Plot ("Seeing Profile","Radius ["+cal.getUnits()+"]","ADU",nullX,nullY,plotOptions);
+        plot.setAijPlot(true);
         plot.setSize(plotWidth, plotHeight);
         plot.setLimits (xMin, xMax, yMin, yMax);
         double xPixels = plotWidth - (Plot.LEFT_MARGIN+Plot.RIGHT_MARGIN+1);

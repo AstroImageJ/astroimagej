@@ -2324,6 +2324,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotWindow.addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent e) {
+                    if (suppressDataUpdate) {
+                        return;
+                    }
                     updatePlotEnabled = false;
 
                     var y = (int) (plot.getSize().height / Prefs.getGuiScale());

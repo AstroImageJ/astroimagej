@@ -420,14 +420,16 @@ public class GUI {
 
         if (comp instanceof JSlider jSlider) {
 			var table = jSlider.getLabelTable();
-            //noinspection unchecked
-            table.elements().asIterator().forEachRemaining(label -> {
-                if (label instanceof JLabel jLabel) {
-					scale(jLabel, factor, processed);
-                }
-			});
-			jSlider.setLabelTable(table);
-		}
+            if (table != null) {
+				//noinspection unchecked
+                table.elements().asIterator().forEachRemaining(label -> {
+                    if (label instanceof JLabel jLabel) {
+                        scale(jLabel, factor, processed);
+                    }
+                });
+                jSlider.setLabelTable(table);
+            }
+        }
 
 		if (comp instanceof JTable jTable) {
 			jTable.setRowHeight((int) ((jTable.getRowHeight() * factor)));

@@ -3948,7 +3948,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         } else if (b == azimuthalAverageMenuItem) {
             IJ.runPlugIn("Azimuthal_Average", "imp");
         } else if (b == threeDSurfacePlotMenuItem) {
-            IJ.runPlugIn("Interactive_3D_Surface_Plot", "");
+            IJ.runPlugIn("plugins.volumetric.Interactive_3D_Surface_Plot", "");
         }
 
 

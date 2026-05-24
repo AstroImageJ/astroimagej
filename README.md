@@ -134,6 +134,9 @@ Licensed under [BSD-3-clause](https://www.optinav.info/Stack-Sorter.htm#:~:text=
 ### [Json Simple](https://github.com/fangyidong/json-simple)
 Licensed under [Apache 2.0](https://github.com/fangyidong/json-simple?tab=Apache-2.0-1-ov-file).
 
+### [Interactive 3D Plot](https://github.com/fiji/Interactive_3D_Surface_Plot)
+Licensed under [GPL 3.0](https://github.com/fiji/Interactive_3D_Surface_Plot/blob/master/LICENSE.txt)
+
 ## Sponsors
 <table>
  <tbody>

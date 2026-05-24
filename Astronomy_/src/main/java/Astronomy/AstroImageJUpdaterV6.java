@@ -60,9 +60,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
 import ij.astro.gui.ToolTipRenderer;
-import ij.astro.io.ConfigHandler;
 import ij.astro.io.prefs.Property;
-import ij.astro.logging.AIJLogger;
 import ij.astro.util.ProgressTrackingInputStream;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
@@ -201,7 +199,10 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         }
 
         if (fileEntry == null) {
-            IJ.error("Unable to find file entry for current system.");
+            IJ.error("""
+                No compatible installer was found for your system.
+                This AstroImageJ release may not support your platform yet.
+                """);
             return;
         }
 
@@ -605,105 +606,33 @@ public class AstroImageJUpdaterV6 implements PlugIn {
         enableBetaBuilds.addActionListener(_ -> ENABLE_BETAS.set(enableBetaBuilds.isSelected()));
         enableAlphaBuilds.addActionListener(_ -> ENABLE_ALPHAS.set(enableAlphaBuilds.isSelected()));
 
-        ENABLE_DAILY_BUILDS.addListener(((key, newValue) -> {
+        Property.PropertyChangeListener<Boolean> refreshSelector = ((_, _) -> {
             var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
 
-            if (newValue) {
+            if (ENABLE_DAILY_BUILDS.get())
                 filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
-            }
 
-            if (ENABLE_PRERELEASES.get()) {
+            if (ENABLE_PRERELEASES.get())
                 filter.add(MetaVersion.ReleaseType.PRERELEASE);
-            }
 
-            if (ENABLE_ALPHAS.get()) {
+            if (ENABLE_ALPHAS.get())
                 filter.add(MetaVersion.ReleaseType.ALPHA);
-            }
 
-            if (ENABLE_BETAS.get()) {
+            if (ENABLE_BETAS.get())
                 filter.add(MetaVersion.ReleaseType.BETA);
-            }
 
-            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
+            var filtered = versions.stream()
+                    .filter(v -> filter.contains(v.releaseType()))
+                    .toList();
 
             selector.removeAllItems();
             selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
-        }));
+        });
 
-        ENABLE_PRERELEASES.addListener(((key, newValue) -> {
-            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
-
-            if (newValue) {
-                filter.add(MetaVersion.ReleaseType.PRERELEASE);
-            }
-
-            if (ENABLE_DAILY_BUILDS.get()) {
-                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
-            }
-
-            if (ENABLE_ALPHAS.get()) {
-                filter.add(MetaVersion.ReleaseType.ALPHA);
-            }
-
-            if (ENABLE_BETAS.get()) {
-                filter.add(MetaVersion.ReleaseType.BETA);
-            }
-
-            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
-
-            selector.removeAllItems();
-            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
-        }));
-
-        ENABLE_ALPHAS.addListener(((key, newValue) -> {
-            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
-
-            if (newValue) {
-                filter.add(MetaVersion.ReleaseType.ALPHA);
-            }
-
-            if (ENABLE_DAILY_BUILDS.get()) {
-                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
-            }
-
-            if (ENABLE_PRERELEASES.get()) {
-                filter.add(MetaVersion.ReleaseType.PRERELEASE);
-            }
-
-            if (ENABLE_BETAS.get()) {
-                filter.add(MetaVersion.ReleaseType.BETA);
-            }
-
-            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
-
-            selector.removeAllItems();
-            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
-        }));
-
-        ENABLE_BETAS.addListener(((key, newValue) -> {
-            var filter = EnumSet.of(MetaVersion.ReleaseType.RELEASE);
-
-            if (newValue) {
-                filter.add(MetaVersion.ReleaseType.BETA);
-            }
-
-            if (ENABLE_DAILY_BUILDS.get()) {
-                filter.add(MetaVersion.ReleaseType.DAILY_BUILD);
-            }
-
-            if (ENABLE_ALPHAS.get()) {
-                filter.add(MetaVersion.ReleaseType.ALPHA);
-            }
-
-            if (ENABLE_PRERELEASES.get()) {
-                filter.add(MetaVersion.ReleaseType.PRERELEASE);
-            }
-
-            var filtered = versions.stream().filter(v -> filter.contains(v.releaseType())).toList();
-
-            selector.removeAllItems();
-            selector.setModel(new DefaultComboBoxModel<>(new Vector<>(filtered)));
-        }));
+        ENABLE_PRERELEASES.addListener(refreshSelector);
+        ENABLE_DAILY_BUILDS.addListener(refreshSelector);
+        ENABLE_ALPHAS.addListener(refreshSelector);
+        ENABLE_BETAS.addListener(refreshSelector);
 
         updateCheckOnStartup.addActionListener(_ -> {
             Prefs.set(DO_UPDATE_NOTIFICATION.substring(1), updateCheckOnStartup.isSelected());

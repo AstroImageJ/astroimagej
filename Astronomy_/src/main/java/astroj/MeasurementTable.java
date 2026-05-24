@@ -2,27 +2,34 @@
 
 package astroj;
 
-import Astronomy.MultiPlot_;
-import Astronomy.multiplot.table.MeasurementsWindow;
-import Astronomy.multiplot.table.util.UpdateEvent;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.WindowManager;
-import ij.measure.ResultsTable;
-import ij.util.Tools;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Frame;
+import java.awt.TextArea;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
+
+import javax.swing.SwingUtilities;
+
+import Astronomy.MultiPlot_;
+import Astronomy.multiplot.table.MeasurementsWindow;
+import Astronomy.multiplot.table.util.UpdateEvent;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.astro.util.FileAssociationHandler;
+import ij.measure.ResultsTable;
+import ij.util.Tools;
 
 
 /**
@@ -33,6 +40,12 @@ import java.util.regex.Pattern;
  * @date 2006-Sep-11
  */
 public class MeasurementTable extends ResultsTable {
+    public static FileAssociationHandler.FileType FILTERED_XLS =
+            new FileAssociationHandler.FileType(".xls",
+                    new int[]{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, true);
+    public static  FileAssociationHandler.FileType EXCEL_XLS =
+            new FileAssociationHandler.FileType(".xls",
+                    new int[]{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}, false);
     public static String PREFIX = "Measurements";
     public static String RESULTS = "Results";
     public static int DEFAULT_DECIMALS = 6;
@@ -124,6 +137,13 @@ public class MeasurementTable extends ResultsTable {
         MeasurementTable table;
 
         var path = Path.of(filename);
+
+        if (EXCEL_XLS.matches(path)) {
+            IJ.error("Excel files are not supported for measurement tables. " +
+                    "Please convert the file to CSV/TSV format and try again.");
+            return null;
+        }
+
         try(var stream = Files.lines(path)) {
             var tac = new TableAccumulator(path);
             stream.forEachOrdered(tac::accept);

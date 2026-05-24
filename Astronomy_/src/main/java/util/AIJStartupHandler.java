@@ -55,7 +55,13 @@ public class AIJStartupHandler implements PlugIn {
 
                     MultiPlot_.loadDataOpenConfig(table, p.toString());
                 }
-            }, true, Prefs.defaultResultsExtension(), ".tbl", ".csv", ".tsv", ".xls");
+            }, true, new FileAssociationHandler.FileType(Prefs.defaultResultsExtension()),
+                    new FileAssociationHandler.FileType(".tbl"),
+                    new FileAssociationHandler.FileType(".csv"),
+                    new FileAssociationHandler.FileType(".tsv"),
+                    // Filter out binary excel files
+                    MeasurementTable.FILTERED_XLS
+            );
     private static final AssociationMapper multiplotFitsTableHandler =
             new AssociationMapper(p -> {
                 if (FitsExtensionUtil.isFitsFile(p.toString())) {

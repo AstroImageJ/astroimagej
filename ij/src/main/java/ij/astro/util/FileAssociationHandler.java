@@ -1,13 +1,15 @@
 package ij.astro.util;
 
-import ij.io.Opener;
-
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+
+import ij.io.Opener;
 
 /**
  * Handles the registration and execution of file handlers.
@@ -74,6 +76,17 @@ public final class FileAssociationHandler {
             }, opener, matchComplete);
         }
 
+        public AssociationMapper(BiConsumer<Path, Set<Opener.OpenOption>> opener, boolean matchComplete, final FileType... fileTypes) {
+            this(p -> {
+                for (FileType fileType : fileTypes) {
+                    if (fileType.matches(p)) {
+                        return true;
+                    }
+                }
+                return false;
+            }, opener, matchComplete);
+        }
+
         public AssociationMapper(BiConsumer<Path, Set<Opener.OpenOption>> opener, final String... fileExtensions) {
             this(opener, false, fileExtensions);
         }
@@ -92,6 +105,53 @@ public final class FileAssociationHandler {
                 return matchComplete ? MapperCase.MATCHES_AND_DONE : MapperCase.MATCHES;
             }
             return MapperCase.DOES_NOT_MATCH;
+        }
+    }
+
+    /**
+     * @param extension the file extension to check for.
+     * @param magicNumber the magic number to check for.
+     * @param mismatchExpected whether the magic number is expected to be different from the file's magic number.
+     */
+    public record FileType(String extension, int[] magicNumber, boolean mismatchExpected) {
+        public FileType(String extension) {
+            this(extension, new int[0], false);
+        }
+
+        public boolean matches(Path path) {
+            if (mismatchExpected) {
+                return matchesExtension(path) && !matchesMagicNumber(path);
+            }
+
+            return matchesExtension(path) && matchesMagicNumber(path);
+        }
+
+        private boolean matchesExtension(Path path) {
+            return path.toString().endsWith(extension);
+        }
+
+        private boolean matchesMagicNumber(Path path) {
+            if (magicNumber.length > 0) {
+                try (var is = Files.newInputStream(path)) {
+                    var fileMagicNumber = new byte[magicNumber.length];
+                    if (is.read(fileMagicNumber) != magicNumber.length) {
+                        return false;
+                    }
+
+                    for (int i = 0; i < fileMagicNumber.length; i++) {
+                        if (Byte.toUnsignedInt(fileMagicNumber[i]) != this.magicNumber[i]) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 

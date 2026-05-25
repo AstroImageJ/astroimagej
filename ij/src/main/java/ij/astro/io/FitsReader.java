@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -108,7 +109,7 @@ public class FitsReader implements AutoCloseable {
 
         IJ.showStatus("Opening: " + directory + fileName);
 
-        if (path.contains(".zip")) {
+        if (isFileWithinZip(path)) {
             var s = path.split("\\.zip");
 
             try (var zip = new ZipFile(s[0] + ".zip")) {
@@ -120,6 +121,14 @@ public class FitsReader implements AutoCloseable {
         }
 
         return new FitsReader(Path.of(path), directory, fileName);
+    }
+
+    private static boolean isFileWithinZip(String path) {
+        if (path.contains(".zip")) {
+            return Files.notExists(Path.of(path));
+        }
+
+        return false;
     }
 
     /**

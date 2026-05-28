@@ -530,7 +530,7 @@ public class Plot implements Cloneable {
 		if (ip != null && width == ip.getWidth() && height == ip.getHeight())
 			return;
 		Dimension minSize = getMinimumSize();
-		if (pp.isAijPlot) {
+		if (isAijPlot()) {
 			pp.width = (int) (Math.max(width, minSize.width) * Prefs.getGuiScale());
 			pp.height = (int) (Math.max(height, minSize.height) * Prefs.getGuiScale());
 		} else {
@@ -1904,7 +1904,7 @@ public class Plot implements Cloneable {
 			p.ip = null;
 			p.imp = null;
 			p.pp = pp.clone();
-            if (p.pp.isAijPlot && !VectorPlotDrawing.SCALED_PLOT.orElse(true)) {
+            if (p.isAijPlot() && !VectorPlotDrawing.SCALED_PLOT.orElse(true)) {
                 p.pp.width = (int)(pp.width / Prefs.getGuiScale());
 				p.pp.height = (int)(pp.height / Prefs.getGuiScale());
             }
@@ -1938,7 +1938,7 @@ public class Plot implements Cloneable {
 	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double descaleX(int x) {
 		if (xMin == xMax) return xMin;
-        if (pp.isAijPlot) {
+        if (isAijPlot()) {
             x = (int) (x / Prefs.getGuiScale());
         }
         double xv = (x-xBasePxl)/xScale + xMin;
@@ -1951,7 +1951,7 @@ public class Plot implements Cloneable {
 	@AstroImageJ(reason = "Support scalable plots", modified = true)
 	public double descaleY(int y) {
 		if (yMin == yMax) return yMin;
-        if (pp.isAijPlot) {
+        if (isAijPlot()) {
             y = (int) (y / Prefs.getGuiScale());
         }
         double yv = (yBasePxl-y)/yScale +yMin;
@@ -2130,7 +2130,7 @@ public class Plot implements Cloneable {
 
 	@AstroImageJ(reason = "Support scaled plots")
 	public BufferedImage getBufferedImage(int width, int height) {
-        if (pp.isAijPlot) {
+        if (isAijPlot()) {
 			draw();
 
 			var buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -2200,7 +2200,7 @@ public class Plot implements Cloneable {
 
 	@AstroImageJ(reason = "Support scaling plots")
 	void scaleFrame() {
-		if (!VectorPlotDrawing.SCALED_PLOT.orElse(true) || !pp.isAijPlot) {
+		if (!VectorPlotDrawing.SCALED_PLOT.orElse(true) || !isAijPlot()) {
 			return;
 		}
 
@@ -4533,12 +4533,16 @@ public class Plot implements Cloneable {
 
 	@AstroImageJ(reason = "Support scaled plots")
     public boolean isAijPlot() {
-        return pp.isAijPlot;
+        return pp.aijPlotType != AijPlotType.BITMAPPED;
     }
 
 	@AstroImageJ(reason = "Support scaled plots")
     public void setAijPlot(boolean aijPlot) {
-        pp.isAijPlot = aijPlot;
+        if (aijPlot) {
+            pp.aijPlotType = AijPlotType.AIJ_PLOT;
+        } else {
+			pp.aijPlotType = AijPlotType.BITMAPPED;
+		}
     }
 
 	@AstroImageJ(reason = "Support vector plot drawing")
@@ -4567,7 +4571,7 @@ class PlotProperties implements Cloneable, Serializable, IPlotProperties {
 	boolean antialiasedText = true;
 	boolean isFrozen;							                    //modifications (size, range, contents) don't update the ImageProcessor
 	@AstroImageJ(reason = "Support scaled plots")
-	boolean isAijPlot;
+	AijPlotType aijPlotType = AijPlotType.BITMAPPED;
 
 	/** Returns an array of all PlotObjects defined as PlotProperties. Note that some may be null */
 	PlotObject[] getAllPlotObjects() {
@@ -4631,6 +4635,13 @@ class PlotProperties implements Cloneable, Serializable, IPlotProperties {
 		return antialiasedText;
 	}
 } // class PlotProperties
+
+@AstroImageJ(reason = "Support different scaled plots")
+enum AijPlotType {
+	AUTOMATIC,
+	AIJ_PLOT,
+	BITMAPPED,
+}
 
 /** This class contains the data and properties for displaying a curve, a set of arrows, a line or a label in a plot,
  *	as well as the legend, axis labels, and frame (including background and fonts of axis numbering).

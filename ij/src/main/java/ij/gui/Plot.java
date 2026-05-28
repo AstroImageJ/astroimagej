@@ -282,7 +282,8 @@ public class Plot implements Cloneable {
 	private int currentJustification = LEFT;
 	private boolean ignoreForce2Grid;               // after explicit setting of range (limits), ignore 'FORCE2GRID' flags
 	//private boolean snapToMinorGrid;  			// snap to grid when zooming to selection
-	private static double SEPARATED_BAR_WIDTH=0.5;  // for plots with separate bars (e.g. categories), fraction of space, 0.1-1.0
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static double SEPARATED_BAR_WIDTH=0.5;  // for plots with separate bars (e.g. categories), fraction of space, 0.1-1.0
 	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
 	public double[] steps;                                 // x & y interval between numbers, major ticks & grid lines, remembered for redrawing the grid
 	private int objectToReplace = -1;               // index in allPlotObjects, for replace

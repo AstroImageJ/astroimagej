@@ -32,6 +32,7 @@ import static ij.gui.Plot.LEGEND_TRANSPARENT;
 import static ij.gui.Plot.MIN_X_GRIDSPACING;
 import static ij.gui.Plot.RIGHT;
 import static ij.gui.Plot.SEPARATED_BAR;
+import static ij.gui.Plot.SEPARATED_BAR_WIDTH;
 import static ij.gui.Plot.TOP_LEFT;
 import static ij.gui.Plot.TOP_RIGHT;
 import static ij.gui.Plot.TRIANGLE;
@@ -687,15 +688,13 @@ public class VectorPlotDrawing {
                 g.setClip(mask);
                 int nPoints = Math.min(plotObject.getxValues().length, plotObject.getyValues().length);
 
-                if (plotObject.getShape() == BAR || plotObject.getShape() == SEPARATED_BAR)
-                //drawBarChart(plotObject);       // (separated) bars
-                //todo implement
+                if (plotObject.getShape() == BAR || plotObject.getShape() == SEPARATED_BAR) {
+                    drawBarChart(g, plotObject);       // (separated) bars
+                }
 
-                {
-                    if (plotObject.getShape() == FILLED) {   // filling below line
-                        g.setColor(plotObject.getColor2() != null ? plotObject.getColor2() : plotObject.getColor());
-                        drawFloatPolyLineFilled(g, plotObject.getxValues(), plotObject.getyValues(), nPoints);
-                    }
+                if (plotObject.getShape() == FILLED) {   // filling below line
+                    g.setColor(plotObject.getColor2() != null ? plotObject.getColor2() : plotObject.getColor());
+                    drawFloatPolyLineFilled(g, plotObject.getxValues(), plotObject.getyValues(), nPoints);
                 }
                 g.setColor(plotObject.getColor());
                 g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
@@ -802,6 +801,57 @@ public class VectorPlotDrawing {
                 drawLegend(plotObject, g);
             default:
                 break;
+        }
+    }
+
+    /** Draw a bar at each point */
+    void drawBarChart(Graphics2D g, IPlotObject plotObject) {
+        int n = Math.min(plotObject.getxValues().length, plotObject.getyValues().length);
+        String[] xCats = plot.labelsInBraces('x'); // do we have categories at the x axis instead of numbers?
+        boolean separatedBars = plotObject.getShape() == SEPARATED_BAR || xCats != null;
+        var halfBarWidthInPixels = n <= 1 ? Math.max(1, frameWidth/2-2) : 0;
+        if (separatedBars && n > 1)
+            halfBarWidthInPixels = Math.max(1, Math.round(Math.abs
+                    (0.5*(plotObject.getxValues()[n-1] - plotObject.getxValues()[0])/(n-1) * plot.xScale * SEPARATED_BAR_WIDTH)));
+        int y0 = plot.scaleYWithOverflow(0);
+        boolean yZeroInFrame = !plot.logYAxis && plot.yBasePxl>plot.frame.y && plot.yBasePxl<plot.frame.y+plot.frame.height;
+        int prevY = y0;
+        for (int i = 0; i < n; i++) {
+            double left=0, right=0;
+            if (halfBarWidthInPixels == 0) {         //bar boundaries in the middle between successive x values
+                left = plot.scaleXtoPxl(i > 0 ? 0.5f*(plotObject.getxValues()[i-1]+plotObject.getxValues()[i]) :
+                        1.5f*plotObject.getxValues()[i] - 0.5f*plotObject.getxValues()[i+1]);
+                right = plot.scaleXtoPxl(i < n-1 ? 0.5f*(plotObject.getxValues()[i]+plotObject.getxValues()[i+1]) :
+                        1.5f*plotObject.getxValues()[i] - 0.5f*plotObject.getxValues()[i-1]);
+            } else {
+                var x = plot.scaleXtoPxl(plotObject.getxValues()[i]);
+                left = x - halfBarWidthInPixels;     //separated bars or n<=1 : fixed bar width
+                right = x + halfBarWidthInPixels;
+            }
+            if (left < plot.frame.x) left = plot.frame.x;
+            if (left > plot.frame.x+plot.frame.width) left = plot.frame.x+plot.frame.width;
+            if (right < plot.frame.x) right = plot.frame.x;
+            if (right > plot.frame.x+plot.frame.width) right = plot.frame.x+plot.frame.width;
+            int y = plot.scaleYWithOverflow(plotObject.getyValues()[i]);
+            if (plotObject.getColor2() != null) {
+                g.setColor(plotObject.getColor2());
+                g.fill(new Rectangle2D.Double(left, y, right-left, Math.abs(y-y0)));
+            }
+            g.setColor(plotObject.getColor());
+            g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
+            if (separatedBars) {
+                g.draw(new Line2D.Double(left, y0, left, y));      //up
+                g.draw(new Line2D.Double(left, y, right, y));      //right
+                g.draw(new Line2D.Double(right, y, right, y0));    //down
+                if (yZeroInFrame)
+                    g.draw(new Line2D.Double(left, y0, right, y0));//baseline
+            } else {
+                g.draw(new Line2D.Double(left, prevY, left, y));   //up or down
+                g.draw(new Line2D.Double(left, y, right, y));      //right
+                if (i == n - 1)
+                    g.draw(new Line2D.Double(right, y, right, y0));//last down
+                prevY = y;
+            }
         }
     }
 
@@ -1171,42 +1221,49 @@ public class VectorPlotDrawing {
     /**
      * Fills space between polyline and y=0 with the current color (the secondary color of the plotObject)
      */
-    //todo make curves be curves
     void drawFloatPolyLineFilled(Graphics2D g, float[] xF, float[] yF, int len) {
         if (xF == null || len <= 1) {
             return;
         }
+
         g.setStroke(new BasicStroke(1));
         int y0 = plot.scaleYWithOverflow(0);
-        double x1, y1;
-        double x2 = plot.scaleXtoPxl(xF[0]);
-        double y2 = plot.scaleYtoPxl(yF[0]);
-        boolean isNaN1;
-        boolean isNaN2 = Float.isNaN(xF[0]) || Float.isNaN(yF[0]) || (plot.logXAxis && xF[0] <= 0) || (plot.logYAxis && yF[0] <= 0);
-        for (int i = 1; i < len; i++) {
-            isNaN1 = isNaN2;
-            isNaN2 = Float.isNaN(xF[i]) || Float.isNaN(yF[i]) || (plot.logXAxis && xF[i] <= 0) || (plot.logYAxis && yF[i] <= 0);
-            x1 = x2;
-            y1 = y2;
-            x2 = plot.scaleXtoPxl(xF[i]);
-            y2 = plot.scaleYtoPxl(yF[i]);
-            double left = (int) x1;
-            double right = (int) x2;
-            if (isNaN1 || isNaN2) continue;
-            if (left < plot.frame.x && right < plot.frame.x) continue; // ignore if all outside the plot area
-            if (left >= plot.frame.x + plot.frame.width && right >= plot.frame.x + plot.frame.width) continue;
-            if (left < plot.frame.x) left = plot.frame.x;
-            if (left >= plot.frame.x + plot.frame.width) left = plot.frame.x + plot.frame.width - 1;
-            if (right < plot.frame.x) right = plot.frame.x;
-            if (right >= plot.frame.x + plot.frame.width) right = plot.frame.x + plot.frame.width - 1;
-            if (left != right) {
-                for (double xi = Math.min(left, right); xi <= Math.max(left, right); xi++) {
-                    double yi = Math.round(y1 + (y2 - y1) * (xi - x1) / (x2 - x1));
-                    g.draw(new Line2D.Double(xi, y0, xi, yi));
+
+        Path2D.Double path = null;
+        var havePoint = false;
+        var lastPx = 0D;
+
+        for (int i = 0; i < len; i++) {
+            var isNaN = Float.isNaN(xF[i]) || Float.isNaN(yF[i]) || (plot.logXAxis && xF[i] <= 0) || (plot.logYAxis && yF[i] <= 0);
+            if (isNaN) {
+                if (havePoint && path != null) {
+                    path.closePath();
+                    g.fill(path);
+                    path = null;
+                    havePoint = false;
                 }
-            } else {
-                g.draw(new Line2D.Double(left, y0, left, y2));
+                continue;
             }
+
+            var px = plot.scaleXtoPxl(xF[i]);
+            var py = plot.scaleYtoPxl(yF[i]);
+
+            if (!havePoint) {
+                path = new Path2D.Double();
+                path.moveTo(px, y0);
+                path.lineTo(px, py);
+                havePoint = true;
+                lastPx = px;
+            } else {
+                path.lineTo(px, py);
+                lastPx = px;
+            }
+        }
+
+        if (havePoint && path != null) {
+            path.lineTo(lastPx, y0);
+            path.closePath();
+            g.fill(path);
         }
     }
 

@@ -64,6 +64,7 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.text.AttributedString;
@@ -1216,38 +1217,35 @@ public class VectorPlotDrawing {
     // Adapted from Plot
     void fillShape(Graphics2D g, int shape, int x0, int y0, int size) {
         if (shape == DIAMOND) size = (int) (size * 1.21);
-        int r = plot.sc(size / 2f) - 1;
+        var xbase = x0 - plot.sc(size) / 2f;
+        var ybase = y0 - plot.sc(size) / 2f;
+        var xend = x0 + plot.sc(size) / 2f;
+        var yend = y0 + plot.sc(size) / 2f;
         switch (shape) {
             case BOX:
-                g.fill(new Rectangle2D.Double(x0 - r, y0 - r, x0 + r, y0 + r));
+                g.fill(new Rectangle2D.Double(xbase, ybase, plot.sc(size), plot.sc(size)));
                 break;
             case TRIANGLE:
-                int ybase = y0 - r - plot.sc(1);
-                int yend = y0 + r;
-                double halfWidth = plot.sc(size / 2f) + plot.sc(1) - 1;
-                double hwStep = halfWidth / (yend - ybase + 1);
-                for (int y = yend; y >= ybase; y--, halfWidth -= hwStep) {
-                    int dx = (int) (Math.round(halfWidth));
-                    for (int x = x0 - dx; x <= x0 + dx; x++) {
-                        drawDot(g, x, y);//todo not loop, not dots
-                    }
-                }
+                var triangle = new Path2D.Double();
+                triangle.moveTo(x0, ybase - plot.sc(1));
+                triangle.lineTo(xend + plot.sc(1), yend);
+                triangle.lineTo(xbase - plot.sc(1), yend);
+                triangle.closePath();
+                g.fill(triangle);
                 break;
             case DIAMOND:
-                ybase = y0 - r - plot.sc(1);
-                yend = y0 + r;
-                halfWidth = plot.sc(size / 2f) + plot.sc(1) - 1;
-                hwStep = halfWidth / (yend - ybase + 1);
-                for (int y = yend; y >= ybase; y--) {
-                    int dx = (int) (Math.round(halfWidth - (hwStep + 1) * Math.abs(y - y0)));
-                    for (int x = x0 - dx; x <= x0 + dx; x++) {
-                        drawDot(g, x, y);//todo not loop, not dots
-                    }
-                }
+                var diamond = new Path2D.Double();
+                diamond.moveTo(xbase, y0);
+                diamond.lineTo(x0, ybase);
+                diamond.lineTo(xend, y0);
+                diamond.lineTo(x0, yend);
+                diamond.closePath();
+                g.fill(diamond);
                 break;
             case CIRCLE:
             case CONNECTED_CIRCLES:
-                drawCircle(g, x0, y0, r, true);
+                int r0 = plot.sc(size) < 5.01 ? 3 : plot.sc(0.5f * size - 0.5f);
+                g.fill(new Ellipse2D.Double(x0 - r0, y0 - r0, 2 * r0, 2 * r0));
                 break;
         }
     }

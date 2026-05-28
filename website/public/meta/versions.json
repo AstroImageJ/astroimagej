@@ -5,6 +5,12 @@
     },
     "versions": [
         {
+            "version": "6.0.8.00",
+            "url": "https://astroimagej.com/meta/versions/6.0.8.00.json",
+            "type": "PRERELEASE",
+            "releaseTime": "2026-05-28T04:25:12.791624152Z"
+        },
+        {
             "version": "6.0.7.02",
             "url": "https://astroimagej.com/meta/versions/6.0.7.02.json",
             "type": "DAILY_BUILD",

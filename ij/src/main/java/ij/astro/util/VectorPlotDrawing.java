@@ -671,8 +671,6 @@ public class VectorPlotDrawing {
         this.justification = justification;
     }
 
-    //todo other objects
-    // see https://github.com/rototor/pdfbox-graphics2d
     protected void drawPlotObject(Graphics2D g, IPlotObject plotObject) {
         if (plotObject == null) return;
         if (plotObject.hasFlag(IPlotObject.HIDDEN)) return;
@@ -742,6 +740,111 @@ public class VectorPlotDrawing {
                 }
                 g.setClip(null);
                 break;
+            case IPlotObject.SHAPES:
+                int iBoxWidth = 20;
+                g.setClip(plot.frame);
+                String shType = plotObject.getShapeType().toLowerCase();
+                if (shType.contains("rectangles")) {
+                    int nShapes = plotObject.getShapeData().size();
+
+                    for (int i = 0; i < nShapes; i++) {
+                        float[] corners = (float[])(plotObject.getShapeData().get(i));
+                        var x1 = plot.scaleXtoPxl(corners[0]);
+                        var y1 = plot.scaleYtoPxl(corners[1]);
+                        var x2 = plot.scaleXtoPxl(corners[2]);
+                        var y2 = plot.scaleYtoPxl(corners[3]);
+
+                        g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
+                        var left = Math.min(x1, x2);
+                        var right = Math.max(x1, x2);
+                        var top = Math.min(y1, y2);
+                        var bottom = Math.max(y1, y2);
+
+                        var r1 = new Rectangle2D.Double(left, top, right-left, bottom - top);
+                        var cBox = new Rectangle2D.Double(plot.frame.x, plot.frame.y, plot.frame.width, plot.frame.height).createIntersection(r1);
+                        if (plotObject.getColor2() != null) {
+                            g.setColor(plotObject.getColor2());
+                            g.fill(cBox);
+                        }
+                        g.setColor(plotObject.getColor());
+                        g.draw(cBox);
+                    }
+                    g.setClip(null);
+                    break;
+                }
+                if (shType.equals("redraw_grid")) {
+                    g.setStroke(new BasicStroke(plot.sc(1)));
+                    redrawGrid(g);
+                    g.setClip(null);
+                    break;
+                }
+                if (shType.contains("boxes")) {
+
+                    String[] parts = Tools.split(shType);
+                    for (int jj = 0; jj < parts.length; jj++) {
+                        String[] pairs = parts[jj].split("=");
+                        if ((pairs.length == 2) && pairs[0].equals("width")) {
+                            iBoxWidth = Integer.parseInt(pairs[1]);
+                        }
+                    }
+                    boolean horizontal = shType.contains("boxesx");
+                    int nShapes = plotObject.getShapeData().size();
+                    var halfWidth = Math.round(plot.sc(iBoxWidth / 2f));
+                    for (int i = 0; i < nShapes; i++) {
+
+                        float[] coords = (float[])(plotObject.getShapeData().get(i));
+
+                        if (!horizontal) {
+
+                            var x = plot.scaleXtoPxl(coords[0]);
+                            var y1 = plot.scaleYtoPxl(coords[1]);
+                            var y2 = plot.scaleYtoPxl(coords[2]);
+                            var y3 = plot.scaleYtoPxl(coords[3]);
+                            var y4 = plot.scaleYtoPxl(coords[4]);
+                            var y5 = plot.scaleYtoPxl(coords[5]);
+                            g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
+
+                            var r1 = new Rectangle2D.Double(x - halfWidth, y4, halfWidth * 2, y2 - y4);
+                            var cBox = new Rectangle2D.Double(plot.frame.x, plot.frame.y, plot.frame.width, plot.frame.height).createIntersection(r1);
+                            if (y1 != y2 || y4 != y5)//otherwise omit whiskers
+                            {
+                                g.draw(new Line2D.Double(x, y1, x, y5));//whiskers
+                            }
+                            if (plotObject.getColor2() != null) {
+                                g.setColor(plotObject.getColor2());
+                                g.fill(cBox);
+                            }
+                            g.setColor(plotObject.getColor());
+                            g.draw(cBox);
+                            g.setClip(plot.frame);
+                            g.draw(new Line2D.Double(x - halfWidth, y3, x + halfWidth - 1, y3));
+                        }
+
+                        if (horizontal) {
+                            var y = plot.scaleYtoPxl(coords[0]);
+                            var x1 = plot.scaleXtoPxl(coords[1]);
+                            var x2 = plot.scaleXtoPxl(coords[2]);
+                            var x3 = plot.scaleXtoPxl(coords[3]);
+                            var x4 = plot.scaleXtoPxl(coords[4]);
+                            var x5 = plot.scaleXtoPxl(coords[5]);
+                            g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
+                            if(x1 !=x2 || x4 != x5)//otherwise omit whiskers
+                                g.draw(new Line2D.Double(x1, y, x5, y));//whiskers
+                            var r1 = new Rectangle2D.Double(x2, y - halfWidth, x4 - x2, halfWidth * 2);
+                            var cBox = new Rectangle2D.Double(plot.frame.x, plot.frame.y, plot.frame.width, plot.frame.height).createIntersection(r1);;
+                            if (plotObject.getColor2() != null) {
+                                g.setColor(plotObject.getColor2());
+                                g.fill(cBox);
+                            }
+                            g.setColor(plotObject.getColor());
+                            g.draw(cBox);
+                            g.setClip(plot.frame);
+                            g.draw(new Line2D.Double(x3, y - halfWidth, x3, y + halfWidth - 1));
+                        }
+                    }
+                    g.setClip(null);
+                    break;
+                }
             case IPlotObject.LINE:
                 g.setClip(mask);
                 g.draw(new Line2D.Double(plot.scaleXtoPxl(plotObject.getX()),
@@ -1598,6 +1701,14 @@ public class VectorPlotDrawing {
         }
     }
 
+    public void redrawGrid(Graphics2D g) {
+        if (g != null) {
+            g.setColor(Color.black);
+            drawAxesTicksGridNumbers(g, plot.steps);
+            g.setColor(Color.black);
+        }
+    }
+
     /**
      * Sets the line width used by lineTo() and drawDot().
      */
@@ -1605,124 +1716,4 @@ public class VectorPlotDrawing {
         lineWidth = width;
         if (lineWidth < 1) lineWidth = 1;
     }
-
-    //todo See https://docs.oracle.com/javase/tutorial/2d/geometry/primitives.html
-
-    /*private static void drawPlotObject(IPlotObject plotObject) {//todo the rest of the shapes
-        if (plotObject.hasFlag(PlotObject.HIDDEN)) return;
-        g.setColor(plotObject.color);
-        ip.setLineWidth(sc(plotObject.lineWidth));
-        int type = plotObject.type;
-        switch (type) {
-            case PlotObject.SHAPES:
-                int iBoxWidth = 20;
-                g.setClip(plot.frame);
-                String shType = plotObject.shapeType.toLowerCase();
-                if (shType.contains("rectangles")) {
-                    int nShapes = plotObject.shapeData.size();
-
-                    for (int i = 0; i < nShapes; i++) {
-                        float[] corners = (float[])(plotObject.shapeData.get(i));
-                        int x1 = plot.scaleXtoPxl(corners[0]);
-                        int y1 = plot.scaleYtoPxl(corners[1]);
-                        int x2 = plot.scaleXtoPxl(corners[2]);
-                        int y2 = plot.scaleYtoPxl(corners[3]);
-
-                        ip.setLineWidth(sc(plotObject.lineWidth));
-                        int left = Math.min(x1, x2);
-                        int right = Math.max(x1, x2);
-                        int top = Math.min(y1, y2);
-                        int bottom = Math.max(y1, y2);
-
-                        Rectangle r1 = new Rectangle(left, top, right-left, bottom - top);
-                        Rectangle cBox = frame.intersection(r1);
-                        if (plotObject.color2 != null) {
-                            g.setColor(plotObject.color2);
-                            ip.fillRect(cBox.x, cBox.y, cBox.width, cBox.height);
-                        }
-                        g.setColor(plotObject.color);
-                        ip.drawRect(cBox.x, cBox.y, cBox.width, cBox.height);
-                    }
-                    g.setClip(null);
-                    break;
-                }
-                if (shType.equals("redraw_grid")) {
-                    ip.setLineWidth(sc(1));
-                    redrawGrid();
-                    g.setClip(null);
-                    break;
-                }
-                if (shType.contains("boxes")) {
-
-                    String[] parts = Tools.split(shType);
-                    for (int jj = 0; jj < parts.length; jj++) {
-                        String[] pairs = parts[jj].split("=");
-                        if ((pairs.length == 2) && pairs[0].equals("width")) {
-                            iBoxWidth = Integer.parseInt(pairs[1]);
-                        }
-                    }
-                    boolean horizontal = shType.contains("boxesx");
-                    int nShapes = plotObject.shapeData.size();
-                    int halfWidth = Math.round(sc(iBoxWidth / 2));
-                    for (int i = 0; i < nShapes; i++) {
-
-                        float[] coords = (float[])(plotObject.shapeData.get(i));
-
-                        if (!horizontal) {
-
-                            int x = plot.scaleXtoPxl(coords[0]);
-                            int y1 = plot.scaleYtoPxl(coords[1]);
-                            int y2 = plot.scaleYtoPxl(coords[2]);
-                            int y3 = plot.scaleYtoPxl(coords[3]);
-                            int y4 = plot.scaleYtoPxl(coords[4]);
-                            int y5 = plot.scaleYtoPxl(coords[5]);
-                            ip.setLineWidth(sc(plotObject.lineWidth));
-
-                            Rectangle r1 = new Rectangle(x - halfWidth, y4, halfWidth * 2, y2 - y4);
-                            Rectangle cBox = frame.intersection(r1);
-                            if (y1 != y2 || y4 != y5)//otherwise omit whiskers
-                            {
-                                g.drawLine(x, y1, x, y5);//whiskers
-                            }
-                            if (plotObject.color2 != null) {
-                                g.setColor(plotObject.color2);
-                                ip.fillRect(cBox.x, cBox.y, cBox.width, cBox.height);
-                            }
-                            g.setColor(plotObject.color);
-                            ip.drawRect(cBox.x, cBox.y, cBox.width, cBox.height);
-                            g.setClip(plot.frame);
-                            g.drawLine(x - halfWidth, y3, x + halfWidth - 1, y3);
-                        }
-
-                        if (horizontal) {
-
-                            int y = plot.scaleYtoPxl(coords[0]);
-                            int x1 = plot.scaleXtoPxl(coords[1]);
-                            int x2 = plot.scaleXtoPxl(coords[2]);
-                            int x3 = plot.scaleXtoPxl(coords[3]);
-                            int x4 = plot.scaleXtoPxl(coords[4]);
-                            int x5 = plot.scaleXtoPxl(coords[5]);
-                            ip.setLineWidth(sc(plotObject.lineWidth));
-                            if(x1 !=x2 || x4 != x5)//otherwise omit whiskers
-                                g.drawLine(x1, y, x5, y);//whiskers
-                            Rectangle r1 = new Rectangle(x2, y - halfWidth, x4 - x2, halfWidth * 2);
-                            Rectangle cBox = frame.intersection(r1);
-                            if (plotObject.color2 != null) {
-                                g.setColor(plotObject.color2);
-                                ip.fillRect(cBox.x, cBox.y, cBox.width, cBox.height);
-                            }
-                            g.setColor(plotObject.color);
-                            ip.drawRect(cBox.x, cBox.y, cBox.width, cBox.height);
-                            g.setClip(plot.frame);
-                            g.drawLine(x3, y - halfWidth, x3, y + halfWidth - 1);
-                        }
-                    }
-                    g.setClip(null);
-                    break;
-                }
-            case PlotObject.LEGEND:
-                drawLegend(plotObject, ip);
-                break;
-        }
-    }*/
 }

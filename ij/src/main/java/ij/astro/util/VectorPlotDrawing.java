@@ -1628,8 +1628,8 @@ public class VectorPlotDrawing {
 
                 g.setClip(clip);
                 break;
-            /*case CUSTOM://todo implemnt
-                if (plotObject.macroCode==null || frame==null)
+            case CUSTOM://todo implemnt
+                /*if (plotObject.macroCode==null || frame==null)
                     break;
                 if (x<frame.x || y<frame.y || x>=frame.x+frame.width || y>=frame.y+frame.height)
                     break;
@@ -1658,8 +1658,9 @@ public class VectorPlotDrawing {
                     if ("[aborted]".equals(rtn))
                         plotObject.macroCode = null;
                 }
-                WindowManager.setTempCurrentImage(null);
-                break;*/
+                WindowManager.setTempCurrentImage(null);*/
+                g.drawString("Error: Custom symbols not yet implemented", (float) x, (float) y);
+                break;
             case CIRCLE, CONNECTED_CIRCLES:
                 int r = plot.sc(size) < 5.01 ? 3 : plot.sc(0.5f * size - 0.5f);//make circles circle again
                 g.draw(new Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r));

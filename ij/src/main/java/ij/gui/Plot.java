@@ -4136,10 +4136,11 @@ public class Plot implements Cloneable {
 	}
 
 	/** Returns the x, y coordinates at the cursor position or the nearest point as a String */
+	@AstroImageJ(reason = "Fix coordinate lookup for scaled coordinates", modified = true)
 	String getCoordinates(int x, int y) {
 		if (frame==null) return "";
 		String text = "";
-		if (!frame.contains(x, y))
+		if ((isAijPlot() ? !frame.contains(x / Prefs.getGuiScale(), y / Prefs.getGuiScale()) : !frame.contains(x, y)))
 			return text;
 		double xv = descaleX(x); // cursor location
 		double yv = descaleY(y);

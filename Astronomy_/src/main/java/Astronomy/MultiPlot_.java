@@ -15355,7 +15355,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     JPanel[] dummyPanel = new JPanel[fill];
                     for (int i = 0; i < fill; i++) {
                         dummyPanel[i] = new JPanel();
-                        dummyPanel[i].setMaximumSize(refStarPanel[0].getSize());
+                        dummyPanel[i].setMaximumSize(refStarPanel[0].getPreferredSize());
                         starsPanel.add(dummyPanel[i]);
                     }
                 }
@@ -16299,15 +16299,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void closeRefStarFrame() {
-        if (refStarFrame.isShowing()) {
-            refStarFrameLocationX = refStarFrame.getLocation().x;
-            refStarFrameLocationY = refStarFrame.getLocation().y;
-            refStarFrame.setVisible(false);
-            Prefs.set("plot2.refStarFrameLocationX", refStarFrameLocationX);
-            Prefs.set("plot2.refStarFrameLocationY", refStarFrameLocationY);
+        if (refStarFrame != null) {
+            if (refStarFrame.isShowing()) {
+                refStarFrameLocationX = refStarFrame.getLocation().x;
+                refStarFrameLocationY = refStarFrame.getLocation().y;
+                refStarFrame.setVisible(false);
+                Prefs.set("plot2.refStarFrameLocationX", refStarFrameLocationX);
+                Prefs.set("plot2.refStarFrameLocationY", refStarFrameLocationY);
+            }
+
+            refStarFrame.dispose();
         }
 
-        refStarFrame.dispose();
         refStarFrame = null;
     }
 

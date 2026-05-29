@@ -589,7 +589,9 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		String statusText = null; //coordinate readout, status or tooltip, will be shown in coordinate&status line
 
 		//arrows and other symbols for modifying the plot range
-		if (x < (plot.leftMargin * Prefs.getGuiScale()) || y > plot.topMargin + (plot.frameHeight * Prefs.getGuiScale())) {
+		var xBound = plot.leftMargin * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
+		var yBound = plot.frameHeight * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
+		if (x < xBound || y > plot.topMargin + yBound) {
 			if (!rangeArrowsVisible && !plot.isFrozen())
 				showRangeArrows();
 			if (activeRangeArrow < 0)       //mouse is not on one of the symbols, ignore (nothing to display)

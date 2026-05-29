@@ -281,6 +281,7 @@ public class FitOptimization implements AutoCloseable {
         var compOptimizationSelection = new JComboBox<ToolTipWrapper>();
         compOptimizationSelection.setEditable(false);
         compOptimizationSelection.setRenderer(new ToolTipRenderer());
+        compOptimizationSelection.setMaximumSize(new Dimension(50, 10));
         var compBruteForce = new ToolTipWrapper("Exhaustive", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
         var compQuickOpti = new ToolTipWrapper("Old Quick", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
         var simpleQuickOpti = new ToolTipWrapper("Quick", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
@@ -296,6 +297,7 @@ public class FitOptimization implements AutoCloseable {
 
         compOptiCards.add(compOptiButtonStart);
         compOptiCards.add(compOptiButtonCancel);
+        compOptiCards.setMaximumSize(new Dimension(50, 10));
 
         switch (compStarMode.get()) {
             case EXHAUSTIVE -> compOptimizationSelection.setSelectedItem(compBruteForce);

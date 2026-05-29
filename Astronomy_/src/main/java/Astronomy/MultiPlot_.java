@@ -1281,6 +1281,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             tableName = table.shortTitle();
             measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));
             dataSectionBorder.setTitle("Data (" + MeasurementTable.shorterName(tableName) + ")");
+            dataSectionBorder.setTitleFont(b12);
             unfilteredColumns = table.getColumnHeadings().split("\t");
             if (unfilteredColumns.length == 0) {
                 IJ.showMessage("No data columns to plot.");
@@ -7707,6 +7708,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         mainpanelgroupa = new JPanel(new SpringLayout());
 
+        dataSectionBorder.setTitleFont(b12);
         mainpanelgroupa.setBorder(dataSectionBorder);
         JPanel mainpanelgroupb = new JPanel(new SpringLayout());
         mainpanelgroupb.setBorder(BorderFactory.createTitledBorder("Data Options"));

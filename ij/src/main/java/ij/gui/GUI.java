@@ -444,8 +444,10 @@ public class GUI {
             var border = jComponent.getBorder();
             if (border instanceof TitledBorder titledBorder) {
                 font = titledBorder.getTitleFont();
-				var newSize = (float) (font.getSize2D() * factor);
-				titledBorder.setTitleFont(font.deriveFont(newSize));
+                if (font != null && !scaledFont(font)) {
+					var newSize = (float) (font.getSize2D() * factor);
+					titledBorder.setTitleFont(font.deriveFont(newSize));
+                }
 
 				var b = titledBorder.getBorder();
 				if (b instanceof LineBorder lb) {

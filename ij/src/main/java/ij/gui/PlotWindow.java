@@ -451,6 +451,31 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		menuItems[HI_RESOLUTION] = addPopupItem(morePopupMenu, "High-Resolution Plot...");
 		morePopupMenu.addSeparator();
 		menuItems[PROFILE_PLOT_OPTIONS] = addPopupItem(morePopupMenu, "Plot Defaults...");
+		morePopupMenu.addSeparator();
+		var forceVec = (CheckboxMenuItem)addPopupItem(morePopupMenu, "Force Vectorization", true);
+		var autoVec = (CheckboxMenuItem)addPopupItem(morePopupMenu, "Automatic Vectorization", true);
+		var noVec = (CheckboxMenuItem)addPopupItem(morePopupMenu, "Force Bitmapped", true);
+		forceVec.setState(plot.isAijForced());
+		autoVec.setState(plot.isAijAutomatic());
+		noVec.setState(!(plot.isAijForced() || plot.isAijAutomatic()));
+		forceVec.addItemListener(_ -> {
+			plot.setAijPlot(true);
+			autoVec.setState(false);
+			noVec.setState(false);
+			plot.updateImage();
+		});
+		autoVec.addItemListener(_ -> {
+			plot.setAijPlotAutomatic();
+			forceVec.setState(false);
+			noVec.setState(false);
+			plot.updateImage();
+		});
+		noVec.addItemListener(_ -> {
+			plot.setAijPlot(false);
+			forceVec.setState(false);
+			autoVec.setState(false);
+			plot.updateImage();
+		});
 		return morePopupMenu;
 	}
 

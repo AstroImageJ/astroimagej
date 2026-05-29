@@ -4534,6 +4534,10 @@ public class Plot implements Cloneable {
 
 	@AstroImageJ(reason = "Support scaled plots")
     public boolean isAijPlot() {
+		if (pp.aijPlotType == AijPlotType.AUTOMATIC) {
+			return allPlotObjects.parallelStream()
+					.noneMatch(p -> p.shape == Plot.CUSTOM && p.type == PlotObject.XY_DATA);
+		}
         return pp.aijPlotType != AijPlotType.BITMAPPED;
     }
 
@@ -4555,6 +4559,11 @@ public class Plot implements Cloneable {
 			pp.aijPlotType = AijPlotType.BITMAPPED;
 		}
     }
+
+	@AstroImageJ(reason = "Support scaled plots")
+	public void setAijPlotAutomatic() {
+		pp.aijPlotType = AijPlotType.AUTOMATIC;
+	}
 
 	@AstroImageJ(reason = "Support vector plot drawing")
     public float getScale() {
@@ -4582,7 +4591,7 @@ class PlotProperties implements Cloneable, Serializable, IPlotProperties {
 	boolean antialiasedText = true;
 	boolean isFrozen;							                    //modifications (size, range, contents) don't update the ImageProcessor
 	@AstroImageJ(reason = "Support scaled plots")
-	AijPlotType aijPlotType = AijPlotType.BITMAPPED;
+	AijPlotType aijPlotType = AijPlotType.AUTOMATIC;
 
 	/** Returns an array of all PlotObjects defined as PlotProperties. Note that some may be null */
 	PlotObject[] getAllPlotObjects() {

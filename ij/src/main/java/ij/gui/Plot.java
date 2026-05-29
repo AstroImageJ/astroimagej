@@ -4537,6 +4537,16 @@ public class Plot implements Cloneable {
     }
 
 	@AstroImageJ(reason = "Support scaled plots")
+	public boolean isAijAutomatic() {
+		return pp.aijPlotType == AijPlotType.AUTOMATIC;
+	}
+
+	@AstroImageJ(reason = "Support scaled plots")
+	public boolean isAijForced() {
+		return pp.aijPlotType == AijPlotType.AIJ_PLOT;
+	}
+
+	@AstroImageJ(reason = "Support scaled plots")
     public void setAijPlot(boolean aijPlot) {
         if (aijPlot) {
             pp.aijPlotType = AijPlotType.AIJ_PLOT;

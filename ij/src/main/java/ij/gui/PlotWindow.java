@@ -614,7 +614,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		String statusText = null; //coordinate readout, status or tooltip, will be shown in coordinate&status line
 
 		//arrows and other symbols for modifying the plot range
-		var xBound = plot.leftMargin * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
+		var xBound = plot.frameWidth * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
 		var yBound = plot.frameHeight * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
 		if (x < xBound || y > plot.topMargin + yBound) {
 			if (!rangeArrowsVisible && !plot.isFrozen())
@@ -665,6 +665,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Mouse wheel: zooms when shift or ctrl is pressed, scrolls in x if space bar down, in y otherwise. */
+	@AstroImageJ(reason = "Support scaled plots", modified = true)
 	public synchronized void mouseWheelMoved(MouseWheelEvent e) {
 		if (plot.isFrozen() || !(ic instanceof PlotCanvas)) {	   //frozen plots are like normal images
 			super.mouseWheelMoved(e);
@@ -672,9 +673,11 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		}
 		int rotation = e.getWheelRotation();
 		int amount = e.getScrollAmount();
-		if (e.getX() < plot.leftMargin || e.getX() > plot.leftMargin + plot.frameWidth)//n__
+		var xBound = plot.frameWidth * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
+		var yBound = plot.frameHeight * (plot.isAijPlot() ? Prefs.getGuiScale() : 1.0);
+		if (e.getX() < plot.leftMargin || e.getX() > plot.leftMargin + xBound)//n__
 			return;
-		if (e.getY() < plot.topMargin || e.getY() > plot.topMargin + plot.frameHeight)
+		if (e.getY() < plot.topMargin || e.getY() > plot.topMargin + yBound)
 			return;
 		boolean ctrl = (e.getModifiers()&Event.CTRL_MASK)!=0;
 		if (amount<1) amount=1;

@@ -115,23 +115,33 @@ public class VectorPlotDrawing {
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             initPlotDrawing(g2);
             for (IPlotObject plotObject : allPlotObjects) {
-                //todo mimic order of drawing, see drawContents
-                //  gonna ignore for now as this works
-                drawPlotObject(g2, plotObject);
+                if (!plotObject.hasFlag(IPlotObject.CONSTRUCTOR_DATA)) {
+                    drawPlotObject(g2, plotObject);
+                }
             }
+
+            // draw the line passed with the constructor last, using the settings present when calling 'draw'
+            if (!allPlotObjects.isEmpty() && allPlotObjects.getFirst().hasFlag(IPlotObject.CONSTRUCTOR_DATA)) {
+                var mainPlotObject = allPlotObjects.getFirst();
+                drawPlotObject(g2, mainPlotObject);
+            }
+
+            var pp = (IPlotProperties) plot.pp;
+            var stroke = new BasicStroke(plot.sc(pp.getFrame().getLineWidth()));
+            g2.setStroke(stroke);
+            g2.setColor(pp.getFrame().getColor());
+            g2.setColor(Color.BLACK);
+
+            // Plot border
+            g2.drawRect(plot.frame.x, plot.frame.y, plot.frame.width - 1, plot.frame.height - 1);
+
+            drawPlotObject(g2, pp.getLegend());
         }
     }
 
     protected void initPlotDrawing(Graphics2D g) {
         g.setColor(Color.BLACK);
         drawAxesTicksGridNumbers(g, plot.steps);
-        var pp = (IPlotProperties) plot.pp;
-        var stroke = new BasicStroke(plot.sc(pp.getFrame().getLineWidth()));
-        g.setStroke(stroke);
-        g.setColor(pp.getFrame().getColor());
-        // Plot border
-        g.drawRect(plot.frame.x, plot.frame.y, plot.frame.width - 1, plot.frame.height - 1);
-        drawPlotObject(g, pp.getLegend());
     }
 
     void drawAxesTicksGridNumbers(Graphics2D g, double[] steps) {

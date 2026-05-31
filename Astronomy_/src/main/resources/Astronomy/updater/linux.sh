@@ -13,6 +13,7 @@ fi
 # Convention: ~/.local/state/astroimagej/logs/elevator.log
 elevator_log="$state_base/astroimagej/logs/elevator.log"
 rm -f "$elevator_log"
+mkdir -p "$(dirname "$elevator_log")"
 exec >>"$elevator_log" 2>&1
 
 echo "Starting AIJ elevator"
@@ -35,14 +36,19 @@ if [[ -n "$PID_TO_WAIT" ]]; then
   done
 fi
 
+if [[ "$DEST" == "/" || -z "$DEST" ]]; then
+  echo "Refusing to delete unsafe destination: '$DEST'" >&2
+  exit 1
+fi
+
 echo "Deleting previous installation..."
-rm -rf "$DEST"
+rm -rf -- "$DEST"
 
 echo "Creating install folder..."
-mkdir -p "$DEST"
+mkdir -p -- "$DEST"
 echo "Unpacking AIJ..."
 tar --strip-components=1 -xzf "$TGZ" -C "$DEST"
 
 # Rerun AIJ
 echo "Relaunching AIJ..."
-$DEST/bin/AstroImageJ
+exec "$DEST/bin/AstroImageJ"

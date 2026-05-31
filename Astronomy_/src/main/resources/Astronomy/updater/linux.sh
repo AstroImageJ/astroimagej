@@ -35,6 +35,9 @@ if [[ -n "$PID_TO_WAIT" ]]; then
   done
 fi
 
+echo "Deleting previous installation..."
+rm -rf "$DEST"
+
 echo "Creating install folder..."
 mkdir -p "$DEST"
 echo "Unpacking AIJ..."

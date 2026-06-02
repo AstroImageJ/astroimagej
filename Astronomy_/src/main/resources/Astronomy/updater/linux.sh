@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Get log file
 # Use XDG_STATE_HOME if available, else ~/.local/state
@@ -32,17 +33,23 @@ if [[ -n "$PID_TO_WAIT" ]]; then
       break
     fi
     sleep 1
-    ((ELAPSED++))
+    ELAPSED=$((ELAPSED + 1))
   done
 fi
 
+echo "Checking destination..."
 if [[ "$DEST" == "/" || -z "$DEST" ]]; then
   echo "Refusing to delete unsafe destination: '$DEST'" >&2
   exit 1
 fi
 
+if [[ ! -x "$DEST/bin/AstroImageJ" || ! -f "$DEST/lib/app/ij.jar" ]]; then
+    echo "Refusing to update: '$DEST' does not appear to contain AstroImageJ"
+    exit 1
+fi
+
 echo "Deleting previous installation..."
-rm -rf -- "$DEST"
+rm -rf -- "${DEST:?}"/*
 
 echo "Creating install folder..."
 mkdir -p -- "$DEST"

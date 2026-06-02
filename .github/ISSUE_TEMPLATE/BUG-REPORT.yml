@@ -12,9 +12,9 @@ body:
     attributes:
       label: AIJ Version
       description: What version of AIJ is affected?
-      placeholder: 6.0.0.00
+      placeholder: "Example: 6.0.0.00"
     validations:
-      required: false
+      required: true
   - type: textarea
     id: what-happened
     attributes:
@@ -41,6 +41,7 @@ body:
       label: Operating System Version
       description: What version is your operating system (Windows 10, Fedora 44, etc)?
       placeholder: Windows 11
+      value: "Windows 11"
     validations:
       required: false
   - type: textarea

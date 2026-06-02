@@ -40,8 +40,7 @@ body:
     attributes:
       label: Operating System Version
       description: What version is your operating system (Windows 10, Fedora 44, etc)?
-      placeholder: Windows 11
-      value: "Windows 11"
+      placeholder: "Example: Windows 11"
     validations:
       required: false
   - type: textarea

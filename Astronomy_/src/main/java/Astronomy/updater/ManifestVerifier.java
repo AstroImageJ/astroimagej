@@ -45,6 +45,10 @@ public class ManifestVerifier {
         }
     }
 
+    public static Map<Path, String> readManifestMap(Path baseDirPath, Path manifestPath) throws Exception {
+        return readManifest(baseDirPath, manifestPath).map;
+    }
+
     public static boolean check(Path baseDirPath, Path manifestPath, int maxChanges) {
         try {
             var changes = checkManifest(baseDirPath, manifestPath, maxChanges);

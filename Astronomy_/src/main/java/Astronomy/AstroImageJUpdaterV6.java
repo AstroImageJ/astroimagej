@@ -36,7 +36,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Vector;
 import java.util.concurrent.Executors;
-import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
@@ -158,8 +157,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
             }
         }
 
-        var appFolder = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
-        Path baseDir;
+        final var appFolder = getBaseDirectory(ImageJ.class).toAbsolutePath().normalize();
+        final Path baseDir;
         if (IJ.isWindows()) {
             baseDir = appFolder.getParent();
         } else if (IJ.isMacOSX()) {
@@ -264,6 +263,21 @@ public class AstroImageJUpdaterV6 implements PlugIn {
 
             System.exit(0);
         } else if (IJ.isLinux()) {
+            // Build file list to remove
+            var manifestFiles = ManifestVerifier.readManifestMap(baseDir, appFolder.resolve("manifest.json")).keySet();
+            var manifest = tmpFolder.resolve("manifest.txt");
+            Files.deleteIfExists(manifest);
+
+            try (var out = Files.newBufferedWriter(manifest)) {
+                for (Path path : manifestFiles.stream()
+                        .sorted(Comparator.comparingInt(Path::getNameCount).reversed())
+                        .filter(p -> p.getNameCount() > 0)
+                        .toList()) {
+                    out.write(path.toString().replace('\\', '/'));
+                    out.newLine();
+                }
+            }
+
             var perms = Files.getPosixFilePermissions(elevator);
             perms.add(PosixFilePermission.OWNER_EXECUTE);
             perms.add(PosixFilePermission.GROUP_EXECUTE);
@@ -273,7 +287,8 @@ public class AstroImageJUpdaterV6 implements PlugIn {
                     elevator.toAbsolutePath().toString(),
                     Long.toString(pid),
                     inst.toAbsolutePath().toString(),
-                    baseDir.toAbsolutePath().toString()
+                    baseDir.toAbsolutePath().toString(),
+                    manifest.toAbsolutePath().toString()
             );
             try {
                 Process p = pb.start();

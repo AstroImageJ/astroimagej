@@ -22,6 +22,7 @@ echo "Starting AIJ elevator"
 PID_TO_WAIT="$1"
 TGZ="$2"
 DEST="$3"
+MANIFEST="$4"
 
 # Wait for the given PID (if any) to exit, silently
 if [[ -n "$PID_TO_WAIT" ]]; then
@@ -39,7 +40,7 @@ fi
 
 echo "Checking destination..."
 if [[ "$DEST" == "/" || -z "$DEST" ]]; then
-  echo "Refusing to delete unsafe destination: '$DEST'" >&2
+  echo "Refusing to update unsafe destination: '$DEST'" >&2
   exit 1
 fi
 
@@ -48,11 +49,45 @@ if [[ ! -x "$DEST/bin/AstroImageJ" || ! -f "$DEST/lib/app/ij.jar" ]]; then
     exit 1
 fi
 
-echo "Deleting previous installation..."
-rm -rf -- "${DEST:?}"/*
+DEST="$(realpath "$DEST")"
 
-echo "Creating install folder..."
-mkdir -p -- "$DEST"
+echo "Removing files from previous installation..."
+
+if [[ ! -f "$MANIFEST" || ! -r "$MANIFEST" ]]; then
+  echo "Manifest not found: '$MANIFEST'"
+  echo "Skipping cleanup..."
+
+else
+
+  echo "Using manifest: '$MANIFEST'"
+  while IFS= read -r entry || [[ -n "$entry" ]]; do
+      # Skip empty lines
+      [[ -z "$entry" || "$entry" =~ ^[[:space:]]*$ ]] && continue
+
+      # Manifest must contain relative paths only
+      if [[ "$entry" = /* ]]; then
+          echo "Refusing absolute manifest entry: '$entry'" >&2
+          continue
+      fi
+
+      target="$(realpath -m "$DEST/$entry")"
+
+      case "$target" in
+          "$DEST"/*) ;;
+          *)
+              echo "Manifest entry escapes destination: '$entry'" >&2
+              continue
+              ;;
+      esac
+
+      if [ -f "$target" ]; then
+          echo "Removing file: '$target'"
+          rm -f -- "$target"
+      fi
+  done < "$MANIFEST"
+  find "$DEST" -mindepth 1 -depth -type d -empty -delete
+fi
+
 echo "Unpacking AIJ..."
 tar --strip-components=1 -xzf "$TGZ" -C "$DEST"
 

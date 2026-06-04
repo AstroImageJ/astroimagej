@@ -2,12 +2,22 @@
 
 package astroj;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.NoninvertibleTransformException;
+import java.text.DecimalFormat;
+
 import ij.IJ;
 import ij.astro.types.Pair;
 import ij.gui.Roi;
-
-import java.awt.*;
-import java.text.DecimalFormat;
 
 /**
  * A ROI consisting of three concentric circles (inner for object, outer annulus for background).
@@ -41,6 +51,7 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
      * RA/DEC position of the geometric center (xPos, yPos) of this aperture
      */
     protected Pair.DoublePair radec;
+    private static boolean hasLoggedInversion = false;
 
     public ApertureRoi(double x, double y, double rad1, double rad2, double rad3, double integratedCnts, boolean isCentered) {
         super((int) x, (int) y, 1, 1);
@@ -291,17 +302,46 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
      * Displays the aperture either as a simple circle (showSky false) or as three circles (showSky true).
      */
     public void draw(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+
+        var defaultTransform = g2.getDeviceConfiguration().getDefaultTransform();
+        var invertedDefaultTransform = new AffineTransform();
+
+        try {
+            invertedDefaultTransform = defaultTransform.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            if (!hasLoggedInversion) {
+                hasLoggedInversion = true;
+                System.err.println("Failed to invert " + defaultTransform);
+                e.printStackTrace();
+            }
+        }
+
         boolean aij = false;
-        if (ic instanceof astroj.AstroCanvas) {
-            aij = true;
-            ac = (AstroCanvas) ic;
-            ((Graphics2D) g).setTransform(ac.invCanvTrans);
+        var aijTransform = new AffineTransform();
+        if (ic instanceof AstroCanvas) {
+            aij =  true;
+            ac =(AstroCanvas)ic;
+            g2.setTransform(ac.invCanvTrans);
+            aijTransform = ac.canvTrans;
             netFlipX = ac.getNetFlipX();
             netFlipY = ac.getNetFlipY();
             netRotate = ac.getNetRotate();
-            showMag = ac.getShowAbsMag() && aMag < 99.0;
+            showMag = ac.getShowAbsMag() && aMag<99.0;
             showIntCntWithMag = ac.getShowIntCntWithAbsMag();
         }
+
+        // Create transform to screenspace coordinates
+        var srcRect = ic.getSrcRect();
+
+        var scaleTransform = AffineTransform.getScaleInstance(ic.getMagnification(), ic.getMagnification());
+        // Stay in IJ space so no 0.5 pixel offset to pixel center
+        var translateTransform = AffineTransform.getTranslateInstance(-srcRect.x, -srcRect.y);
+
+        var toScreenSpace = new AffineTransform(aijTransform);
+        toScreenSpace.concatenate(scaleTransform);
+        toScreenSpace.concatenate(translateTransform);
+        toScreenSpace.preConcatenate(invertedDefaultTransform);
 
         String value = showMag ?
                 aMagText + (showIntCntWithMag && !intCntsBlank ? ", " + intCntsWithMagText : "") :
@@ -313,67 +353,50 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
         int descent = metrics.getDescent();
         g.setFont(font);
 
-        int sx = screenXD(xPos);
-        int sy = screenYD(yPos);
-        double x1d = netFlipX ? screenXD(xPos + r1) : screenXD(xPos - r1);
-        int x1 = (int) Math.round(x1d);
-        double w1d = netFlipX ? screenXD(xPos - r1) - x1 : screenXD(xPos + r1) - x1;
-        int w1 = (int) Math.round(w1d);
-        double y1d = netFlipY ? screenYD(yPos + r1) : screenYD(yPos - r1);
-        int y1 = (int) Math.round(y1d);
-        double h1d = netFlipY ? screenYD(yPos - r1) - y1 : screenYD(yPos + r1) - y1;
-        int h1 = (int) Math.round(h1d);
+        var sx = xPos;
+        var sy = yPos;
+        var x1 = xPos - r1;
+        var w1 = 2 * r1;
+        var y1 = yPos - r1;
+        var h1 = 2 * r1;
 
-        int xl = sx + h;
-        int yl = sy + (int) Math.round(h / 3.0);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
+        var apertureShape = toScreenSpace.createTransformedShape(new Ellipse2D.Double(x1, y1, w1, h1));
         if (showAperture) {
-            g.drawOval(x1, y1, w1, h1);
+            g2.draw(apertureShape);
             if (isCentroid) {
-                int w1do4 = (int) Math.round(w1d / 4.0);
-                int h1do4 = (int) Math.round(h1d / 4.0);
-                g.drawLine(sx - w1do4, sy, sx + w1do4, sy);
-                g.drawLine(sx, sy - h1do4, sx, sy + h1do4);
-
-//                g.drawLine(x1, sy, (int)(x1d+w1do6), sy);
-//                g.drawLine(x1+w1, sy, (int)(x1d+w1d-w1do6), sy);
-//                g.drawLine(sx, y1, sx, (int)(y1d+h1d06));
-//                g.drawLine(sx, y1+h1, sx, (int)(y1d+h1d-h1d06));
-
-//                g.drawLine(x1, y1, (int)(x1d+w1d/4.0), (int)(y1d+h1d/4.0));
-//                g.drawLine(x1+w1, y1, (int)(x1d+w1d-w1d/4.0), (int)(y1d+h1d/4.0));
-//                g.drawLine(x1, y1+h1, (int)(x1d+w1d/4.0), (int)(y1d+h1d-h1d/4.0));
-//                g.drawLine(x1+w1, y1+h1, (int)(x1d+w1d-w1d/4.0), (int)(y1d+h1d-h1d/4.0));                
+                var w1do4 = Math.round(w1 / 4.0);
+                var h1do4 = Math.round(h1 / 4.0);
+                g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(sx - w1do4, sy, sx + w1do4, sy)));
+                g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(sx, sy - h1do4, sx, sy + h1do4)));
             }
-            xl = x1 + w1 + descent;
         }
 
+        Shape backgroundShape = null;
         if (showSky) {
-            int x2 = netFlipX ? screenXD(xPos + r2) : screenXD(xPos - r2);
-            int x3 = netFlipX ? screenXD(xPos + r3) : screenXD(xPos - r3);
-            int w2 = netFlipX ? screenXD(xPos - r2) - x2 : screenXD(xPos + r2) - x2;
-            int w3 = netFlipX ? screenXD(xPos - r3) - x3 : screenXD(xPos + r3) - x3;
-            int y2 = netFlipY ? screenYD(yPos + r2) : screenYD(yPos - r2);
-            int y3 = netFlipY ? screenYD(yPos + r3) : screenYD(yPos - r3);
-            int h2 = netFlipY ? screenYD(yPos - r2) - y2 : screenYD(yPos + r2) - y2;
-            int h3 = netFlipY ? screenYD(yPos - r3) - y3 : screenYD(yPos + r3) - y3;
-            g.drawOval(x2, y2, w2, h2);
-            g.drawOval(x3, y3, w3, h3);
-//            if (aij) ac.transEnabled = true;
-//            int xl3 = netFlipX ? screenXD (xPos+r3) : screenXD (xPos-r3);
-//            int wl3 = netFlipX ? screenXD (xPos-r3)-xl3 : screenXD (xPos+r3)-xl3;
-//            if (aij) ac.transEnabled = false;
-            xl = x3 + w3 + descent;
+            var x2 = xPos - r2;
+            var x3 = xPos - r3;
+            var w2 = 2 * r2;
+            var w3 = 2 * r3;
+            var y2 = yPos - r2;
+            var y3 = yPos - r3;
+            var h2 = 2 * r2;
+            var h3 = 2 * r3;
+            g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(x2, y2, w2, h2)));
+            backgroundShape = toScreenSpace.createTransformedShape(new Ellipse2D.Double(x3, y3, w3, h3));
+            g2.draw(backgroundShape);
         }
-//        xl += (int)w1do6;
-//        if (aij) ((Graphics2D)g).setTransform(ac.invCanvTrans);
 
-        if (showName && showValues && nameText != null && !nameText.equals("") && value != null && !value.equals("")) {
-            g.drawString(nameText + "=" + value, xl, yl);
-        } else if (showName && nameText != null && !nameText.equals("")) {
-            g.drawString(nameText, xl, yl);
-        } else if (showValues && value != null && !value.equals("")) {
-            g.drawString(value, xl, yl);
+        var b = (backgroundShape != null && showSky ? backgroundShape : apertureShape).getBounds();
+        var offset = h / 4;
+        if (showName && showValues && nameText != null && !nameText.isEmpty() && !value.isEmpty()) {
+            g.drawString(nameText + "=" + value, (int) b.getMaxX() + 5, (int) (b.getMinY() + b.getHeight()/2 + offset));
+        } else if (showName && nameText != null && !nameText.isEmpty()) {
+            g.drawString(nameText, (int) b.getMaxX() + 5, (int) (b.getMinY() + b.getHeight()/2 + offset));
+        } else if (showValues && !value.isEmpty()) {
+            g.drawString(value, (int) b.getMaxX() + 5, (int) (b.getMinY() + b.getHeight()/2 + offset));
         }
 
         if (aij) {

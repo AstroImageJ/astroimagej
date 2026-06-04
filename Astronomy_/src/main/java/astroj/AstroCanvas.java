@@ -17,6 +17,7 @@ import java.awt.event.MouseEvent;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.MemoryImageSource;
 import java.text.DecimalFormat;
@@ -154,24 +155,45 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
     void buildRedCrossHairCursor() {
-        int curWidth = 33;
-        int curHeight = 33;
-        int x;
-        int y;
-        int[] pix = new int[curWidth * curHeight];
-        for (y = 0; y < curHeight; y++)
-            for (x = 0; x < curWidth; x++)
-                pix[y + x] = 0; // all points transparent
+        var bestSize = Toolkit.getDefaultToolkit().getBestCursorSize(33, 33);
 
-        int curCol = Color.RED.getRGB();
+        if (bestSize.width == 0 || bestSize.height < 0) {
+            redCrossHairCursor = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return;
+        }
 
-        for (x = 0; x < curWidth; x++)
-            pix[(curWidth) * (curHeight / 2 + 1) + x] = curCol;
-        for (y = 0; y < curHeight; y++)
-            pix[(curWidth / 2 + 1) + (curWidth) * y] = curCol;
+        var w = bestSize.width;
+        var h = bestSize.height;
 
-        Image img = createImage(new MemoryImageSource(curWidth, curHeight, pix, 0, curWidth));
-        redCrossHairCursor = Toolkit.getDefaultToolkit().createCustomCursor(img, new Point(16, 16), "red cross-hair");
+        var pix = new int[w * h];
+
+        int red = Color.RED.getRGB();
+
+        var xMid = w / 2;
+        var yMid = h / 2;
+
+        var x0 = (w % 2 == 0) ? xMid - 1 : xMid;
+        var y0 = (h % 2 == 0) ? yMid - 1 : yMid;
+
+        for (int x = 0; x < w; x++) {
+            pix[y0 * w + x] = red;
+            pix[yMid * w + x] = red;
+        }
+
+        for (int y = 0; y < h; y++) {
+            pix[y * w + x0] = red;
+            pix[y * w + xMid] = red;
+        }
+
+        /*pix[y0 * w + x0] = Color.WHITE.getRGB();
+        pix[yMid * w + xMid] = Color.WHITE.getRGB();
+        pix[y0 * w + xMid] = Color.WHITE.getRGB();
+        pix[yMid * w + x0] = Color.WHITE.getRGB();*/
+
+        var center = new Point(xMid, yMid);
+
+        var img = createImage(new MemoryImageSource(w, h, pix, 0, w));
+        redCrossHairCursor = Toolkit.getDefaultToolkit().createCustomCursor(img, center, "red cross-hair");
     }
 
     void buildClearCursor() {
@@ -806,6 +828,14 @@ public class AstroCanvas extends OverlayCanvas {
         setCursor(sx, sy, ox, oy);
     }
 
+    private double screenXD0(double ox) {
+        return transEnabled && netFlipX ? (getWidth() - (ox - srcRect.x) * magnification) : ((ox - srcRect.x) * magnification);
+    }
+
+    private double screenYD0(double oy) {
+        return transEnabled && netFlipY ? (getHeight() - (oy - srcRect.y) * magnification) : ((oy - srcRect.y) * magnification);
+    }
+
     void updatePhotometerOverlay(Graphics g) {
         ((Graphics2D) g).setTransform(invCanvTrans);
         transEnabled = false;
@@ -821,34 +851,35 @@ public class AstroCanvas extends OverlayCanvas {
         int sy = screenYD(imageY);
 //                IJ.log("screenX = "+sx+"   screenY = "+sy);
 //                IJ.log("");
-        int x1 = screenXD(imageX - radius);
-        int w1 = screenXD(imageX + radius) - x1;
-        int y1 = screenYD(imageY - radius);
-        int h1 = screenYD(imageY + radius) - y1;
-        int x2 = screenXD(imageX - rBack1);
-        int x3 = screenXD(imageX - rBack2);
-        int w2 = screenXD(imageX + rBack1) - x2;
-        int w3 = screenXD(imageX + rBack2) - x3;
-        int y2 = screenYD(imageY - rBack1);
-        int y3 = screenYD(imageY - rBack2);
-        int h2 = screenYD(imageY + rBack1) - y2;
-        int h3 = screenYD(imageY + rBack2) - y3;
+        var x1 = screenXD0(imageX - radius);
+        var w1 = screenXD0(imageX + radius) - x1;
+        var y1 = screenYD0(imageY - radius);
+        var h1 = screenYD0(imageY + radius) - y1;
+        var x2 = screenXD0(imageX - rBack1);
+        var x3 = screenXD0(imageX - rBack2);
+        var w2 = screenXD0(imageX + rBack1) - x2;
+        var w3 = screenXD0(imageX + rBack2) - x3;
+        var y2 = screenYD0(imageY - rBack1);
+        var y3 = screenYD0(imageY - rBack2);
+        var h2 = screenYD0(imageY + rBack1) - y2;
+        var h3 = screenYD0(imageY + rBack2) - y3;
 
-        g.drawOval(x1, y1, w1, h1);
+        if (g instanceof Graphics2D g2) {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
+            g2.draw(new Ellipse2D.Double(x1, y1, w1, h1));
 
-        if (showSkyOverlay) {
+            if (showSkyOverlay) {
+                g2.draw(new Ellipse2D.Double(x2, y2, w2, h2));
+                g2.draw(new Ellipse2D.Double(x3, y3, w3, h3));
+            }
 
-            g.drawOval(x2, y2, w2, h2);
-            g.drawOval(x3, y3, w3, h3);
+            /*g.setColor(Color.CYAN);
+            g2.draw(new Line2D.Double(sx - w1, sy, sx + w1, sy));
+            g2.draw(new Line2D.Double(sx, sy - h1, sx, sy + h1));*/
         }
-                /*g.setColor(Color.CYAN);
-                g.drawRect((int) screenX, (int) screenY, 1, 1);*/
 
-//                oldX3=x3;
-//                oldY3=y3;
-//                oldW3=w3;
-//                oldH3=h3;
         transEnabled = true;
         ((Graphics2D) g).setTransform(canvTrans);
     }

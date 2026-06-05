@@ -1456,7 +1456,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (refStarFrame != null) {
                 refStarPanelWasShowing = refStarFrame.isVisible();
                 refStarScrollPane.removeAll();
-                rebuildRefStarJPanel();
+                relayoutRefStarPanel();
             } else {
                 refStarPanelWasShowing = false;
             }
@@ -14986,7 +14986,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    static void rebuildRefStarJPanel() {
+    static void relayoutRefStarPanel() {
         if (allNonePanel != null) {
             allNonePanel.validate();
             SpringUtil.makeCompactGrid(allNonePanel, 1, allNonePanel.getComponentCount(), 2, 2, 2, 2);
@@ -15063,7 +15063,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     needsPanelUpdate = true;
                 }
             }
-            if (needsPanelUpdate) rebuildRefStarJPanel();
+            if (needsPanelUpdate) relayoutRefStarPanel();
         });
         forceMagDisplayPanel.add(forceMagDisplayButton);
         JButton forceNoMagDisplayButton = new JButton("Hide Magnitudes");
@@ -15078,7 +15078,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     needsPanelUpdate = true;
                 }
             }
-            if (needsPanelUpdate) rebuildRefStarJPanel();
+            if (needsPanelUpdate) relayoutRefStarPanel();
         });
         forceMagDisplayPanel.add(forceNoMagDisplayButton);
 
@@ -15344,7 +15344,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (hasAbsMag || forceAbsMagDisplay) {
                     refStarPanel[r].add(absMagTF[r]);
                 }
-                SpringUtil.makeCompactGrid(refStarPanel[r], refStarPanel[r].getComponentCount(), 1, 0, 0, 0, 0);
+                SpringUtil.makeCompactGrid(refStarPanel[r], refStarPanel[r].getComponentCount(), 1, 2, 2, 2, 2);
                 starsPanel.add(refStarPanel[r]);
             }
             defaultCBColor = refStarCB[0].getBackground();
@@ -15448,7 +15448,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         UIHelper.recursiveFontSetter(refStarFrame, p11);
         GUI.scaleFrame(refStarFrame);
-        refStarFrame.pack();
+        // Recaluate the component layout as we are now scaled
+        relayoutRefStarPanel();
         refStarFrame.setVisible(true);
         refStarPanelWasShowing = true;
         FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);

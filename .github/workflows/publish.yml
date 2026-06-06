@@ -327,7 +327,7 @@ jobs:
         with:
           name: installer-${{ matrix.osName }}
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
           path: |
             build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
 
@@ -349,7 +349,7 @@ jobs:
         if: runner.os == 'Windows' && github.event.inputs.windows_sign == 'true'
         uses: actions/upload-artifact@v4
         with:
-          retention-days: 1
+          retention-days: 7
           path: signpath/output
           # Overwrite does not seem to work since we are in the same job?
           overwrite: true

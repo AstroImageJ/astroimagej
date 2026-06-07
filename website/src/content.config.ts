@@ -10,13 +10,17 @@ const releases = defineCollection({
 	// Type-check frontmatter using a schema
 	schema: ({ image }) =>
 		z.object({
-			title: z.string(),
+			title: z.string().optional(),
 			description: z.string(),
 			versionNumber: z.string(),
 			// Transform string to Date object
 			date: z.coerce.date(),
 			draft: z.coerce.boolean().default(false),
-		}),
+		}).transform((data) => ({
+			// Generate title from version number if not provided
+			...data,
+			title: data.title ?? `Release ${data.versionNumber}`,
+		})),
 });
 
 export const collections = {

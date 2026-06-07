@@ -11,6 +11,9 @@ importers:
       '@astrojs/markdoc':
         specifier: ^1.0.6
         version: 1.0.6(astro@6.4.4(@types/node@24.13.1)(rollup@4.61.1)(sass-embedded@1.93.2)(sass@1.93.2))
+      '@astrojs/markdown-remark':
+        specifier: ^7.2.0
+        version: 7.2.0
       '@astrojs/starlight':
         specifier: ^0.39.3
         version: 0.39.3(astro@6.4.4(@types/node@24.13.1)(rollup@4.61.1)(sass-embedded@1.93.2)(sass@1.93.2))(typescript@5.8.3)
@@ -2129,7 +2132,7 @@ snapshots:
     dependencies:
       '@types/hast': 3.0.4
       '@types/mdast': 4.0.4
-      js-yaml: 4.1.1
+      js-yaml: 4.2.0
       picomatch: 4.0.4
       retext-smartypants: 6.2.0
       shiki: 4.2.0

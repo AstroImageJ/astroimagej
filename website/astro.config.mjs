@@ -1,6 +1,7 @@
 import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
 
+import {unified} from '@astrojs/markdown-remark';
 import markdoc from '@astrojs/markdoc';
 import remarkInlineImage from './src/remark/inline-image.mjs';
 import remarkPathOverride from './src/remark/path-override.mjs';
@@ -24,9 +25,11 @@ export default defineConfig({
         customCss: ['./src/styles/docs.scss'],
     }), markdoc()],
     markdown: {
-        remarkPlugins: [
-          remarkInlineImage,
-          remarkPathOverride,
-        ],
+        processor: unified({
+            remarkPlugins: [
+                remarkInlineImage,
+                remarkPathOverride,
+            ],
+        }),
     },
 });

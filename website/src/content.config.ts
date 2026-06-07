@@ -1,7 +1,8 @@
-import { defineCollection, z } from 'astro:content';
-import { docsLoader } from '@astrojs/starlight/loaders';
-import { docsSchema } from '@astrojs/starlight/schema';
-import { glob } from 'astro/loaders';
+import {defineCollection} from 'astro:content';
+import {docsLoader} from '@astrojs/starlight/loaders';
+import {docsSchema} from '@astrojs/starlight/schema';
+import {glob} from 'astro/loaders';
+import {z} from "astro/zod";
 
 const releases = defineCollection({
 	// Load Markdown files in the src/content/releases directory.
@@ -13,8 +14,8 @@ const releases = defineCollection({
 			description: z.string(),
 			versionNumber: z.string(),
 			// Transform string to Date object
-			date: z.date({ coerce: true }),
-			draft: z.boolean({ coerce: true }),
+			date: z.coerce.date(),
+			draft: z.coerce.boolean().default(false),
 		}),
 });
 

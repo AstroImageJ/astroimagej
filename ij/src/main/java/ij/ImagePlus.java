@@ -702,7 +702,16 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	/** Returns a copy of this image as an 8-bit or RGB BufferedImage.
 	 * @see ij.process.ShortProcessor#get16BitBufferedImage
 	 */
+	@AstroImageJ(reason = "Support for Vectorized and Scaled plots", modified = true)
 	public BufferedImage getBufferedImage() {
+		if (getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null) {
+			Plot plot = (Plot)(getProperty(VectorPlotDrawing.PROPERTY_KEY));
+			return plot.getBufferedImage(width, height);
+		}
+		if (stack instanceof PlotVirtualStack plotVirtualStack) {
+			var plot = plotVirtualStack.getPlot(currentSlice);
+			return plot.getBufferedImage(width, height);
+		}
 		if (isComposite())
 			return (new ColorProcessor(getImage())).getBufferedImage();
 		else

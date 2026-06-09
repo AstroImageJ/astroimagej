@@ -38,6 +38,7 @@ import ij.WindowManager;
 import ij.astro.AstroImageJ;
 import ij.astro.accessors.TransferablePlot;
 import ij.astro.util.PdfPlotOutput;
+import ij.astro.util.VectorPlotDrawing;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.RoiScaler;
@@ -512,7 +513,16 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
 			SaveDialog sf = new SaveDialog("Save plot as PNG",fileName, ".png");
 			if (sf.getDirectory() == null || sf.getFileName() == null) return;
-			IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
+			// Save unscaled plot
+			var image = imp;
+			if (plot.isAijPlot()) {
+				image = ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, false).call(() -> {
+					var scaledPlot = plot.duplicate();
+					scaledPlot.draw();
+					return scaledPlot.getImagePlus();
+				});
+			}
+			IJ.runPlugIn(image, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
 		} else if (b==aps) {
 			Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
 			Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));

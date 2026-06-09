@@ -17928,6 +17928,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static void savePlotImage(String path, String writer) {
         ImagePlus image = WindowManager.getImage("Plot of " + tableName);
+        // Get unscaled plot for saving
+        if (image != null && image.getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null) {
+            var plot = (Plot)(image.getProperty(VectorPlotDrawing.PROPERTY_KEY));
+            if (plot.isAijPlot()) {
+                image = ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, false).call(() -> {
+                    var scaledPlot = plot.duplicate();
+                    scaledPlot.draw();
+                    return scaledPlot.getImagePlus();
+                });
+            }
+        }
         if (image == null) {
             IJ.beep();
             IJ.showMessage("No plot image to save");
@@ -18086,6 +18097,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (savePlot) {
             String imagepath = filenamesProvided ? plotPath : outBase + plotSuffix + "." + imageFormat;
             ImagePlus image = WindowManager.getImage("Plot of " + tableName);
+            // Get unscaled plot for saving
+            if (image != null && image.getProperty(VectorPlotDrawing.PROPERTY_KEY)!=null) {
+                var plot = (Plot)(image.getProperty(VectorPlotDrawing.PROPERTY_KEY));
+                if (plot.isAijPlot()) {
+                    image = ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, false).call(() -> {
+                        var scaledPlot = plot.duplicate();
+                        scaledPlot.draw();
+                        return scaledPlot.getImagePlus();
+                    });
+                }
+            }
             if (image == null) {
                 IJ.beep();
                 IJ.showMessage("No plot image to save");

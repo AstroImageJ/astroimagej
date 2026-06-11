@@ -1519,6 +1519,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.draw();
                 ImageProcessor ip = plot.getProcessor();
                 plotImage.setProcessor("Plot of " + tableName, ip);
+                if (plotImage.getCanvas() instanceof PlotCanvas plotCanvas) {
+                    plotCanvas.setPlot(plot);
+                }
             }
         } else {
             IJ.showStatus("No plot to clear");

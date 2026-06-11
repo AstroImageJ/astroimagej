@@ -1,13 +1,15 @@
 package Astronomy.multiplot.settings;
 
+import java.awt.Color;
+import java.util.function.Function;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+
 import Astronomy.MultiPlot_;
 import ij.astro.gui.MergedIcon;
 import ij.astro.gui.nstate.NState;
 import ij.astro.util.EmojiIcon;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.function.Function;
 
 public enum MPOperator implements NState<MPOperator> {
     NONE(null, "", false),
@@ -66,7 +68,7 @@ public enum MPOperator implements NState<MPOperator> {
     public MPOperator fromString(String s) {
         if (s.length() < 3) {
             try {
-                Integer i = Integer.getInteger(s);
+                var i = Integer.parseInt(s);
                 return switch (i) {
                     case 0 -> NONE;
                     case 1 -> DIVIDE_BY;

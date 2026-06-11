@@ -557,7 +557,7 @@ public class GUI {
 		return false;
 	}
 
-	private static boolean scaleFontInUIManager(Font original) {
+	private static synchronized boolean scaleFontInUIManager(Font original) {
 		var d = UIManager.getLookAndFeelDefaults();
 		for (var key : d.keySet()) {
 			if (key != null && key.toString().endsWith(".font")) {

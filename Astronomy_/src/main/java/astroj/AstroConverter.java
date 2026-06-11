@@ -225,11 +225,11 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     double[] amTwiDate = {2000, 1, 1, 12};
     boolean J2000radecSource = true, J2000altazSource = false;
     boolean showSexagesimal = true, optionChanged = true, showToolTips = true, updateText = false, autoTimeZone = true, useAMPM = true;
-    boolean usePM = true, usePrec = true, useNut = true, useAber = true, useRefr = true, useHarvard = true, useOhioState = false;
+    boolean usePM = true, usePrec = true, useNut = true, useAber = true, useRefr = true, useHarvard = true, useSharedSkies = false;
     boolean newSimbadData = false, newleapSecTableReady = false, ssObject = false, twiLocal = true, running = false;
     boolean SIMBADAccessFailed = false;
-    boolean OSUAccessFailed = false;
-    boolean OSUBJDFound = false;
+    boolean sharedSkiesAccessFailed = false;
+    boolean sharedSkiesBJDFound = false;
     boolean validObjectID = false;
     boolean useCustomObservatoryList = false;
     boolean reportSSBDown = true;
@@ -247,10 +247,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     JMenuBar menuBar;
     JMenu fileMenu, prefsMenu, networkMenu, helpMenu;
     JMenuItem savePrefsMenuItem, exitMenuItem, showLeapSecondTableMenuItem, helpMenuItem, setProxyAddressMenuItem, setProxyPortMenuItem, skyMapSettingsButton;
-    JCheckBoxMenuItem showSexagesimalCB, useHarvardCB, useOhioStateCB, useProxyCB, autoTimeZoneCB, reportSSBDownCB;
+    JCheckBoxMenuItem showSexagesimalCB, useHarvardCB, useSharedSkiesStateCB, useProxyCB, autoTimeZoneCB, reportSSBDownCB;
     JCheckBoxMenuItem useAMPMCB, showLocalTwilightCB, showToolTipsCB, useCustomObservatoryListCB;
     JCheckBoxMenuItem usePMCB, usePrecCB, useNutCB, useAberCB, useRefrCB;
-    JCheckBox useNowEpochCB, autoLeapSecCB, useOhioStateCheckBox;
+    JCheckBox useNowEpochCB, autoLeapSecCB, useSharedSkiesCheckBox;
     boolean useNowEpoch = false, autoLeapSec = true, jdEOIupMouseDown = false, jdEOIdownMouseDown = false, spinnerActive = false;
     Object mouseSource, textFieldSource;
     JTextField currentUTDateTextField, currentUTTimeTextField, currentEpochTextField, currentJDTextField, currentLSTTextField;
@@ -260,7 +260,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     JComboBox<String> observatoryIDComboBox;
     JButton updateLeapSecTableButton, jdEOIupButton, jdEOIdownButton, nowEOIButton, pmTwilightButton, amTwilightButton;
     JButton jdLocEOIupButton, jdLocEOIdownButton, skyMapButton, simbadButton;
-    JLabel moonPhaseLabel, OSULabel;
+    JLabel moonPhaseLabel, sharedSkiesLabel;
     JTextField eoiUTDateTextField, eoiUTTimeTextField, eoiJDTextField, eoiLSTTextField;
     JTextField UTDateJ2000TextField, epochJ2000TextField, jdJ2000TextField, lstJ2000TextField;
     JTextField eoiLocDateTextField, eoiLocTimeTextField, eoiPMTwilightTextField, eoiAMTwilightTextField;
@@ -592,9 +592,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         useHarvardCB.addItemListener(this);
         networkMenu.add(useHarvardCB);
 
-        useOhioStateCB = new JCheckBoxMenuItem("Use Ohio State BJD server, deselect to calculate internally", useOhioState);
-        useOhioStateCB.addItemListener(this);
-        networkMenu.add(useOhioStateCB);
+        useSharedSkiesStateCB = new JCheckBoxMenuItem("Use Shared Skies BJD server, deselect to calculate internally", useSharedSkies);
+        useSharedSkiesStateCB.addItemListener(this);
+        networkMenu.add(useSharedSkiesStateCB);
 
         useProxyCB = new JCheckBoxMenuItem("Use proxy server for internet access", useProxy);
         useProxyCB.addItemListener(this);
@@ -1645,21 +1645,21 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         JPanel eoiBJDPanel = new JPanel(new SpringLayout());
         eoiBJDPanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
 
-        JPanel OSUPanel = new JPanel(new SpringLayout());
+        JPanel sharedSkiesPanel = new JPanel(new SpringLayout());
 
-        OSULabel = new JLabel("OSU/internal");
-        OSULabel.setFont(p12);
-        OSULabel.setToolTipText("Use Ohio State BJD server, deselect to calculate internally");
-        OSULabel.setHorizontalAlignment(JTextField.RIGHT);
-        OSUPanel.add(OSULabel);
+        sharedSkiesLabel = new JLabel("Shared Skies/internal");
+        sharedSkiesLabel.setFont(p12);
+        sharedSkiesLabel.setToolTipText("Use Shared Skies BJD server, deselect to calculate internally");
+        sharedSkiesLabel.setHorizontalAlignment(JTextField.RIGHT);
+        sharedSkiesPanel.add(sharedSkiesLabel);
 
-        useOhioStateCheckBox = new JCheckBox("", useOhioState);
-        useOhioStateCheckBox.setToolTipText("Use Ohio State BJD server, deselect to calculate internally");
-        useOhioStateCheckBox.addItemListener(this);
-        OSUPanel.add(useOhioStateCheckBox);
+        useSharedSkiesCheckBox = new JCheckBox("", useSharedSkies);
+        useSharedSkiesCheckBox.setToolTipText("Use Shared Skies BJD server, deselect to calculate internally");
+        useSharedSkiesCheckBox.addItemListener(this);
+        sharedSkiesPanel.add(useSharedSkiesCheckBox);
 
-        SpringUtil.makeCompactGrid(OSUPanel, 1, OSUPanel.getComponentCount(), 0, 0, 0, 0);
-        eoiBJDPanel.add(OSUPanel);
+        SpringUtil.makeCompactGrid(sharedSkiesPanel, 1, sharedSkiesPanel.getComponentCount(), 0, 0, 0, 0);
+        eoiBJDPanel.add(sharedSkiesPanel);
 
         JLabel eoiBJDLabel = new JLabel("BJD:");
         eoiBJDLabel.setFont(p12);
@@ -2021,10 +2021,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 showToolTips = true;
             else if (source == useHarvardCB)
                 useHarvard = true;
-            else if (source == useOhioStateCB || source == useOhioStateCheckBox) {
-                useOhioState = true;
-                useOhioStateCB.setSelected(useOhioState);
-                useOhioStateCheckBox.setSelected(useOhioState);
+            else if (source == useSharedSkiesStateCB || source == useSharedSkiesCheckBox) {
+                useSharedSkies = true;
+                useSharedSkiesStateCB.setSelected(useSharedSkies);
+                useSharedSkiesCheckBox.setSelected(useSharedSkies);
             } else if (source == useProxyCB)
                 useProxy = true;
             else if (source == usePMCB)
@@ -2063,10 +2063,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 getObservatories();
             } else if (source == useHarvardCB)
                 useHarvard = false;
-            else if (source == useOhioStateCB || source == useOhioStateCheckBox) {
-                useOhioState = false;
-                useOhioStateCB.setSelected(useOhioState);
-                useOhioStateCheckBox.setSelected(useOhioState);
+            else if (source == useSharedSkiesStateCB || source == useSharedSkiesCheckBox) {
+                useSharedSkies = false;
+                useSharedSkiesStateCB.setSelected(useSharedSkies);
+                useSharedSkiesCheckBox.setSelected(useSharedSkies);
             } else if (source == useProxyCB)
                 useProxy = false;
             else if (source == showToolTipsCB)
@@ -2303,7 +2303,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 double lst = SkyAlgorithms.CalcLST((int) utDate[0], (int) utDate[1], (int) utDate[2], utDate[3], lon, leapSec);
                 double gg = (357.53 + 0.9856003 * (bjd - 2451545.0)) / DEG_IN_RADIAN;
                 double jdtest = 0;
-                if (useOhioState) {
+                if (useSharedSkies) {
                     double del = bjd - getBJDTDB(bjd, radecJ2000[0], radecJ2000[1]);
                     jdtest = bjd + del;
                 } else
@@ -2311,7 +2311,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 jdtest = Tools.parseDouble(sixPlaces.format(jdtest), 0.0);  //round to six places
                 gg = (357.53 + 0.9856003 * (jdtest - 2451545.0)) / DEG_IN_RADIAN;
                 double bjdtest = 0;
-                if (useOhioState) {
+                if (useSharedSkies) {
                     bjdtest = getBJDTDB(jdtest, radecJ2000[0], radecJ2000[1]);
                 } else
                     bjdtest = jdtest + ((dT + 0.001658 * Math.sin(gg) + 0.000014 * Math.sin(2 * gg)) / 86400.0 + calculateBJDCorrection(jdtest, dT, radec[0], radec[1], lst, lat, alt));
@@ -2596,7 +2596,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         eoiHJDTextField.setText(sixPlaces.format(hjdEOI));
         eoiHJDdTTextField.setText(decToSex((hjdEOICorr) * 24.0, 0, 24, false));
 
-        if (useOhioState && !useNowEpoch && !spinnerActive)
+        if (useSharedSkies && !useNowEpoch && !spinnerActive)
             bjdEOI = getBJDTDB(jdEOI, radecJ2000[0], radecJ2000[1]);
         else
             bjdEOI = TDB + calculateBJDCorrection(jdEOI, dT, radecEOI[0], radecEOI[1], lstEOI, lat, alt);
@@ -3130,9 +3130,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         pmTwilightButton.setEnabled(enable);
         amTwilightButton.setEnabled(enable);
         nowEOIButton.setEnabled(enable);
-        useOhioStateCheckBox.setEnabled(!useNowEpoch);
-        OSULabel.setEnabled(!useNowEpoch);
-        useOhioStateCB.setEnabled(!useNowEpoch);
+        useSharedSkiesCheckBox.setEnabled(!useNowEpoch);
+        sharedSkiesLabel.setEnabled(!useNowEpoch);
+        useSharedSkiesStateCB.setEnabled(!useNowEpoch);
     }
 
     protected void wait(int millis) {
@@ -3343,48 +3343,50 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         Thread t = new Thread() {
             public void run() {
                 eoiBJDTextField.setBackground(leapYellow);
-                eoiBJDTextField.setText("accessing OSU...");
+                eoiBJDTextField.setText("accessing Shared Skies...");
                 eoiBJDTextField.repaint();
             }
         };
 
         t.start();
         Thread.yield();
-        OSUAccessFailed = false;
-        OSUBJDFound = false;
+        sharedSkiesAccessFailed = false;
+        sharedSkiesBJDFound = false;
         double bjd = bjdEOI;
         try {
 //            String objectID = URLEncoder.encode(objectIDTextField.getText().trim(),"UTF-8");
-            URL ohioState;
-            ohioState = new URL("https://astroutils.astronomy.osu.edu/time/utc2bjd.url.php?UTC=" + jd + "&RA=" + (ra2000 * 15) + "&DEC=" + dec2000);
-            URLConnection ohioStateCon;
-            if (useProxy) ohioStateCon = ohioState.openConnection(proxy);
-            else ohioStateCon = ohioState.openConnection();
-            ohioStateCon.setConnectTimeout(10000);
-            ohioStateCon.setReadTimeout(10000);
-            BufferedReader in = new BufferedReader(new InputStreamReader(ohioStateCon.getInputStream()));
+            URL sharedSkies;
+            sharedSkies = new URI("https://sharedskies.space/bjd.php?UTC=" + jd + "&RA=" + (ra2000 * 15) + "&DEC=" + dec2000).toURL();
+            URLConnection sharedSkiesCon;
+            if (useProxy) sharedSkiesCon = sharedSkies.openConnection(proxy);
+            else sharedSkiesCon = sharedSkies.openConnection();
+            sharedSkiesCon.setConnectTimeout(10000);
+            sharedSkiesCon.setReadTimeout(10000);
+            BufferedReader in = new BufferedReader(new InputStreamReader(sharedSkiesCon.getInputStream()));
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
                 //IJ.log(inputLine);
-                if (inputLine.startsWith("<pre>")) {
-                    inputLine = inputLine.substring(5);
+                if (!inputLine.isBlank()) {
                     bjd = Tools.parseDouble(inputLine.trim(), 0.0);
-                    OSUBJDFound = true;
+                    sharedSkiesBJDFound = true;
                     break;
                 }
             }
-            if (!OSUBJDFound) {
-                showMessage("Ohio State BJD query error", "<html>" + "The OSU site did not return a valid BJD value." + "<br>" +
+            if (!sharedSkiesBJDFound) {
+                showMessage("Shared Skies BJD query error", "<html>" + "The Shared Skies site did not return a valid BJD value." + "<br>" +
                         "Report this problem to the AIJ team via the user forum." + "<br>" +
                         "An option is to use internal calculations (see Preferences menu)." + "</html>");
-                OSUAccessFailed = true;
+                sharedSkiesAccessFailed = true;
             }
             in.close();
         } catch (IOException ioe) {
-            showMessage("Ohio State BJD query error", "<html>" + "Could not open link to Ohio State BJD calculation site." + "<br>" +
+            showMessage("Shared Skies BJD query error", "<html>" + "Could not open link to Shared Skies BJD calculation site." + "<br>" +
                     "Check internet connection or proxy settings (see Network menu) or" + "<br>" +
                     "use internal calculations (see Preferences menu)." + "</html>");
-            OSUAccessFailed = true;
+            sharedSkiesAccessFailed = true;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            sharedSkiesAccessFailed = true;
         }
 
         eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
@@ -5021,7 +5023,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         showSexagesimal = Prefs.get(prefix + "showSexagesimal", showSexagesimal);
         useCustomObservatoryList = Prefs.get(prefix + "useCustomObservatoryList", useCustomObservatoryList);
         useHarvard = Prefs.get(prefix + "useHarvard", useHarvard);
-        useOhioState = Prefs.get(prefix + "useOhioState", useOhioState);
+        useSharedSkies = Prefs.get(prefix + "useOhioState", useSharedSkies);
         showToolTips = Prefs.get("astroIJ.showToolTips", showToolTips);
         useNowEpoch = Prefs.get(prefix + "useNowEpoch", useNowEpoch);
         autoLeapSec = Prefs.get(prefix + "autoLeapSec", autoLeapSec);
@@ -5089,7 +5091,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         Prefs.set(prefix + "showSexagesimal", showSexagesimal);
         Prefs.set(prefix + "useCustomObservatoryList", useCustomObservatoryList);
         Prefs.set(prefix + "useHarvard", useHarvard);
-        Prefs.set(prefix + "useOhioState", useOhioState);
+        Prefs.set(prefix + "useOhioState", useSharedSkies);
         Prefs.set("astroIJ.showToolTips", showToolTips);
         Prefs.set(prefix + "useNowEpoch", useNowEpoch);
         Prefs.set(prefix + "autoLeapSec", autoLeapSec);
@@ -5211,17 +5213,17 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
     public int setHJDTime(double hjd) {
         eoiHJDTextField.setText("" + hjd);
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         processAction(eoiHJDTextField);
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 
     public int setBJDTime(double bjd) {
         eoiBJDTextField.setText("" + bjd);
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         processAction(eoiBJDTextField);
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 
@@ -5260,21 +5262,21 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     }
 
     public int processManualCoordinates() {
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         processAction(null);
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 
     public int processRADECJ2000Coordinates() {
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         processAction(raJ2000TextField);
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 
     public int processRADECJ2000(double ra, double dec) {
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         clearActiveBox();
         raJ2000TextField.setText(showSexagesimal ? decToSex(ra, 3, 24, false) : sixPlaces.format(ra));
         raJ2000TextField.setBorder(greenBorder);
@@ -5282,12 +5284,12 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         decJ2000TextField.setBorder(greenBorder);
         newradecJ2000 = true;
         processAction(null);
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 
     public int processRADECEOD(double ra, double dec) {
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         clearActiveBox();
         raEOITextField.setText(showSexagesimal ? decToSex(ra, 3, 24, false) : sixPlaces.format(ra));
         raEOITextField.setBorder(greenBorder);
@@ -5295,7 +5297,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         decEOITextField.setBorder(greenBorder);
         newradecEOI = true;
         processAction(null);
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 
@@ -5303,11 +5305,11 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         objectIDTextField.setText(simbadID.replace("_", " ").toLowerCase().trim());
         SIMBADAccessFailed = false;
-        OSUAccessFailed = false;
+        sharedSkiesAccessFailed = false;
         processAction(objectIDTextField);
         if (SIMBADAccessFailed) return 1;
         if (!newSimbadData) return 2;
-        if (OSUAccessFailed) return 3;
+        if (sharedSkiesAccessFailed) return 3;
         return 0;
     }
 

@@ -1,5 +1,14 @@
 package Astronomy.multiplot.table.util;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.Function;
+
+import javax.swing.JTextField;
+
 import Astronomy.multiplot.table.MeasurementsWindow;
 import ij.IJ;
 import ij.astro.gui.GenericSwingDialog;
@@ -9,14 +18,6 @@ import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
 import org.hipparchus.special.Gamma;
-
-import javax.swing.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.Function;
 
 public class OperationsHandler {
     private static final String VALUE_SOURCE_CONST_B = "Constant: b (from input box)";
@@ -151,6 +152,7 @@ public class OperationsHandler {
 
     public enum Operator implements NState<Operator>, ToolTipProvider {
         ADD("cv + b", Double::sum),
+        SUBTRACT("cv - b", (cv, b) -> cv - b),
         MULTIPLY("cv * b", (cv, b) -> cv * b),
         DIVIDE("cv / b", (cv, b) -> cv / b),
         EXPONENTIATE("<html>cv<sup>b</sup></html>", (cv, b) -> {

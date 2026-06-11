@@ -15443,14 +15443,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(refStarMainPanel, refStarMainPanel.getComponentCount(), 1, 6, 6, 6, 6);
 
         refStarFrame.add(refStarScrollPane);
-        refStarFrame.pack();
         refStarFrame.setResizable(true);
+
+        UIHelper.recursiveFontSetter(refStarFrame, p11);
+        GUI.scaleFrame(refStarFrame);
+        refStarFrame.pack();
 
         if (rememberWindowLocations) {
             IJU.setFrameSizeAndLocation(refStarFrame, refStarFrameLocationX, refStarFrameLocationY, 0, 0);
         }
-        UIHelper.recursiveFontSetter(refStarFrame, p11);
-        GUI.scaleFrame(refStarFrame);
+
         // Recaluate the component layout as we are now scaled
         relayoutRefStarPanel();
         refStarFrame.setVisible(true);

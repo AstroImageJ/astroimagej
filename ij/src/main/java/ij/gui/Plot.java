@@ -531,8 +531,8 @@ public class Plot implements Cloneable {
 			return;
 		Dimension minSize = getMinimumSize();
 		if (isAijPlot()) {
-			pp.width = (int) (Math.max(width, minSize.width) * Prefs.getGuiScale());
-			pp.height = (int) (Math.max(height, minSize.height) * Prefs.getGuiScale());
+			pp.width = (int) Math.round(Math.max(width, minSize.width) * Prefs.getGuiScale());
+			pp.height = (int) Math.round(Math.max(height, minSize.height) * Prefs.getGuiScale());
 		} else {
 			pp.width = Math.max(width, minSize.width);
 			pp.height = Math.max(height, minSize.height);
@@ -2214,8 +2214,8 @@ public class Plot implements Cloneable {
 		}
 
 		var v = Prefs.getGuiScale();
-		frameWidth = (int) (pp.width / v) - (leftMargin + rightMargin);
-		frameHeight = (int) (pp.height / v) - (topMargin + bottomMargin);
+		frameWidth = (int) Math.round((pp.width / v) - (leftMargin + rightMargin));
+		frameHeight = (int) Math.round((pp.height / v) - (topMargin + bottomMargin));
 	}
 
 	/** Calculates the margin sizes and sets the class variables accordingly */

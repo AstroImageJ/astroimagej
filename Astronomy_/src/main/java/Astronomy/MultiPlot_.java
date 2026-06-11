@@ -2417,7 +2417,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.setFrozen(false);
         } else {
             plotWindow = (PlotWindow) plotImage.getWindow();
-            ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, true).run(() -> {
+            ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> {
                 ImageProcessor ip = plot.getProcessor();
                 plotImage.setProcessor("Plot of " + tableName, ip);
             });

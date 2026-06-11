@@ -2151,7 +2151,16 @@ public class Plot implements Cloneable {
 			return buffer;
         }
 
-		return getProcessor().getBufferedImage();
+		// MP has a race condition as setSize sets the ip to null, and it disposes of the plot as well
+		// So, make a copy of the plot and draw there
+		var ip = getProcessor();
+        if (ip == null) {
+            var p = duplicate();
+			p.draw();
+			ip = p.getProcessor();
+        }
+
+		return ip.getBufferedImage();
 	}
 
 	/** Creates the processor if not existing, clears the background and prepares

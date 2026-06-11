@@ -3364,7 +3364,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             sharedSkiesCon.setReadTimeout(10000);
             BufferedReader in = new BufferedReader(new InputStreamReader(sharedSkiesCon.getInputStream()));
             String inputLine;
-            while ((inputLine = in.readLine()) != null) {
+            var c = 10;
+            while ((inputLine = in.readLine()) != null && c > 0) {
+                c--;
                 //IJ.log(inputLine);
                 if (!inputLine.isBlank()) {
                     bjd = Tools.parseDouble(inputLine.trim(), 0.0);

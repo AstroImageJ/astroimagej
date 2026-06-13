@@ -758,7 +758,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             ac.setMagnification((double) ac.getHeight() / (double) rect.height);
             ac.setDrawingSize((int) ((double) ac.getHeight() * (double) rect.width / (double) rect.height), ac.getHeight());
             if (rect.x < 0 || rect.y < 0 || rect.x + w > ipWidth || rect.y + h > ipHeight) {
-                ac.paint(ac.getGraphics());//clearAndPaint();
+                ac.repaint();//clearAndPaint();
             }
         }
 //                IJ.log("Finished check of 'startup using previous pan position'");
@@ -3041,11 +3041,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 showPhotometer = true;
 //                updatePhotometerOverlay();
                 ac.setAperture(radius, rBack1, rBack2, showSkyOverlay, showPhotometer);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showPhotometer", showPhotometer);
             } else if (source == showRedCrossHairCursorCB) {
                 ac.showRedCrossHairCursor = true;
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showRedCrossHairCursor", ac.showRedCrossHairCursor);
             } else if (source == removeBackStarsCB) {
                 removeBackStars = true;
@@ -3126,38 +3126,38 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             } else if (source == showZoomCB) {
                 showZoom = true;
                 ac.setShowZoom(showZoom);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showZoom", showZoom);
             } else if (source == showDirCB) {
                 showDir = true;
                 ac.setShowDir(showDir);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showDir", showDir);
             } else if (source == showXYCB) {
                 showXY = true;
                 ac.setShowXY(showXY);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showXY", showXY);
             } else if (source == showScaleXCB) {
                 showScaleX = true;
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showScaleX", showScaleX);
             } else if (source == showScaleYCB) {
                 showScaleY = true;
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
                 ;
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showScaleY", showScaleY);
             } else if (source == showAbsMagCB) {
                 showAbsMag = true;
                 ac.setShowAbsMag(showAbsMag);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showAbsMag", showAbsMag);
             } else if (source == showIntCntWithAbsMagCB) {
                 showIntCntWithAbsMag = true;
                 ac.setShowIntCntWithAbsMag(showIntCntWithAbsMag);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showIntCntWithAbsMag", showIntCntWithAbsMag);
             } else if (source == autoNupEleftRB) {
                 autoNupEleft = true;
@@ -3294,7 +3294,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 Prefs.set("Astronomy_Tool.showPhotometer", showPhotometer);
             } else if (source == showRedCrossHairCursorCB) {
                 ac.showRedCrossHairCursor = false;
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showRedCrossHairCursor", ac.showRedCrossHairCursor);
             } else if (source == removeBackStarsCB) {
                 removeBackStars = false;
@@ -3304,7 +3304,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 showRemovedPixels = false;
                 OverlayCanvas oc = OverlayCanvas.getOverlayCanvas(imp);
                 oc.removePixelRois();
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("aperture.showremovedpixels", showRemovedPixels);
                 Prefs.set("oldAperture.showRemovedPixels", showRemovedPixels);
             } else if (source == rightClickAnnotateCB) {
@@ -3376,38 +3376,38 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             } else if (source == showZoomCB) {
                 showZoom = false;
                 ac.setShowZoom(showZoom);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showZoom", showZoom);
             } else if (source == showDirCB) {
                 showDir = false;
                 ac.setShowDir(showDir);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showDir", showDir);
             } else if (source == showXYCB) {
                 showXY = false;
                 ac.setShowXY(showXY);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showXY", showXY);
             } else if (source == showScaleXCB) {
                 showScaleX = false;
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showScaleX", showScaleX);
             } else if (source == showScaleYCB) {
                 showScaleY = false;
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showScaleY", showScaleY);
             } else if (source == showAbsMagCB) {
                 showAbsMag = false;
                 ac.setShowAbsMag(showAbsMag);
                 ;
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showAbsMag", showAbsMag);
             } else if (source == showIntCntWithAbsMagCB) {
                 showIntCntWithAbsMag = false;
                 ac.setShowIntCntWithAbsMag(showIntCntWithAbsMag);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
                 Prefs.set("Astronomy_Tool.showIntCntWithAbsMag", showIntCntWithAbsMag);
             } else if (source == autoNupEleftRB) {
                 autoNupEleft = false;
@@ -3463,7 +3463,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         netFlipX = ac.getNetFlipX();
         netFlipY = ac.getNetFlipY();
         netRotate = ac.getNetRotate();
-        ac.paint(ac.getGraphics());
+        ac.repaint();
         if (saveConfig) {
             Prefs.set("Astronomy_Tool.invertX", invertX);
             Prefs.set("Astronomy_Tool.invertY", invertY);
@@ -4042,7 +4042,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     roi.setRadec(coords[0], coords[1]);
                     ac.removePhantomApertureRois();
                     ac.add(roi);
-                    ac.paint(ac.getGraphics());
+                    ac.repaint();
                     MultiAperture_.addApertureAsOld(coords[0], coords[1], pixel[0], pixel[1], (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0);
                     MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
                     MultiAperture_.SHAPED_IMPORTED_APS.set(Collections.singletonList(ShapedApertureRoi.fromApertureRoi(roi)));
@@ -4515,7 +4515,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         pixelScaleY = gd.getNextNumber();
         ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
         ac.updateZoomBoxParameters();
-        ac.paint(ac.getGraphics());
+        ac.repaint();
         Prefs.set("Astronomy_Tool.pixelScaleX", pixelScaleX);
         Prefs.set("Astronomy_Tool.pixelScaleY", pixelScaleY);
     }
@@ -4530,7 +4530,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (gd.wasCanceled()) return;
         ac.zoomIndicatorSize = (int) gd.getNextNumber();
         ac.updateZoomBoxParameters();
-        ac.paint(ac.getGraphics());
+        ac.repaint();
         Prefs.set("Astronomy_Tool.zoomIndicatorSize", ac.zoomIndicatorSize);
     }//setSimbadSearchRadiusDialog
 
@@ -4560,7 +4560,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ac.NdirAngle = gd.getNextNumber();
         ac.EdirAngle = gd.getNextNumber();
         ac.updateZoomBoxParameters();
-        ac.paint(ac.getGraphics());
+        ac.repaint();
         Prefs.set("Astronomy_Tool.NdirAngle", ac.NdirAngle);
         Prefs.set("Astronomy_Tool.EdirAngle", ac.EdirAngle);
     }
@@ -4761,7 +4761,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             if (updateImage) {
                 dataRotated = true;
 //                    layoutContainer(this);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
             }
         } else {
             for (int i = 1; i <= stackSize; i++) {
@@ -5246,7 +5246,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 shapedApertureRoi.setName(isRef[i] ? "C" + (i + 1) : "T" + (i + 1));
                 shaped.add(shapedApertureRoi);
                 ac.add(roi);
-                ac.paint(ac.getGraphics());
+                ac.repaint();
             }
             MultiAperture_.SHAPED_IMPORTED_APS.set(shaped);
         } catch (Exception e) {
@@ -5560,7 +5560,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         frameLocationY = this.getLocation().y;
 //        apertureOverlay.clear();
         ac.setAstronomyMode(false);
-        ac.paint(ac.getGraphics());
+        ac.repaint();
         savePrefs();
         astronomyMode = false;
         imp.unlock();
@@ -5598,7 +5598,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //        apertureOverlay.clear();
         ac.setMouseInImage(false);
         ac.setAstronomyMode(true);
-        ac.paint(ac.getGraphics());
+        ac.repaint();
     }
 
 //	public void focusGained(FocusEvent e) {
@@ -5788,7 +5788,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (autoNupEleft) {
             setBestOrientation();
         } else {
-            ac.paint(ac.getGraphics());
+            ac.repaint();
         }
     }
 
@@ -6627,7 +6627,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                        }
 //                    }
 //                }
-        ac.paint(ac.getGraphics());
+        ac.repaint();
     }
 
     public void updateIntCnts() {
@@ -6682,7 +6682,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     public void mouseExited(MouseEvent e) {
 //            apertureOverlay.clear();
         ac.setMouseInImage(false);
-        ac.paint(ac.getGraphics());
+        ac.repaint();
     }
 
     private Future<?> previousTask;
@@ -6715,7 +6715,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
             SwingUtilities.invokeLater(() -> {
                 if (showPhotometer) {
-                    ac.paint(ac.getGraphics());
+                    ac.repaint();
                 }
 
                 updateXYValue(imageX, imageY, NOT_DRAGGING, e.isShiftDown(), e.isControlDown());
@@ -6843,7 +6843,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                                            }
 //                                        else
 //                                            ac.repaint();
-                    ac.paint(ac.getGraphics());
+                    ac.repaint();
                 }
                 xy[0] = imageX;
                 xy[1] = imageY;
@@ -7351,7 +7351,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             if (repaintoverlay) {
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
                 ac.updateZoomBoxParameters();
-                ac.paint(ac.getGraphics());
+                ac.repaint();
             }
         }
     }
@@ -7578,7 +7578,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //            }
 //        else
 //            ac.repaint();
-        ac.paint(ac.getGraphics());
+        ac.repaint();
         prevMag = ac.getMagnification();
     }
 

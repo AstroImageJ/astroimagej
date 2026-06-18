@@ -156,8 +156,8 @@ const payloadJson = JSON.stringify(payload);
           return "linux-x64";
         }
         if (/mac/i.test(platform) || /darwin/i.test(platform)) {
-          if (/arm|aarch|arm64/i.test(architecture)) return "mac-arm";
-          return "mac-intel";
+          if (/x86|amd|intel|x64/i.test(architecture)) return "mac-intel";
+          return "mac-arm";
         }
       }
     } catch (e) {
@@ -174,8 +174,8 @@ const payloadJson = JSON.stringify(payload);
     }
     if (/android/i.test(ua)) return "linux-arm";
     if (/macintosh|mac os x|darwin/i.test(ua)) {
-      if (/arm|aarch64|apple silicon|arm64/i.test(ua)) return "mac-arm";
-      return "mac-intel";
+      if (/x86_64|intel/i.test(ua)) return "mac-intel";
+      return "mac-arm";
     }
     return "unknown";
   }

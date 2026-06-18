@@ -2313,140 +2313,146 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.addLabel(10/pWid, (h + 43)/h, Plot.X_LABEL_V_ANCHOR + removedCount);
         }
 
-        SwingUtilities.invokeLater(() -> {
-            if (plotImage == null) {
-                // Freeze plot as we draw it again later
-                plot.setFrozen(true);
-                plotFrameLocationX = (int) Prefs.get("plot2.plotFrameLocationX", plotFrameLocationX);
-                plotFrameLocationY = (int) Prefs.get("plot2.plotFrameLocationY", plotFrameLocationY);
-                if (!Prefs.isLocationOnScreen(new Point(plotFrameLocationX, plotFrameLocationY))) {
-                    plotFrameLocationX = 10;
-                    plotFrameLocationY = 10;
-                    Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
-                    Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
+        if (SwingUtilities.isEventDispatchThread()) {
+            drawUpdatedPlot();
+        } else {
+            SwingUtilities.invokeLater(MultiPlot_::drawUpdatedPlot);
+        }
+    }
+
+    private static void drawUpdatedPlot() {
+        if (plotImage == null) {
+            // Freeze plot as we draw it again later
+            plot.setFrozen(true);
+            plotFrameLocationX = (int) Prefs.get("plot2.plotFrameLocationX", plotFrameLocationX);
+            plotFrameLocationY = (int) Prefs.get("plot2.plotFrameLocationY", plotFrameLocationY);
+            if (!Prefs.isLocationOnScreen(new Point(plotFrameLocationX, plotFrameLocationY))) {
+                plotFrameLocationX = 10;
+                plotFrameLocationY = 10;
+                Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
+                Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
+            }
+            plotWindow = plot.show();
+            plotWindow.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    if (suppressDataUpdate) {
+                        return;
+                    }
+                    updatePlotEnabled = false;
+
+                    var y = (int) (plot.getSize().height / Prefs.getGuiScale());
+                    var x = (int) (plot.getSize().width / Prefs.getGuiScale());
+
+                    if (plotSizeX != x) {
+                        plotwidthspinner.setValue(x);
+                    }
+                    if (plotSizeY != y) {
+                        plotheightspinner.setValue(y);
+                    }
+                    updatePlotEnabled = true;
+                    supressDataProcessing();
+                    updatePlot(updateNoFits());
                 }
-                plotWindow = plot.show();
-                plotWindow.addComponentListener(new ComponentAdapter() {
-                    @Override
-                    public void componentResized(ComponentEvent e) {
-                        if (suppressDataUpdate) {
-                            return;
-                        }
-                        updatePlotEnabled = false;
 
-                        var y = (int) (plot.getSize().height / Prefs.getGuiScale());
-                        var x = (int) (plot.getSize().width / Prefs.getGuiScale());
-
-                        if (plotSizeX != x) {
-                            plotwidthspinner.setValue(x);
-                        }
-                        if (plotSizeY != y) {
-                            plotheightspinner.setValue(y);
-                        }
-                        updatePlotEnabled = true;
-                        supressDataProcessing();
-                        updatePlot(updateNoFits());
-                    }
-
-                    @Override
-                    public void componentMoved(ComponentEvent e) {
-                        if (e.getComponent().isVisible()) {
-                            var loc = e.getComponent().getLocationOnScreen();
-                            plotFrameLocationX = loc.x;
-                            plotFrameLocationY = loc.y;
-                            Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
-                            Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
-                        }
-                    }
-                });
-                plotWindow.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosing(WindowEvent e) {
+                @Override
+                public void componentMoved(ComponentEvent e) {
+                    if (e.getComponent().isVisible()) {
                         var loc = e.getComponent().getLocationOnScreen();
                         plotFrameLocationX = loc.x;
                         plotFrameLocationY = loc.y;
                         Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
                         Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
                     }
-                });
-                ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
-                    HELP_PANEL.setVisible(true);
-                });
-                plotWindow.setIconImage(plotIcon.getImage());
-                plotImage = plotWindow.getImagePlus();
-
-                plotImageCanvas = plotImage.getCanvas();
-                ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
-                plotOverlayCanvas = new OverlayCanvas(plotImage);
-                list.clear();
-
-                MouseMotionListener[] mml = plotImageCanvas.getMouseMotionListeners();
-                if (mml.length > 0) {
-                    for (MouseMotionListener mouseMotionListener : mml)
-                        plotImageCanvas.removeMouseMotionListener(mouseMotionListener);
                 }
-
-                MouseWheelListener[] mwl = plotImageCanvas.getMouseWheelListeners();
-                if (mwl.length > 0) {
-                    for (MouseWheelListener mouseWheelListener : mwl)
-                        plotImageCanvas.removeMouseWheelListener(mouseWheelListener);
+            });
+            plotWindow.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    var loc = e.getComponent().getLocationOnScreen();
+                    plotFrameLocationX = loc.x;
+                    plotFrameLocationY = loc.y;
+                    Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
+                    Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
                 }
+            });
+            ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
+                HELP_PANEL.setVisible(true);
+            });
+            plotWindow.setIconImage(plotIcon.getImage());
+            plotImage = plotWindow.getImagePlus();
 
-                MouseWheelListener[] mwl3 = plotWindow.getMouseWheelListeners();
-                if (mwl3.length > 0) {
-                    for (MouseWheelListener mouseWheelListener : mwl3)
-                        plotWindow.removeMouseWheelListener(mouseWheelListener);
-                }
+            plotImageCanvas = plotImage.getCanvas();
+            ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
+            plotOverlayCanvas = new OverlayCanvas(plotImage);
+            list.clear();
 
-                MouseListener[] ml = plotImageCanvas.getMouseListeners();
-                if (ml.length > 0) {
-                    for (MouseListener mouseListener : ml) plotImageCanvas.removeMouseListener(mouseListener);
-                }
-
-                KeyListener[] kl = plotImageCanvas.getKeyListeners();
-                if (kl.length > 0) {
-                    for (KeyListener mouseListener : kl) plotImageCanvas.removeKeyListener(mouseListener);
-                }
-
-                plotImageCanvas.addMouseWheelListener(plotMouseWheelListener);
-                plotImageCanvas.addMouseMotionListener(plotMouseMotionListener);
-                plotImageCanvas.addMouseListener(plotMouseListener);
-                plotImageCanvas.addKeyListener(plotKeyListener);
-                plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                zoomX = 0.0;
-                zoomY = 0.0;
-                plot.setFrozen(false);
-            } else {
-                plotWindow = (PlotWindow) plotImage.getWindow();
-                ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> {
-                    ImageProcessor ip = plot.getProcessor();
-                    plotImage.setProcessor("Plot of " + tableName, ip);
-                });
-                plotImageCanvas = plotImage.getCanvas();
-                plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
+            MouseMotionListener[] mml = plotImageCanvas.getMouseMotionListeners();
+            if (mml.length > 0) {
+                for (MouseMotionListener mouseMotionListener : mml)
+                    plotImageCanvas.removeMouseMotionListener(mouseMotionListener);
             }
 
-            plot.update();
+            MouseWheelListener[] mwl = plotImageCanvas.getMouseWheelListeners();
+            if (mwl.length > 0) {
+                for (MouseWheelListener mouseWheelListener : mwl)
+                    plotImageCanvas.removeMouseWheelListener(mouseWheelListener);
+            }
 
-            plotbottompanel = (Panel) plotWindow.getComponent(1);
-            plotbottompanel.getComponentCount();
-            plotbottompanel.setSize(600, 30);
-            plotcoordlabel = (Label) plotbottompanel.getComponent(plotbottompanel.getComponentCount() - 1);
-            plotcoordlabel.setSize(400, 20);
-            plotcoordlabel.setBackground(Color.white);
+            MouseWheelListener[] mwl3 = plotWindow.getMouseWheelListeners();
+            if (mwl3.length > 0) {
+                for (MouseWheelListener mouseWheelListener : mwl3)
+                    plotWindow.removeMouseWheelListener(mouseWheelListener);
+            }
 
-            //Replot to clean up blank areas
+            MouseListener[] ml = plotImageCanvas.getMouseListeners();
+            if (ml.length > 0) {
+                for (MouseListener mouseListener : ml) plotImageCanvas.removeMouseListener(mouseListener);
+            }
 
-            excludedHeadSamples = holdExcludedHeadSamples;
-            excludedTailSamples = holdExcludedTailSamples;
-            table.setLock(false);
-            plotWindow.getImagePlus().setPlot(plot);
-            ((PlotWindow) plotWindow).setPlot(plot);
-            updatePlotPos();
-            suppressDataUpdate = false;
-            updatePlotRunning = false;
-        });
+            KeyListener[] kl = plotImageCanvas.getKeyListeners();
+            if (kl.length > 0) {
+                for (KeyListener mouseListener : kl) plotImageCanvas.removeKeyListener(mouseListener);
+            }
+
+            plotImageCanvas.addMouseWheelListener(plotMouseWheelListener);
+            plotImageCanvas.addMouseMotionListener(plotMouseMotionListener);
+            plotImageCanvas.addMouseListener(plotMouseListener);
+            plotImageCanvas.addKeyListener(plotKeyListener);
+            plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            zoomX = 0.0;
+            zoomY = 0.0;
+            plot.setFrozen(false);
+        } else {
+            plotWindow = (PlotWindow) plotImage.getWindow();
+            ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> {
+                ImageProcessor ip = plot.getProcessor();
+                plotImage.setProcessor("Plot of " + tableName, ip);
+            });
+            plotImageCanvas = plotImage.getCanvas();
+            plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
+        }
+
+        plot.update();
+
+        plotbottompanel = (Panel) plotWindow.getComponent(1);
+        plotbottompanel.getComponentCount();
+        plotbottompanel.setSize(600, 30);
+        plotcoordlabel = (Label) plotbottompanel.getComponent(plotbottompanel.getComponentCount() - 1);
+        plotcoordlabel.setSize(400, 20);
+        plotcoordlabel.setBackground(Color.white);
+
+        //Replot to clean up blank areas
+
+        excludedHeadSamples = holdExcludedHeadSamples;
+        excludedTailSamples = holdExcludedTailSamples;
+        table.setLock(false);
+        plotWindow.getImagePlus().setPlot(plot);
+        ((PlotWindow) plotWindow).setPlot(plot);
+        updatePlotPos();
+        suppressDataUpdate = false;
+        updatePlotRunning = false;
     }
 
     private static PlotDataLock processData(boolean[] updateFit) {

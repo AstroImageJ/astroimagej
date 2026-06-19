@@ -64,6 +64,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,12 +74,20 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -114,6 +125,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
 import astroj.util.SkyMapOptions;
+import ij.IJ;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
@@ -362,6 +374,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     // used to weight barycenter calculation only.
     private Frame frame;
     private static final SimbadOptions SIMBAD_OPTIONS = new SimbadOptions();
+    private final Map<RaDec, Map<Double, Double>> bulkTimes = new HashMap<>();
 
 
     public AstroConverter(boolean showWindow, boolean dpControlled, String title) {
@@ -3350,6 +3363,18 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         t.start();
         Thread.yield();
+
+        if (!bulkTimes.isEmpty() && sharedSkiesBJDFound) {
+            var tm = bulkTimes.get(new RaDec(ra2000, dec2000));
+            if (tm != null) {
+                var bjd = tm.get(jd);
+                if (bjd != null) {
+                    eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
+                    return bjd;
+                }
+            }
+        }
+
         sharedSkiesAccessFailed = false;
         sharedSkiesBJDFound = false;
         double bjd = bjdEOI;
@@ -4947,6 +4972,191 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         return retvals;
     }
 
+    public boolean bulkProcessTimes(MeasurementTable table, boolean useTableLoc, String raColumn, String decColumn, String JDColumn) {
+        bulkTimes.clear();
+
+        if (useSharedSkies) {
+            return true;
+        }
+
+        var jdCol = table.getColumnIndex(JDColumn);
+        if (jdCol == MeasurementTable.COLUMN_NOT_FOUND) {
+            IJ.beep();
+            IJ.showMessage("Error: could not find JD table column '" + JDColumn + "'");
+            return false;
+        }
+
+        var addOffset = JDColumn.contains("-2400000");
+        var tableLength = table.getCounter();
+        RaDec defaultKey = new RaDec(radecJ2000[0], radecJ2000[1]);
+        var initTimes = Collections.synchronizedMap(new HashMap<RaDec, Map<Double, Double>>());
+
+        if (useTableLoc) {
+            var raCol = table.getColumnIndex(raColumn);
+            var decCol = table.getColumnIndex(decColumn);
+
+            if (raCol == MeasurementTable.COLUMN_NOT_FOUND) {
+                IJ.beep();
+                IJ.showMessage("Error: could not find RA table column '" + raColumn + "'");
+                return false;
+            }
+            if (decCol == MeasurementTable.COLUMN_NOT_FOUND) {
+                IJ.beep();
+                IJ.showMessage("Error: could not find DEC table column '" + decColumn + "'");
+                return false;
+            }
+
+            for (int i = 0; i < tableLength; i++) {
+                var ra = table.getValueAsDouble(raCol, i);
+                var dec = table.getValueAsDouble(decCol, i);
+
+                RaDec key = defaultKey;
+                if (!Double.isNaN(ra) && !Double.isNaN(dec)) {
+                    key = new RaDec(ra, dec);
+                }
+
+                var jd = table.getValueAsDouble(jdCol, i);
+                if (addOffset) {
+                    jd += 2400000;
+                }
+
+                initTimes.computeIfAbsent(key, ignored -> Collections.synchronizedMap(new HashMap<>()))
+                        .put(jd, jd);
+            }
+        } else {
+            for (int i = 0; i < tableLength; i++) {
+                var jd = table.getValueAsDouble(jdCol, i);
+                if (addOffset) {
+                    jd += 2400000;
+                }
+
+                initTimes.computeIfAbsent(defaultKey, ignored -> Collections.synchronizedMap(new HashMap<>()))
+                        .put(jd, jd);
+            }
+        }
+
+        if (!requestTimes(initTimes)) {
+            return false;
+        }
+
+        bulkTimes.putAll(initTimes);
+
+        return true;
+    }
+
+    private boolean requestTimes(Map<AstroConverter.RaDec, Map<Double, Double>> bulkTimes) {
+        final var anyAccessFailed = new AtomicBoolean(false);
+        final var anyBjdFound = new AtomicBoolean(false);
+        final var maxRequests = 8;
+        final var permits = new Semaphore(maxRequests);
+        final var futures = new ArrayList<CompletableFuture<Void>>();
+        try (var client = HttpClient.newBuilder().executor(Executors.newVirtualThreadPerTaskExecutor()).build()) {
+            bulkTimes.forEach((raDec, timeMap) -> {
+                var sortedTimes = timeMap.keySet().stream().sorted().toList();
+                if (sortedTimes.isEmpty()) {
+                    return;
+                }
+
+                var jd = sortedTimes.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","));
+
+                try {
+                    permits.acquire();
+                } catch (InterruptedException e) {
+                    anyAccessFailed.set(true);
+                    return;
+                }
+
+                var request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://sharedskies.space/bjd.php"))
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                "RA=%s&DEC=%s&UTC=%s".formatted(raDec.ra * 15, raDec.dec, jd)))
+                        .build();
+
+                var future = client
+                        .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                        .thenAccept(response -> {
+                            if (response.statusCode() != 200) {
+                                anyAccessFailed.set(true);
+                                return;
+                            }
+
+                            var bjdFound = false;
+
+                            try (var in = new BufferedReader(new InputStreamReader(response.body()))) {
+                                String inputLine;
+                                int p = 0;
+
+                                while ((inputLine = in.readLine()) != null && p < sortedTimes.size()) {
+                                    if (inputLine.isBlank()) {
+                                        continue;
+                                    }
+
+                                    var parsed = Tools.parseDouble(inputLine.trim(), Double.NaN);
+                                    if (!Double.isNaN(parsed)) {
+                                        timeMap.put(sortedTimes.get(p++), parsed);
+                                        bjdFound = true;
+                                    } else {
+                                        timeMap.put(sortedTimes.get(p++), 0D);
+                                    }
+                                }
+                            } catch (IOException e) {
+                                anyAccessFailed.set(true);
+                                throw new CompletionException(e);
+                            }
+
+                            if (bjdFound) {
+                                anyBjdFound.set(true);
+                            } else {
+                                anyAccessFailed.set(true);
+                            }
+                        })
+                        .exceptionally(ex -> {
+                            anyAccessFailed.set(true);
+                            ex.printStackTrace();
+                            return null;
+                        })
+                        .whenComplete((_, _) -> permits.release());
+
+                futures.add(future);
+            });
+
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        } catch (CompletionException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getCause() != null ? e.getCause() : e);
+        }
+
+        sharedSkiesAccessFailed = anyAccessFailed.get();
+        sharedSkiesBJDFound = anyBjdFound.get();
+
+        if (sharedSkiesAccessFailed && !sharedSkiesBJDFound) {
+            SwingUtilities.invokeLater(() -> showMessage(
+                    "Shared Skies BJD query error",
+                    "<html>" +
+                            "The Shared Skies site did not return a valid BJD value." + "<br>" +
+                            "Report this problem to the AIJ team via the user forum." + "<br>" +
+                            "An option is to use internal calculations (see Preferences menu)." +
+                            "</html>"
+            ));
+            return false;
+        } else if (sharedSkiesAccessFailed) {
+            SwingUtilities.invokeLater(() -> showMessage(
+                    "Shared Skies BJD query error",
+                    "<html>" +
+                            "Could not open link to Shared Skies BJD calculation site." + "<br>" +
+                            "Check internet connection or proxy settings (see Network menu) or" + "<br>" +
+                            "use internal calculations (see Preferences menu)." +
+                            "</html>"
+            ));
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Displays a message in a dialog box titled "Message".
      * Writes the Java console if ImageJ is not present.
@@ -5383,6 +5593,10 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         return hazdEOI[1];
     }
 
+    public void clearBulkTimes() {
+        bulkTimes.clear();
+    }
+
     /**
      * A modal dialog box that displays information. Based on the
      * InfoDialogclass from "Java in a Nutshell" by David Flanagan.
@@ -5516,4 +5730,6 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             return p.get() ? 1 : 0;
         }
     }
+
+    private record RaDec(double ra, double dec) {}
 }

@@ -5352,6 +5352,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             saveAstroPanelPrefs();
             checkAndLockTable();
+            acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
             int tableLength = table.getCounter();
             for (int i = 0; i < tableLength; i++) {
                 if (updateMPCC(i)) {
@@ -5387,7 +5388,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
 
-
+            acc.clearBulkTimes();
             table.show();
             table.setLock(false);
             if (!autoAstroDataUpdateRunning) updatePlot(updateAllFits(), false);

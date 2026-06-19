@@ -289,6 +289,20 @@ jobs:
           ls -l images/Linux_x64/astroimagej/lib/runtime/lib/jspawnhelper
           ls -l images/Linux_x64/astroimagej/bin/AstroImageJ
 
+      - name: Download App Image For Linux Arm
+        if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: appimage-linux-arm64.tar
+
+      - name: Unpack App Image For Linux Arm
+        if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
+        run: |
+          mkdir appimage-linux-arm64
+          tar -xvf astroimagej-linux-arm64.tar -p
+          ls -l images/Linux_aarch64/astroimagej/lib/runtime/lib/jspawnhelper
+          ls -l images/Linux_aarch64/astroimagej/bin/AstroImageJ
+
       - name: Download App Image For Windows x64
         if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'
         uses: actions/download-artifact@v8

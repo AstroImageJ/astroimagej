@@ -1,6 +1,7 @@
 package Astronomy;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
@@ -14557,7 +14558,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         } else {
             IJU.setFrameSizeAndLocation(fitFrame[c], 40 + c * 25, 40 + c * 25, 0, 0);
         }
-        GUI.scaleFrame(fitFrame[c]);
+        if (c != 0) {
+            var popups = new Component[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 8];
+            System.arraycopy(priorCenterStepPopup, 0, popups, 0, priorCenterStepPopup.length);
+            System.arraycopy(priorWidthStepPopup, 0, popups, priorCenterStepPopup.length, priorWidthStepPopup.length);
+            System.arraycopy(fitStepStepPopup, 0, popups, priorCenterStepPopup.length + priorWidthStepPopup.length, fitStepStepPopup.length);
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 0] = eccentricityStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 1] = omegaStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 2] = teffStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 3] = jminuskStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 4] = mStarStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 5] = rStarStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 6] = rhoStarStepPopup;
+            popups[priorCenterStepPopup.length + priorWidthStepPopup.length + fitStepStepPopup.length + 7] = orbitalPeriodStepPopup;
+            GUI.scaleFrame(fitFrame[c], popups);
+        } else {
+            GUI.scaleFrame(fitFrame[c]);
+        }
         if (openFitPanels && detrendFitIndex[c] == 9) fitFrame[c].setVisible(true);
 
         FileDrop fileDrop = new FileDrop(fitPanel[c], BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);

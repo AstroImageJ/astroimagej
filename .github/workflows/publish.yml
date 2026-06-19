@@ -289,7 +289,7 @@ jobs:
         if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
         uses: actions/download-artifact@v8
         with:
-          name: appimage-linux-arm64
+          name: appimage-linux-aarch64
 
       - name: Unpack App Image For Linux Arm
         if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'

@@ -103,6 +103,7 @@ jobs:
           # Needed to include .jpackage.xml
           include-hidden-files: true
           retention-days: 1
+          archive: false
           path: |
             astroimagej-linux-x64.tar
 
@@ -114,6 +115,7 @@ jobs:
           # Needed to include .jpackage.xml
           include-hidden-files: true
           retention-days: 1
+          archive: false
           path: |
             astroimagej-linux-arm64.tar
 
@@ -136,6 +138,7 @@ jobs:
           # Needed to include .jpackage.xml
           include-hidden-files: true
           retention-days: 1
+          archive: false
           path: |
             astroimagej-mac-x64.tar
 
@@ -147,6 +150,7 @@ jobs:
           # Needed to include .jpackage.xml
           include-hidden-files: true
           retention-days: 1
+          archive: false
           path: |
             astroimagej-mac-arm.tar
 
@@ -328,6 +332,7 @@ jobs:
           name: installer-${{ matrix.osName }}
           if-no-files-found: error
           retention-days: 7
+          archive: false
           path: |
             build/distributions/**/AstroImageJ*.${{ matrix.artifactExt }}
 
@@ -355,6 +360,7 @@ jobs:
           overwrite: true
           name: signed-installer-${{ matrix.osName }}
           if-no-files-found: error
+          archive: false
 
   create-release:
     name: Create GitHub Release

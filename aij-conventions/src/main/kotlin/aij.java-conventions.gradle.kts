@@ -36,7 +36,7 @@ version = fullVersionProvider.get()
 
 // Use to share built artifacts with the root project so it can package them
 // https://docs.gradle.org/current/userguide/cross_project_publications.html#sec:simple-sharing-artifacts-between-projects
-val shippingJar by configurations.creating {
+val shippingJar = configurations.create("shippingJar") {
     isCanBeConsumed = true
     isCanBeResolved = false
 }

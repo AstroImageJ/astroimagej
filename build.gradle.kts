@@ -54,16 +54,16 @@ repositories {
 // See https://guides.gradle.org/creating-multi-project-builds/
 
 // Java version to compile and package with
-val shippingJava = (properties["javaShippingVersion"] as String).toInt()
+val shippingJava: Int = providers.gradleProperty("javaShippingVersion").map { it.toInt() }.get()
 // Minimum Java version binaries should be compatible with
-val targetJava = (properties["minJava"] as String).toInt()
+val targetJava: Int = providers.gradleProperty("minJava").map { it.toInt() }.get()
 
-val shippingIJ: Configuration by configurations.creating {
+val shippingIJ = configurations.create("shippingIJ") {
     isCanBeConsumed = false
     isCanBeResolved = true
 }
 
-val shippingAstro: Configuration by configurations.creating {
+val shippingAstro = configurations.create("shippingAstro") {
     isCanBeConsumed = false
     isCanBeResolved = true
 }

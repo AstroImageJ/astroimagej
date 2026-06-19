@@ -57,10 +57,10 @@ jobs:
       - run: echo "Version is $VERSION"
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 24
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '24'
@@ -70,7 +70,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -96,7 +96,7 @@ jobs:
         run: tar -cvf astroimagej-mac-arm.tar -C build/distributions images/Mac_aarch64
 
       - name: Upload App Image For Linux x64
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appimage-linux-x64
           if-no-files-found: error
@@ -107,7 +107,7 @@ jobs:
             astroimagej-linux-x64.tar
 
       - name: Upload App Image For Linux Arm
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appimage-linux-aarch64
           if-no-files-found: error
@@ -118,7 +118,7 @@ jobs:
             astroimagej-linux-arm64.tar
 
       - name: Upload App Image For Windows x64
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appimage-windows-x64
           if-no-files-found: error
@@ -129,7 +129,7 @@ jobs:
             build/distributions/**/images/Windows_x64/AstroImageJ
 
       - name: Upload App Image For Mac x64
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appimage-mac-x64
           if-no-files-found: error
@@ -140,7 +140,7 @@ jobs:
             astroimagej-mac-x64.tar
 
       - name: Upload App Image For Mac Arm
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appimage-mac-aarch64
           if-no-files-found: error
@@ -254,10 +254,10 @@ jobs:
           --team-id "${{ secrets.APPLE_TEAM_ID }}"
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 24
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '24'
@@ -267,13 +267,13 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Download App Image For Linux x64
         if: runner.os == 'Linux' && github.event.inputs.crosspackage == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: appimage-linux-x64
 
@@ -287,13 +287,13 @@ jobs:
 
       - name: Download App Image For Windows x64
         if: runner.os == 'Windows' && github.event.inputs.crosspackage == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: appimage-windows-x64
 
       - name: Download App Image For Mac x64
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: appimage-mac-x64
 
@@ -305,7 +305,7 @@ jobs:
 
       - name: Download App Image For Mac Arm
         if: runner.os == 'macOS' && github.event.inputs.crosspackage == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: appimage-mac-aarch64
 
@@ -323,7 +323,7 @@ jobs:
 
       - name: Upload installer ( ${{ matrix.osName }} )
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: installer-${{ matrix.osName }}
           if-no-files-found: error
@@ -333,7 +333,7 @@ jobs:
 
       - name: Windows Signing
         if: runner.os == 'Windows' && github.event.inputs.windows_sign == 'true'
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
@@ -347,7 +347,7 @@ jobs:
 
       - name: Upload Signed Windows Installer
         if: runner.os == 'Windows' && github.event.inputs.windows_sign == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           retention-days: 7
           path: signpath/output
@@ -366,42 +366,42 @@ jobs:
     steps:
       - name: Checkout
         # Checkout repo so gh cli can work
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download installer (linux-x64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: installer-linux-x64
         continue-on-error: true
 
       - name: Download installer (linux-aarch64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: installer-linux-aarch64
         continue-on-error: true
 
       - name: Download installer (mac-aarch64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: installer-mac-aarch64
         continue-on-error: true
 
       - name: Download installer (mac-x64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: installer-mac-x64
         continue-on-error: true
 
       - name: Download installer (windows-x64)
         if: github.event.inputs.windows_sign == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: signed-installer-windows-x64
         continue-on-error: true
 
       - name: Download installer (windows-x64)
         if: github.event.inputs.windows_sign == 'false'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: installer-windows-x64
         continue-on-error: true
@@ -432,7 +432,7 @@ jobs:
             > release_notes.md
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -447,7 +447,7 @@ jobs:
 
       - name: Upload assets & metadata (no release)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-assets
           path: |
@@ -458,7 +458,7 @@ jobs:
       - name: Upload metadata (release)
         # Upload metadata as artifact in case release creation fails
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: metadata
           path: |
@@ -477,7 +477,7 @@ jobs:
 
       - name: Update metadata
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.skip_release == 'true') }}
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: Update version metadata
           file_pattern: '*.json'

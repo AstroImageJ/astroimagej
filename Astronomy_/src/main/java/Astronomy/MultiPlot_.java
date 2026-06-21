@@ -11165,6 +11165,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void showMoreCurvesJPanel() {
+        if (subFrame != null) {
+            subFrame.dispose();
+            subFrame = null;
+        }
         if (subFrame == null) {
             subFrame = new JFrame("Multi-plot Y-data") {
                 @Override

@@ -439,8 +439,13 @@ public class FitsReader implements AutoCloseable {
         var noScienceImage =
                 hduDescriptors.stream().noneMatch(descriptor ->
                         Objects.equals("SCI", descriptor.getStringValue(EXTNAME)));
+        var singleImage = hduDescriptors.size() == 1 ||
+                (hduDescriptors.getFirst().hduType == HDUType.IMAGE &&
+                        Arrays.equals(new int[0], hduDescriptors.getFirst().getAxesFromHeader()) &&
+                        hduDescriptors.stream().skip(1).filter(HDUDescriptor::isImage).count() == 1
+                );
 
-        if (!noExtensionNames && noScienceImage) {
+        if (!noExtensionNames && !singleImage && noScienceImage) {
             AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
         }
 
@@ -449,7 +454,7 @@ public class FitsReader implements AutoCloseable {
             if (header.getIntValue(NAXIS) == 0) {
                 continue;
             }
-            if (!noExtensionNames && !Objects.equals("SCI", hduDescriptors.get(i).getStringValue(EXTNAME))) {
+            if (!noExtensionNames && !singleImage && !Objects.equals("SCI", hduDescriptors.get(i).getStringValue(EXTNAME))) {
                 continue;
             }
 
@@ -555,8 +560,13 @@ public class FitsReader implements AutoCloseable {
                 .allMatch(descriptor -> Objects.isNull(descriptor.getStringValue(EXTNAME)));
         var noScienceImage = hduDescriptors.stream()
                 .noneMatch(descriptor -> Objects.equals("SCI", descriptor.getStringValue(EXTNAME)));
+        var singleImage = hduDescriptors.size() == 1 ||
+                (hduDescriptors.getFirst().hduType == HDUType.IMAGE &&
+                        Arrays.equals(new int[0], hduDescriptors.getFirst().getAxesFromHeader()) &&
+                        hduDescriptors.stream().skip(1).filter(HDUDescriptor::isImage).count() == 1
+                );
 
-        if (!noExtensionNames && noScienceImage) {
+        if (!noExtensionNames && noScienceImage && !singleImage) {
             AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
         }
 
@@ -569,7 +579,7 @@ public class FitsReader implements AutoCloseable {
             if (header.getIntValue(NAXIS) == 0) {
                 continue;
             }
-            if (!noExtensionNames && !Objects.equals("SCI", descriptor.getStringValue(EXTNAME))) {
+            if (!noExtensionNames && !singleImage && !Objects.equals("SCI", descriptor.getStringValue(EXTNAME))) {
                 continue;
             }
             count++;

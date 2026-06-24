@@ -540,7 +540,7 @@ public class FitsReader implements AutoCloseable {
                 .skip(firstValidHdu)
                 .allMatch(HDUDescriptor::isImage);
 
-        if (!isImages) {
+        if (!isImages || hduDescriptors.size() - firstValidHdu == 1) {
             return false;
         }
 

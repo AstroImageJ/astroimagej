@@ -5356,7 +5356,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             checkAndLockTable();
             try (var exec = Executors.newSingleThreadExecutor()) {
                 exec.execute(() -> {
-                    acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
+                    //acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
                     int tableLength = table.getCounter();
                     for (int i = 0; i < tableLength; i++) {
                         if (updateMPCC(i)) {

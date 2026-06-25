@@ -5342,6 +5342,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (OKbutton != null) {
                     OKbutton.setForeground(Color.RED);
                     OKbutton.setText("working...");
+                    OKbutton.setEnabled(false);
                     OKbutton.paint(OKbutton.getGraphics());
                 }
             });
@@ -5353,40 +5354,44 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             saveAstroPanelPrefs();
             checkAndLockTable();
-            //acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
-            int tableLength = table.getCounter();
-            for (int i = 0; i < tableLength; i++) {
-                if (updateMPCC(i)) {
-                    if (addAirmass) table.setValue(airmassName, i, acc.getAirmass());
-                    if (addAltitude) table.setValue(altitudeName, i, acc.getAltitude());
-                    if (addAzimuth) table.setValue(azimuthName, i, acc.getAzimuth());
-                    if (addHourAngle) table.setValue(hourAngleName, i, acc.getHourAngle());
-                    if (addZenithDistance) table.setValue(zenithDistanceName, i, acc.getZenithDistance());
-                    if (addGJD) table.setValue(gjdName, i, acc.getJD());
-                    if (addHJD) table.setValue(hjdName, i, acc.getHJD());
-                    if (addHJDCorr) table.setValue(hjdCorrName, i, acc.getHJDCorrection());
-                    if (addBJD) table.setValue(bjdName, i, acc.getBJD());
-                    if (addBJDCorr) table.setValue(bjdCorrName, i, acc.getBJDCorrection());
-                    if (addRaNow) table.setValue(raNowName, i, acc.getRAEOI());
-                    if (addDecNow) table.setValue(decNowName, i, acc.getDecEOI());
-                    if (addRA2000) table.setValue(ra2000Name, i, acc.getRAJ2000());
-                    if (addDec2000) table.setValue(dec2000Name, i, acc.getDecJ2000());
-                } else {
-                    if (addAirmass) table.setValue(airmassName, i, Double.NaN);
-                    if (addAltitude) table.setValue(altitudeName, i, Double.NaN);
-                    if (addAzimuth) table.setValue(azimuthName, i, Double.NaN);
-                    if (addHourAngle) table.setValue(hourAngleName, i, Double.NaN);
-                    if (addZenithDistance) table.setValue(zenithDistanceName, i, Double.NaN);
-                    if (addGJD) table.setValue(gjdName, i, Double.NaN);
-                    if (addHJD) table.setValue(hjdName, i, Double.NaN);
-                    if (addHJDCorr) table.setValue(hjdCorrName, i, Double.NaN);
-                    if (addBJD) table.setValue(bjdName, i, Double.NaN);
-                    if (addBJDCorr) table.setValue(bjdCorrName, i, Double.NaN);
-                    if (addRaNow) table.setValue(raNowName, i, Double.NaN);
-                    if (addDecNow) table.setValue(decNowName, i, Double.NaN);
-                    if (addRA2000) table.setValue(ra2000Name, i, Double.NaN);
-                    if (addDec2000) table.setValue(dec2000Name, i, Double.NaN);
-                }
+            try (var exec = Executors.newSingleThreadExecutor()) {
+                exec.execute(() -> {
+                    acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
+                    int tableLength = table.getCounter();
+                    for (int i = 0; i < tableLength; i++) {
+                        if (updateMPCC(i)) {
+                            if (addAirmass) table.setValue(airmassName, i, acc.getAirmass());
+                            if (addAltitude) table.setValue(altitudeName, i, acc.getAltitude());
+                            if (addAzimuth) table.setValue(azimuthName, i, acc.getAzimuth());
+                            if (addHourAngle) table.setValue(hourAngleName, i, acc.getHourAngle());
+                            if (addZenithDistance) table.setValue(zenithDistanceName, i, acc.getZenithDistance());
+                            if (addGJD) table.setValue(gjdName, i, acc.getJD());
+                            if (addHJD) table.setValue(hjdName, i, acc.getHJD());
+                            if (addHJDCorr) table.setValue(hjdCorrName, i, acc.getHJDCorrection());
+                            if (addBJD) table.setValue(bjdName, i, acc.getBJD());
+                            if (addBJDCorr) table.setValue(bjdCorrName, i, acc.getBJDCorrection());
+                            if (addRaNow) table.setValue(raNowName, i, acc.getRAEOI());
+                            if (addDecNow) table.setValue(decNowName, i, acc.getDecEOI());
+                            if (addRA2000) table.setValue(ra2000Name, i, acc.getRAJ2000());
+                            if (addDec2000) table.setValue(dec2000Name, i, acc.getDecJ2000());
+                        } else {
+                            if (addAirmass) table.setValue(airmassName, i, Double.NaN);
+                            if (addAltitude) table.setValue(altitudeName, i, Double.NaN);
+                            if (addAzimuth) table.setValue(azimuthName, i, Double.NaN);
+                            if (addHourAngle) table.setValue(hourAngleName, i, Double.NaN);
+                            if (addZenithDistance) table.setValue(zenithDistanceName, i, Double.NaN);
+                            if (addGJD) table.setValue(gjdName, i, Double.NaN);
+                            if (addHJD) table.setValue(hjdName, i, Double.NaN);
+                            if (addHJDCorr) table.setValue(hjdCorrName, i, Double.NaN);
+                            if (addBJD) table.setValue(bjdName, i, Double.NaN);
+                            if (addBJDCorr) table.setValue(bjdCorrName, i, Double.NaN);
+                            if (addRaNow) table.setValue(raNowName, i, Double.NaN);
+                            if (addDecNow) table.setValue(decNowName, i, Double.NaN);
+                            if (addRA2000) table.setValue(ra2000Name, i, Double.NaN);
+                            if (addDec2000) table.setValue(dec2000Name, i, Double.NaN);
+                        }
+                    }
+                });
             }
 
             acc.clearBulkTimes();
@@ -5397,6 +5402,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (OKbutton != null) {
                     OKbutton.setForeground(defaultOKForeground);
                     OKbutton.setText("Update Table");
+                    OKbutton.setEnabled(true);
                     OKbutton.paint(OKbutton.getGraphics());
                 }
             });

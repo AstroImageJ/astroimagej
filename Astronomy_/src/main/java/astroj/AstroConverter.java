@@ -77,7 +77,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -3374,11 +3373,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     return bjd;
                 }
             }
-
-            IO.println("Cache miss");
         }
-
-        IO.println("No cache");
 
         sharedSkiesAccessFailed = false;
         sharedSkiesBJDFound = false;
@@ -5052,150 +5047,87 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     private boolean requestTimes(Map<AstroConverter.RaDec, Map<Double, Double>> bulkTimes) {
         final var anyAccessFailed = new AtomicBoolean(false);
         final var anyBjdFound = new AtomicBoolean(false);
-        final int maxRequests = 8;
-        final int chunkSize = 100;
-
+        final var maxRequests = 8;
         final var permits = new Semaphore(maxRequests);
         final var futures = new ArrayList<CompletableFuture<Void>>();
-
-        final var semaphoreWaitTimesNs = Collections.synchronizedList(new ArrayList<Long>());
-        final var requestTimesNs = Collections.synchronizedList(new ArrayList<Long>());
-        final var totalTimesNs = Collections.synchronizedList(new ArrayList<Long>());
-
-        var t0 = System.nanoTime();
-
-        try (var client = HttpClient.newBuilder()
-                .executor(Executors.newVirtualThreadPerTaskExecutor())
-                .build()) {
-
+        try (var client = HttpClient.newBuilder().executor(Executors.newVirtualThreadPerTaskExecutor()).build()) {
             bulkTimes.forEach((raDec, timeMap) -> {
                 var sortedTimes = timeMap.keySet().stream().sorted().toList();
                 if (sortedTimes.isEmpty()) {
                     return;
                 }
 
-                for (int start = 0; start < sortedTimes.size(); start += chunkSize) {
-                    final var chunkTimes = sortedTimes.subList(
-                            start,
-                            Math.min(start + chunkSize, sortedTimes.size())
-                    );
+                var jd = sortedTimes.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","));
 
-                    var jd = chunkTimes.stream()
-                            .map(Object::toString)
-                            .collect(Collectors.joining(","));
-
-                    long totalStart = System.nanoTime();
-
-                    long waitStart = System.nanoTime();
-                    try {
-                        permits.acquire();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        anyAccessFailed.set(true);
-                        return;
-                    }
-
-                    long waitTime = System.nanoTime() - waitStart;
-                    semaphoreWaitTimesNs.add(waitTime);
-
-                    long requestStart = System.nanoTime();
-
-                    var body = "RA=%s&DEC=%s&UTC=%s"
-                            .formatted(raDec.ra * 15, raDec.dec, jd);
-
-                    var request = HttpRequest.newBuilder()
-                            .uri(URI.create("https://sharedskies.space/bjd.php"))
-                            .header("Content-Type", "application/x-www-form-urlencoded")
-                            .POST(HttpRequest.BodyPublishers.ofString(body))
-                            .build();
-
-                    /*
-                    IO.println("""
-                            curl -X POST "%s" \
-                              -H "Content-Type: application/x-www-form-urlencoded" \
-                              --data '%s'
-                            """.formatted(request.uri(), body));
-                    */
-
-                    var future = client
-                            .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
-                            .thenAccept(response -> {
-                                long requestTime = System.nanoTime() - requestStart;
-                                requestTimesNs.add(requestTime);
-
-                                if (response.statusCode() != 200) {
-                                    anyAccessFailed.set(true);
-                                    return;
-                                }
-
-                                var bjdFound = false;
-
-                                try (var in = new BufferedReader(
-                                        new InputStreamReader(response.body()))) {
-
-                                    String inputLine;
-                                    int p = 0;
-
-                                    while ((inputLine = in.readLine()) != null
-                                            && p < chunkTimes.size()) {
-
-                                        if (inputLine.isBlank()) {
-                                            continue;
-                                        }
-
-                                        var parsed = Tools.parseDouble(
-                                                inputLine.trim(),
-                                                Double.NaN
-                                        );
-
-                                        var jdValue = chunkTimes.get(p++);
-
-                                        if (!Double.isNaN(parsed)) {
-                                            timeMap.put(jdValue, parsed);
-                                            bjdFound = true;
-                                        } else {
-                                            timeMap.put(jdValue, 0D);
-                                        }
-                                    }
-                                } catch (IOException e) {
-                                    anyAccessFailed.set(true);
-                                    throw new CompletionException(e);
-                                }
-
-                                if (bjdFound) {
-                                    anyBjdFound.set(true);
-                                } else {
-                                    anyAccessFailed.set(true);
-                                }
-                            })
-                            .exceptionally(ex -> {
-                                anyAccessFailed.set(true);
-                                ex.printStackTrace();
-                                return null;
-                            })
-                            .whenComplete((_, _) -> {
-                                totalTimesNs.add(System.nanoTime() - totalStart);
-                                permits.release();
-                            });
-
-                    futures.add(future);
+                try {
+                    permits.acquire();
+                } catch (InterruptedException e) {
+                    anyAccessFailed.set(true);
+                    return;
                 }
+
+                var request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://sharedskies.space/bjd.php"))
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                "RA=%s&DEC=%s&UTC=%s".formatted(raDec.ra * 15, raDec.dec, jd)))
+                        .build();
+
+                var future = client
+                        .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                        .thenAccept(response -> {
+                            if (response.statusCode() != 200) {
+                                anyAccessFailed.set(true);
+                                return;
+                            }
+
+                            var bjdFound = false;
+
+                            try (var in = new BufferedReader(new InputStreamReader(response.body()))) {
+                                String inputLine;
+                                int p = 0;
+
+                                while ((inputLine = in.readLine()) != null && p < sortedTimes.size()) {
+                                    if (inputLine.isBlank()) {
+                                        continue;
+                                    }
+
+                                    var parsed = Tools.parseDouble(inputLine.trim(), Double.NaN);
+                                    if (!Double.isNaN(parsed)) {
+                                        timeMap.put(sortedTimes.get(p++), parsed);
+                                        bjdFound = true;
+                                    } else {
+                                        timeMap.put(sortedTimes.get(p++), 0D);
+                                    }
+                                }
+                            } catch (IOException e) {
+                                anyAccessFailed.set(true);
+                                throw new CompletionException(e);
+                            }
+
+                            if (bjdFound) {
+                                anyBjdFound.set(true);
+                            } else {
+                                anyAccessFailed.set(true);
+                            }
+                        })
+                        .exceptionally(ex -> {
+                            anyAccessFailed.set(true);
+                            ex.printStackTrace();
+                            return null;
+                        })
+                        .whenComplete((_, _) -> permits.release());
+
+                futures.add(future);
             });
 
-            CompletableFuture.allOf(
-                    futures.toArray(CompletableFuture[]::new)
-            ).join();
-
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         } catch (CompletionException e) {
             e.printStackTrace();
-            throw new RuntimeException(
-                    e.getCause() != null ? e.getCause() : e
-            );
+            throw new RuntimeException(e.getCause() != null ? e.getCause() : e);
         }
-
-        printTimingStats("Semaphore wait", semaphoreWaitTimesNs);
-        printTimingStats("HTTP request", requestTimesNs);
-        printTimingStats("Total request", totalTimesNs);
 
         sharedSkiesAccessFailed = anyAccessFailed.get();
         sharedSkiesBJDFound = anyBjdFound.get();
@@ -5204,8 +5136,8 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             SwingUtilities.invokeLater(() -> showMessage(
                     "Shared Skies BJD query error",
                     "<html>" +
-                            "The Shared Skies site did not return a valid BJD value.<br>" +
-                            "Report this problem to the AIJ team via the user forum.<br>" +
+                            "The Shared Skies site did not return a valid BJD value." + "<br>" +
+                            "Report this problem to the AIJ team via the user forum." + "<br>" +
                             "An option is to use internal calculations (see Preferences menu)." +
                             "</html>"
             ));
@@ -5214,47 +5146,15 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             SwingUtilities.invokeLater(() -> showMessage(
                     "Shared Skies BJD query error",
                     "<html>" +
-                            "Could not open link to Shared Skies BJD calculation site.<br>" +
-                            "Check internet connection or proxy settings (see Network menu) or<br>" +
+                            "Could not open link to Shared Skies BJD calculation site." + "<br>" +
+                            "Check internet connection or proxy settings (see Network menu) or" + "<br>" +
                             "use internal calculations (see Preferences menu)." +
                             "</html>"
             ));
             return false;
         }
 
-        IO.println("Total time: "
-                + (System.nanoTime() - t0) / 1_000_000
-                + " ms");
-
         return true;
-    }
-
-    private static void printTimingStats(String label, List<Long> timesNs) {
-        if (timesNs.isEmpty()) {
-            System.out.println(label + ": no samples");
-            return;
-        }
-
-        long min = Long.MAX_VALUE;
-        long max = Long.MIN_VALUE;
-        long sum = 0L;
-
-        synchronized (timesNs) {
-            for (long t : timesNs) {
-                if (t < min) min = t;
-                if (t > max) max = t;
-                sum += t;
-            }
-        }
-
-        double avgMs = sum / 1_000_000.0 / timesNs.size();
-        double minMs = min / 1_000_000.0;
-        double maxMs = max / 1_000_000.0;
-
-        System.out.printf(
-                "%s: avg=%.2f ms, min=%.2f ms, max=%.2f ms, n=%d%n",
-                label, avgMs, minMs, maxMs, timesNs.size()
-        );
     }
 
     /**

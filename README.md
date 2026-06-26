@@ -1,6 +1,6 @@
 # AstroImageJ
 
-Merged project of Dr. Karen Collins' AstroImageJ.
+Merged project of Dr. Karen Collins' AstroImageJ, using the [Why Java Launcher](https://github.com/AstroImageJ/Why).
 
 ## Developer Instructions
 

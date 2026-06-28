@@ -44,6 +44,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -2317,7 +2318,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (SwingUtilities.isEventDispatchThread()) {
             drawUpdatedPlot();
         } else {
-            SwingUtilities.invokeLater(MultiPlot_::drawUpdatedPlot);
+            try {
+                SwingUtilities.invokeAndWait(MultiPlot_::drawUpdatedPlot);
+            } catch (InterruptedException | InvocationTargetException _) {
+            }
         }
     }
 
@@ -2449,8 +2453,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         excludedHeadSamples = holdExcludedHeadSamples;
         excludedTailSamples = holdExcludedTailSamples;
         table.setLock(false);
-        plotWindow.getImagePlus().setPlot(plot);
-        ((PlotWindow) plotWindow).setPlot(plot);
+        ScopedValue.where(VectorPlotDrawing.SCALED_PLOT, plot.isAijPlot()).run(() -> {
+            plotWindow.getImagePlus().setPlot(plot);
+            plotWindow.getImagePlus().setProperty(VectorPlotDrawing.PROPERTY_KEY, plot);
+            plotWindow.drawPlot(plot);
+        });
         updatePlotPos();
         suppressDataUpdate = false;
         updatePlotRunning = false;

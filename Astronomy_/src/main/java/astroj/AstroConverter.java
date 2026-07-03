@@ -58,6 +58,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -88,7 +89,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -125,6 +125,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import astroj.json.simple.JSONAware;
+import astroj.json.simple.JSONObject;
 import astroj.util.SkyMapOptions;
 import ij.IJ;
 import ij.Prefs;
@@ -3394,25 +3396,35 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         sharedSkiesAccessFailed = false;
         sharedSkiesBJDFound = false;
         double bjd = bjdEOI;
-        try {
-//            String objectID = URLEncoder.encode(objectIDTextField.getText().trim(),"UTF-8");
-            URL sharedSkies;
-            sharedSkies = new URI("https://sharedskies.space/bjd.php?UTC=" + jd + "&RA=" + (ra2000 * 15) + "&DEC=" + dec2000).toURL();
-            URLConnection sharedSkiesCon;
-            if (useProxy) sharedSkiesCon = sharedSkies.openConnection(proxy);
-            else sharedSkiesCon = sharedSkies.openConnection();
-            sharedSkiesCon.setConnectTimeout(10000);
-            sharedSkiesCon.setReadTimeout(10000);
-            BufferedReader in = new BufferedReader(new InputStreamReader(sharedSkiesCon.getInputStream()));
-            String inputLine;
-            var c = 10;
-            while ((inputLine = in.readLine()) != null && c > 0) {
-                c--;
-                //IJ.log(inputLine);
-                if (!inputLine.isBlank()) {
-                    bjd = Tools.parseDouble(inputLine.trim(), 0.0);
-                    sharedSkiesBJDFound = true;
-                    break;
+        var clientBuilder = HttpClient.newBuilder();
+        if (useProxy) {
+            clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyAddress, proxyPort)));
+        }
+        try (var client = clientBuilder.build()) {
+            var request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://sharedskies.space/bjd.php"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            JSONObject.toJSONString(Map.of("observations",
+                                    List.of(Observation.create(ra2000 * 15, dec2000, jd, this))))))
+                    .build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            if (response.statusCode() != 200) {
+                sharedSkiesAccessFailed = true;
+                sharedSkiesBJDFound = false;
+            } else {
+                try (var reader = new BufferedReader(new InputStreamReader(response.body()))) {
+                    String inputLine;
+                    var c = 10;
+                    while ((inputLine = reader.readLine()) != null && c > 0) {
+                        c--;
+                        //IJ.log(inputLine);
+                        if (!inputLine.isBlank()) {
+                            bjd = Tools.parseDouble(inputLine.trim(), 0.0);
+                            sharedSkiesBJDFound = true;
+                            break;
+                        }
+                    }
                 }
             }
             if (!sharedSkiesBJDFound) {
@@ -3421,14 +3433,12 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                         "An option is to use internal calculations (see Preferences menu)." + "</html>");
                 sharedSkiesAccessFailed = true;
             }
-            in.close();
         } catch (IOException ioe) {
             showMessage("Shared Skies BJD query error", "<html>" + "Could not open link to Shared Skies BJD calculation site." + "<br>" +
                     "Check internet connection or proxy settings (see Network menu) or" + "<br>" +
                     "use internal calculations (see Preferences menu)." + "</html>");
             sharedSkiesAccessFailed = true;
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        } catch (InterruptedException e) {
             sharedSkiesAccessFailed = true;
         }
 
@@ -5066,16 +5076,20 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         final var maxRequests = 8;
         final var permits = new Semaphore(maxRequests);
         final var futures = new ArrayList<CompletableFuture<Void>>();
-        try (var client = HttpClient.newBuilder().executor(Executors.newVirtualThreadPerTaskExecutor()).build()) {
+        var clientBuilder = HttpClient.newBuilder().executor(Executors.newVirtualThreadPerTaskExecutor());
+        if (useProxy) {
+            clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyAddress, proxyPort)));
+        }
+        try (var client = clientBuilder.build()) {
             bulkTimes.forEach((raDec, timeMap) -> {
                 var sortedTimes = timeMap.keySet().stream().sorted().toList();
                 if (sortedTimes.isEmpty()) {
                     return;
                 }
 
-                var jd = sortedTimes.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(","));
+                var observations = sortedTimes.stream()
+                        .map(t -> Observation.create(raDec.ra() * 15, raDec.dec(), t, this))
+                        .toList();
 
                 try {
                     permits.acquire();
@@ -5086,9 +5100,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
                 var request = HttpRequest.newBuilder()
                         .uri(URI.create("https://sharedskies.space/bjd.php"))
-                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(
-                                "RA=%s&DEC=%s&UTC=%s".formatted(raDec.ra() * 15, raDec.dec(), jd)))
+                                        JSONObject.toJSONString(Map.of("observations", observations))))
                         .build();
 
                 var future = client
@@ -5139,6 +5153,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 futures.add(future);
             });
 
+            //IO.println(futures.size() + " requests queued.");
             CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         } catch (CompletionException e) {
             e.printStackTrace();
@@ -5810,6 +5825,35 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     "ra=" + ra() +
                     ", dec=" + dec() +
                     '}';
+        }
+    }
+
+    record Observation(double jd, double ra, double dec, double lat, double lon, double elevation) implements JSONAware {
+        public Observation(double jd, double ra, double dec) {
+            this(jd, ra, dec, Double.NaN, Double.NaN, Double.NaN);
+        }
+
+        public static Observation create(double ra, double dec, double jd, AstroConverter astroConverter) {
+            return new Observation(jd, ra, dec, astroConverter.lat, astroConverter.lon, astroConverter.alt);
+        }
+
+        @SuppressWarnings("unchecked")
+        public JSONObject toJson() {
+            var json = new JSONObject();
+            json.put("jd", jd);
+            json.put("ra", ra);
+            json.put("dec", dec);
+            if (!Double.isNaN(lat) && !Double.isNaN(lon) && !Double.isNaN(elevation)) {
+                json.put("lat", lat);
+                json.put("lon", lon);
+                json.put("elevation", elevation);
+            }
+            return json;
+        }
+
+        @Override
+        public String toJSONString() {
+            return toJson().toJSONString();
         }
     }
 }

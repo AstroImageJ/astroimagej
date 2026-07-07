@@ -260,7 +260,9 @@ abstract class CreateAppImageTask
             <?xml version="1.0" ?>
             <jpackage-state version="${'$'}VERSION" platform="${osString}">
               <app-version>${version}</app-version>
-              <main-launcher>AstroImageJ</main-launcher>
+              <main-launcher name="AstroImageJ">
+                <description>AstroImageJ</description>
+              </main-launcher>
               <main-class>ij.ImageJ</main-class>
               <signed>${targetOs.get() == OperatingSystem.MAC}</signed>
               <app-store>${targetOs.get() == OperatingSystem.MAC}</app-store></jpackage-state>

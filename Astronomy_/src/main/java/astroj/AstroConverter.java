@@ -5020,9 +5020,20 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 return false;
             }
 
+            var raField = new JTextField();
+            var decField = new JTextField();
+
             for (int i = 0; i < tableLength; i++) {
                 var ra = table.getValueAsDouble(raCol, i);
                 var dec = table.getValueAsDouble(decCol, i);
+
+                // Adjust coordinates like the panel would
+                raField.setText(showSexagesimal ? decToSex(ra, 3, 24, false) : sixPlaces.format(ra));
+                decField.setText(showSexagesimal ? decToSex(dec, 2, 90, true) : sixPlaces.format(dec));
+                var coords = processCoordinatePair(raField, 3, 24, false,
+                        decField, 2, 90, true, false, false);
+                ra = coords[0];
+                dec = coords[1];
 
                 RaDec key = defaultKey;
                 if (!Double.isNaN(ra) && !Double.isNaN(dec)) {

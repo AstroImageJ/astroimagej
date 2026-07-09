@@ -5363,7 +5363,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             checkAndLockTable();
             try (var exec = Executors.newSingleThreadExecutor()) {
                 exec.execute(() -> {
-                    acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
+                    var oSharedSkies = acc.useSharedSkies();
+                    if (useBJD) {
+                        acc.setUseSharedSkies(addBJD || addBJDCorr);
+                        acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
+                    }
                     int tableLength = table.getCounter();
                     for (int i = 0; i < tableLength; i++) {
                         if (updateMPCC(i)) {
@@ -5398,6 +5402,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             if (addDec2000) table.setValue(dec2000Name, i, Double.NaN);
                         }
                     }
+                    acc.setUseSharedSkies(oSharedSkies);
                 });
             }
 

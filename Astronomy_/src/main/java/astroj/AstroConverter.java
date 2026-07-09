@@ -5621,6 +5621,14 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         bulkTimes.clear();
     }
 
+    public void setUseSharedSkies(boolean useSharedSkies) {
+        this.useSharedSkies = useSharedSkies;
+    }
+
+    public boolean useSharedSkies() {
+        return useSharedSkies;
+    }
+
     /**
      * A modal dialog box that displays information. Based on the
      * InfoDialogclass from "Java in a Nutshell" by David Flanagan.

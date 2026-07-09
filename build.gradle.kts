@@ -44,7 +44,7 @@ plugins {
 
     id("aij.java-reproducible-builds")
 
-    id("dev.sigstore.sign-base") version "2.1.0"
+    id("dev.sigstore.sign-base") version "2.2.0"
 }
 
 repositories {

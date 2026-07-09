@@ -26,7 +26,7 @@ dependencies {
     implementation("org.bouncycastle:bcpg-jdk18on:1.80")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
 
-    implementation("dev.sigstore:sigstore-java:2.1.0")
+    implementation("dev.sigstore:sigstore-java:2.2.0")
 
     implementation("net.java.dev.jna:jna:5.18.1")
     implementation("net.java.dev.jna:jna-platform:5.18.1")

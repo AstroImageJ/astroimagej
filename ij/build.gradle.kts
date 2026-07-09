@@ -9,7 +9,12 @@ dependencies {
     api("de.rototor.pdfbox:graphics2d:3.0.2")
     api("net.java.dev.jna:jna-platform:5.17.0")
     api(fileTree(mapOf("dir" to "${rootDir}/aijLibs", "include" to listOf("*.jar"))))
-    api("dev.sigstore:sigstore-java:2.1.0")
+    api("dev.sigstore:sigstore-java:2.2.0")
+    constraints {
+        implementation("com.google.protobuf:protobuf-java-util:4.35.0") {
+            because("previous versions use sun.misc.Unsafe which is deprecated and will be removed in future")
+        }
+    }
     implementation("ch.randelshofer:fastdoubleparser:2.0.1")
     api("org.hipparchus:hipparchus-stat:3.1")
     api("org.jocl:jocl:2.0.5")

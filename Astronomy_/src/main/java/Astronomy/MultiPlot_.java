@@ -5364,7 +5364,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             try (var exec = Executors.newSingleThreadExecutor()) {
                 exec.execute(() -> {
                     var oSharedSkies = acc.useSharedSkies();
-                    if (useBJD) {
+                    if (useGJD) {
                         acc.setUseSharedSkies(addBJD || addBJDCorr);
                         acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
                     }

@@ -103,6 +103,7 @@ import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
+import util.prefs.RegionExclusion;
 
 
 /**
@@ -5881,6 +5882,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                                                         if (MultiAperture_.apLoading.get() == MultiAperture_.ApLoading.IMPORTED) {
                                                             MultiAperture_.apLoading.set(MultiAperture_.ApLoading.ALL_PREVIOUS);
                                                         }
+                                                        RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(false);
                                                         new PlugInFilterRunner(maInst, "", "");
                                                     }
                                                     Prefs.set("multiaperture.automode", false);

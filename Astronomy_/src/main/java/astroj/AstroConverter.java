@@ -84,10 +84,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
@@ -3387,6 +3385,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     .findAny();
             if (m.isPresent()) {
                 //IO.println("\tRecovered using " + m.get().getKey());
+                eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
                 return m.get().getValue().get(jd);
             }
         } else {
@@ -3406,7 +3405,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(
                             JSONObject.toJSONString(Map.of("observations",
-                                    List.of(Observation.create(ra2000 * 15, dec2000, jd, this))))))
+                                    List.of(Observation.create(ra2000, dec2000, jd, this))))))
                     .build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             if (response.statusCode() != 200) {
@@ -5073,88 +5072,74 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     private boolean requestTimes(Map<AstroConverter.RaDec, Map<Double, Double>> bulkTimes) {
         final var anyAccessFailed = new AtomicBoolean(false);
         final var anyBjdFound = new AtomicBoolean(false);
-        final var maxRequests = 8;
-        final var permits = new Semaphore(maxRequests);
-        final var futures = new ArrayList<CompletableFuture<Void>>();
+
+        var radecTimeMaps = new ArrayList<>(bulkTimes.entrySet());
+        var observations = new ArrayList<Observation>();
+        for (Map.Entry<RaDec, Map<Double, Double>> radecTimeMap : radecTimeMaps) {
+            var raDec = radecTimeMap.getKey();
+            observations.addAll(radecTimeMap.getValue().values().stream()
+                    .map(t -> Observation.create(raDec.ra(), raDec.dec(), t, this))
+                    .toList());
+        }
+
         var clientBuilder = HttpClient.newBuilder().executor(Executors.newVirtualThreadPerTaskExecutor());
         if (useProxy) {
             clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyAddress, proxyPort)));
         }
         try (var client = clientBuilder.build()) {
-            bulkTimes.forEach((raDec, timeMap) -> {
-                var sortedTimes = timeMap.keySet().stream().sorted().toList();
-                if (sortedTimes.isEmpty()) {
-                    return;
-                }
+            var request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://sharedskies.space/bjd.php"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            JSONObject.toJSONString(Map.of("observations", observations))))
+                    .build();
 
-                var observations = sortedTimes.stream()
-                        .map(t -> Observation.create(raDec.ra() * 15, raDec.dec(), t, this))
-                        .toList();
-
-                try {
-                    permits.acquire();
-                } catch (InterruptedException e) {
-                    anyAccessFailed.set(true);
-                    return;
-                }
-
-                var request = HttpRequest.newBuilder()
-                        .uri(URI.create("https://sharedskies.space/bjd.php"))
-                        .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(
-                                        JSONObject.toJSONString(Map.of("observations", observations))))
-                        .build();
-
-                var future = client
-                        .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
-                        .thenAccept(response -> {
-                            if (response.statusCode() != 200) {
-                                anyAccessFailed.set(true);
-                                return;
-                            }
-
-                            var bjdFound = false;
-
-                            try (var in = new BufferedReader(new InputStreamReader(response.body()))) {
-                                String inputLine;
-                                int p = 0;
-
-                                while ((inputLine = in.readLine()) != null && p < sortedTimes.size()) {
-                                    if (inputLine.isBlank()) {
-                                        continue;
-                                    }
-
-                                    var parsed = Tools.parseDouble(inputLine.trim(), Double.NaN);
-                                    if (!Double.isNaN(parsed)) {
-                                        timeMap.put(sortedTimes.get(p++), parsed);
-                                        bjdFound = true;
-                                    } else {
-                                        timeMap.put(sortedTimes.get(p++), 0D);
-                                    }
-                                }
-                            } catch (IOException e) {
-                                anyAccessFailed.set(true);
-                                throw new CompletionException(e);
-                            }
-
-                            if (bjdFound) {
-                                anyBjdFound.set(true);
-                            } else {
-                                anyAccessFailed.set(true);
-                            }
-                        })
-                        .exceptionally(ex -> {
+            var future = client
+                    .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                    .thenAccept(response -> {
+                        if (response.statusCode() != 200) {
                             anyAccessFailed.set(true);
-                            ex.printStackTrace();
-                            return null;
-                        })
-                        .whenComplete((_, _) -> permits.release());
+                            return;
+                        }
 
-                futures.add(future);
-            });
+                        var bjdFound = false;
 
-            //IO.println(futures.size() + " requests queued.");
-            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+                        try (var in = new BufferedReader(new InputStreamReader(response.body()))) {
+                            String inputLine;
+                            int p = 0;
+
+                            while ((inputLine = in.readLine()) != null && p < observations.size()) {
+                                if (inputLine.isBlank()) {
+                                    continue;
+                                }
+
+                                var parsed = Tools.parseDouble(inputLine.trim(), Double.NaN);
+                                var obs = observations.get(p++);
+                                if (!Double.isNaN(parsed)) {
+                                    bjdFound = true;
+                                } else {
+                                    parsed = 0;
+                                }
+
+                                bulkTimes.get(new RaDec(obs.ra, obs.dec)).put(obs.jd, parsed);
+                            }
+                        } catch (IOException e) {
+                            anyAccessFailed.set(true);
+                            throw new CompletionException(e);
+                        }
+
+                        if (bjdFound) {
+                            anyBjdFound.set(true);
+                        } else {
+                            anyAccessFailed.set(true);
+                        }
+                    })
+                    .exceptionally(ex -> {
+                        anyAccessFailed.set(true);
+                        ex.printStackTrace();
+                        return null;
+                    });
+            future.join();
         } catch (CompletionException e) {
             e.printStackTrace();
             throw new RuntimeException(e.getCause() != null ? e.getCause() : e);
@@ -5841,7 +5826,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         public JSONObject toJson() {
             var json = new JSONObject();
             json.put("jd", jd);
-            json.put("ra", ra);
+            json.put("ra", ra * 15);
             json.put("dec", dec);
             if (!Double.isNaN(lat) && !Double.isNaN(lon) && !Double.isNaN(elevation)) {
                 json.put("lat", lat);

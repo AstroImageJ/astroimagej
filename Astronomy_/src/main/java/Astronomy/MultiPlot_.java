@@ -5497,7 +5497,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 if (returnCode == 3) {
                     IJ.beep();
-                    IJ.showMessage("ERROR: Ohio State access failed when attempting to retrieve BJD(TDB).");
+                    IJ.showMessage("ERROR: Shared Skies access failed when attempting to retrieve BJD(TDB).");
                     return false;
                 }
             }
@@ -5538,7 +5538,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         if (returnCode == 3) {
             IJ.beep();
-            IJ.showMessage("ERROR: Ohio State access failed when attempting to retrieve BJD(TDB).");
+            IJ.showMessage("ERROR: Shared Skies access failed when attempting to retrieve BJD(TDB).");
             return false;
         }
         return true;

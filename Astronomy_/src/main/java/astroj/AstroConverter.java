@@ -1663,12 +1663,24 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         sharedSkiesLabel = new JLabel("Shared Skies/internal");
         sharedSkiesLabel.setFont(p12);
-        sharedSkiesLabel.setToolTipText("Use Shared Skies BJD server, deselect to calculate internally");
+        sharedSkiesLabel.setToolTipText("""
+                <html>
+                Internal is faster and does not require an internet connection, but is less accurate (~200ms conversion precision).<br>
+                Shared Skies is slower and requires an internet connection, but is more accurate (~20μs).<br>
+                Either option is acceptable for typical exoplanet transit observations.
+                </html>
+                """);
         sharedSkiesLabel.setHorizontalAlignment(JTextField.RIGHT);
         sharedSkiesPanel.add(sharedSkiesLabel);
 
         useSharedSkiesCheckBox = new JCheckBox("", useSharedSkies);
-        useSharedSkiesCheckBox.setToolTipText("Use Shared Skies BJD server, deselect to calculate internally");
+        useSharedSkiesCheckBox.setToolTipText("""
+                <html>
+                Internal is faster and does not require an internet connection, but is less accurate (~200ms conversion precision).<br>
+                Shared Skies is slower and requires an internet connection, but is more accurate (~20μs).<br>
+                Either option is acceptable for typical exoplanet transit observations.
+                </html>
+                """);
         useSharedSkiesCheckBox.addItemListener(this);
         sharedSkiesPanel.add(useSharedSkiesCheckBox);
 

@@ -5206,7 +5206,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         addAstroDataPanel.add(hjdCorrField);
 
         bjdCB = new JCheckBox("BJD_TDB", addBJD);
-        bjdCB.setToolTipText("Add Barycentric Julian Date (TDB) column to active table");
+        bjdCB.setToolTipText("""
+                <html>
+                Internal time conversion is used by Default (faster, less accurate).<br>
+                If Shared Skies is selected in Coordinate Converter,
+                and JD (UTC) is selected for the Input Time Format above, and this checkbox is enabled,
+                and an internet connection is available,<br>
+                the external Shared Skies server will be used to calculate precise BJD_TDB times (slower by more accurate).
+                <html>
+                """);
         addAstroDataPanel.add(bjdCB);
 
         bjdField = new JTextField(bjdName);

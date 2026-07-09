@@ -5365,7 +5365,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 exec.execute(() -> {
                     var oSharedSkies = acc.useSharedSkies();
                     if (useGJD) {
-                        acc.setUseSharedSkies(addBJD || addBJDCorr);
+                        acc.setUseSharedSkies(addBJD);
                         acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
                     }
                     int tableLength = table.getCounter();

@@ -3354,23 +3354,27 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     }
 
     double getBJDTDB(double jd, double ra2000, double dec2000) {
-        Thread t = new Thread() {
-            public void run() {
-                eoiBJDTextField.setBackground(leapYellow);
-                eoiBJDTextField.setText("accessing Shared Skies...");
-                eoiBJDTextField.repaint();
-            }
+        Runnable ud = () -> {
+            eoiBJDTextField.setBackground(leapYellow);
+            eoiBJDTextField.setText("accessing Shared Skies...");
+            eoiBJDTextField.repaint();
         };
-
-        t.start();
-        Thread.yield();
+        if (SwingUtilities.isEventDispatchThread()) {
+            ud.run();
+        } else {
+            SwingUtilities.invokeLater(ud);
+        }
 
         if (!bulkTimes.isEmpty() && sharedSkiesBJDFound) {
             var tm = bulkTimes.get(new RaDec(ra2000, dec2000));
             if (tm != null) {
                 var bjd = tm.get(jd);
                 if (bjd != null) {
-                    eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
+                    if (SwingUtilities.isEventDispatchThread()) {
+                        eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
+                    } else {
+                        SwingUtilities.invokeLater(() -> eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray));
+                    }
                     return bjd;
                 }
             }
@@ -3430,7 +3434,11 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             sharedSkiesAccessFailed = true;
         }
 
-        eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
+        if (SwingUtilities.isEventDispatchThread()) {
+            eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
+        } else {
+            SwingUtilities.invokeLater(() -> eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray));
+        }
         return bjd;
     }
 

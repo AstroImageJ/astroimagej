@@ -3377,17 +3377,6 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
             /*IO.println("Cache miss: " + (tm == null ? "Missing ra/dec data" : "Missing original time entry") +
                     " for " + ra2000 + " " + dec2000 + " " + jd + " " + (tm == null ? "" : tm.get(jd)));*/
-
-            var r = new RaDec(ra2000, dec2000);
-            var m = bulkTimes.entrySet().stream()
-                    .filter(raDecTimes -> raDecTimes.getKey().angularDistance(r.ra(), r.dec()) < 1)
-                    .filter(raDecTimes -> raDecTimes.getValue().containsKey(jd))
-                    .findAny();
-            if (m.isPresent()) {
-                //IO.println("\tRecovered using " + m.get().getKey());
-                eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
-                return m.get().getValue().get(jd);
-            }
         } else {
             //IO.println("No cache");
         }
@@ -5747,70 +5736,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         }
     }
 
-    private record RaDec(long raBin, long decBin) {
-        private static final double BIN_SIZE_ARCSEC = 1.0 / Math.sqrt(2.0);
-
-        private RaDec(double ra, double dec) {
-            //ra = 15 * ra;
-            var cosDec = Math.toDegrees(Math.cos(Math.toRadians(dec)));
-
-            var raArcsec = ra * 3600 * cosDec;
-            var decArcsec = dec * 3600;
-
-            this((long) Math.floor(raArcsec / BIN_SIZE_ARCSEC), (long) Math.floor(decArcsec / BIN_SIZE_ARCSEC));
-            checkDistance(ra, dec);
-            //IO.println("Binned ra/dec: " + ra + " " + dec + " -> " + ra() + " " + dec() + " Separation: " + angularDistance(ra, dec) + "arcsec");
-        }
-
-        private void checkDistance(double ra, double dec) {
-            var separation = angularDistance(ra, dec);
-
-            if (separation >= 0.9) {
-                throw new IllegalStateException("Distance is too large: " + separation + " arcsec");
-            }
-        }
-
-        /**
-         * @return angular separation in arcsecs
-         */
-        private double angularDistance(double ra, double dec) {
-            var ra1 = Math.toRadians(ra);
-            var dec1 = Math.toRadians(dec);
-            var ra2 = Math.toRadians(ra());
-            var dec2 = Math.toRadians(dec());
-
-            var separation = Math.acos(Math.sin(dec1) * Math.sin(dec2) + Math.cos(dec1) * Math.cos(dec2) * Math.cos(ra1 - ra2));
-            return Math.toDegrees(separation) * 3600;
-        }
-
-        /**
-         * @return right ascenscion of bin center
-         */
-        public double ra() {
-            var decArcsec = (decBin + 0.5) * BIN_SIZE_ARCSEC;
-            var dec = decArcsec / 3600;
-
-            var cosDec = Math.toDegrees(Math.cos(Math.toRadians(dec)));
-
-            var raArcsec = (raBin + 0.5) * BIN_SIZE_ARCSEC;
-            return raArcsec / (3600 * cosDec);
-        }
-
-        /**
-         * @return declination of bin center
-         */
-        public double dec() {
-            var decArcsec = (decBin + 0.5) * BIN_SIZE_ARCSEC;
-            return decArcsec / 3600;
-        }
-
-        @Override
-        public String toString() {
-            return "RaDec{" +
-                    "ra=" + ra() +
-                    ", dec=" + dec() +
-                    '}';
-        }
+    private record RaDec(double ra, double dec) {
     }
 
     record Observation(double jd, double ra, double dec, double lat, double lon, double elevation) implements JSONAware {

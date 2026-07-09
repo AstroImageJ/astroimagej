@@ -1090,6 +1090,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         saveAstroPanelPrefs();
         checkAndLockTable();
+        var oSharedSkies = acc.useSharedSkies();
+        acc.setUseSharedSkies(addBJD && oSharedSkies && useGJD);
         if (updateMPCC(i)) {
             if (addAirmass) table.setValue(airmassName, i, acc.getAirmass());
             if (addAltitude) table.setValue(altitudeName, i, acc.getAltitude());
@@ -1121,6 +1123,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (addRA2000) table.setValue(ra2000Name, i, Double.NaN);
             if (addDec2000) table.setValue(dec2000Name, i, Double.NaN);
         }
+        acc.setUseSharedSkies(oSharedSkies);
         table.setLock(false);
     };
     private static PlotDataLock plotDataLock;
@@ -5364,8 +5367,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             try (var exec = Executors.newSingleThreadExecutor()) {
                 exec.execute(() -> {
                     var oSharedSkies = acc.useSharedSkies();
+                    acc.setUseSharedSkies(addBJD && oSharedSkies && useGJD);
                     if (useGJD) {
-                        acc.setUseSharedSkies(addBJD && oSharedSkies);
                         acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
                     }
                     int tableLength = table.getCounter();

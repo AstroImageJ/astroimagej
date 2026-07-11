@@ -1666,7 +1666,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         sharedSkiesLabel.setToolTipText("""
                 <html>
                 Internal is faster and does not require an internet connection, but is less accurate (~200ms conversion precision).<br>
-                Shared Skies is slower and requires an internet connection, but is more accurate (~20μs).<br>
+                Shared Skies is slower and requires an internet connection, but is more accurate (~200μs).<br>
                 Either option is acceptable for typical exoplanet transit observations.
                 </html>
                 """);
@@ -1677,7 +1677,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         useSharedSkiesCheckBox.setToolTipText("""
                 <html>
                 Internal is faster and does not require an internet connection, but is less accurate (~200ms conversion precision).<br>
-                Shared Skies is slower and requires an internet connection, but is more accurate (~20μs).<br>
+                Shared Skies is slower and requires an internet connection, but is more accurate (~200μs).<br>
                 Either option is acceptable for typical exoplanet transit observations.
                 </html>
                 """);

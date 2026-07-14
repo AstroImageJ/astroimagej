@@ -622,7 +622,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             case ROW_INSERTED -> tableView.fireTableRowsInserted(i1, i2);
             case ROW_UPDATED -> tableView.fireTableRowsUpdated(i1, i2);
             case CELL_UPDATED -> {
-                tableView.fireTableCellUpdated(i1, i2);
+                var viewColumn = jTable.convertColumnIndexToView(i2);
+                var viewRow = jTable.convertRowIndexToView(i1);
+                tableView.fireTableCellUpdated(viewRow, viewColumn);
                 adjustWidthOnRow(i1, i2);
             }
             case COL_ADDED -> {
@@ -655,7 +657,11 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             return;
         }
 
-        TableColumn c = jTable.getColumnModel().getColumn(columnIndex);
+        var viewColumn = jTable.convertColumnIndexToView(columnIndex);
+        if (viewColumn < 0 || viewColumn >= jTable.getColumnModel().getColumnCount())
+            return;
+
+        TableColumn c = jTable.getColumnModel().getColumn(viewColumn);
 
         if (c == null) {
             return;

@@ -1039,6 +1039,12 @@ public class ResultsTable implements Cloneable {
 			}
 		}
 	}
+
+	@AstroImageJ(reason = "Detect string columns")
+	public boolean isStringColumn(int column) {
+		// stringColumns.contains does not return true
+		return stringColumns != null && stringColumns.get(Integer.valueOf(column)) != null;
+	}
 		
 	private String getValueAsString(int column, int row) { 
 		double value = columns[column][row];

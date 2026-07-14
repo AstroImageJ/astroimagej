@@ -557,6 +557,17 @@ public class MeasurementTable extends ResultsTable {
     }
 
     @Override
+    public void setValue(int column, int row, String value) {
+        var newColNeeded = column > getLastColumn();
+        super.setValue(column, row, value);
+        if (newColNeeded) {
+            headingsCache.put(getColumnHeading(getLastColumn()), getLastColumn());
+            updateViewSynced(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
+        }
+        updateView(UpdateEvent.CELL_UPDATED, row, column);
+    }
+
+    @Override
     public void setValue(int column, int row, double value) {
         var newColNeeded = column > getLastColumn();
         super.setValue(column, row, value);

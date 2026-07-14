@@ -1176,7 +1176,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         }
 
         @Override
-        public int getColumnCount() {//todo support string columns
+        public int getColumnCount() {
             if (table.getLastColumn() == -1) {
                 return 0;
             }
@@ -1191,7 +1191,11 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             if (isRowNumCol(columnIndex)) {
                 return rowIndex+table.getBaseRowNumber();
             }
-            //table.getStringValue() //todo if double == nan, try get string. What to do with col. type? check first value? not safe
+
+            if (table.isStringColumn(offsetCol(columnIndex))) {
+                return table.getStringValue(offsetCol(columnIndex), rowIndex);
+            }
+
             return table.getValue(table.getColumnHeading(offsetCol(columnIndex)), rowIndex);
         }
 
@@ -1205,6 +1209,10 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     return;
                 }
             } else {
+                if (table.isStringColumn(offsetCol(columnIndex))) {
+                    table.setValue(offsetCol(columnIndex), rowIndex, aValue.toString());
+                    return;
+                }
                 if (aValue instanceof Number n) {
                     table.setValue(offsetCol(columnIndex), rowIndex, n.doubleValue());
                 } else {
@@ -1244,6 +1252,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             }
             if (isRowNumCol(columnIndex)) {
                 return Integer.class;
+            }
+            if (table.isStringColumn(offsetCol(columnIndex))) {
+                return String.class;
             }
             return Double.class;
         }

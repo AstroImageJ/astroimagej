@@ -506,6 +506,15 @@ public class ResultsTable implements Cloneable {
 		}
 		Arrays.fill(columns[index], 0, data.length, Double.NaN);
 
+		// Convert to mixed type
+		for (int i = 0; i < data.length; i++) {
+			var d = Tools.parseDouble(data[i]);
+            if (!Double.isNaN(d)) {
+                columns[index][i] = d;
+				stringColumn.set(i, "");
+            }
+		}
+
 		if (data.length > counter) {
 			counter = data.length;
 		}

@@ -1092,18 +1092,26 @@ public class MeasurementTable extends ResultsTable {
                 }
 
                 for (int col = (2 - shift); col < header.length - shift; col++) {
+                    var blank = false;
                     if (col >= words.length) {
                         d = Double.NaN;
+                        blank = true;
                     } else if (words[col] == null) {
                         d = Double.NaN;
+                        blank = true;
                     } else if (words[col].isBlank() || words[col].trim().equals("-")) {
                         d = Double.NaN;
+                        blank = true;
                     } else if (isHMS(words[col])) {
                         d = hms(words[col]);
                     } else {
                         d = Tools.parseDouble(words[col]);
                     }
-                    table.addValue(header[col + shift], d);
+                    if (Double.isNaN(d) && !blank) {
+                        table.addValue(header[col + shift], words[col]);
+                    } else {
+                        table.addValue(header[col + shift], d);
+                    }
                 }
                 row++;
             }

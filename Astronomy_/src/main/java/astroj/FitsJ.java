@@ -1236,6 +1236,26 @@ public class FitsJ {
 		if (s.startsWith("'") && s.endsWith("'")) {
 			s = s.substring(1, l - 1);
 		}
+
+		/*
+			Examples of sexagesimal formats matched by the regex:
+				12:34:56.78
+				12h34m56s.78
+				12h34m56.78s
+				12 34 56.78
+				12h 34m56s.78
+				12h 34m 56s.78
+				12h34m 56s.78
+				+45° 30′ 15.5''
+				+45°30′15.5''
+				12h 34m56.78s
+				+45°30′15″.5
+				12h34m
+		*/
+		if (!s.matches("(?<hours>[+-]?\\d{1,2})[h:°]?\\s*(?<mins>\\d{1,2})(?:[m:'′]?\\s*(?<secs>\\d{1,2}(?:(?:\\.\\d+)?(?:s|''|\"|″)?|(?:s|''|\"|″)\\.\\d+)?)?)?(?:s|''|\"|″)?\\s*$")) {
+			return Double.NaN;
+		}
+
         String[] pieces = s.replaceAll("[\\-][^0-9\\.]{0,}", " \\-").replaceAll("[+][^0-9\\.]{0,}", " +").replaceAll("[^0-9\\.\\-+]{1,}", " ").trim().split("[^0-9\\.\\-+]{1,}");
         if (pieces.length > 0) {
             d = Tools.parseDouble(pieces[0]);

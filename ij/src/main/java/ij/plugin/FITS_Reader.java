@@ -671,7 +671,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					if ("Label".equals(cName)) {
 						continue;
 					}
-					setColumn(o, table, cName);
+					setColumn(o, table, cName, true);
 				}
 
 				// Handle labels
@@ -712,7 +712,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 							if ("Label".equals(cName)) {
 								continue;
 							}
-							setColumn(o, table, cName);
+							setColumn(o, table, cName, true);
 							totalCol++;
 						}
 					}
@@ -783,7 +783,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (int c = 0; c < tableHDU.getNCols(); c++) {
 				var o = tableHDU.getColumn(c);
 				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
-				setColumn(o, table, cName);
+				setColumn(o, table, cName, false);
 			}
 		}
 
@@ -792,7 +792,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	//todo check listed column type, skip image columns, or open them as stacks?
 	//todo add other columns, but as NaN?
-	private static void setColumn(Object colData, ResultsTable finalMt, String cName) {
+	private static void setColumn(Object colData, ResultsTable finalMt, String cName, boolean isAijTbl) {
 		if (colData instanceof byte[] arr) {
 			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, Byte.toUnsignedInt(arr[i])));
 		} else if (colData instanceof short[] arr) {
@@ -806,7 +806,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		} else if (colData instanceof double[] arr) {
 			finalMt.bulkSetColumnAsDoubles(cName, arr);
 		} else if (colData instanceof String[] arr) {
-			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			finalMt.bulkSetColumnAsStrings(cName, arr);
+		} else if (isAijTbl && colData instanceof byte[][] bytes) {
+			var arr = Arrays.stream(bytes)
+					.map(aByte -> new String(aByte, StandardCharsets.UTF_8))
+					.toArray(String[]::new);
+			finalMt.bulkSetColumnAsStrings(cName, arr);
 		}
 	}
 

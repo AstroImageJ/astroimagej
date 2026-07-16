@@ -1,11 +1,42 @@
 package ij.plugin;
 
+import static ij.astro.util.FitsExtensionUtil.CompressionMode.FPACK;
+import static ij.astro.util.FitsExtensionUtil.CompressionMode.GZIP;
+import static nom.tam.fits.header.Standard.BSCALE;
+import static nom.tam.fits.header.Standard.BZERO;
+import static nom.tam.fits.header.Standard.END;
+import static nom.tam.fits.header.Standard.EXTEND;
+
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.zip.GZIPOutputStream;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
-import ij.astro.util.*;
+import ij.astro.util.FitsCompressionUtil;
+import ij.astro.util.FitsExtensionUtil;
+import ij.astro.util.ImageType;
+import ij.astro.util.ObjectShare;
+import ij.astro.util.ProgressTrackingOutputStream;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
@@ -13,27 +44,18 @@ import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import nom.tam.fits.*;
+import nom.tam.fits.BinaryTable;
+import nom.tam.fits.BinaryTableHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.ImageHDU;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.extra.AIJExt;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.image.compression.hdu.CompressedTableHDU;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsOutputStream;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.zip.GZIPOutputStream;
-
-import static ij.astro.util.FitsExtensionUtil.CompressionMode.FPACK;
-import static ij.astro.util.FitsExtensionUtil.CompressionMode.GZIP;
-import static nom.tam.fits.header.Standard.*;
 
 /**
  * This plugin saves a 16 or 32 bit image in FITS format. It is a stripped-down version of the SaveAs_FITS 
@@ -385,6 +407,12 @@ public class FITS_Writer implements PlugIn {
 				var columns = Math.min(maxColumns, resultsTable.getLastColumn() - processedColumns);
 
 				for (int col = 0; col <= columns; col++) {
+                    if (resultsTable.isStringColumn(col+processedColumns)) {
+						table.addColumn(Arrays.stream(resultsTable.bulkGetColumnAsStrings(col+processedColumns))
+								.map(s -> s == null ? "" : s)
+								.map(s -> s.getBytes(StandardCharsets.UTF_8)).toArray(byte[][]::new));
+						continue;
+                    }
 					table.addColumn(resultsTable.bulkGetColumnAsDoubles(col+processedColumns));
 				}
 				table.defragment();

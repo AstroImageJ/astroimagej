@@ -8,6 +8,7 @@ import static Astronomy.MultiAperture_.SHAPED_VARIATION_LOCKED;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.Locale;
+import java.util.Objects;
 
 import Astronomy.multiplot.table.MeasurementsWindow;
 import astroj.Aperture;
@@ -252,6 +253,7 @@ public class Aperture_ implements PlugInFilter {
     boolean isFITS = false;
     boolean debug = false;
     double[] raDec = null;
+    HeaderKey headerKey;
 
     /**
      * Help routine to convert real pixel position + aperture radius into
@@ -423,7 +425,7 @@ public class Aperture_ implements PlugInFilter {
      * Performs exact measurement of object position and integrated brightness.
      */
     protected boolean measureAperture() {
-        return measureAperture(FitsJ.getHeader(imp));
+        return measureAperture(getHeader());
     }
 
     /**
@@ -498,7 +500,7 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected void measurePhotometry() {
-        measurePhotometry(FitsJ.getHeader(imp));
+        measurePhotometry(getHeader());
     }
 
     protected void measurePhotometry(FitsJ.Header hdr) {
@@ -521,7 +523,7 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected Photometer measurePhotometry(ImagePlus imp, double x, double y, double r, double r2, double r3) {
-        return measurePhotometry(imp, FitsJ.getHeader(imp), x, y, r, r2, r3);
+        return measurePhotometry(imp, getHeader(), x, y, r, r2, r3);
     }
 
     protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, double x, double y, double r, double r2, double r3) {
@@ -910,11 +912,18 @@ public class Aperture_ implements PlugInFilter {
             table.addValue(AP_RA + suffix, raDec[0] / 15.0, 6);
             table.addValue(AP_DEC + suffix, raDec[1], 6);
         }
+        var hdr = getHeader();
         if (showFits && fitsVals != null) {
             String[] sarr = fitsKeywords.split(",");
             for (int l = 0; l < fitsVals.length; l++) {
-                if (fitsVals[l] != Double.NaN)
+                if (!Double.isNaN(fitsVals[l])) {
                     table.addValue(sarr[l], fitsVals[l], 6);
+                } else if (hdr != null) {
+                    var s = FitsJ.findStringValue(sarr[l], hdr);
+                    if (s != null) {
+                        table.addValue(sarr[l], FitsJ.findStringValue(sarr[l], hdr));
+                    }
+                }
             }
         }
         if (showTimes && !Double.isNaN(mjd)) {
@@ -999,7 +1008,7 @@ public class Aperture_ implements PlugInFilter {
             }
         }
 
-        if (showTimes && FitsJ.isTESS(FitsJ.getHeader(imp)) && table.getColumnIndex(AP_BJDTDB) == ResultsTable.COLUMN_NOT_FOUND)
+        if (showTimes && FitsJ.isTESS(getHeader()) && table.getColumnIndex(AP_BJDTDB) == ResultsTable.COLUMN_NOT_FOUND)
             i = table.getFreeColumn(AP_BJDTDB);
         if (showRadii) {
             if (table.getColumnIndex(AP_RSOURCE) == ResultsTable.COLUMN_NOT_FOUND)
@@ -1076,6 +1085,15 @@ public class Aperture_ implements PlugInFilter {
         return true;
     }
 
+    private FitsJ.Header getHeader() {
+        if (headerKey != null && headerKey.matches(imp)) {
+            return headerKey.header();
+        }
+
+        headerKey = new HeaderKey(imp);
+        return headerKey.header();
+    }
+
     /**
      * Gets all the aperture measurement parameters needed from the preferences.
      */
@@ -1150,18 +1168,16 @@ public class Aperture_ implements PlugInFilter {
 
     protected record AdjustedAperture(boolean centroidFound, Centroid center) {
     }
+
+    protected record HeaderKey(String name, int hash, int slice, FitsJ.Header header) {
+        public HeaderKey(ImagePlus imp) {
+            this(imp.getTitle(), System.identityHashCode(imp), imp.getCurrentSlice(), FitsJ.getHeader(imp, false));
+        }
+
+        public boolean matches(ImagePlus imp) {
+            return Objects.equals(imp.getTitle(), name) && hash == System.identityHashCode(imp) &&
+                    imp.getCurrentSlice() == slice;
+        }
+    }
 }
-
-/*
-			addOvalRoi (xCenter,yCenter,radius);
-			if (skyOverlay)
-				{
-				addOvalRoi (xCenter,yCenter,rBack1);
-				addOvalRoi (xCenter,yCenter,rBack2);
-				}
-			int off = (int)radius;
-			if (skyOverlay) off = (int)rBack2;
-			addStringRoi (xCenter+off,yCenter,"   "+g.format(source));
-*/
-
 

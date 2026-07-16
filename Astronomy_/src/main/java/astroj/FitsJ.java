@@ -2,13 +2,17 @@
 
 package astroj;
 
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Properties;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
 import ij.util.Tools;
-
-import java.util.*;
 
 /**
  * A collection of helpful static methods to read, manipulate, write, and query FITS-based images within ImageJ.
@@ -1343,6 +1347,20 @@ public class FitsJ {
 			return false;
 		}
     }
+
+	/**
+	 * Finds and extracts a String value from a FITS header stored in a String array.
+	 *
+	 * @param key   The FITS keyword that should be found and parsed.
+	 * @param hdr The FITS header.
+	 */
+	public static String findStringValue(String key, Header hdr) throws NumberFormatException {
+		int icard = findCardWithKey(key, hdr);
+		if (icard < 0) {
+			return null;
+		}
+		return getCardStringValue(hdr.cards[icard]);
+	}
 
     /**
      * Finds and extracts a double value from a FITS header stored in a String array.

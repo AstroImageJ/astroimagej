@@ -88,6 +88,7 @@ import ij.plugin.Distribution;
 import ij.plugin.FITS_Writer;
 import ij.plugin.filter.Analyzer;
 import ij.util.Java2;
+import ij.util.Tools;
 
 public class MeasurementsWindow extends JFrame implements ITableWindow {
     private final JTable jTable;
@@ -1210,7 +1211,12 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 }
             } else {
                 if (table.isStringColumn(offsetCol(columnIndex))) {
-                    table.setValue(offsetCol(columnIndex), rowIndex, aValue.toString());
+                    var d = Tools.parseDouble(aValue.toString(), Double.NaN);
+                    if (Double.isNaN(d)) {
+                        table.setValue(offsetCol(columnIndex), rowIndex, aValue.toString());
+                    } else {
+                        table.setValue(offsetCol(columnIndex), rowIndex, d);
+                    }
                     return;
                 }
                 if (aValue instanceof Number n) {

@@ -3378,7 +3378,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         }
 
         if (!bulkTimes.isEmpty() && sharedSkiesBJDFound) {
-            var tm = bulkTimes.get(new RaDec(ra2000, dec2000));
+            var tm = bulkTimes.get(new RaDec(ra2000, dec2000, getObservatoryLatitude(), getObservatoryLongitude(), getAltitude()));
             if (tm != null) {
                 var bjd = tm.get(jd);
                 if (bjd != null) {
@@ -5006,7 +5006,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         return retvals;
     }
 
-    public boolean bulkProcessTimes(MeasurementTable table, boolean useTableLoc, String raColumn, String decColumn, String JDColumn) {
+    public boolean bulkProcessTimes(MeasurementTable table, boolean useTableLoc, String raColumn, String decColumn, String JDColumn, boolean useTableLatLon, String latColumn, String lonColumn) {
         bulkTimes.clear();
 
         if (!useSharedSkies) {
@@ -5022,8 +5022,28 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         var addOffset = JDColumn.contains("-2400000");
         var tableLength = table.getCounter();
-        RaDec defaultKey = new RaDec(radecJ2000[0], radecJ2000[1]);
+        RaDec defaultKey = new RaDec(radecJ2000[0], radecJ2000[1], this);
         var initTimes = Collections.synchronizedMap(new HashMap<RaDec, Map<Double, Double>>());
+        var lat = getObservatoryLatitude();
+        var lon = getObservatoryLongitude();
+        var elevation = getAltitude();
+
+        int latCol = 0;
+        int lonCol = 0;
+        if (useTableLatLon) {
+            latCol = table.getColumnIndex(latColumn);
+            lonCol = table.getColumnIndex(lonColumn);
+            if (latCol == MeasurementTable.COLUMN_NOT_FOUND) {
+                IJ.beep();
+                IJ.showMessage("Error: could not find Latitude table column '" + latColumn + "'");
+                return false;
+            }
+            if (lonCol == MeasurementTable.COLUMN_NOT_FOUND) {
+                IJ.beep();
+                IJ.showMessage("Error: could not find Longitude table column '" + lonColumn + "'");
+                return false;
+            }
+        }
 
         if (useTableLoc) {
             var raCol = table.getColumnIndex(raColumn);
@@ -5055,9 +5075,19 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 ra = coords[0];
                 dec = coords[1];
 
+                if (useTableLatLon) {
+                    var lat0 = table.getValueAsDouble(latCol, i);
+                    var lon0 = table.getValueAsDouble(lonCol, i);
+                    if (Double.isFinite(lat) && Double.isFinite(lon)) {
+                        lat = lat0;
+                        lon = lon0;
+                        elevation = 0;
+                    }
+                }
+
                 RaDec key = defaultKey;
                 if (!Double.isNaN(ra) && !Double.isNaN(dec)) {
-                    key = new RaDec(ra, dec);
+                    key = new RaDec(ra, dec, lat, lon, elevation);
                 }
 
                 var jd = table.getValueAsDouble(jdCol, i);
@@ -5075,7 +5105,19 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     jd += 2400000;
                 }
 
-                initTimes.computeIfAbsent(defaultKey, ignored -> Collections.synchronizedMap(new HashMap<>()))
+                var key = defaultKey;
+                if (useTableLatLon) {
+                    var lat0 = table.getValueAsDouble(latCol, i);
+                    var lon0 = table.getValueAsDouble(lonCol, i);
+                    if (Double.isFinite(lat) && Double.isFinite(lon)) {
+                        lat = lat0;
+                        lon = lon0;
+                        elevation = 0;
+                        key = new RaDec(radecJ2000[0], radecJ2000[1], lat, lon, elevation);
+                    }
+                }
+
+                initTimes.computeIfAbsent(key, ignored -> Collections.synchronizedMap(new HashMap<>()))
                         .put(jd, jd);
             }
         }
@@ -5098,7 +5140,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         for (Map.Entry<RaDec, Map<Double, Double>> radecTimeMap : radecTimeMaps) {
             var raDec = radecTimeMap.getKey();
             observations.addAll(radecTimeMap.getValue().values().stream()
-                    .map(t -> Observation.create(raDec.ra(), raDec.dec(), t, this))
+                    .map(t -> Observation.create(raDec.ra(), raDec.dec(), t, raDec))
                     .toList());
         }
 
@@ -5141,7 +5183,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                                     parsed = 0;
                                 }
 
-                                bulkTimes.get(new RaDec(obs.ra, obs.dec)).put(obs.jd, parsed);
+                                bulkTimes.get(new RaDec(obs.ra, obs.dec, obs.lat, obs.lon, obs.elevation)).put(obs.jd, parsed);
                             }
                         } catch (IOException e) {
                             anyAccessFailed.set(true);
@@ -5775,16 +5817,23 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         }
     }
 
-    private record RaDec(double ra, double dec) {
+    private record RaDec(double ra, double dec, double lat, double lon, double elevation) {
+        public RaDec(double ra, double dec, AstroConverter astroConverter) {
+            this(ra, dec, astroConverter.lat, astroConverter.lon, astroConverter.alt);
+        }
     }
 
-    record Observation(double jd, double ra, double dec, double lat, double lon, double elevation) implements JSONAware {
+    private record Observation(double jd, double ra, double dec, double lat, double lon, double elevation) implements JSONAware {
         public Observation(double jd, double ra, double dec) {
             this(jd, ra, dec, Double.NaN, Double.NaN, Double.NaN);
         }
 
         public static Observation create(double ra, double dec, double jd, AstroConverter astroConverter) {
             return new Observation(jd, ra, dec, astroConverter.lat, astroConverter.lon, astroConverter.alt);
+        }
+
+        public static Observation create(double ra, double dec, double jd, RaDec raDec) {
+            return new Observation(jd, ra, dec, raDec.lat, raDec.lon, raDec.elevation);
         }
 
         @SuppressWarnings("unchecked")

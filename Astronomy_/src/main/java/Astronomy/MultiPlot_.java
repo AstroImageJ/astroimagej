@@ -426,7 +426,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static String combinedTableName;
     static String requestedTableName;
     static String templateDir;
-    static String JDColumn, raColumn, decColumn;
+    static String JDColumn, raColumn, decColumn, latColumn, lonColumn;
     static int jdCol, raCol, decCol;
 
     static int n;
@@ -690,7 +690,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JRadioButton unphasedButton, dayssincetcButton, hourssincetcButton, orbitalphaseButton;
 
     static JRadioButton useGJDButton, useHJDButton, useBJDButton, useManualRaDecButton, useTableRaDecButton;
-    static boolean useGJD = true, useHJD = false, useBJD = false, useTableRaDec = false;
+    static boolean useGJD = true, useHJD = false, useBJD = false, useTableRaDec = false, useTableLatLon;
     static ButtonGroup JDRadioGroup, RaDecRadioGroup;
 
     static SpinnerModel mmagrefsmodel;
@@ -5110,6 +5110,87 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(radeccolumnpanel, 1, radeccolumnpanel.getComponentCount(), 0, 0, 0, 0);
         addAstroDataPanel.add(radeccolumnpanel);
 
+        var useManualLatLonButton = new JRadioButton("Manual");
+        useManualLatLonButton.setToolTipText("Manually enter Lat and Lon in 'MP Coordinate Converter' panel");
+        var useTableLatLonButton = new JRadioButton("Table");
+        useTableLatLonButton.setToolTipText("Use Lat and Lon values from specified table columns");
+
+        MutableComboBoxModel<String> lonDefaultModel = new DefaultComboBoxModel<>(columns);
+        var lonColumnBox = new JComboBox<>(lonDefaultModel);
+        MutableComboBoxModel<String> latdefaultmodel = new DefaultComboBoxModel<>(columns);
+        var latColumnBox = new JComboBox<>(latdefaultmodel);
+
+        if (useTableLatLon) {
+            useTableLatLonButton.setSelected(true);
+            useManualLatLonButton.setSelected(false);
+            acc.setEnableObjectEntry(false);
+        } else { //use manual RA/Dec entry
+            useTableLatLonButton.setSelected(false);
+            useManualLatLonButton.setSelected(true);
+            acc.setEnableObjectEntry(true);
+        }
+
+        var LatLonRadioGroup = new ButtonGroup();
+        LatLonRadioGroup.add(useManualLatLonButton);
+        LatLonRadioGroup.add(useTableLatLonButton);
+
+        useManualLatLonButton.addActionListener(ae -> {
+            useTableLatLon = false;
+            latColumnBox.setEnabled(false);
+            lonColumnBox.setEnabled(false);
+            if (!astroConverterUpdating) updateMPCC(-1);
+        });
+        useTableLatLonButton.addActionListener(ae -> {
+            useTableLatLon = true;
+            latColumnBox.setEnabled(true);
+            lonColumnBox.setEnabled(true);
+            if (!astroConverterUpdating) updateMPCC(-1);
+        });
+
+        var latLonSelectionPanel = new JPanel(new SpringLayout());
+        latLonSelectionPanel.setBorder(BorderFactory.createTitledBorder("Lat/Lon Source"));
+        latLonSelectionPanel.add(useManualLatLonButton);
+        latLonSelectionPanel.add(useTableLatLonButton);
+        SpringUtil.makeCompactGrid(latLonSelectionPanel, 1, latLonSelectionPanel.getComponentCount(), 2, 0, 2, 0);
+        addAstroDataPanel.add(latLonSelectionPanel);
+
+        JPanel latLonColumnPanel = new JPanel(new SpringLayout());
+
+        JPanel latColumnPanel = new JPanel(new SpringLayout());
+        latColumnPanel.setBorder(BorderFactory.createTitledBorder("Lat Column (deg)"));
+        latColumnBox.setSelectedItem(latColumn);
+        latColumnBox.setEnabled(useTableLatLon);
+        latColumnBox.setToolTipText("Table column containing observatory latitude (in degrees)");
+        latColumnBox.setPrototypeDisplayValue("123456789012345");
+        latColumnBox.addActionListener(_ -> {
+            latColumn = (String) latColumnBox.getSelectedItem();
+            if (!astroConverterUpdating) updateMPCC(-1);
+        });
+
+        latColumnPanel.add(latColumnBox);
+        latColumnPanel.setPreferredSize(new Dimension(125, 25));
+        SpringUtil.makeCompactGrid(latColumnPanel, 1, 1, 0, 0, 0, 0);
+        latLonColumnPanel.add(latColumnPanel);
+
+
+        JPanel lonColumnPanel = new JPanel(new SpringLayout());
+        lonColumnPanel.setBorder(BorderFactory.createTitledBorder("Lon Column (deg)"));
+        lonColumnBox.setSelectedItem(lonColumn);
+        lonColumnBox.setEnabled(useTableLatLon);
+        lonColumnBox.setToolTipText("Table column containing observatory longitude (in degrees)");
+        lonColumnBox.setPrototypeDisplayValue("123456789012345");
+        lonColumnBox.addActionListener(_ -> {
+            lonColumn = (String) lonColumnBox.getSelectedItem();
+            if (!astroConverterUpdating) updateMPCC(-1);
+        });
+
+        lonColumnPanel.add(lonColumnBox);
+        lonColumnPanel.setPreferredSize(new Dimension(125, 25));
+        SpringUtil.makeCompactGrid(lonColumnPanel, 1, 1, 0, 0, 0, 0);
+        latLonColumnPanel.add(lonColumnPanel);
+
+        SpringUtil.makeCompactGrid(latLonColumnPanel, 1, latLonColumnPanel.getComponentCount(), 0, 0, 0, 0);
+        addAstroDataPanel.add(latLonColumnPanel);
 
         JLabel dataTitleLabel = new JLabel("Select data to add");
         addAstroDataPanel.add(dataTitleLabel);
@@ -5377,7 +5458,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     var oSharedSkies = acc.useSharedSkies();
                     acc.setUseSharedSkies(addBJD && oSharedSkies && useGJD);
                     if (useGJD) {
-                        acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn);
+                        acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn, useTableLatLon, latColumn, lonColumn);
                     }
                     int tableLength = table.getCounter();
                     for (int i = 0; i < tableLength; i++) {
@@ -5518,6 +5599,29 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static boolean processCoordinates(int row) {
+        if (useTableLatLon) {
+            var latCol = table.getColumnIndex(latColumn);
+            var lonCol = table.getColumnIndex(lonColumn);
+            if (latCol == MeasurementTable.COLUMN_NOT_FOUND) {
+                if (row < 1) {
+                    IJ.beep();
+                    IJ.showMessage("Error: could not find Latitude table column '" + latColumn + "'");
+                }
+                return false;
+            }
+            if (lonCol == MeasurementTable.COLUMN_NOT_FOUND) {
+                if (row < 1) {
+                    IJ.beep();
+                    IJ.showMessage("Error: could not find Longitude table column '" + lonColumn + "'");
+                }
+                return false;
+            }
+            var lat = table.getValueAsDouble(latCol, row);
+            var lon = table.getValueAsDouble(lonCol, row);
+            if (Double.isFinite(lat) && Double.isFinite(lon)) {
+                acc.setLatLonAlt(lat, lon, 0);
+            }
+        }
         if (useTableRaDec) {
             raColumn = (String) racolumnbox.getSelectedItem();
             decColumn = (String) deccolumnbox.getSelectedItem();
@@ -6559,6 +6663,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JDColumn = "JD_UTC";
         raColumn = "RA_OBJ";
         decColumn = "DEC_OBJ";
+        latColumn = "LAT_OBS";
+        lonColumn = "LONG_OBS";
         jdCol = 0;
         raCol = 0;
         decCol = 0;
@@ -18572,6 +18678,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JDColumn = Prefs.get("plot2.JDColumn", JDColumn);
         raColumn = Prefs.get("plot2.raColumn", raColumn);
         decColumn = Prefs.get("plot2.decColumn", decColumn);
+        latColumn = Prefs.get("plot2.latColumn", latColumn);
+        lonColumn = Prefs.get("plot2.lonColumn", lonColumn);
 
         addAirmass = Prefs.get("plot2.addAirmass", addAirmass);
         addAltitude = Prefs.get("plot2.addAltitude", addAltitude);
@@ -18610,6 +18718,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         unscale = Prefs.get("plot2.unscale", unscale);
         unshift = Prefs.get("plot2.unshift", unshift);
         useTableRaDec = Prefs.get("plot2.useTableRaDec", useTableRaDec);
+        useTableLatLon = Prefs.get("plot2.useTableLatLon", useTableLatLon);
         maxSubsetColumns = (int) Prefs.get("plot2.maxSubsetColumns", maxSubsetColumns);
         modifyCurvesAbove = Prefs.get("plot2.modifyCurvesAbove", modifyCurvesAbove);
         modifyCurvesBelow = Prefs.get("plot2.modifyCurvesBelow", modifyCurvesBelow);
@@ -18952,12 +19061,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot2.JDColumn", JDColumn);
         Prefs.set("plot2.raColumn", raColumn);
         Prefs.set("plot2.decColumn", decColumn);
+        Prefs.set("plot2.latColumn", latColumn);
+        Prefs.set("plot2.lonColumn", lonColumn);
         Prefs.set("plot2.useGJD", useGJD);
         Prefs.set("plot2.useHJD", useHJD);
         Prefs.set("plot2.useBJD", useBJD);
         Prefs.set("plot2.unscale", unscale);
         Prefs.set("plot2.unshift", unshift);
         Prefs.set("plot2.useTableRaDec", useTableRaDec);
+        Prefs.set("plot2.useTableLatLon", useTableLatLon);
         Prefs.set("plot2.autoAstroDataUpdate", autoAstroDataUpdate);
     }
 

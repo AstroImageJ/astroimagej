@@ -2229,8 +2229,8 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 latTextField.setText(showSexagesimal ? decToSex(lat, 2, 90, true) : sixPlaces.format(lat));
                 lonTextField.setText(showSexagesimal ? decToSex(lon, 2, 180, true) : sixPlaces.format(lon));
                 altTextField.setText(uptoTwoPlaces.format(alt));
-                if (dp && ignoreObservatoryAction) return;
             }
+            if (dp && ignoreObservatoryAction) return;
         } else if (source == savePrefsMenuItem) {
             savePrefs();
         } else if (source == exitMenuItem) {

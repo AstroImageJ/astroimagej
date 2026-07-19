@@ -375,7 +375,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     // used to weight barycenter calculation only.
     private Frame frame;
     private static final SimbadOptions SIMBAD_OPTIONS = new SimbadOptions();
-    private final Map<RaDec, Map<Double, Double>> bulkTimes = new HashMap<>();
+    private final Map<Observation, Double> bulkTimes = new HashMap<>();
 
 
     public AstroConverter(boolean showWindow, boolean dpControlled, String title) {
@@ -3377,22 +3377,20 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             SwingUtilities.invokeLater(ud);
         }
 
+        var observation = Observation.create(ra2000, dec2000, jd, this);
         if (!bulkTimes.isEmpty() && sharedSkiesBJDFound) {
-            var tm = bulkTimes.get(new RaDec(ra2000, dec2000, getObservatoryLatitude(), getObservatoryLongitude(), getAltitude()));
-            if (tm != null) {
-                var bjd = tm.get(jd);
-                if (bjd != null) {
-                    if (SwingUtilities.isEventDispatchThread()) {
-                        eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
-                    } else {
-                        SwingUtilities.invokeLater(() -> eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray));
-                    }
-                    return bjd;
+            var newTime = bulkTimes.get(observation);
+            if (newTime != null) {
+                if (SwingUtilities.isEventDispatchThread()) {
+                    eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray);
+                } else {
+                    SwingUtilities.invokeLater(() -> eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray));
                 }
+                return newTime;
             }
 
-            /*IO.println("Cache miss: " + (tm == null ? "Missing ra/dec data" : "Missing original time entry") +
-                    " for " + ra2000 + " " + dec2000 + " " + jd + " " + (tm == null ? "" : tm.get(jd)));*/
+            /*IO.println("Cache miss: " + (newTime == null ? "Missing ra/dec data" : "Missing original time entry") +
+                    " for " + ra2000 + " " + dec2000 + " " + jd + " " + (newTime == null ? "" : newTime));*/
         } else {
             //IO.println("No cache");
         }
@@ -3410,7 +3408,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(
                             JSONObject.toJSONString(Map.of("observations",
-                                    List.of(Observation.create(ra2000, dec2000, jd, this))))))
+                                    List.of(observation)))))
                     .build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             if (response.statusCode() != 200) {
@@ -3451,6 +3449,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         } else {
             SwingUtilities.invokeLater(() -> eoiBJDTextField.setBackground(!useNowEpoch && timeEnabled ? Color.WHITE : leapGray));
         }
+        bulkTimes.put(observation, bjd);
         return bjd;
     }
 
@@ -5022,11 +5021,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         var addOffset = JDColumn.contains("-2400000");
         var tableLength = table.getCounter();
-        RaDec defaultKey = new RaDec(radecJ2000[0], radecJ2000[1], this);
-        var initTimes = Collections.synchronizedMap(new HashMap<RaDec, Map<Double, Double>>());
-        var lat = getObservatoryLatitude();
-        var lon = getObservatoryLongitude();
-        var elevation = getAltitude();
+        var initTimes = Collections.synchronizedMap(new HashMap<Observation, Double>(tableLength));
 
         int latCol = 0;
         int lonCol = 0;
@@ -5078,16 +5073,15 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                 if (useTableLatLon) {
                     var lat0 = table.getValueAsDouble(latCol, i);
                     var lon0 = table.getValueAsDouble(lonCol, i);
-                    if (Double.isFinite(lat) && Double.isFinite(lon)) {
-                        lat = lat0;
-                        lon = lon0;
-                        elevation = 0;
+                    if (Double.isFinite(lat0) && Double.isFinite(lon0)) {
+                        setLatLonAlt(lat0, lon0, 0);
+                        getLatLonAlt();
                     }
                 }
 
-                RaDec key = defaultKey;
-                if (!Double.isNaN(ra) && !Double.isNaN(dec)) {
-                    key = new RaDec(ra, dec, lat, lon, elevation);
+                if (Double.isNaN(ra) || Double.isNaN(dec)) {
+                    ra = radecJ2000[0];
+                    dec = radecJ2000[1];
                 }
 
                 var jd = table.getValueAsDouble(jdCol, i);
@@ -5095,8 +5089,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     jd += 2400000;
                 }
 
-                initTimes.computeIfAbsent(key, ignored -> Collections.synchronizedMap(new HashMap<>()))
-                        .put(jd, jd);
+                initTimes.put(Observation.create(ra, dec, jd, this), jd);
             }
         } else {
             for (int i = 0; i < tableLength; i++) {
@@ -5105,20 +5098,17 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                     jd += 2400000;
                 }
 
-                var key = defaultKey;
                 if (useTableLatLon) {
                     var lat0 = table.getValueAsDouble(latCol, i);
                     var lon0 = table.getValueAsDouble(lonCol, i);
-                    if (Double.isFinite(lat) && Double.isFinite(lon)) {
-                        lat = lat0;
-                        lon = lon0;
-                        elevation = 0;
-                        key = new RaDec(radecJ2000[0], radecJ2000[1], lat, lon, elevation);
+                    if (Double.isFinite(lat0) && Double.isFinite(lon0)) {
+                        setLatLonAlt(lat0, lon0, 0);
+                        lat = getObservatoryLatitude();
+                        lon = getObservatoryLongitude();
                     }
                 }
 
-                initTimes.computeIfAbsent(key, ignored -> Collections.synchronizedMap(new HashMap<>()))
-                        .put(jd, jd);
+                initTimes.put(Observation.create(radecJ2000[0], radecJ2000[1], jd, this), jd);
             }
         }
 
@@ -5131,18 +5121,11 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         return true;
     }
 
-    private boolean requestTimes(Map<AstroConverter.RaDec, Map<Double, Double>> bulkTimes) {
+    private boolean requestTimes(Map<Observation, Double> bulkTimes) {
         final var anyAccessFailed = new AtomicBoolean(false);
         final var anyBjdFound = new AtomicBoolean(false);
 
-        var radecTimeMaps = new ArrayList<>(bulkTimes.entrySet());
-        var observations = new ArrayList<Observation>();
-        for (Map.Entry<RaDec, Map<Double, Double>> radecTimeMap : radecTimeMaps) {
-            var raDec = radecTimeMap.getKey();
-            observations.addAll(radecTimeMap.getValue().values().stream()
-                    .map(t -> Observation.create(raDec.ra(), raDec.dec(), t, raDec))
-                    .toList());
-        }
+        var observations = new ArrayList<>(bulkTimes.keySet());
 
         var clientBuilder = HttpClient.newBuilder().executor(Executors.newVirtualThreadPerTaskExecutor());
         if (useProxy) {
@@ -5183,7 +5166,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                                     parsed = 0;
                                 }
 
-                                bulkTimes.get(new RaDec(obs.ra, obs.dec, obs.lat, obs.lon, obs.elevation)).put(obs.jd, parsed);
+                                bulkTimes.put(obs, parsed);
                             }
                         } catch (IOException e) {
                             anyAccessFailed.set(true);
@@ -5817,12 +5800,6 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         }
     }
 
-    private record RaDec(double ra, double dec, double lat, double lon, double elevation) {
-        public RaDec(double ra, double dec, AstroConverter astroConverter) {
-            this(ra, dec, astroConverter.lat, astroConverter.lon, astroConverter.alt);
-        }
-    }
-
     private record Observation(double jd, double ra, double dec, double lat, double lon, double elevation) implements JSONAware {
         public Observation(double jd, double ra, double dec) {
             this(jd, ra, dec, Double.NaN, Double.NaN, Double.NaN);
@@ -5830,10 +5807,6 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
 
         public static Observation create(double ra, double dec, double jd, AstroConverter astroConverter) {
             return new Observation(jd, ra, dec, astroConverter.lat, astroConverter.lon, astroConverter.alt);
-        }
-
-        public static Observation create(double ra, double dec, double jd, RaDec raDec) {
-            return new Observation(jd, ra, dec, raDec.lat, raDec.lon, raDec.elevation);
         }
 
         @SuppressWarnings("unchecked")

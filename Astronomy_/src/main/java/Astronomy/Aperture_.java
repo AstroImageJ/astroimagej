@@ -921,7 +921,7 @@ public class Aperture_ implements PlugInFilter {
                 } else if (hdr != null) {
                     var s = FitsJ.findStringValue(sarr[l], hdr);
                     if (s != null) {
-                        table.addValue(sarr[l], FitsJ.findStringValue(sarr[l], hdr));
+                        table.addValue(sarr[l], s.trim());
                     }
                 }
             }

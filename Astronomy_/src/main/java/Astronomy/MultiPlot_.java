@@ -5124,10 +5124,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useTableLatLonButton.setSelected(true);
             useManualLatLonButton.setSelected(false);
             acc.setEnableObjectEntry(false);
-        } else { //use manual RA/Dec entry
+            acc.setEnableObservatoryEntry(false);
+        } else { //use manual Lat/Lon entry
             useTableLatLonButton.setSelected(false);
             useManualLatLonButton.setSelected(true);
             acc.setEnableObjectEntry(true);
+            acc.setEnableObservatoryEntry(true);
         }
 
         var LatLonRadioGroup = new ButtonGroup();
@@ -5138,12 +5140,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useTableLatLon = false;
             latColumnBox.setEnabled(false);
             lonColumnBox.setEnabled(false);
+            acc.setEnableObservatoryEntry(true);
             if (!astroConverterUpdating) updateMPCC(-1);
         });
         useTableLatLonButton.addActionListener(ae -> {
             useTableLatLon = true;
             latColumnBox.setEnabled(true);
             lonColumnBox.setEnabled(true);
+            acc.setEnableObservatoryEntry(false);
             if (!astroConverterUpdating) updateMPCC(-1);
         });
 

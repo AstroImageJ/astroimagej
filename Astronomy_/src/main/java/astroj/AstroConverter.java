@@ -85,6 +85,7 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -5059,6 +5060,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             var decField = new JTextField();
 
             for (int i = 0; i < tableLength; i++) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return false;
+                }
                 var ra = table.getValueAsDouble(raCol, i);
                 var dec = table.getValueAsDouble(decCol, i);
 
@@ -5093,6 +5097,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
             }
         } else {
             for (int i = 0; i < tableLength; i++) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return false;
+                }
                 var jd = table.getValueAsDouble(jdCol, i);
                 if (addOffset) {
                     jd += 2400000;
@@ -5154,6 +5161,9 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                             int p = 0;
 
                             while ((inputLine = in.readLine()) != null && p < observations.size()) {
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
                                 if (inputLine.isBlank()) {
                                     continue;
                                 }
@@ -5184,7 +5194,15 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
                         ex.printStackTrace();
                         return null;
                     });
-            future.join();
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                future.cancel(true);
+                Thread.currentThread().interrupt();
+                return false;
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e.getCause());
+            }
         } catch (CompletionException e) {
             e.printStackTrace();
             throw new RuntimeException(e.getCause() != null ? e.getCause() : e);

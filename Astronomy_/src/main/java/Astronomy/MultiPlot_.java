@@ -1041,6 +1041,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static String lastUsedTitle, lastUsedSubtitle;
     @PropertyKey(value = "plot.periodAlias", ignoreAffixes = true)
     static final Property<Integer> periodAlias = new Property<>(1, MultiPlot_.class);
+    private static final ExecutorService astroExecutor = Executors.newSingleThreadExecutor();
+    private static volatile Future<?> currentTask;
 
     public static IntConsumer addTableData = i -> {
         if (!autoAstroDataUpdate || !addAstroDataFrameWasShowing) {
@@ -5398,6 +5400,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         OKbutton = new JButton("Update Table");
         OKbutton.addActionListener(e -> {
+            // Cancel if already running
+            if (currentTask != null && !currentTask.isDone()) {
+                currentTask.cancel(true);
+                return;
+            }
+
             astroConverterUpdating = true;
             JDColumn = (String) jdcolumnbox.getSelectedItem();
             int jdCol = table.getColumnIndex(JDColumn);
@@ -5444,8 +5452,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Thread t = new Thread(() -> {
                 if (OKbutton != null) {
                     OKbutton.setForeground(Color.RED);
-                    OKbutton.setText("working...");
-                    OKbutton.setEnabled(false);
+                    OKbutton.setText("Cancel");
                     OKbutton.paint(OKbutton.getGraphics());
                 }
             });
@@ -5457,15 +5464,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             saveAstroPanelPrefs();
             checkAndLockTable();
-            try (var exec = Executors.newSingleThreadExecutor()) {
-                exec.execute(() -> {
+            currentTask = astroExecutor.submit(() -> {
+                try {
                     var oSharedSkies = acc.useSharedSkies();
                     acc.setUseSharedSkies(addBJD && oSharedSkies && useGJD);
                     if (useGJD) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            acc.setUseSharedSkies(oSharedSkies);
+                            return;
+                        }
                         acc.bulkProcessTimes(table, useTableRaDec, raColumn, decColumn, JDColumn, useTableLatLon, latColumn, lonColumn);
                     }
                     int tableLength = table.getCounter();
                     for (int i = 0; i < tableLength; i++) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            acc.setUseSharedSkies(oSharedSkies);
+                            return;
+                        }
                         if (updateMPCC(i)) {
                             if (addAirmass) table.setValue(airmassName, i, acc.getAirmass());
                             if (addAltitude) table.setValue(altitudeName, i, acc.getAltitude());
@@ -5499,26 +5514,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                     acc.setUseSharedSkies(oSharedSkies);
-                });
-            }
+                } finally {
+                    SwingUtilities.invokeLater(() -> {
+                        acc.clearBulkTimes();
+                        table.show();
+                        table.setLock(false);
+                        if (!autoAstroDataUpdateRunning) updatePlot(updateAllFits(), false);
+                        Thread t2 = new Thread(() -> {
+                            if (OKbutton != null) {
+                                OKbutton.setForeground(defaultOKForeground);
+                                OKbutton.setText("Update Table");
+                                OKbutton.setEnabled(true);
+                                OKbutton.paint(OKbutton.getGraphics());
+                            }
+                        });
 
-            acc.clearBulkTimes();
-            table.show();
-            table.setLock(false);
-            if (!autoAstroDataUpdateRunning) updatePlot(updateAllFits(), false);
-            Thread t2 = new Thread(() -> {
-                if (OKbutton != null) {
-                    OKbutton.setForeground(defaultOKForeground);
-                    OKbutton.setText("Update Table");
-                    OKbutton.setEnabled(true);
-                    OKbutton.paint(OKbutton.getGraphics());
+                        t2.start();
+                        Thread.yield();
+                        astroConverterUpdating = false;
+                        Prefs.set("plot2.JDColumn", JDColumn);
+                    });
                 }
             });
-
-            t2.start();
-            Thread.yield();
-            astroConverterUpdating = false;
-            Prefs.set("plot2.JDColumn", JDColumn);
         });
 
         OKCancelPanel.add(OKbutton);

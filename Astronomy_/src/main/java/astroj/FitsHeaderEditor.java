@@ -8,8 +8,10 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
@@ -17,17 +19,23 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import javax.swing.AbstractAction;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -284,61 +292,47 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
 
         searchTF = new JTextField(10);
         searchTF.setToolTipText("Enter search text and press enter");
-        searchTF.addActionListener(new java.awt.event.ActionListener() {
+
+        Runnable searchForward = () -> search(true);
+        Runnable searchBackward = () -> search(false);
+
+        searchTF.addActionListener(e -> {
+            if ((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0) {
+                searchBackward.run();
+            } else {
+                searchForward.run();
+            }
+        });
+
+        var im = searchTF.getInputMap(JComponent.WHEN_FOCUSED);
+        var am = searchTF.getActionMap();
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "searchForward");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.SHIFT_DOWN_MASK), "searchBackward");
+
+        am.put("searchForward", new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                int rows = table.getRowCount();
-                int cols = table.getColumnCount();
-                if (rows < 1 || cols < 1) return;
-                int startRow = table.getSelectedRow();
-                if (startRow < 0) startRow = 0;
-                int startCol = table.getSelectedColumn();
-                if (startCol < 0) startCol = 0;
-                if (startRow == lastGoodSearchRow && startCol == lastGoodSearchCol) {
-                    if (startCol == 4) {
-                        startCol = 0;
-                        if (startRow < rows - 1) {
-                            startRow++;
-                        } else {
-                            startRow = 0;
-                            startCol = 0;
-                        }
-                    } else {
-                        startCol++;
-                    }
-                }
-                Object cellObject;
-                String cellText = "";
-                String searchText = searchTF.getText().trim().toLowerCase();
-                for (int j = startRow; j < rows; j++) {
-                    for (int i = 0; i < cols; i++) {
-                        if (j == startRow && i == 0) i = startCol;
-                        cellObject = table.getValueAt(j, i);
-                        if (cellObject == null) {
-                            cellText = " ";
-                        } else {
-                            cellText = cellObject.toString().toLowerCase();
-                        }
-                        if (cellText.contains(searchText)) {
-                            //IJ.log("found "+searchText+" at ("+j+","+i+")");
-                            table.changeSelection(j, i, false, false);
-                            lastGoodSearchCol = i;
-                            lastGoodSearchRow = j;
-                            break;
-                        }
-                    }
-                    if (cellText.contains(searchText)) {
-                        break;
-                    }
-                    if (j == rows - 1) {
-                        IJ.error("Search string not found");
-                        lastGoodSearchRow = 0;
-                        lastGoodSearchCol = 0;
-                        table.changeSelection(0, 0, false, false);
-                    }
-                }
+                search(true);
+            }
+        });
+
+        am.put("searchBackward", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                search(false);
             }
         });
         gui.add(searchTF);
+
+        var arrows = Box.createHorizontalBox();
+        var prevButton = new BasicArrowButton(SwingConstants.WEST);
+        prevButton.addActionListener(_ -> search(false));
+        arrows.add(prevButton);
+        var nextButton = new BasicArrowButton(SwingConstants.EAST);
+        nextButton.addActionListener(_ -> search(true));
+        arrows.add(nextButton);
+        gui.add(arrows);
 
         JButton deleterow = new JButton(DELETE);
         deleterow.setToolTipText("Delete selected row(s)");
@@ -405,6 +399,86 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         frame.setVisible(true);
 
         searchTF.grabFocus();
+    }
+
+    void search(boolean forward) {
+        var searchText = searchTF.getText().toLowerCase();
+
+        var rows = table.getRowCount();
+        var cols = table.getColumnCount();
+        if (rows == 0 || cols == 0 || searchText.isEmpty()) {
+            return;
+        }
+
+        var row = table.getSelectedRow();
+        var col = table.getSelectedColumn();
+
+        if (row < 0) {
+            row = 0;
+        }
+        if (col < 0) {
+            col = 0;
+        }
+
+        // Continue after the last match if still selected.
+        if (row == lastGoodSearchRow && col == lastGoodSearchCol) {
+            if (forward) {
+                col++;
+                if (col >= cols) {
+                    col = 0;
+                    row++;
+                    if (row >= rows) {
+                        row = 0;
+                    }
+                }
+            } else {
+                col--;
+                if (col < 0) {
+                    col = cols - 1;
+                    row--;
+                    if (row < 0) {
+                        row = rows - 1;
+                    }
+                }
+            }
+        }
+
+        var startRow = row;
+        var startCol = col;
+        do {
+            var value = table.getValueAt(row, col);
+            var text = value == null ? "" : value.toString().toLowerCase();
+
+            if (text.contains(searchText)) {
+                table.changeSelection(row, col, false, false);
+                lastGoodSearchRow = row;
+                lastGoodSearchCol = col;
+                return;
+            }
+
+            if (forward) {
+                col++;
+                if (col >= cols) {
+                    col = 0;
+                    row++;
+                    if (row >= rows) {
+                        row = 0;
+                    }
+                }
+            } else {
+                col--;
+                if (col < 0) {
+                    col = cols - 1;
+                    row--;
+                    if (row < 0) {
+                        row = rows - 1;
+                    }
+                }
+            }
+
+        } while (row != startRow || col != startCol);
+
+        IJ.error("Search string not found");
     }
 
 

@@ -212,7 +212,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         // table.setFillsViewportHeight(true);		Java 1.6
         table.setShowGrid(true);
 
-        table.setColumnSelectionAllowed(false);
+        table.setColumnSelectionAllowed(true);
 
         ListSelectionModel model = table.getSelectionModel();
         model.addListSelectionListener(this);

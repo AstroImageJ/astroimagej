@@ -295,7 +295,10 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
                         // Needs to be sorted as we are removing rows in descending order
                         var idx = IntStream.range(0, table.size())
-                                .filter(row -> !Double.isFinite(table.getValueAsDouble(cIdx, row)))
+                                .filter(row ->
+                                        !Double.isFinite(table.getValueAsDouble(cIdx, row)) &&
+                                        (!table.isStringColumn(cIdx) || table.getStringValue(cIdx, row).equals("NaN"))
+                                )
                                 .sorted().toArray();
                         table.deleteRows(idx);
                         table.setLock(false);

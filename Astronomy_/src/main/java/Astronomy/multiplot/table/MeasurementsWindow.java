@@ -356,6 +356,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                             var column = getTable().getFreeColumn(heading);
                             if (column == COLUMN_IN_USE) {
                                 IJ.error("Column already exists");
+                                return;
                             }
 
                             var col = getTable().bulkGetColumnAsDoubles(column);
@@ -380,6 +381,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                             var column = getTable().getColumnIndex(heading);
                             if (column != COLUMN_NOT_FOUND) {
                                 IJ.error("Column already exists");
+                                return;
                             }
 
                             getTable().renameColumn((String) c.getIdentifier(), heading);

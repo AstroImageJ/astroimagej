@@ -5125,12 +5125,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (useTableLatLon) {
             useTableLatLonButton.setSelected(true);
             useManualLatLonButton.setSelected(false);
-            acc.setEnableObjectEntry(false);
             acc.setEnableObservatoryEntry(false);
         } else { //use manual Lat/Lon entry
             useTableLatLonButton.setSelected(false);
             useManualLatLonButton.setSelected(true);
-            acc.setEnableObjectEntry(true);
             acc.setEnableObservatoryEntry(true);
         }
 

@@ -8715,16 +8715,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             dmarker2spinner.setModel(new SpinnerNumberModel(dMarker2Value, null, null, xStep));
             dmarker3spinner.setModel(new SpinnerNumberModel(dMarker3Value, null, null, xStep));
             dmarker4spinner.setModel(new SpinnerNumberModel(dMarker4Value, null, null, xStep));
-            vmarker1spinner.setEditor(new JSpinner.NumberEditor(vmarker1spinner, "########0.######"));
-            vmarker2spinner.setEditor(new JSpinner.NumberEditor(vmarker2spinner, "########0.######"));
-            xwidthspinner.setEditor(new JSpinner.NumberEditor(xwidthspinner, "########0.######"));
-            xmaxspinner.setEditor(new JSpinner.NumberEditor(xmaxspinner, "########0.######"));
-            xminspinner.setEditor(new JSpinner.NumberEditor(xminspinner, "########0.######"));
-            mfmarker1spinner.setEditor(new JSpinner.NumberEditor(mfmarker1spinner, "########0.######"));
-            dmarker1spinner.setEditor(new JSpinner.NumberEditor(dmarker1spinner, "########0.######"));
-            dmarker2spinner.setEditor(new JSpinner.NumberEditor(dmarker2spinner, "########0.######"));
-            dmarker3spinner.setEditor(new JSpinner.NumberEditor(dmarker3spinner, "########0.######"));
-            dmarker4spinner.setEditor(new JSpinner.NumberEditor(dmarker4spinner, "########0.######"));
             Prefs.set("plot.xStep", xStep);
         });
 
@@ -10056,7 +10046,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (Double.isNaN(value)) return;
             yMaxStep = value;
             ymaxspinner.setModel(new SpinnerNumberModel(yMax, null, null, yMaxStep));
-            ymaxspinner.setEditor(new JSpinner.NumberEditor(ymaxspinner, "########0.######"));
             Prefs.set("plot.yMaxStep", yMaxStep);
         });
 
@@ -10138,7 +10127,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (Double.isNaN(value)) return;
             yMinStep = value;
             yminspinner.setModel(new SpinnerNumberModel(yMin, null, null, yMinStep));
-            yminspinner.setEditor(new JSpinner.NumberEditor(yminspinner, "########0.######"));
             Prefs.set("plot.yMinStep", yMinStep);
         });
 
@@ -10341,7 +10329,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (Double.isNaN(value)) return;
             T0Step = value;
             T0spinner.setModel(new SpinnerNumberModel(T0, 0.0, null, T0Step));
-            T0spinner.setEditor(new JSpinner.NumberEditor(T0spinner, "########0.######"));
             Prefs.set("plot.T0Step", T0Step);
         });
 
@@ -10375,7 +10362,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (Double.isNaN(value)) return;
             periodStep = value;
             periodspinner.setModel(new SpinnerNumberModel(period, 0.0001, null, periodStep));
-            periodspinner.setEditor(new JSpinner.NumberEditor(periodspinner, "########0.########"));
             Prefs.set("plot.periodStep", periodStep);
         });
 
@@ -10408,7 +10394,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (Double.isNaN(value)) return;
             durationStep = value;
             durationspinner.setModel(new SpinnerNumberModel(duration, 0.0, null, durationStep));
-            durationspinner.setEditor(new JSpinner.NumberEditor(durationspinner, "########0.######"));
             Prefs.set("plot.durationStep", durationStep);
         });
 
@@ -12135,7 +12120,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             detrendFactorStep[c][detrendVarDisplayed[c]] = value;
             Prefs.set("plot.detrendFactorStep[" + c + "][" + detrendVarDisplayed[c] + "]", detrendFactorStep[c][detrendVarDisplayed[c]]);
             detrendfactorspinner[c].setModel(new SpinnerNumberModel(detrendFactor[c][detrendVarDisplayed[c]], null, null, detrendFactorStep[c][detrendVarDisplayed[c]]));
-            detrendfactorspinner[c].setEditor(new JSpinner.NumberEditor(detrendfactorspinner[c], "########0.#########"));
         });
         detrendfactorsteplabel[c] = new JLabel("Stepsize:");
         detrendfactorsteppanel[c].add(detrendfactorsteplabel[c]);
@@ -12268,10 +12252,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             force[c] = false;
             forcebox[c].setSelected(false);
             customscalespinner[c].setModel(new SpinnerNumberModel(customScaleFactor[c], null, null, customScaleStep[c]));
-            customscalespinner[c].setEditor(new JSpinner.NumberEditor(customscalespinner[c], "########0.#########"));
             customscalestepspinner[c].setValue(convertToText(customScaleStep[c]));
             customshiftspinner[c].setModel(new SpinnerNumberModel(customShiftFactor[c], null, null, customShiftStep[c]));
-            customshiftspinner[c].setEditor(new JSpinner.NumberEditor(customshiftspinner[c], "########0.#########"));
             ((JSpinner.DefaultEditor) customshiftspinner[c].getEditor()).getTextField().addMouseListener(shiftSpinnerMouseListener);
             customshiftstepspinner[c].setValue(convertToText(customShiftStep[c]));
             Prefs.set("plot.force" + c, force[c]);
@@ -12296,13 +12278,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 customShiftFactor[c] = 1.0;
             }
             customscalespinner[c].setModel(new SpinnerNumberModel(force[c] ? autoScaleFactor[c] * 100.0 : customScaleFactor[c], null, null, force[c] ? autoScaleStep[c] : customScaleStep[c]));
-            customscalespinner[c].setEditor(new JSpinner.NumberEditor(customscalespinner[c], "########0.#########"));
             customscalestepspinner[c].setValue(convertToText(force[c] ? autoScaleStep[c] : customScaleStep[c]));
             customshiftspinner[c].setModel(new SpinnerNumberModel(force[c] ? autoShiftFactor[c] * 100 : customShiftFactor[c], null, null, force[c] ? autoShiftStep[c] : customShiftStep[c]));
-            customshiftspinner[c].setEditor(new JSpinner.NumberEditor(customshiftspinner[c], "########0.#########"));
             ((JSpinner.DefaultEditor) customshiftspinner[c].getEditor()).getTextField().addMouseListener(shiftSpinnerMouseListener);
             residualShiftSpinner[c].setModel(new SpinnerNumberModel(force[c] ? autoResidualShift[c] * 100 : residualShift[c], null, null, force[c] ? autoShiftStep[c] : customShiftStep[c]));
-            residualShiftSpinner[c].setEditor(new JSpinner.NumberEditor(residualShiftSpinner[c], fitFormat));
             customshiftstepspinner[c].setValue(convertToText(force[c] ? autoShiftStep[c] : customShiftStep[c]));
             Prefs.set("plot.force" + c, force[c]);
             updatePlot(updateNoFits());
@@ -12361,7 +12340,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot.customScaleStep" + c, customScaleStep[c]);
             }
             customscalespinner[c].setModel(new SpinnerNumberModel(force[c] ? autoScaleFactor[c] * 100 : customScaleFactor[c], null, null, force[c] ? autoScaleStep[c] : customScaleStep[c]));
-            customscalespinner[c].setEditor(new JSpinner.NumberEditor(customscalespinner[c], "########0.#########"));
         });
         customscalesteplabel[c] = new JLabel("Stepsize:");
         customscalesteppanel[c].add(customscalesteplabel[c]);
@@ -12483,7 +12461,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     Prefs.set("plot.customShiftStep" + curve, customShiftStep[curve]);
                 }
                 customshiftspinner[curve].setModel(new SpinnerNumberModel(force[curve] ? autoShiftFactor[curve] * 100 : customShiftFactor[curve], null, null, force[curve] ? invertYAxisSign * autoShiftStep[curve] : invertYAxisSign * customShiftStep[curve]));
-                customshiftspinner[curve].setEditor(new JSpinner.NumberEditor(customshiftspinner[curve], "########0.#########"));
                 ((JSpinner.DefaultEditor) customshiftspinner[curve].getEditor()).getTextField().addMouseListener(shiftSpinnerMouseListener);
                 customshiftstepspinner[curve].setValue(convertToText(force[curve] ? autoShiftStep[curve] : customShiftStep[curve]));
             }
@@ -12827,7 +12804,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             orbitalPeriodStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 orbitalPeriodSpinner[c].setModel(new SpinnerNumberModel(orbitalPeriod[c], 0.001, null, orbitalPeriodStep));
-                orbitalPeriodSpinner[c].setEditor(new JSpinner.NumberEditor(orbitalPeriodSpinner[c], "####0.##########"));
             }
             Prefs.set("plot.orbitalPeriodStep", orbitalPeriodStep);
         });
@@ -12863,7 +12839,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             eccentricityStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 eccentricitySpinner[c].setModel(new SpinnerNumberModel(Double.valueOf(eccentricity[c]), Double.valueOf(0), Double.valueOf(1), Double.valueOf(eccentricityStep)));
-                eccentricitySpinner[c].setEditor(new JSpinner.NumberEditor(eccentricitySpinner[c], "####0.##########"));
             }
             Prefs.set("plot.eccentricityStep", eccentricityStep);
         });
@@ -12899,7 +12874,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             omegaStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 omegaSpinner[c].setModel(new SpinnerNumberModel(Double.valueOf(omega[c]), Double.valueOf(-360.0), Double.valueOf(360.0), Double.valueOf(omegaStep)));
-                omegaSpinner[c].setEditor(new JSpinner.NumberEditor(omegaSpinner[c], "####0.##########"));
             }
             Prefs.set("plot.omegaStep", omegaStep);
         });
@@ -12936,7 +12910,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             teffStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 teffSpinner[c].setModel(new SpinnerNumberModel(Double.valueOf(teff[c]), Double.valueOf(IJU.tStar[IJU.tStar.length - 1]), Double.valueOf(IJU.tStar[0]), Double.valueOf(teffStep)));
-                teffSpinner[c].setEditor(new JSpinner.NumberEditor(teffSpinner[c], "####0"));
             }
             Prefs.set("plot.teffStep", teffStep);
         });
@@ -12972,7 +12945,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             jminuskStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 jminuskSpinner[c].setModel(new SpinnerNumberModel((Double) jminuskSpinner[c].getValue(), Double.valueOf(IJU.JminusK[0]), Double.valueOf(IJU.JminusK[IJU.JminusK.length - 1]), Double.valueOf(jminuskStep)));
-                jminuskSpinner[c].setEditor(new JSpinner.NumberEditor(jminuskSpinner[c], "#0.000"));
             }
             Prefs.set("plot.jminuskStep", jminuskStep);
         });
@@ -13008,7 +12980,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             mStarStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 mStarSpinner[c].setModel(new SpinnerNumberModel((Double) mStarSpinner[c].getValue(), Double.valueOf(IJU.mStar[IJU.mStar.length - 1]), Double.valueOf(IJU.mStar[0]), Double.valueOf(mStarStep)));
-                mStarSpinner[c].setEditor(new JSpinner.NumberEditor(mStarSpinner[c], "#0.000"));
             }
             Prefs.set("plot.mStarStep", mStarStep);
         });
@@ -13044,7 +13015,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             rStarStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 rStarSpinner[c].setModel(new SpinnerNumberModel((Double) rStarSpinner[c].getValue(), Double.valueOf(IJU.rStar[IJU.rStar.length - 1]), Double.valueOf(IJU.rStar[0]), Double.valueOf(rStarStep)));
-                rStarSpinner[c].setEditor(new JSpinner.NumberEditor(rStarSpinner[c], "#0.000"));
             }
             Prefs.set("plot.rStarStep", rStarStep);
         });
@@ -13080,7 +13050,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             rhoStarStep = value;
             for (int c = 0; c < maxCurves; c++) {
                 rhoStarSpinner[c].setModel(new SpinnerNumberModel((Double) rhoStarSpinner[c].getValue(), Double.valueOf(IJU.rhoStar[0]), Double.valueOf(IJU.rhoStar[IJU.rhoStar.length - 1]), Double.valueOf(rhoStarStep)));
-                rhoStarSpinner[c].setEditor(new JSpinner.NumberEditor(rhoStarSpinner[c], "#0.000"));
             }
             Prefs.set("plot.rhoStarStep", rhoStarStep);
         });
@@ -13140,7 +13109,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else {
                     priorCenterSpinner[c][p].setModel(new SpinnerNumberModel(priorCenter[c][p], null, null, priorCenterStep[p]));
                 }
-                priorCenterSpinner[c][p].setEditor(new JSpinner.NumberEditor(priorCenterSpinner[c][p], fitFormat));
             }
             Prefs.set("plot.priorCenterStep[" + p + "]", priorCenterStep[p]);
         });
@@ -13174,7 +13142,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             priorWidthStep[p] = value;
             for (int c = 0; c < maxCurves; c++) {
                 priorWidthSpinner[c][p].setModel(new SpinnerNumberModel(priorWidth[c][p], 0.0, null, priorWidthStep[p]));
-                priorWidthSpinner[c][p].setEditor(new JSpinner.NumberEditor(priorWidthSpinner[c][p], fitFormat));
             }
             Prefs.set("plot.priorWidthStep[" + p + "]", priorWidthStep[p]);
         });
@@ -13208,7 +13175,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             fitStepStep[p] = value;
             for (int c = 0; c < maxCurves; c++) {
                 fitStepSpinner[c][p].setModel(new SpinnerNumberModel(fitStep[c][p], 0.0, null, fitStepStep[p]));
-                fitStepSpinner[c][p].setEditor(new JSpinner.NumberEditor(fitStepSpinner[c][p], fitFormat));
             }
             Prefs.set("plot.fitStepStep[" + p + "]", fitStepStep[p]);
         });

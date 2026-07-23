@@ -291,7 +291,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         gui.add(searchLabel);
 
         searchTF = new JTextField(10);
-        searchTF.setToolTipText("Enter search text and press enter");
+        searchTF.setToolTipText("Enter search text and press enter, or shift+enter to search backwards, or click the arrows to the right");
 
         Runnable searchForward = () -> search(true);
         Runnable searchBackward = () -> search(false);
@@ -328,9 +328,11 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         var arrows = Box.createHorizontalBox();
         var prevButton = new BasicArrowButton(SwingConstants.WEST);
         prevButton.addActionListener(_ -> search(false));
+        prevButton.setToolTipText("Search backwards");
         arrows.add(prevButton);
         var nextButton = new BasicArrowButton(SwingConstants.EAST);
         nextButton.addActionListener(_ -> search(true));
+        nextButton.setToolTipText("Search forwards");
         arrows.add(nextButton);
         gui.add(arrows);
 

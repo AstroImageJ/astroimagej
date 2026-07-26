@@ -159,6 +159,10 @@ public class MeridianFlip {
             updateDisplay();
         });
 
+        if (input.getLayout() instanceof CardLayout cardLayout) {
+            cardLayout.show(input, FLIP_TYPE.get().name());
+        }
+
         FLIP_COL.addListener(this, (_, v) -> {
             if (FLIP_TYPE.get() != FlipType.COLUMN) {
                 return;

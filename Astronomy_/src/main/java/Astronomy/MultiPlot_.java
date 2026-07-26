@@ -51,6 +51,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Locale;
@@ -1539,6 +1540,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 return;
             }
             row = IntStream.range(1, col.length)
+                    .boxed()
+                    .sorted(Comparator.comparingDouble(i -> table.getValueAsDouble(xCol, i)))
+                    //.filter(i -> !Objects.equals("NaN", col[i]))
                     .filter(i -> !Objects.equals(col[i], col[i - 1]))
                     .findFirst().orElse(-1);
         } else {
@@ -1552,6 +1556,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             row = IntStream.range(1, col.length)
                     .filter(i -> Double.isFinite(col[i]))
+                    .boxed()
+                    .sorted(Comparator.comparingDouble(i -> table.getValueAsDouble(xCol, i)))
                     .filter(i -> Double.compare(col[i], col[i - 1]) != 0)
                     .findFirst().orElse(-1);
         }

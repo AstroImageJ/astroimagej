@@ -1146,6 +1146,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean[] usesYModel2;
     private static boolean performingBulkShiftUpdate;
     private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
+    private static ColCalcKey meridianFlipCalcKey;
 
     static {
         initializeVariables();
@@ -1515,8 +1516,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static void calculateMeridianFlip() {
         if (meridianFlip.getFlipType() != MeridianFlip.FlipType.COLUMN) {
+            meridianFlipCalcKey = null;
             mfMarker1Value = meridianFlip.getMeridianFlip();
             return;
+        }
+
+        // MF calculation is not needed
+        if (meridianFlipCalcKey != null) {
+            var calcKey = ColCalcKey.create(table, xlabel2[firstCurve]);
+            if (Objects.equals(calcKey, meridianFlipCalcKey)) {
+                return;
+            }
+            meridianFlipCalcKey = calcKey;
+        } else {
+            meridianFlipCalcKey = ColCalcKey.create(table, xlabel2[firstCurve]);
         }
 
         var needsXOffset = (xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD"));
@@ -19371,6 +19384,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot.displayBinMinutes[" + i +"]", minutes.get(i).first());
                 Prefs.set("plot.displayBin[" + i +"]", binDisplay[i].name());
             }
+        }
+    }
+
+    private record ColCalcKey(String colName, int mfColHash, int xColHash) {
+        static ColCalcKey create(MeasurementTable table, String xColName) {
+            int mfColId = table.getColumnIndex(MeridianFlip.FLIP_COL.get());
+            int xColId = table.getColumnIndex(xColName);
+            if (mfColId == ResultsTable.COLUMN_NOT_FOUND || xColId == ResultsTable.COLUMN_NOT_FOUND) {
+                return null;
+            }
+            return new ColCalcKey(MeridianFlip.FLIP_COL.get(),
+                    Arrays.hashCode(table.bulkGetColumnAsDoubles(mfColId)),
+                    Arrays.hashCode(table.bulkGetColumnAsDoubles(xColId))
+            );
         }
     }
 }

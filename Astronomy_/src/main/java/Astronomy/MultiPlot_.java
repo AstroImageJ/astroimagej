@@ -1532,7 +1532,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             meridianFlipCalcKey = ColCalcKey.create(table, xlabel2[firstCurve]);
         }
 
-        var needsXOffset = (xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD"));
         var colName = MeridianFlip.FLIP_COL.get();
         var colId = table.getColumnIndex(colName);
         if (colId == ResultsTable.COLUMN_NOT_FOUND) {
@@ -1584,7 +1583,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var mf = (a + b) / 2D;
 
-        mfMarker1Value = needsXOffset ? mf - xOffset : mf;
+        mfMarker1Value = mf - xOffset;
+        if (xlabel2[curve].startsWith("J.D.-2400000")) {
+            mfMarker1Value += 2400000;
+        }
         meridianFlip.setMeridianFlip(mfMarker1Value);
     }
 

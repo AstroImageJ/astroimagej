@@ -89,7 +89,7 @@ public class MeridianFlip {
 
     public void setMeridianFlip(double meridianFlip) {
         this.meridianFlip = meridianFlip;
-        IO.println("Meridian Flip changed to " + meridianFlip);
+        //IO.println("Meridian Flip changed to " + meridianFlip);
         SwingUtilities.invokeLater(this::updateDisplay);
     }
 
@@ -156,6 +156,7 @@ public class MeridianFlip {
                 }
             }
             MultiPlot_.updatePlot();
+            updateDisplay();
         });
 
         FLIP_COL.addListener(this, (_, v) -> {
@@ -188,6 +189,7 @@ public class MeridianFlip {
             showMFMarkersCB.setSelected(true);
             checkForUT(mfmarker1spinner);
             meridianFlip = (Double) mfmarker1spinner.getValue();
+            updateDisplay();
             updatePlot();
         });
         mfmarker1spinner.addMouseWheelListener(e -> mfmarker1spinner.setValue((Double) mfmarker1spinner.getValue() - e.getWheelRotation() * xStep));

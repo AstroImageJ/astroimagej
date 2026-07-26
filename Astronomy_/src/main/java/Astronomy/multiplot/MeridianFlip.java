@@ -90,7 +90,7 @@ public class MeridianFlip {
     public void setMeridianFlip(double meridianFlip) {
         this.meridianFlip = meridianFlip;
         IO.println("Meridian Flip changed to " + meridianFlip);
-        updateDisplay();
+        SwingUtilities.invokeLater(this::updateDisplay);
     }
 
     public double getMeridianFlip() {
@@ -133,6 +133,7 @@ public class MeridianFlip {
         var columnPanel = new JPanel();
         columnPanel.add(new JLabel("Column: "));
         var colSelector = new JComboBox<>(MultiPlot_.columns);
+        colSelector.setSelectedItem(FLIP_COL.get());
         colSelector.addActionListener(_ -> FLIP_COL.set((String) colSelector.getSelectedItem()));
         columnPanel.add(colSelector);
         input.add(columnPanel, FlipType.COLUMN.name());

@@ -65,9 +65,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -113,6 +115,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
 import Astronomy.multiplot.KeplerSplineControl;
+import Astronomy.multiplot.MeridianFlip;
 import Astronomy.multiplot.PlotDraggableShape;
 import Astronomy.multiplot.gui.ConstantColSubset;
 import Astronomy.multiplot.macro.title.EditorArea;
@@ -210,6 +213,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     public static final ImageIcon CUSTOM_LEGEND_ICON = createImageIcon("astroj/images/customlegend.png", "Use a custom legend for this data set");
     static final double defaultTcFitStep = 0.04;
     public static final ImageIcon GEAR_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiplot/gear.png", -1, 22);
+    private static final MeridianFlip meridianFlip = new MeridianFlip();
     static boolean panelsUpdating;
     static String title;
     static double titlePosX;
@@ -704,7 +708,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JPopupMenu ymaxsteppopup, yminsteppopup;
     static JPopupMenu plotwidthsteppopup, plotheightsteppopup, trimdataheadsteppopup, trimdatatailsteppopup;
     static JPopupMenu xaxispopup, yaxispopup, legendpopup;
-    static JPopupMenu xsteppopup, T0steppopup, periodsteppopup, durationsteppopup;
+    public static JPopupMenu xsteppopup;
+    static JPopupMenu T0steppopup;
+    static JPopupMenu periodsteppopup;
+    static JPopupMenu durationsteppopup;
 
     static SpinnerModel ymaxstepmodel, yminstepmodel;
     static SpinnerModel plotwidthstepmodel, plotheightstepmodel;
@@ -726,11 +733,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JSpinner T0spinner, periodspinner, durationspinner;
 
     static JCheckBox showVMarker1CB, showVMarker2CB, twoxPeriodCB, oddNotEvenCB, periodSyncCB;
-    static JCheckBox showMFMarkersCB, showDMarkersCB, useDMarker1CB, useDMarker4CB;
+    public static JCheckBox showMFMarkersCB;
+    static JCheckBox showDMarkersCB;
+    static JCheckBox useDMarker1CB;
+    static JCheckBox useDMarker4CB;
 
     static JButton moreybutton, closebutton, grabautoxbutton, grabautoybutton, updateplotbutton, addastrodatabutton, refStarButton, OKbutton;
     static String tableName;
-    static String[] columns, unfilteredColumns, oldUnfilteredColumns;
+    public static String[] columns;
+    static String[] unfilteredColumns;
+    static String[] oldUnfilteredColumns;
     static String[] columnswd, columnsDetrend;
 
     static MeasurementTable table;
@@ -754,7 +766,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] nFitTrim;
     static int maxColumnLength;
     static double vMarker1Value = 0.5, vMarker2Value = 0.7;
-    static double xStep = 0.001;
+    public static double xStep = 0.001;
     static double T0Step = 0.001, periodStep = 0.0001, durationStep = 0.01;
     static double dMarker1Value = 0.3, dMarker2Value = 0.5, dMarker3Value = 0.7, dMarker4Value = 0.9;
     static double mfMarker1Value = 0.6;
@@ -979,7 +991,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static Font p8 = new Font(fontName, Font.PLAIN, 8);
     static Font p9 = new Font(fontName, Font.PLAIN, 9);
     static Font p10 = new Font(fontName, Font.PLAIN, 10);
-    static Font p11 = new Font(fontName, Font.PLAIN, 11);
+    public static Font p11 = new Font(fontName, Font.PLAIN, 11);
     static Font p12 = new Font(fontName, Font.PLAIN, 12);
     static Font b11 = new Font(fontName, Font.BOLD, 11);
     static Font b12 = new Font(fontName, Font.BOLD, 12);
@@ -1498,6 +1510,63 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static public void setPlotAutoMode(boolean mode) {
         plotAutoMode = mode;
+    }
+
+    public static void calculateMeridianFlip() {
+        if (meridianFlip.getFlipType() != MeridianFlip.FlipType.COLUMN) {
+            mfMarker1Value = meridianFlip.getMeridianFlip();
+            return;
+        }
+
+        var needsXOffset = (xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD"));
+        var colName = MeridianFlip.FLIP_COL.get();
+        var colId = table.getColumnIndex(colName);
+        if (colId == ResultsTable.COLUMN_NOT_FOUND) {
+            return;
+        }
+
+        var xCol = table.getColumnIndex(xlabel2[firstCurve]);
+        if (xCol == ResultsTable.COLUMN_NOT_FOUND) {
+            return;
+        }
+
+        int row = -1;
+        if (table.isStringColumn(colId)) {
+            var col = table.bulkGetColumnAsStrings(colId);
+            var counts = Arrays.stream(col)
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+            if (counts.size() != 2) {
+                return;
+            }
+            row = IntStream.range(1, col.length)
+                    .filter(i -> !Objects.equals(col[i], col[i - 1]))
+                    .findFirst().orElse(-1);
+        } else {
+            var col = table.bulkGetColumnAsDoubles(colId);
+            var counts = Arrays.stream(col)
+                    .filter(Double::isFinite)
+                    .boxed()
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+            if (counts.size() != 2) {
+                return;
+            }
+            row = IntStream.range(1, col.length)
+                    .filter(i -> Double.isFinite(col[i]))
+                    .filter(i -> Double.compare(col[i], col[i - 1]) != 0)
+                    .findFirst().orElse(-1);
+        }
+
+        if (row <= 0 || row >= table.size()) {
+            return;
+        }
+
+        var a = table.getValueAsDouble(xCol, row);
+        var b = table.getValueAsDouble(xCol, row-1);
+
+        var mf = (a + b) / 2D;
+
+        mfMarker1Value = needsXOffset ? mf - xOffset : mf;
+        meridianFlip.setMeridianFlip(mfMarker1Value);
     }
 
     static public void clearPlot() {
@@ -3181,6 +3250,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                         }
                     }
+                    calculateMeridianFlip();
                     double meridianFlip = mfMarker1Value + xOffset;
                     for (int v = 0; v < maxDetrendVars; v++) {
                         if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
@@ -7749,20 +7819,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         else { return "                    1"; }
     }
 
-    static void checkForUT(JSpinner spinner) {
+    public static void checkForUT(JSpinner spinner) {
         JSpinner.NumberEditor ed = (JSpinner.NumberEditor) spinner.getEditor();
         String text = ed.getTextField().getText();
         double dValue = Tools.parseDouble(text);
         if (Double.isNaN(dValue)) {
             double value = 0.5;
-            String[] pieces = text.replaceAll("[^0-9\\.]+", " ").trim().split("[^0-9\\.]+");
-            if (pieces.length > 0 && !pieces[0].trim().equals("")) {
+            String[] pieces = text.replaceAll("[^0-9.]+", " ").trim().split("[^0-9.]+");
+            if (pieces.length > 0 && !pieces[0].trim().isEmpty()) {
                 value += Tools.parseDouble(pieces[0], 0) / 24.0;
             }
-            if (pieces.length > 1 && !pieces[1].trim().equals("")) {
+            if (pieces.length > 1 && !pieces[1].trim().isEmpty()) {
                 value += Tools.parseDouble(pieces[1], 0) / 1440.0;
             }
-            if (pieces.length > 2 && !pieces[2].trim().equals("")) {
+            if (pieces.length > 2 && !pieces[2].trim().isEmpty()) {
                 value += Tools.parseDouble(pieces[2], 0) / 86400.0;
             }
             value %= 1;
@@ -10952,23 +11022,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         TitledBorder mfmarker1border = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Flip Time", TitledBorder.CENTER, TitledBorder.TOP, p11);
         mfmarker1panel.setBorder(mfmarker1border);
 
-        mfmarker1spinnermodel = new SpinnerNumberModel(mfMarker1Value, null, null, xStep);
-
-        mfmarker1spinner = new JSpinner(mfmarker1spinnermodel);
-        mfmarker1spinner.setFont(p11);
-        mfmarker1spinner.setEditor(new JSpinner.NumberEditor(mfmarker1spinner, "########0.######"));
-        mfmarker1spinner.setPreferredSize(new Dimension(75, 25));
-        mfmarker1spinner.setEnabled(true);
-        mfmarker1spinner.setComponentPopupMenu(xsteppopup);
-        mfmarker1spinner.setToolTipText("<html>" + "Enter meridian flip time in x-axis units" + "<br>" + "or enter UT time in HH:MM or HH:MM:SS format and press 'Enter'" + "<br>" + "---------------------------------------------" + "<br>" + "Right click to set spinner stepsize" + "</html>");
-        mfmarker1spinner.addChangeListener(ev -> {
-            showMFMarkersCB.setSelected(true);
-            checkForUT(mfmarker1spinner);
-            mfMarker1Value = (Double) mfmarker1spinner.getValue();
-            updatePlot(updateAllFits());
-        });
-        mfmarker1spinner.addMouseWheelListener(e -> mfmarker1spinner.setValue((Double) mfmarker1spinner.getValue() - e.getWheelRotation() * xStep));
-        mfmarker1panel.add(mfmarker1spinner);
+        meridianFlip.setFlipType(MeridianFlip.FlipType.MANUAL);
+        meridianFlip.setMeridianFlip(mfMarker1Value);
+        mfmarker1panel.add(meridianFlip.getDisplay());
 
         SpringUtil.makeCompactGrid(mfmarker1panel, 1, mfmarker1panel.getComponentCount(), 2, 2, 0, 0);
         mfmarkerpanel.add(mfmarker1panel);

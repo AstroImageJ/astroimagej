@@ -61,6 +61,7 @@ public class MeridianFlip {
                     public void windowLostFocus(WindowEvent e) {
                         d.dispose();
                         if (awaitingEdit) {
+                            awaitingEdit = false;
                             MultiPlot_.updatePlot();
                             updateDisplay();
                         }

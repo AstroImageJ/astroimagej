@@ -1535,11 +1535,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var colName = MeridianFlip.FLIP_COL.get();
         var colId = table.getColumnIndex(colName);
         if (colId == ResultsTable.COLUMN_NOT_FOUND) {
+            IJ.error("Meridian Flip", """
+                        Could not find the selected source column.
+                        """);
             return;
         }
 
         var xCol = table.getColumnIndex(xlabel2[firstCurve]);
         if (xCol == ResultsTable.COLUMN_NOT_FOUND) {
+            IJ.error("Meridian Flip", """
+                        Could not find the selected x-axis column.
+                        """);
             return;
         }
 
@@ -1550,6 +1556,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             var counts = Arrays.stream(col)
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
             if (counts.size() != 2) {
+                IJ.error("Meridian Flip", """
+                        There was either no change in the values or more than 2 changes in the selected source column for meridian flip calculation.
+                        """);
                 return;
             }
             validRows = IntStream.range(1, col.length)
@@ -1568,6 +1577,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     .boxed()
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
             if (counts.size() != 2) {
+                IJ.error("Meridian Flip", """
+                        There was either no change in the values or more than 2 changes in the selected source column for meridian flip calculation.
+                        """);
                 return;
             }
             validRows = IntStream.range(1, col.length)
@@ -1582,6 +1594,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         if (row <= 0 || row >= table.size()) {
+            IJ.error("Meridian Flip", """
+                        Meridian flip calculation found a row that is not in the table!
+                        """);
             return;
         }
 

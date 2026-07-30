@@ -571,34 +571,7 @@ public class AstroCanvas extends OverlayCanvas {
             }
 
             if (doubleBuffered) {
-                BufferStrategy bufferStrategy = getBufferStrategy();
-
-                if (bufferStrategy == null) {
-                    createBufferStrategy(2);
-                    bufferStrategy = getBufferStrategy();
-                }
-
-                do {
-                    // The following loop ensures that the contents of the drawing buffer
-                    // are consistent in case the underlying surface was recreated
-                    do {
-                        // Get a new graphics context every time through the loop
-                        // to make sure the strategy is validated
-                        Graphics graphics = bufferStrategy.getDrawGraphics();
-
-                        // Render to graphics
-                        paintCanvas(graphics);
-
-                        graphics.dispose();
-
-                        // Repeat the rendering if the drawing buffer contents were restored
-                    } while (bufferStrategy.contentsRestored());
-
-                    // Display the buffer
-                    bufferStrategy.show();
-
-                    // Repeat the rendering if the drawing buffer was lost
-                } while (bufferStrategy.contentsLost());
+                render();
             } else {
                 paintCanvas(g);
             }
@@ -607,6 +580,41 @@ public class AstroCanvas extends OverlayCanvas {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void render() {
+        BufferStrategy bufferStrategy = getBufferStrategy();
+
+        if (bufferStrategy == null) {
+            createBufferStrategy(2);
+            bufferStrategy = getBufferStrategy();
+
+            if (bufferStrategy == null) {
+                return;
+            }
+        }
+
+        do {
+            // The following loop ensures that the contents of the drawing buffer
+            // are consistent in case the underlying surface was recreated
+            do {
+                // Get a new graphics context every time through the loop
+                // to make sure the strategy is validated
+                Graphics graphics = bufferStrategy.getDrawGraphics();
+
+                // Render to graphics
+                paintCanvas(graphics);
+
+                graphics.dispose();
+
+                // Repeat the rendering if the drawing buffer contents were restored
+            } while (bufferStrategy.contentsRestored());
+
+            // Display the buffer
+            bufferStrategy.show();
+
+            // Repeat the rendering if the drawing buffer was lost
+        } while (bufferStrategy.contentsLost());
     }
 
     private void paintCanvas(Graphics drawingGraphics) {

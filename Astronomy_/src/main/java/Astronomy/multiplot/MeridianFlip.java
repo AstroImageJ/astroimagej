@@ -31,6 +31,7 @@ import ij.astro.io.prefs.Property;
 
 public class MeridianFlip {
     private double meridianFlip;
+    private boolean awaitingEdit;
     private final JLabel meridianFlipLabel = new JLabel("Meridian Flip");
     public static final Property<String> FLIP_COL = new Property<>("", "plot.", "", MeridianFlip.class);
     public static final Property<FlipType> FLIP_TYPE = new Property<>(FlipType.MANUAL, "plot.", "", MeridianFlip.class);
@@ -53,17 +54,23 @@ public class MeridianFlip {
                 d.setContentPane(buildPopup());
                 d.pack();
                 d.setLocation(evt.getLocationOnScreen());
+                awaitingEdit = true;
 
                 d.addWindowFocusListener(new java.awt.event.WindowAdapter() {
                     @Override
                     public void windowLostFocus(WindowEvent e) {
                         d.dispose();
+                        if (awaitingEdit) {
+                            MultiPlot_.updatePlot();
+                        }
+                        awaitingEdit = false;
                     }
                 });
 
                 d.setVisible(true);
             }
         });
+        awaitingEdit = true;
         return meridianFlipLabel;
     }
 
@@ -171,7 +178,9 @@ public class MeridianFlip {
                 return;
             }
 
-            MultiPlot_.updatePlot();
+            if (!awaitingEdit) {
+                MultiPlot_.updatePlot();
+            }
         });
 
         return root;

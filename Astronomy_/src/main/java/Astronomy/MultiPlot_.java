@@ -1537,6 +1537,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (colId == ResultsTable.COLUMN_NOT_FOUND) {
             IJ.error("Meridian Flip", """
                         Could not find the selected source column.
+                        Using previous flip value. 
                         """);
             return;
         }
@@ -1545,6 +1546,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (xCol == ResultsTable.COLUMN_NOT_FOUND) {
             IJ.error("Meridian Flip", """
                         Could not find the selected x-axis column.
+                        Using previous flip value.
                         """);
             return;
         }
@@ -1558,6 +1560,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (counts.size() != 2) {
                 IJ.error("Meridian Flip", """
                         There was either no change in the values or more than 2 changes in the selected source column for meridian flip calculation.
+                        Using previous flip value.
                         """);
                 return;
             }
@@ -1579,6 +1582,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (counts.size() != 2) {
                 IJ.error("Meridian Flip", """
                         There was either no change in the values or more than 2 changes in the selected source column for meridian flip calculation.
+                        Using previous flip value.
                         """);
                 return;
             }
@@ -1596,6 +1600,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (row <= 0 || row >= table.size()) {
             IJ.error("Meridian Flip", """
                         Meridian flip calculation found a row that is not in the table!
+                        Using previous flip value.
                         """);
             return;
         }

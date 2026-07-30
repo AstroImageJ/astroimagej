@@ -11,6 +11,7 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
@@ -56,7 +57,7 @@ public class MeridianFlip {
                 d.setLocation(evt.getLocationOnScreen());
                 awaitingEdit = true;
 
-                d.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+                d.addWindowFocusListener(new WindowAdapter() {
                     @Override
                     public void windowLostFocus(WindowEvent e) {
                         d.dispose();
@@ -65,6 +66,17 @@ public class MeridianFlip {
                             MultiPlot_.updatePlot();
                             updateDisplay();
                         }
+                        awaitingEdit = false;
+                    }
+                });
+                d.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        awaitingEdit = false;
+                    }
+
+                    @Override
+                    public void windowClosed(WindowEvent e) {
                         awaitingEdit = false;
                     }
                 });

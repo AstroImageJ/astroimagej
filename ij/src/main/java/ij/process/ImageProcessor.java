@@ -19,6 +19,7 @@ import java.awt.image.WritableRaster;
 import java.util.Random;
 
 import ij.Prefs;
+import ij.astro.AstroImageJ;
 import ij.gui.Arrow;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
@@ -1458,6 +1459,7 @@ public abstract class ImageProcessor implements Cloneable {
 
 	/** Draws a single-line string at the current drawing location cx, cy and
 	 *  adds the line height (FontMetrics.getHeight) to the current y coordinate 'cy' */
+	@AstroImageJ(reason = "Limit drawing of text to be within the image to fix exception related to AIJ markers", modified = true)
 	private void drawString2(String s) {
 		int w =  getStringWidth(s);
 		int cxx = cx;
@@ -1474,7 +1476,7 @@ public abstract class ImageProcessor implements Cloneable {
 		int descent = metrics.getDescent();
 		g.setFont(font);
 
-		if (antialiasedText && cxx>=0 && cy-h>=0) {
+		if (antialiasedText && cxx>=0 && cxx<=width && cy-h>=0) {
 			Java2.setAntialiasedText(g, true);
 			setRoi(cxx, cy-h, w, h);
 			ImageProcessor ip = crop();

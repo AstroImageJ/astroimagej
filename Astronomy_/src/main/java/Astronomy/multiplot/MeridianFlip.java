@@ -70,7 +70,7 @@ public class MeridianFlip {
                 d.setVisible(true);
             }
         });
-        awaitingEdit = true;
+        awaitingEdit = false;
         return meridianFlipLabel;
     }
 

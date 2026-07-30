@@ -62,6 +62,7 @@ public class MeridianFlip {
                         d.dispose();
                         if (awaitingEdit) {
                             MultiPlot_.updatePlot();
+                            updateDisplay();
                         }
                         awaitingEdit = false;
                     }
@@ -165,8 +166,10 @@ public class MeridianFlip {
                     }
                 }
             }
-            MultiPlot_.updatePlot();
-            updateDisplay();
+            if (!awaitingEdit) {
+                MultiPlot_.updatePlot();
+                updateDisplay();
+            }
         });
 
         if (input.getLayout() instanceof CardLayout cardLayout) {

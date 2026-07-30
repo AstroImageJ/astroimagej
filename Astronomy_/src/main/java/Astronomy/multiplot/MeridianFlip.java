@@ -130,6 +130,7 @@ public class MeridianFlip {
     }
 
     private JComponent buildPopup() {
+        awaitingEdit = true;
         var root = new JPanel();
 
         var flipGroup = new ButtonGroup();
@@ -163,9 +164,6 @@ public class MeridianFlip {
         input.add(columnPanel, FlipType.COLUMN.name());
 
         root.add(input);
-
-        FLIP_COL.clearListeners();
-        FLIP_TYPE.clearListeners();
 
         FLIP_TYPE.addListener(this, (_, v) -> {
             switch (v) {
@@ -201,6 +199,8 @@ public class MeridianFlip {
                 MultiPlot_.updatePlot();
             }
         });
+
+        awaitingEdit = false;
 
         return root;
     }

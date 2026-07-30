@@ -208,8 +208,10 @@ public class MeridianFlip {
             showMFMarkersCB.setSelected(true);
             checkForUT(mfmarker1spinner);
             meridianFlip = (Double) mfmarker1spinner.getValue();
-            updateDisplay();
-            updatePlot();
+            if (!awaitingEdit) {
+                updateDisplay();
+                updatePlot();
+            }
         });
         mfmarker1spinner.addMouseWheelListener(e -> mfmarker1spinner.setValue((Double) mfmarker1spinner.getValue() - e.getWheelRotation() * xStep));
         return mfmarker1spinner;

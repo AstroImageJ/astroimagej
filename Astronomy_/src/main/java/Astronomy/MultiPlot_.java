@@ -3184,6 +3184,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             applyXAutoScale(x);
         }
 
+        calculateMeridianFlip();
+
         var normAverageSet = new double[maxCurves];
         boolean[] finalUpdateFit = updateFit;
         boolean[] atLeastOneArr = new boolean[maxCurves];
@@ -3313,7 +3315,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                         }
                     }
-                    calculateMeridianFlip();
                     double meridianFlip = mfMarker1Value + xOffset;
                     for (int v = 0; v < maxDetrendVars; v++) {
                         if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected

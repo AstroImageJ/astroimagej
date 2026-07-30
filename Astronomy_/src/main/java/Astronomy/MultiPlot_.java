@@ -1543,7 +1543,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             return;
         }
 
-        int row = -1;
+        int row;
+        int[] validRows;
         if (table.isStringColumn(colId)) {
             var col = table.bulkGetColumnAsStrings(colId);
             var counts = Arrays.stream(col)
@@ -1551,10 +1552,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (counts.size() != 2) {
                 return;
             }
-            row = IntStream.range(1, col.length)
+            validRows = IntStream.range(1, col.length)
                     .boxed()
                     .sorted(Comparator.comparingDouble(i -> table.getValueAsDouble(xCol, i)))
-                    //.filter(i -> !Objects.equals("NaN", col[i]))
+                    .filter(i -> !Objects.equals("NaN", col[i]))
+                    .mapToInt(Integer::intValue)
+                    .toArray();
+            row = Arrays.stream(validRows).skip(1)
                     .filter(i -> !Objects.equals(col[i], col[i - 1]))
                     .findFirst().orElse(-1);
         } else {
@@ -1566,10 +1570,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (counts.size() != 2) {
                 return;
             }
-            row = IntStream.range(1, col.length)
+            validRows = IntStream.range(1, col.length)
                     .filter(i -> Double.isFinite(col[i]))
                     .boxed()
                     .sorted(Comparator.comparingDouble(i -> table.getValueAsDouble(xCol, i)))
+                    .mapToInt(Integer::intValue)
+                    .toArray();
+            row = Arrays.stream(validRows).skip(1)
                     .filter(i -> Double.compare(col[i], col[i - 1]) != 0)
                     .findFirst().orElse(-1);
         }
@@ -1579,7 +1586,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         var a = table.getValueAsDouble(xCol, row);
-        var b = table.getValueAsDouble(xCol, row-1);
+        var prevRow = IntStream.range(0, validRows.length)
+                .map(i -> validRows.length - i - 1) // Reverse to descending order
+                .map(i -> validRows[i])
+                .filter(i -> i != row && table.getValueAsDouble(xCol, i) <= a)
+                .findFirst().orElse(row);
+        var b = table.getValueAsDouble(xCol, prevRow);
 
         var mf = (a + b) / 2D;
 

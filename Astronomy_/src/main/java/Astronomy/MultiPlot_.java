@@ -5614,7 +5614,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 OKbutton.setForeground(defaultOKForeground);
                                 OKbutton.setText("Update Table");
                                 OKbutton.setEnabled(true);
-                                OKbutton.paint(OKbutton.getGraphics());
+                                OKbutton.repaint();
                             }
                         });
 

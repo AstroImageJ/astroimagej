@@ -164,6 +164,9 @@ public class MeridianFlip {
 
         root.add(input);
 
+        FLIP_COL.clearListeners();
+        FLIP_TYPE.clearListeners();
+
         FLIP_TYPE.addListener(this, (_, v) -> {
             switch (v) {
                 case MANUAL -> {

@@ -8,10 +8,12 @@ import static Astronomy.MultiPlot_.xStep;
 import static Astronomy.MultiPlot_.xsteppopup;
 
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.JComboBox;
@@ -46,6 +48,7 @@ public class MeridianFlip {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 var d = new JDialog(SwingUtilities.getWindowAncestor(evt.getComponent()));
                 d.setUndecorated(true);
+                d.getRootPane().setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
                 d.setFocusableWindowState(true);
                 d.setContentPane(buildPopup());
                 d.pack();

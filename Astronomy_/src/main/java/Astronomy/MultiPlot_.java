@@ -1537,7 +1537,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (colId == ResultsTable.COLUMN_NOT_FOUND) {
             IJ.error("Meridian Flip", """
                         Could not find the selected source column.
-                        Using previous flip value. 
+                        Using previous flip value.
                         """);
             return;
         }

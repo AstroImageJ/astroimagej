@@ -3465,7 +3465,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         netRotate = ac.getNetRotate();
         // When using #repaint, the updates are pushed to a queue which does not update frequently enough when dragging
         // the scrollbar. This bypasses the queue and pushes the render update directly.
-        ac.render();
+        SwingUtilities.invokeLater(() -> ac.render());
         if (saveConfig) {
             Prefs.set("Astronomy_Tool.invertX", invertX);
             Prefs.set("Astronomy_Tool.invertY", invertY);

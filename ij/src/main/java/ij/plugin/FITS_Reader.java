@@ -1203,9 +1203,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ImageProcessor ip;
 		var type = ImageType.getType(imageData, bscale, bzero);
 
-		var imgtmp = type.makeProcessor(wi, he);
-		var pixels = type.processImageData(imageData, wi, he, bzero, bscale);
-		ip = conditionImageProcessor(pixels, imgtmp);
+		var imgtmp = type.makeProcessor(wi, he, type.processImageData(imageData, wi, he, bzero, bscale));
+		ip = conditionImageProcessor(imgtmp);
 		this.setProcessor(fileName, ip);
 		return ip;
 	}
@@ -1213,9 +1212,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Set pixel and scaling data of the ImageProcessor, flip the image vertically.
 	 */
-	private ImageProcessor conditionImageProcessor(Object pixels, ImageProcessor imgtmp) {
+	private ImageProcessor conditionImageProcessor(ImageProcessor imgtmp) {
 		ImageProcessor ip;
-		imgtmp.setPixels(pixels);
 		imgtmp.resetMinAndMax();
 
 		if (he == 1) {

@@ -1,11 +1,13 @@
 package ij.astro.util;
 
-import ij.process.*;
-
-import java.util.function.BiFunction;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.IntProcessor;
+import ij.process.ShortProcessor;
 
 public enum ImageType {
-    BYTE(ByteProcessor::new, byte[][].class) {
+    BYTE(byte[][].class) {
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof byte[][] values) {
@@ -63,7 +65,7 @@ public enum ImageType {
             return 8;
         }
     },
-    SHORT(ShortProcessor::new, short[][].class) {
+    SHORT(short[][].class) {
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof short[][] values) {
@@ -96,7 +98,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip, boolean useBZero) {//todo support 3d images? (write entire stack as one layered image, with option to disable?)
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {
             var lip = ((ShortProcessor) ip);
 
             var width = lip.getWidth();
@@ -129,7 +131,7 @@ public enum ImageType {
             return 16;
         }
     },
-    INT(FloatProcessor::new/*IntProcessor::new*/, int[][].class) {//todo when using int processor, fits_reader displays invalid values
+    INT(int[][].class) {//todo when using int processor, fits_reader displays invalid values
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof int[][] values) {
@@ -197,7 +199,7 @@ public enum ImageType {
         }
     },
     //this loses accuracy for some values
-    LONG(FloatProcessor::new, long[][].class) {
+    LONG(long[][].class) {
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof long[][] values) {
@@ -257,7 +259,7 @@ public enum ImageType {
             return 64;
         }
     },
-    FLOAT(FloatProcessor::new, float[][].class) {
+    FLOAT(float[][].class) {
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof float[][] values) {
@@ -378,7 +380,7 @@ public enum ImageType {
         }
     },
     //this loses accuracy for some values
-    DOUBLE(FloatProcessor::new, double[][].class) {
+    DOUBLE(double[][].class) {
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof double[][] values) {
@@ -441,11 +443,9 @@ public enum ImageType {
 
     private static final boolean USE_FMA = testForFma();
 
-    private final BiFunction<Integer, Integer, ? extends ImageProcessor> factory;
     private final Class<?> rawDataType;
 
-    ImageType(BiFunction<Integer, Integer, ? extends ImageProcessor> factory, Class<?> rawDataType) {
-        this.factory = factory;
+    <T> ImageType(Class<T[]> rawDataType) {
         this.rawDataType = rawDataType;
     }
 
@@ -508,8 +508,14 @@ public enum ImageType {
         return false;
     }
 
-    public ImageProcessor makeProcessor(int width, int height) {
-        return factory.apply(width, height);
+    public ImageProcessor makeProcessor(int w, int h, Object pixels) {
+        return switch (pixels) {
+            case byte[] a -> new ByteProcessor(w, h, a);
+            case short[] a -> new ShortProcessor(w, h, a, null);
+            case float[] a -> new FloatProcessor(w, h, a);
+            case int[] a -> new IntProcessor(w, h, a);
+            default -> throw new IllegalArgumentException("Given incorrect type: " + pixels);
+        };
     }
 
     public abstract Object processImageData(Object rawData, int width, int height, double bzero, double bscale);

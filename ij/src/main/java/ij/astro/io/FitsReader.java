@@ -495,16 +495,14 @@ public class FitsReader implements AutoCloseable {
      */
     private ImageProcessor twoDimensionalImageData2Processor(Object imageData) {
         var type = ImageType.getType(imageData, bScale, bZero);
-        var imgtmp = type.makeProcessor(width, height);
-        var pixels = type.processImageData(imageData, width, height, bZero, bScale);
-        return conditionImageProcessor(pixels, imgtmp);
+        var imgtmp = type.makeProcessor(width, height, type.processImageData(imageData, width, height, bZero, bScale));
+        return conditionImageProcessor(imgtmp);
     }
 
     /**
      * Set pixel and scaling data of the ImageProcessor, flip the image vertically.
      */
-    private ImageProcessor conditionImageProcessor(Object pixels, ImageProcessor imgtmp) {
-        imgtmp.setPixels(pixels);
+    private ImageProcessor conditionImageProcessor(ImageProcessor imgtmp) {
         imgtmp.resetMinAndMax();
 
         if (height == 1) {

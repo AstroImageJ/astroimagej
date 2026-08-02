@@ -583,6 +583,10 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
     public void render() {
+        if (!performDraw) {
+            return;
+        }
+
         BufferStrategy bufferStrategy = getBufferStrategy();
 
         if (bufferStrategy == null) {

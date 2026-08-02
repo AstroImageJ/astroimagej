@@ -16250,18 +16250,27 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             closeRefStarFrame();
         } else {
             updateColumnLists();
+            var needsNewCols = !Arrays.equals(oldUnfilteredColumns, unfilteredColumns) && columns != null;
             oldUnfilteredColumns = unfilteredColumns.clone();
-            xdatacolumndefault.setModel(new DefaultComboBoxModel<>(columns));
+            if (needsNewCols) {
+                xdatacolumndefault.setModel(new DefaultComboBoxModel<>(columns));
+            }
             xdatacolumndefault.setSelectedItem(xlabeldefault);
             xdatacolumndefault.repaint();
             for (int c = 0; c < maxCurves; c++) {
-                xdatacolumn[c].setModel(new DefaultComboBoxModel<>(columnswd));
+                if (needsNewCols) {
+                    xdatacolumn[c].setModel(new DefaultComboBoxModel<>(columnswd));
+                }
                 xdatacolumn[c].setSelectedItem(xlabel[c]);
                 disableUpdatePlotBox = true;   //disable automatic enable of plot when a new data column has been selected
-                ydatacolumn[c].setModel(new DefaultComboBoxModel<>(columns));
+                if (needsNewCols) {
+                    ydatacolumn[c].setModel(new DefaultComboBoxModel<>(columns));
+                }
                 ydatacolumn[c].setSelectedItem(ylabel[c]);
                 disableUpdatePlotBox = false;
-                operatorcolumn[c].setModel(new DefaultComboBoxModel<>(columns));
+                if (needsNewCols) {
+                    operatorcolumn[c].setModel(new DefaultComboBoxModel<>(columns));
+                }
                 operatorcolumn[c].setSelectedItem(oplabel[c]);
                 detrendbox[c].setModel(new DefaultComboBoxModel<>(columnsDetrend));
                 detrendbox[c].setSelectedItem(detrendlabel[c][detrendVarDisplayed[c]]);

@@ -26,13 +26,14 @@ import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import Astronomy.MultiPlot_;
 import ij.astro.io.prefs.Property;
 
 public class MeridianFlip {
     private double meridianFlip;
-    private boolean awaitingEdit;
+    private volatile boolean awaitingEdit;
     private final JLabel meridianFlipLabel = new JLabel("Meridian Flip");
     public static final Property<String> FLIP_COL = new Property<>("", "plot.", "", MeridianFlip.class);
     public static final Property<FlipType> FLIP_TYPE = new Property<>(FlipType.MANUAL, "plot.", "", MeridianFlip.class);
@@ -48,35 +49,34 @@ public class MeridianFlip {
         meridianFlipLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
+                awaitingEdit = true;
                 var d = new JDialog(SwingUtilities.getWindowAncestor(evt.getComponent()));
                 d.setUndecorated(true);
+                d.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                 d.getRootPane().setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
                 d.setFocusableWindowState(true);
                 d.setContentPane(buildPopup());
                 d.pack();
                 d.setLocation(evt.getLocationOnScreen());
-                awaitingEdit = true;
 
                 d.addWindowFocusListener(new WindowAdapter() {
                     @Override
                     public void windowLostFocus(WindowEvent e) {
-                        d.dispose();
-                        if (awaitingEdit) {
-                            awaitingEdit = false;
-                            MultiPlot_.updatePlot();
-                            updateDisplay();
+                        if (!d.isFocused()) {
+                            d.dispose();
                         }
-                        awaitingEdit = false;
                     }
                 });
                 d.addWindowListener(new WindowAdapter() {
                     @Override
-                    public void windowClosing(WindowEvent e) {
-                        awaitingEdit = false;
-                    }
-
-                    @Override
                     public void windowClosed(WindowEvent e) {
+                        if (e.getSource() != d) {
+                            return;
+                        }
+                        if (awaitingEdit) {
+                            MultiPlot_.updatePlot();
+                            updateDisplay();
+                        }
                         awaitingEdit = false;
                     }
                 });
@@ -84,8 +84,11 @@ public class MeridianFlip {
                 d.setVisible(true);
             }
         });
-        awaitingEdit = false;
         return meridianFlipLabel;
+    }
+
+    public boolean isAwaitingEdit() {
+        return awaitingEdit;
     }
 
     private String getDisplayTooltip() {
@@ -138,13 +141,13 @@ public class MeridianFlip {
         typeSelection.add(new JLabel("Flip Type: "));
         var manualRadioButton = new JRadioButton("Manual");
         flipGroup.add(manualRadioButton);
-        manualRadioButton.addActionListener(_ -> FLIP_TYPE.set(FlipType.MANUAL));
         manualRadioButton.setSelected(FLIP_TYPE.get() == FlipType.MANUAL);
+        manualRadioButton.addActionListener(_ -> FLIP_TYPE.set(FlipType.MANUAL));
         typeSelection.add(manualRadioButton);
         var columnRadioButton = new JRadioButton("Column");
-        flipGroup.add(columnRadioButton);
-        columnRadioButton.addActionListener(_ -> FLIP_TYPE.set(FlipType.COLUMN));
         columnRadioButton.setSelected(FLIP_TYPE.get() == FlipType.COLUMN);
+        columnRadioButton.addActionListener(_ -> FLIP_TYPE.set(FlipType.COLUMN));
+        flipGroup.add(columnRadioButton);
         typeSelection.add(columnRadioButton);
         root.add(typeSelection);
 
@@ -165,6 +168,8 @@ public class MeridianFlip {
 
         root.add(input);
 
+        FLIP_COL.clearListeners();
+        FLIP_TYPE.clearListeners();
         FLIP_TYPE.addListener(this, (_, v) -> {
             switch (v) {
                 case MANUAL -> {
@@ -180,10 +185,10 @@ public class MeridianFlip {
                     }
                 }
             }
-            if (!awaitingEdit) {
+            /*if (!awaitingEdit) {
                 MultiPlot_.updatePlot();
                 updateDisplay();
-            }
+            }*/
         });
 
         if (input.getLayout() instanceof CardLayout cardLayout) {
@@ -195,12 +200,10 @@ public class MeridianFlip {
                 return;
             }
 
-            if (!awaitingEdit) {
+            /*if (!awaitingEdit) {
                 MultiPlot_.updatePlot();
-            }
+            }*/
         });
-
-        awaitingEdit = false;
 
         return root;
     }

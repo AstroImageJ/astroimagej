@@ -64,20 +64,13 @@ public class MeridianFlip {
                     public void windowLostFocus(WindowEvent e) {
                         if (!d.isFocused()) {
                             d.dispose();
+
+                            if (awaitingEdit) {
+                                MultiPlot_.updatePlot();
+                                updateDisplay();
+                            }
+                            awaitingEdit = false;
                         }
-                    }
-                });
-                d.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosed(WindowEvent e) {
-                        if (e.getSource() != d) {
-                            return;
-                        }
-                        if (awaitingEdit) {
-                            MultiPlot_.updatePlot();
-                            updateDisplay();
-                        }
-                        awaitingEdit = false;
                     }
                 });
 

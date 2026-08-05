@@ -1536,27 +1536,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var colId = table.getColumnIndex(colName);
         //if (true)return;
         if (colId == ResultsTable.COLUMN_NOT_FOUND) {
-            if (!meridianFlip.isAwaitingEdit()) {
-                SwingUtilities.invokeLater(() -> {
-                    IJ.error("Meridian Flip", """
+            SwingUtilities.invokeLater(() -> {
+                IJ.error("Meridian Flip", """
                         Could not find the selected source column.
                         Using previous flip value.
                         """);
-                });
-            }
+            });
             return;
         }
 
         var xCol = table.getColumnIndex(xlabel2[firstCurve]);
         if (xCol == ResultsTable.COLUMN_NOT_FOUND) {
-            if (!meridianFlip.isAwaitingEdit()) {
-                SwingUtilities.invokeLater(() -> {
-                    IJ.error("Meridian Flip", """
+            SwingUtilities.invokeLater(() -> {
+                IJ.error("Meridian Flip", """
                         Could not find the selected x-axis column.
                         Using previous flip value.
                         """);
-                });
-            }
+            });
             return;
         }
 

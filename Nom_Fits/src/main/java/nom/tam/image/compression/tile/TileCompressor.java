@@ -71,81 +71,91 @@ public class TileCompressor extends TileCompressionOperation {
      * first tile is used to append the complete block.
      */
     private void compactCompressedData() {
-        if (getTileIndex() > 0) {
-            // wait for the previous tile to finish.
-            getPreviousTileOperation().waitForResult();
-            ByteBuffer compressedWholeArea = getCompressedWholeArea();
-            compressedOffset = compressedWholeArea.position();
-            ElementType.BYTE.appendBuffer(compressedWholeArea, compressedData);
-            replaceCompressedBufferWithTargetArea(compressedWholeArea);
-        } else {
-            compressedOffset = 0;
-            getCompressedWholeArea().position(compressedData.limit());
+        synchronized (lock) {
+            if (getTileIndex() > 0) {
+                // wait for the previous tile to finish.
+                getPreviousTileOperation().waitForResult();
+                ByteBuffer compressedWholeArea = getCompressedWholeArea();
+                compressedOffset = compressedWholeArea.position();
+                ElementType.BYTE.appendBuffer(compressedWholeArea, compressedData);
+                replaceCompressedBufferWithTargetArea(compressedWholeArea);
+            } else {
+                compressedOffset = 0;
+                getCompressedWholeArea().position(compressedData.limit());
+            }
         }
     }
 
     private void compress() {
-        initTileOptions();
+        synchronized (lock) {
+            initTileOptions();
 
-        compressedData.limit(getTileBuffer().getPixelSize() * getBaseType().size());
-        compressionType = TileCompressionType.COMPRESSED;
-        boolean compressSuccess = false;
-        boolean tryNormalCompression = !(tileOptions.isLossyCompression() && forceNoLoss);
+            compressedData.limit(getTileBuffer().getPixelSize() * getBaseType().size());
+            compressionType = TileCompressionType.COMPRESSED;
+            boolean compressSuccess = false;
+            boolean tryNormalCompression = !(tileOptions.isLossyCompression() && forceNoLoss);
 
-        tileOptions.getCompressionParameters().setTileIndex(getTileIndex());
+            tileOptions.getCompressionParameters().setTileIndex(getTileIndex());
 
-        if (tryNormalCompression) {
-            compressSuccess = getCompressorControl().compress(getTileBuffer().getBuffer(), compressedData, tileOptions);
-            if (compressSuccess) {
-                if (nullPixelMaskPerserver != null) {
-                    nullPixelMaskPerserver.preserveNull();
+            if (tryNormalCompression) {
+                compressSuccess = getCompressorControl().compress(getTileBuffer().getBuffer(), compressedData, tileOptions);
+                if (compressSuccess) {
+                    if (nullPixelMaskPerserver != null) {
+                        nullPixelMaskPerserver.preserveNull();
+                    }
+                    tileOptions.getCompressionParameters().setValuesInColumn(getTileIndex());
                 }
-                tileOptions.getCompressionParameters().setValuesInColumn(getTileIndex());
             }
-        }
 
-        if (!compressSuccess) {
-            compressionType = TileCompressionType.GZIP_COMPRESSED;
-            compressedData.rewind();
-            getTileBuffer().getBuffer().rewind();
-            compressSuccess = getGzipCompressorControl().compress(getTileBuffer().getBuffer(), compressedData, null);
-            if (compressSuccess) {
-                tileOptions.getCompressionParameters().setValuesInColumn(getTileIndex());
+            if (!compressSuccess) {
+                compressionType = TileCompressionType.GZIP_COMPRESSED;
+                compressedData.rewind();
+                getTileBuffer().getBuffer().rewind();
+                compressSuccess = getGzipCompressorControl().compress(getTileBuffer().getBuffer(), compressedData, null);
+                if (compressSuccess) {
+                    tileOptions.getCompressionParameters().setValuesInColumn(getTileIndex());
+                }
             }
-        }
 
-        if (!compressSuccess) {
-            compressionType = TileCompressionType.UNCOMPRESSED;
+            if (!compressSuccess) {
+                compressionType = TileCompressionType.UNCOMPRESSED;
+                compressedData.rewind();
+                getTileBuffer().getBuffer().rewind();
+                getBaseType().appendToByteBuffer(compressedData, getTileBuffer().getBuffer());
+            }
+
+            compressedData.limit(compressedData.position());
             compressedData.rewind();
-            getTileBuffer().getBuffer().rewind();
-            getBaseType().appendToByteBuffer(compressedData, getTileBuffer().getBuffer());
+
+            compactCompressedData();
         }
-
-        compressedData.limit(compressedData.position());
-        compressedData.rewind();
-
-        compactCompressedData();
     }
 
     private void replaceCompressedBufferWithTargetArea(ByteBuffer compressedWholeArea) {
-        int compressedSize = compressedData.limit();
-        int latest = compressedWholeArea.position();
-        compressedWholeArea.position(compressedOffset);
-        compressedData = compressedWholeArea.slice();
-        compressedData.limit(compressedSize);
-        compressedWholeArea.position(latest);
+        synchronized (lock) {
+            int compressedSize = compressedData.limit();
+            int latest = compressedWholeArea.position();
+            compressedWholeArea.position(compressedOffset);
+            compressedData = compressedWholeArea.slice();
+            compressedData.limit(compressedSize);
+            compressedWholeArea.position(latest);
+        }
     }
 
     @Override
     protected NullPixelMaskPreserver createImageNullPixelMask(ImageNullPixelMask imageNullPixelMask) {
-        if (imageNullPixelMask != null) {
-            nullPixelMaskPerserver = imageNullPixelMask.createTilePreserver(getTileBuffer(), getTileIndex());
+        synchronized (lock) {
+            if (imageNullPixelMask != null) {
+                nullPixelMaskPerserver = imageNullPixelMask.createTilePreserver(getTileBuffer(), getTileIndex());
+            }
+            return nullPixelMaskPerserver;
         }
-        return nullPixelMaskPerserver;
     }
 
     @Override
     protected void forceNoLoss(boolean value) {
-        forceNoLoss = value;
+        synchronized (lock) {
+            forceNoLoss = value;
+        }
     }
 }

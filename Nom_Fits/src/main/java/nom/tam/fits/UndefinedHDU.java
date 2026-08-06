@@ -31,11 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
+import static nom.tam.fits.header.Standard.XTENSION;
+
 import java.io.PrintStream;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Standard;
-
-import static nom.tam.fits.header.Standard.XTENSION;
 
 /**
  * A HDU that holds a type of data we don't recognise. We can still access that data in its raw binary form, and the
@@ -76,6 +77,7 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
      *                   We cannot wrap arbitrary data objects since we do not have a generic recipe for converting
      *                   these into binary form.
      */
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     @Deprecated
     public static boolean isData(Object o) {
         return o instanceof byte[];
@@ -92,6 +94,7 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
      * @return         <CODE>true</CODE> if this HDU has a valid header.
      */
     @Deprecated
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     public static boolean isHeader(Header hdr) {
         if (ImageHDU.isHeader(hdr)) {
             return false;
@@ -147,6 +150,7 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
      * @param      h the header for this HDU
      * @param      d the data used to build the image.
      */
+    @Deprecated
     public UndefinedHDU(Header h, UndefinedData d) {
         super(h, d);
     }

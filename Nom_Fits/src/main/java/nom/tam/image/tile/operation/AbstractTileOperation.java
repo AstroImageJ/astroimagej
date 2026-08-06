@@ -31,13 +31,13 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
-import nom.tam.image.tile.operation.buffer.TileBuffer;
-import nom.tam.image.tile.operation.buffer.TileBufferFactory;
-import nom.tam.util.type.ElementType;
-
 import java.nio.Buffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import nom.tam.image.tile.operation.buffer.TileBuffer;
+import nom.tam.image.tile.operation.buffer.TileBufferFactory;
+import nom.tam.util.type.ElementType;
 
 /**
  * (<i>for internal use</i>) A base implementation of parallel processing of tiles. Each instance handles the processing

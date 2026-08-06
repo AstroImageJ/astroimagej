@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
  * 
  * @author     Ritchie
  */
+@Deprecated
 @SuppressWarnings("javadoc")
 public class BitBuffer {
 
@@ -67,14 +68,17 @@ public class BitBuffer {
 
     private long position;
 
+    @Deprecated
     public BitBuffer(ByteBuffer writeBuffer) {
         buffer = writeBuffer;
     }
 
+    @Deprecated
     public int bitbuffer() {
         return buffer.get((int) (position / BITS_OF_1_BYTE));
     }
 
+    @Deprecated
     void close() {
         if (position % BITS_OF_1_BYTE != 0) {
             putByte((byte) 0, (int) (BITS_OF_1_BYTE - position % BITS_OF_1_BYTE));
@@ -82,14 +86,17 @@ public class BitBuffer {
         buffer.position((int) (position / BITS_OF_1_BYTE));
     }
 
+    @Deprecated
     public int missingBitsInCurrentByte() {
         return (int) (BITS_OF_1_BYTE - position % BITS_OF_1_BYTE);
     }
 
+    @Deprecated
     public void movePosition(int i) {
         position += i;
     }
 
+    @Deprecated
     public void putByte(byte byteToAdd) {
         final int bytePosition = (int) (position / BITS_OF_1_BYTE);
         final int positionInByte = (int) (position % BITS_OF_1_BYTE);
@@ -102,6 +109,7 @@ public class BitBuffer {
         position += BITS_OF_1_BYTE;
     }
 
+    @Deprecated
     public void putByte(byte byteToAdd, int bits) {
         final int bytePosition = (int) (position / BITS_OF_1_BYTE);
         final int positionInByte = (int) (position % BITS_OF_1_BYTE);
@@ -120,6 +128,7 @@ public class BitBuffer {
      * 
      * @param i integer to write
      */
+    @Deprecated
     public void putInt(int i) {
         putByte((byte) ((i & BYTE_4_OF_INT) >>> BITS_OF_3_BYTES));
         putByte((byte) ((i & BYTE_3_OF_INT) >>> BITS_OF_2_BYTES));
@@ -127,6 +136,7 @@ public class BitBuffer {
         putByte((byte) (i & BYTE_1_OF_INT));
     }
 
+    @Deprecated
     public void putInt(int i, int bits) {
         if (bits == 0) {
             return;
@@ -142,6 +152,7 @@ public class BitBuffer {
         } while (bits > 0);
     }
 
+    @Deprecated
     public void putLong(long l, int bits) {
         if (bits == 0) {
             return;

@@ -32,12 +32,15 @@
 package nom.tam.util;
 
 // What do we use in here?
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.utilities.FitsCheckSum;
-
-import java.io.*;
-import java.nio.ByteBuffer;
 
 /**
  * For reading FITS files through an {@link InputStream}.
@@ -98,7 +101,7 @@ public class FitsInputStream extends ArrayInputStream implements ArrayDataInput 
     }
 
     @Override
-    public int read() throws IOException {
+    public synchronized int read() throws IOException {
         int i = super.read();
         if (i >= 0) {
             check.put((byte) i);
@@ -110,7 +113,7 @@ public class FitsInputStream extends ArrayInputStream implements ArrayDataInput 
     }
 
     @Override
-    public int read(byte[] b, int from, int len) throws IOException {
+    public synchronized int read(byte[] b, int from, int len) throws IOException {
         int n = super.read(b, from, len);
         for (int i = 0; i < n;) {
             int l = Math.min(n - i, check.remaining());
@@ -121,6 +124,7 @@ public class FitsInputStream extends ArrayInputStream implements ArrayDataInput 
             i += l;
         }
         return n;
+
     }
 
     private void aggregate() {
@@ -215,11 +219,12 @@ public class FitsInputStream extends ArrayInputStream implements ArrayDataInput 
     }
 
     @Override
-    public long skip(long n) throws IOException {
+    public synchronized long skip(long n) throws IOException {
         byte[] b = new byte[FitsFactory.FITS_BLOCK_SIZE];
 
         // Always read so we can checksum.
         long skipped = 0;
+
         while (skipped < n) {
             int got = read(b, 0, (int) Math.min(n - skipped, b.length));
             if (got < 0) {
@@ -227,6 +232,7 @@ public class FitsInputStream extends ArrayInputStream implements ArrayDataInput 
             }
             skipped += got;
         }
+
         return skipped;
     }
 

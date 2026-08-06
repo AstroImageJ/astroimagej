@@ -31,29 +31,6 @@ package nom.tam.fits.compression.provider;
  * #L%
  */
 
-import nom.tam.fits.compression.algorithm.api.ICompressOption;
-import nom.tam.fits.compression.algorithm.api.ICompressor;
-import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.*;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.*;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.*;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressorQuantizeOption;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
-import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
-import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.DoubleQuantCompressor;
-import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressor.*;
-import nom.tam.fits.compression.algorithm.rice.RiceQuantizeCompressOption;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.*;
-import nom.tam.fits.compression.provider.api.ICompressorProvider;
-import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
-import nom.tam.fits.compression.provider.param.api.ICompressParameters;
-import nom.tam.fits.compression.provider.param.base.CompressParameters;
-import nom.tam.fits.compression.provider.param.hcompress.HCompressParameters;
-import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.Buffer;
@@ -61,6 +38,53 @@ import java.nio.ByteBuffer;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import nom.tam.fits.FitsException;
+import nom.tam.fits.compression.algorithm.api.ICompressOption;
+import nom.tam.fits.compression.algorithm.api.ICompressor;
+import nom.tam.fits.compression.algorithm.api.ICompressorControl;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.ByteGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.DoubleGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.FloatGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.IntGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.LongGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.ShortGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.ByteGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.DoubleGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.FloatGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.IntGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.LongGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.ShortGZip2Compressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ByteHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.DoubleHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.FloatHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.IntHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ShortHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressorQuantizeOption;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
+import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
+import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.DoubleQuantCompressor;
+import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressor.ByteRiceCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressor.DoubleRiceCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressor.FloatRiceCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressor.IntRiceCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressor.ShortRiceCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceQuantizeCompressOption;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.ByteNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.DoubleNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.FloatNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.IntNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.LongNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.ShortNoCompressCompressor;
+import nom.tam.fits.compression.provider.api.ICompressorProvider;
+import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
+import nom.tam.fits.compression.provider.param.api.ICompressParameters;
+import nom.tam.fits.compression.provider.param.base.CompressParameters;
+import nom.tam.fits.compression.provider.param.hcompress.HCompressParameters;
+import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
 
 /**
  * (<i>for internal use</i>) Standard implementation of the {@code ICompressorProvider} interface.
@@ -151,55 +175,57 @@ public class CompressorProvider implements ICompressorProvider {
 
         @SuppressWarnings({"unchecked", "rawtypes"})
         private ICompressor<Buffer> newCompressor(ICompressOption option)
-                throws InstantiationException, IllegalAccessException, InvocationTargetException {
+                throws FitsException, InstantiationException, IllegalAccessException, InvocationTargetException {
             ICompressor<Buffer> compressor = null;
             QuantizeOption quantOption = null;
 
-            if (option == NULL_OPTION) {
-                option = null;
-            } else if (option instanceof QuantizeOption) {
+            if (option instanceof QuantizeOption) {
                 quantOption = (QuantizeOption) option;
                 option = quantOption.getCompressOption();
             }
 
-            try {
-                for (Constructor<ICompressor<Buffer>> c : constructors) {
-                    Class<?>[] parms = c.getParameterTypes();
-
-                    if (option == null && parms.length == 0) {
-                        compressor = c.newInstance();
-                        break;
-                    }
-
-                    if (option != null && parms.length == 1) {
-                        Class<? extends ICompressOption> p = (Class<? extends ICompressOption>) parms[0];
-                        if (quantOption != null && p.isAssignableFrom(quantOption.getClass())) {
-                            compressor = c.newInstance(quantOption);
-                            quantOption = null; // Don't wrap in a quantizer below...
-                            break;
-                        }
-                        if (p.isAssignableFrom(option.getClass())) {
-                            compressor = c.newInstance(option);
-                            break;
-                        }
-                    }
-                }
-
-                if (quantOption != null && quantType != null) {
-                    if (quantType.equals(double.class)) {
-                        return (ICompressor) new DoubleQuantCompressor(quantOption, (ICompressor) compressor);
-                    }
-                    if (quantType.equals(float.class)) {
-                        return (ICompressor) new FloatQuantCompressor(quantOption, (ICompressor) compressor);
-                    }
-                }
-
-                return compressor;
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (option == NULL_OPTION) {
+                option = null;
             }
 
-            return null;
+            for (Constructor<ICompressor<Buffer>> c : constructors) {
+                Class<?>[] parms = c.getParameterTypes();
+
+                if (parms.length == 0 && option == null) {
+                    // Use constructor without special options...
+                    compressor = c.newInstance();
+                    break;
+                }
+
+                if (parms.length == 1 && option != null) {
+                    // Use constructor with the option
+                    Class<? extends ICompressOption> p = (Class<? extends ICompressOption>) parms[0];
+                    if (quantOption != null && p.isAssignableFrom(quantOption.getClass())) {
+                        compressor = c.newInstance(quantOption);
+                        quantOption = null; // Don't wrap in a quantizer below...
+                        break;
+                    }
+                    if (p.isAssignableFrom(option.getClass())) {
+                        compressor = c.newInstance(option);
+                        break;
+                    }
+                }
+            }
+
+            if (compressor == null) {
+                throw new FitsException("Could not instantiate (de)compressor for the specified options");
+            }
+
+            if (quantOption != null && quantType != null) {
+                if (quantType.equals(double.class)) {
+                    return (ICompressor) new DoubleQuantCompressor(quantOption, (ICompressor) compressor);
+                }
+                if (quantType.equals(float.class)) {
+                    return (ICompressor) new FloatQuantCompressor(quantOption, (ICompressor) compressor);
+                }
+            }
+
+            return compressor;
         }
     }
 

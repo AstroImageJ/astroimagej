@@ -1,5 +1,8 @@
 package nom.tam.image.compression.hdu;
 
+import static nom.tam.fits.header.Compression.ZIMAGE;
+import static nom.tam.fits.header.Standard.BLANK;
+
 import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -8,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.BinaryTableHDU;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsUtil;
@@ -58,9 +62,6 @@ import nom.tam.util.FitsOutputStream;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.fits.header.Compression.ZIMAGE;
-import static nom.tam.fits.header.Standard.BLANK;
 
 /**
  * <p>
@@ -202,6 +203,7 @@ public class CompressedImageHDU extends BinaryTableHDU {
      * @return         <CODE>true</CODE> if this HDU has a valid header.
      */
     @Deprecated
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     public static boolean isHeader(Header hdr) {
         return hdr.getBooleanValue(ZIMAGE, false);
     }

@@ -33,16 +33,17 @@ package nom.tam.fits.header.extra;
 
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("javadoc")
 public class CommonExtTest {
 
     @Test
     public void testCommonExt() throws Exception {
         IFitsHeader key = CommonExt.ANGLE;
 
-        Assert.assertEquals("ANGLE", key.key());
-        Assert.assertEquals(VALUE.REAL, key.valueType());
+        Assertions.assertEquals("ANGLE", key.key());
+        Assertions.assertEquals(VALUE.REAL, key.valueType());
     }
 }

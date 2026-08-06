@@ -1,11 +1,11 @@
 package nom.tam.fits.header;
 
-import nom.tam.fits.HeaderCard;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
+import nom.tam.fits.HeaderCard;
 
 /*
  * #%L

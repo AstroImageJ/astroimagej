@@ -1,6 +1,7 @@
 package nom.tam.fits.header.hierarch;
 
 import java.util.Locale;
+import java.util.StringTokenizer;
 
 import nom.tam.fits.utilities.FitsLineAppender;
 
@@ -46,14 +47,32 @@ import nom.tam.fits.utilities.FitsLineAppender;
 public class StandardIHierarchKeyFormatter implements IHierarchKeyFormatter {
     private boolean allowMixedCase;
 
+    /**
+     * Instantiates a new standard formatter for ESO HIERARCH style keywords.
+     */
+    public StandardIHierarchKeyFormatter() {
+    }
+
     @Override
     public String toHeaderString(String key) {
+        StringBuilder formatted = new StringBuilder(key.length());
+
         if (!allowMixedCase) {
             key = key.toUpperCase(Locale.US);
         }
 
-        // cfitsio specifies a required space before the '=', so let's play nice with it.
-        return key.replace('.', ' ') + " ";
+        StringTokenizer tokens = new StringTokenizer(key, ". ");
+        if (!tokens.hasMoreTokens()) {
+            return "";
+        }
+        formatted.append(tokens.nextToken());
+
+        while (tokens.hasMoreTokens()) {
+            formatted.append(' ');
+            formatted.append(tokens.nextToken());
+        }
+
+        return formatted.toString();
     }
 
     @Override
@@ -64,7 +83,7 @@ public class StandardIHierarchKeyFormatter implements IHierarchKeyFormatter {
     @Override
     public int getExtraSpaceRequired(String key) {
         // The one extra space before '='...
-        return 1;
+        return 0;
     }
 
     @Override

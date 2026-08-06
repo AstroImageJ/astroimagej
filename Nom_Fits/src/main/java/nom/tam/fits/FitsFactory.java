@@ -1,5 +1,10 @@
 package nom.tam.fits;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.hierarch.IHierarchKeyFormatter;
 import nom.tam.fits.header.hierarch.StandardIHierarchKeyFormatter;
@@ -7,10 +12,6 @@ import nom.tam.image.compression.hdu.CompressedImageData;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.image.compression.hdu.CompressedTableData;
 import nom.tam.image.compression.hdu.CompressedTableHDU;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 /*
  * #%L
@@ -519,6 +520,7 @@ public final class FitsFactory {
      * @deprecated               Use {@link Fits#makeHDU(Object)} instead (this method may either be migrated to
      *                               {@link Fits} entirely or else have visibility reduced to the package level).
      */
+    @Deprecated
     public static BasicHDU<?> hduFactory(Object o) throws FitsException {
         Data d;
         Header h;
@@ -759,6 +761,7 @@ public final class FitsFactory {
         }
     }
 
+    @SuppressFBWarnings(value = "USO_UNSAFE_ACCESSIBLE_OBJECT_SYNCHRONIZATION", justification = "Lock is through a private static field.")
     private static void initializeThreadPool() {
         synchronized (GLOBAL_SETTINGS) {
             if (threadPool == null) {

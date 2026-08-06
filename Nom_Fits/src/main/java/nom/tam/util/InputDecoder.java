@@ -71,6 +71,9 @@ public abstract class InputDecoder {
     /** the conversion buffer */
     private InputBuffer buf;
 
+    /** For thread synchronization */
+    protected Object lock = new Object();
+
     /**
      * Instantiates a new decoder of binary input to Java arrays. To be used by subclass constructors only.
      *
@@ -140,7 +143,7 @@ public abstract class InputDecoder {
      *
      * @throws IOException if an IO error, other than the end-of-file prevented the read.
      */
-    protected synchronized int read() throws IOException {
+    protected int read() throws IOException {
         return in.read();
     }
 
@@ -155,7 +158,7 @@ public abstract class InputDecoder {
      *
      * @throws IOException if an IO error, other than the end-of-file prevented the read.
      */
-    protected synchronized int read(byte[] b, int start, int length) throws IOException {
+    protected int read(byte[] b, int start, int length) throws IOException {
         return in.read(b, start, length);
     }
 
@@ -262,19 +265,19 @@ public abstract class InputDecoder {
             return buf.get((byte[]) o, 0, length);
         }
         if (o instanceof short[]) {
-            return buf.get((short[]) o, 0, length) * Short.BYTES;
+            return (long) buf.get((short[]) o, 0, length) * Short.BYTES;
         }
         if (o instanceof int[]) {
-            return buf.get((int[]) o, 0, length) * Integer.BYTES;
+            return (long) buf.get((int[]) o, 0, length) * Integer.BYTES;
         }
         if (o instanceof float[]) {
-            return buf.get((float[]) o, 0, length) * Float.BYTES;
+            return (long) buf.get((float[]) o, 0, length) * Float.BYTES;
         }
         if (o instanceof long[]) {
-            return buf.get((long[]) o, 0, length) * Long.BYTES;
+            return (long) buf.get((long[]) o, 0, length) * Long.BYTES;
         }
         if (o instanceof double[]) {
-            return buf.get((double[]) o, 0, length) * Double.BYTES;
+            return (long) buf.get((double[]) o, 0, length) * Double.BYTES;
         }
         if (!(o instanceof Object[])) {
             throw new IllegalArgumentException("Not a numerical image type: " + o.getClass().getName());

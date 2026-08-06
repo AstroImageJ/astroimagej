@@ -31,9 +31,6 @@ package nom.tam.fits;
  * #L%
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.util.*;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +44,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.FitsDecoder;
+import nom.tam.util.FitsEncoder;
+import nom.tam.util.FitsIO;
+import nom.tam.util.RandomAccess;
 
 /**
  * Static utility functions used throughout the FITS classes.
@@ -86,6 +91,7 @@ public final class FitsUtil {
      *
      * @param      size the current size.
      */
+    @Deprecated
     public static int addPadding(int size) {
         return size + padding(size);
     }
@@ -111,7 +117,7 @@ public final class FitsUtil {
      * 
      * @param  o a new array of <code>Boolean</code>
      * 
-     * @return   and array of FITS logical values with the same size and shape as the input
+     * @return   an array of FITS logical values with the same size and shape as the input
      * 
      * @see      #bytesToBooleanObjects(Object)
      * @see      #byteToBoolean(byte[])
@@ -120,11 +126,11 @@ public final class FitsUtil {
      */
     static Object booleansToBytes(Object o) {
         if (o == null) {
-            return FitsEncoder.byteForBoolean(null);
+            return new byte[] {FitsEncoder.byteForBoolean(null)};
         }
 
         if (o instanceof Boolean) {
-            return FitsEncoder.byteForBoolean((Boolean) o);
+            return new byte[] {FitsEncoder.byteForBoolean((Boolean) o)};
         }
 
         if (o instanceof boolean[]) {
@@ -291,7 +297,7 @@ public final class FitsUtil {
      * trims trailing spaces but not leading ones.
      * 
      * @param  bytes      an array of ASCII bytes
-     * @param  offset     the array index at which the string begins
+     * @param  pos        the array index at which the string begins
      * @param  maxLen     the maximum number of bytes to extract from the position
      * @param  terminator the byte value that terminates the string, such as 0x00.
      * 
@@ -364,6 +370,7 @@ public final class FitsUtil {
      * 
      * @deprecated        (<i>for internal use</i>) No longer used internally, will be removed in the future.
      */
+    @Deprecated
     public static String[] byteArrayToStrings(byte[] bytes, int maxLen) {
         // Note that if a String in a binary table contains an internal 0,
         // the FITS standard says that it is to be considered as terminating
@@ -452,6 +459,7 @@ public final class FitsUtil {
      * 
      * @deprecated   (<i>for internal use</i>) Visibility may be reduced to the package level in the future.
      */
+    @Deprecated
     public static long findOffset(Closeable o) {
         if (o instanceof RandomAccess) {
             return ((RandomAccess) o).getFilePointer();
@@ -495,6 +503,7 @@ public final class FitsUtil {
      * 
      * @deprecated         (<i>for internal use</i>) No longer used internally, may be removed in the future.
      */
+    @Deprecated
     public static int maxLength(String[] strings) {
         int max = 0;
         for (String element : strings) {
@@ -582,6 +591,7 @@ public final class FitsUtil {
      * 
      * @deprecated               (<i>for internal use</i>) Visibility may be reduced to package level in the future
      */
+    @Deprecated
     public static void pad(ArrayDataOutput stream, long size) throws FitsException {
         pad(stream, size, (byte) 0);
     }
@@ -601,6 +611,7 @@ public final class FitsUtil {
      * 
      * @deprecated               (<i>for internal use</i>) Visibility may be reduced to private in the future
      */
+    @Deprecated
     public static void pad(ArrayDataOutput stream, long size, byte fill) throws FitsException {
         int len = padding(size);
         if (len > 0) {
@@ -622,6 +633,7 @@ public final class FitsUtil {
      *
      * @param      size the size without padding
      */
+    @Deprecated
     public static int padding(int size) {
         return padding((long) size);
     }
@@ -739,6 +751,7 @@ public final class FitsUtil {
      * 
      * @deprecated             (<i>for internal use</i>) Visibility may be reduced to package level in the future.
      */
+    @Deprecated
     public static byte[] stringsToByteArray(String[] stringArray, int len) {
         return stringsToByteArray(stringArray, len, BLANK_SPACE);
     }
@@ -798,15 +811,14 @@ public final class FitsUtil {
      * Extracts strings from a packed delimited byte sequence. Strings start either immediately after the prior string
      * reached its maximum length, or else immediately after the specified delimiter byte value.
      * 
-     * @param  bytes  bytes containing the packed strings
-     * @param  maxlen the maximum length of individual string components
-     * @param  delim  the byte value that delimits strings shorter than the maximum length
+     * @param  bytes bytes containing the packed strings
+     * @param  delim the byte value that delimits strings shorter than the maximum length
      * 
-     * @return        An array of the extracted strings
+     * @return       An array of the extracted strings
      *
-     * @see           #stringsToDelimitedBytes(String[], int, byte)
+     * @see          #stringsToDelimitedBytes(String[], int, byte)
      * 
-     * @since         1.18
+     * @since        1.18
      */
     private static String[] delimitedBytesToStrings(byte[] bytes, byte delim) {
         ArrayList<String> s = new ArrayList<>();

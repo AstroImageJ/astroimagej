@@ -48,6 +48,8 @@ public abstract class BufferDecoder extends FitsDecoder {
     private BufferPointer p;
 
     /**
+     * Instantiates a new decoder for FITS data types.
+     * 
      * @param p Unused, but the position and length fields are set/reset as to pretend that half of the buffer is
      *              perpetually available for reading. However, at no point will there be any data actually in the
      *              buffer of this object, and you should by all means avoid directly loading data from the stream into
@@ -55,6 +57,7 @@ public abstract class BufferDecoder extends FitsDecoder {
      *              <code>checkBuffer(int)</code> (and it's safest if you don't override or ever call
      *              <code>checkBuffer(int)</code> from your code!).
      */
+    @Deprecated
     public BufferDecoder(BufferPointer p) {
         super();
 
@@ -91,6 +94,7 @@ public abstract class BufferDecoder extends FitsDecoder {
         p.length = p.buffer == null ? 0 : p.buffer.length >>> 1;
     }
 
+    @Deprecated
     @Override
     boolean makeAvailable(int needBytes) throws IOException {
         pretendHalfPopulated();
@@ -111,6 +115,7 @@ public abstract class BufferDecoder extends FitsDecoder {
     protected void checkBuffer(int needBytes) throws IOException {
     }
 
+    @Deprecated
     @Override
     protected int read(byte[] buf, int offset, int length) throws IOException {
         throw new UnsupportedOperationException(
@@ -147,6 +152,7 @@ public abstract class BufferDecoder extends FitsDecoder {
      *                                      supported for decoding.
      * @throws IOException              if there was an IO error reading from the input
      */
+    @Deprecated
     protected long readLArray(Object o) throws IOException {
         try {
             return super.readArray(o);

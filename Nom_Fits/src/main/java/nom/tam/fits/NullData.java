@@ -1,6 +1,14 @@
 package nom.tam.fits;
 
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.PCOUNT;
+
 import java.nio.Buffer;
+
+import nom.tam.fits.header.Bitpix;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
 
 /*-
  * #%L
@@ -33,14 +41,6 @@ import java.nio.Buffer;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.PCOUNT;
-
 /**
  * A subclass of <code>Data</code> containing no actual data. It wraps an underlying data of <code>null</code>.
  *
@@ -51,6 +51,12 @@ import static nom.tam.fits.header.Standard.PCOUNT;
  * @see    NullDataHDU
  */
 public final class NullData extends ImageData {
+
+    /**
+     * Instantiates an empty data object for a header-only HDU.
+     */
+    public NullData() {
+    }
 
     @SuppressWarnings("deprecation")
     @Override

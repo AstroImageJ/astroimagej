@@ -1,12 +1,49 @@
 package nom.tam.image.compression.hdu;
 
-import nom.tam.fits.*;
+import static nom.tam.fits.header.Compression.ZTABLE;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.BinaryTable;
+import nom.tam.fits.BinaryTableHDU;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.Cursor;
 import nom.tam.util.type.ElementType;
 
-import static nom.tam.fits.header.Compression.ZTABLE;
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2024 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
 /**
  * A header-data unit (HDU) containing a compressed binary table. A compressed table is still a binary table but with
@@ -86,19 +123,16 @@ public class CompressedTableHDU extends BinaryTableHDU {
      * are widely used we want to support files created or consumed by these tools. As such we allow to deviate from the
      * FITS standard, and swap the order of the stored VLA indices inside compressed tables.
      * 
-     * @param  value <code>true</code> if we should use VLA indices in compressed tables that follow the format
-     *                   described in the original Pence et al. 2013 convention, and also the FITS 4.0 standard as of
-     *                   2024 Mar 1; otherwise <code>false</code>. These original prescriptions define the reverse of
-     *                   what is actually implemented by CFITSIO and its tools <code>fpack</code> and
-     *                   <code>funpack</code>. (Our default is to conform to CFITSIO, and the expected revision of the
-     *                   standard to match).
+     * @param value <code>true</code> if we should use VLA indices in compressed tables that follow the format described
+     *                  in the original Pence et al. 2013 convention, and also the FITS 4.0 standard as of 2024 Mar 1;
+     *                  otherwise <code>false</code>. These original prescriptions define the reverse of what is
+     *                  actually implemented by CFITSIO and its tools <code>fpack</code> and <code>funpack</code>. (Our
+     *                  default is to conform to CFITSIO, and the expected revision of the standard to match).
      * 
-     * @see          #hasOldStandardVLAIndexing()
-     * @see          #asBinaryTableHDU()
+     * @see         #hasOldStandardVLAIndexing()
+     * @see         #asBinaryTableHDU()
      * 
-     * @since        1.19.1
-     * 
-     * @author       Attila Kovacs
+     * @since       1.19.1
      */
     public static void useOldStandardVLAIndexing(boolean value) {
         reversedVLAIndices = value;
@@ -117,8 +151,6 @@ public class CompressedTableHDU extends BinaryTableHDU {
      * @see    #useOldStandardVLAIndexing(boolean)
      * 
      * @since  1.19.1
-     * 
-     * @author Attila Kovacs
      */
     public static boolean hasOldStandardVLAIndexing() {
         return reversedVLAIndices;
@@ -188,6 +220,7 @@ public class CompressedTableHDU extends BinaryTableHDU {
      * @return         <CODE>true</CODE> if this HDU has a valid header.
      */
     @Deprecated
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     public static boolean isHeader(Header hdr) {
         return hdr.getBooleanValue(ZTABLE, false);
     }

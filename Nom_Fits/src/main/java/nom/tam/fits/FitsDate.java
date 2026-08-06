@@ -70,8 +70,8 @@ public class FitsDate implements Comparable<FitsDate> {
 
     private static final int NEW_FORMAT_YEAR_GROUP = 2;
 
-    private static final Pattern NORMAL_REGEX = Pattern.compile(
-            "\\s*(([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9]))(T([0-9][0-9]):([0-9][0-9]):([0-9][0-9])(\\.([0-9]+))?)?\\s*");
+    private static final Pattern NORMAL_REGEX = Pattern
+            .compile("\\s*((\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d))(T(\\d\\d):(\\d\\d):(\\d\\d)(\\.(\\d+))?)?\\s*");
 
     private static final int OLD_FORMAT_DAY_OF_MONTH_GROUP = 1;
 
@@ -79,7 +79,7 @@ public class FitsDate implements Comparable<FitsDate> {
 
     private static final int OLD_FORMAT_YEAR_GROUP = 3;
 
-    private static final Pattern OLD_REGEX = Pattern.compile("\\s*([0-9][0-9])/([0-9][0-9])/([0-9][0-9])\\s*");
+    private static final Pattern OLD_REGEX = Pattern.compile("\\s*(\\d\\d)/(\\d\\d)/(\\d\\d)\\s*");
 
     private static final int YEAR_OFFSET = 1900;
 
@@ -176,8 +176,10 @@ public class FitsDate implements Comparable<FitsDate> {
         if (dStr == null || dStr.isEmpty()) {
             return;
         }
+
         Matcher match = FitsDate.NORMAL_REGEX.matcher(dStr);
         if (match.matches()) {
+            // The regex match ensures we can never get a NumberFormatException here...
             year = getInt(match, FitsDate.NEW_FORMAT_YEAR_GROUP);
             month = getInt(match, FitsDate.NEW_FORMAT_MONTH_GROUP);
             mday = getInt(match, FitsDate.NEW_FORMAT_DAY_OF_MONTH_GROUP);
@@ -186,6 +188,7 @@ public class FitsDate implements Comparable<FitsDate> {
             second = getInt(match, FitsDate.NEW_FORMAT_SECOND_GROUP);
             millisecond = getMilliseconds(match, FitsDate.NEW_FORMAT_MILLISECOND_GROUP);
         } else {
+            // The regex match ensures we can never get a NumberFormatException here...
             match = FitsDate.OLD_REGEX.matcher(dStr);
             if (!match.matches()) {
                 if (dStr.trim().isEmpty()) {
@@ -199,7 +202,7 @@ public class FitsDate implements Comparable<FitsDate> {
         }
     }
 
-    private static int getInt(Matcher match, int groupIndex) {
+    private static int getInt(Matcher match, int groupIndex) throws NumberFormatException {
         String value = match.group(groupIndex);
         if (value != null) {
             return Integer.parseInt(value);
@@ -207,7 +210,7 @@ public class FitsDate implements Comparable<FitsDate> {
         return -1;
     }
 
-    private static int getMilliseconds(Matcher match, int groupIndex) {
+    private static int getMilliseconds(Matcher match, int groupIndex) throws NumberFormatException {
         String value = match.group(groupIndex);
         if (value != null) {
             value = String.format("%-3s", value).replace(' ', '0');

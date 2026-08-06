@@ -58,12 +58,15 @@ package nom.tam.util;
 public final class ByteFormatter {
 
     /** String representation of NaN values */
+    @Deprecated
     public static final String NOT_A_NUMBER = "NaN";
 
     /** String representation of (positive) infinity values */
+    @Deprecated
     public static final String INFINITY = "Infinity";
 
     /** String representation of (negative) infinity values */
+    @Deprecated
     public static final String NEGATIVE_INFINITY = "-Infinity";
 
     /**
@@ -183,6 +186,13 @@ public final class ByteFormatter {
     private final byte[] tbuf2 = new byte[ByteFormatter.TEMP_BUFFER_SIZE];
 
     /**
+     * Intantiates a new number formatter for FITS ASCII representation.
+     */
+    @Deprecated
+    public ByteFormatter() {
+    }
+
+    /**
      * This method formats a double given a decimal mantissa and exponent information.
      *
      * @param  val   The original number
@@ -290,6 +300,7 @@ public final class ByteFormatter {
      *
      * @return       Offset of next available character in buffer.
      */
+    @Deprecated
     public int format(boolean val, byte[] array) {
         return format(val, array, 0, array.length);
     }
@@ -304,6 +315,7 @@ public final class ByteFormatter {
      *
      * @return       Offset of next available character in buffer.
      */
+    @Deprecated
     public int format(boolean val, byte[] array, int off, int len) {
         if (len > 0) {
             if (val) {
@@ -324,6 +336,7 @@ public final class ByteFormatter {
      *
      * @return       The number of characters used. @ * if the value was truncated
      */
+    @Deprecated
     public int format(double val, byte[] array) {
         return format(val, array, 0, array.length);
     }
@@ -350,6 +363,7 @@ public final class ByteFormatter {
      *
      * @return     offset of next unused character in input buffer.
      */
+    @Deprecated
     public int format(double val, byte[] buf, int off, int len) {
 
         double pos = Math.abs(val);
@@ -425,6 +439,7 @@ public final class ByteFormatter {
      *
      * @return       The number of characters used. @ * if the value was truncated
      */
+    @Deprecated
     public int format(float val, byte[] array) {
         return format(val, array, 0, array.length);
     }
@@ -451,6 +466,7 @@ public final class ByteFormatter {
      *
      * @return     Offset of next character in buffer. @ * if the value was truncated
      */
+    @Deprecated
     public int format(float val, byte[] buf, int off, int len) {
 
         float pos = Math.abs(val);
@@ -526,6 +542,7 @@ public final class ByteFormatter {
      *
      * @return       The number of characters used. @ * if the value was truncated
      */
+    @Deprecated
     public int format(int val, byte[] array) {
         return format(val, array, 0, array.length);
     }
@@ -540,6 +557,7 @@ public final class ByteFormatter {
      *
      * @return     offset of next unused character in input buffer.
      */
+    @Deprecated
     public int format(int val, byte[] buf, int off, int len) {
 
         // Special case
@@ -601,6 +619,7 @@ public final class ByteFormatter {
      *
      * @return       The number of characters used. @ * if the value was truncated
      */
+    @Deprecated
     public int format(long val, byte[] array) {
         return format(val, array, 0, array.length);
     }
@@ -615,6 +634,7 @@ public final class ByteFormatter {
      *
      * @return     offset of next unused character in input buffer. @ * if the value was truncated
      */
+    @Deprecated
     public int format(long val, byte[] buf, int off, int len) {
         // Special case
         if (val == Long.MIN_VALUE) {
@@ -678,6 +698,7 @@ public final class ByteFormatter {
      *
      * @return       Offset of next available character in buffer.
      */
+    @Deprecated
     public int format(String val, byte[] array) {
         return format(val, array, 0, array.length);
     }
@@ -693,6 +714,7 @@ public final class ByteFormatter {
      *
      * @return       Offset of next available character in buffer.
      */
+    @Deprecated
     public int format(String val, byte[] array, int off, int len) {
 
         if (val == null) {

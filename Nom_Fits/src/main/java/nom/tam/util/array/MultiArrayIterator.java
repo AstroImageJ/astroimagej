@@ -38,10 +38,14 @@ import nom.tam.util.ArrayFuncs;
 /**
  * Multi-dimensional array iterator (<i>primarily for internal use</i>)
  *
- * @param <BaseArray> the generic type of array at the base of a multi-dimensional array object. For example for a
- *                        <code>float[][][]</code> array the base would be <code>float[]</code>.
+ * @param      <BaseArray> the generic type of array at the base of a multi-dimensional array object. For example for a
+ *                             <code>float[][][]</code> array the base would be <code>float[]</code>.
+ * 
+ * @deprecated             The generic type argument is miscontrued, referring to both the type of array element, and
+ *                             the type of the array itself, making it typically useless, and leaving one to use the
+ *                             class with raw types only. This is fine for internal use.
  */
-@SuppressWarnings({"deprecation"})
+@Deprecated
 public class MultiArrayIterator<BaseArray> {
 
     private final BaseArray baseArray;
@@ -58,6 +62,7 @@ public class MultiArrayIterator<BaseArray> {
      * 
      * @param baseArray the multidimensional array, whose elements we want to iterate over.
      */
+    @Deprecated
     public MultiArrayIterator(BaseArray baseArray) {
         this.baseArray = baseArray;
         baseIsNoSubArray = !MultiArrayPointer.isSubArray(this.baseArray);
@@ -77,6 +82,7 @@ public class MultiArrayIterator<BaseArray> {
      * 
      * @see    ArrayFuncs#getBaseClass(Object)
      */
+    @Deprecated
     public Class<?> deepComponentType() {
         return ArrayFuncs.getBaseClass(baseArray);
     }
@@ -86,6 +92,7 @@ public class MultiArrayIterator<BaseArray> {
      * 
      * @return the next array element in the top-level array object.
      */
+    @Deprecated
     @SuppressWarnings("unchecked")
     public BaseArray next() {
         if (baseIsNoSubArray) {
@@ -108,6 +115,7 @@ public class MultiArrayIterator<BaseArray> {
     /**
      * Resets the iterator so it can be re-used again.
      */
+    @Deprecated
     public void reset() {
         if (baseIsNoSubArray) {
             baseNextCalled = false;
@@ -128,6 +136,7 @@ public class MultiArrayIterator<BaseArray> {
      * 
      * @see    ArrayFuncs#countElements(Object)
      */
+    @Deprecated
     public int size() {
         return (int) ArrayFuncs.countElements(baseArray);
     }

@@ -1,5 +1,22 @@
 package nom.tam.fits;
 
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.BLANKS;
+import static nom.tam.fits.header.Standard.COMMENT;
+import static nom.tam.fits.header.Standard.END;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.HISTORY;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
+import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -16,9 +33,11 @@ import java.util.logging.Logger;
 
 import nom.tam.fits.FitsFactory.FitsSettings;
 import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.Checksum;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
 import nom.tam.fits.header.Standard;
+import nom.tam.fits.utilities.FitsCheckSum;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.AsciiFuncs;
@@ -60,23 +79,6 @@ import nom.tam.util.RandomAccess;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLANKS;
-import static nom.tam.fits.header.Standard.COMMENT;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.HISTORY;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 
 /**
  * <p>
@@ -141,6 +143,7 @@ public class Header implements FitsElement {
      *                 'fixed-format' header entries, and result in files that are unreadable by some other software.
      *                 This constant will be obsoleted and removed.
      */
+    @Deprecated
     public static final int MIN_COMMENT_ALIGN = 20;
 
     /**
@@ -150,6 +153,7 @@ public class Header implements FitsElement {
      *                 'fixed-format' header entries, and result in files that are unreadable by some other software.
      *                 This constant will be obsoleted and removed.
      */
+    @Deprecated
     public static final int MAX_COMMENT_ALIGN = 70;
 
     /**
@@ -919,8 +923,6 @@ public class Header implements FitsElement {
      * 
      * @return       The list of header cards that match the regular expression.
      * 
-     * @author       Richard J. Mathar
-     * 
      * @since        1.19.1
      */
     public HeaderCard[] findCards(final String regex) {
@@ -974,6 +976,7 @@ public class Header implements FitsElement {
      *
      * @return         The associated value or 0.0 if not found.
      */
+    @Deprecated
     public final BigDecimal getBigDecimalValue(IFitsHeader key) {
         return getBigDecimalValue(key.key());
     }
@@ -989,6 +992,7 @@ public class Header implements FitsElement {
      *
      * @return         the associated value.
      */
+    @Deprecated
     public final BigDecimal getBigDecimalValue(IFitsHeader key, BigDecimal dft) {
         return getBigDecimalValue(key.key(), dft);
     }
@@ -1003,6 +1007,7 @@ public class Header implements FitsElement {
      *
      * @return         The associated value or 0.0 if not found.
      */
+    @Deprecated
     public final BigDecimal getBigDecimalValue(String key) {
         return getBigDecimalValue(key, BigDecimal.ZERO);
     }
@@ -1018,6 +1023,7 @@ public class Header implements FitsElement {
      *
      * @return         the associated value.
      */
+    @Deprecated
     public BigDecimal getBigDecimalValue(String key, BigDecimal dft) {
         HeaderCard fcard = getCard(key);
         if (fcard == null) {
@@ -1036,6 +1042,7 @@ public class Header implements FitsElement {
      *
      * @return         the associated value or 0 if not found.
      */
+    @Deprecated
     public final BigInteger getBigIntegerValue(IFitsHeader key) {
         return getBigIntegerValue(key.key());
     }
@@ -1051,6 +1058,7 @@ public class Header implements FitsElement {
      *
      * @return         the associated value.
      */
+    @Deprecated
     public final BigInteger getBigIntegerValue(IFitsHeader key, BigInteger dft) {
         return getBigIntegerValue(key.key(), dft);
     }
@@ -1065,6 +1073,7 @@ public class Header implements FitsElement {
      *
      * @return         The associated value or 0 if not found.
      */
+    @Deprecated
     public final BigInteger getBigIntegerValue(String key) {
         return getBigIntegerValue(key, BigInteger.ZERO);
     }
@@ -1080,6 +1089,7 @@ public class Header implements FitsElement {
      *
      * @return         the associated value.
      */
+    @Deprecated
     public BigInteger getBigIntegerValue(String key, BigInteger dft) {
         HeaderCard fcard = getCard(key);
         if (fcard == null) {
@@ -1504,6 +1514,7 @@ public class Header implements FitsElement {
      * @see            HeaderCard#getHexValue()
      * @see            #addHexValue(String, long, String)
      */
+    @Deprecated
     public long getHexValue(String key, long dft) {
         HeaderCard fcard = getCard(key);
         if (fcard == null) {
@@ -2202,6 +2213,7 @@ public class Header implements FitsElement {
         }
 
         FitsUtil.reposition(dos, fileOffset);
+
         write(dos);
         dos.flush();
     }
@@ -2300,11 +2312,13 @@ public class Header implements FitsElement {
             LOG.warning("setNaxis ignored because axis less than 0");
             return;
         }
+
         if (axis == 1) {
             iter.setKey(NAXIS.key());
-        } else if (axis > 1) {
+        } else {
             iter.setKey(NAXISn.n(axis - 1).key());
         }
+
         if (iter.hasNext()) {
             iter.next();
         }
@@ -2382,6 +2396,33 @@ public class Header implements FitsElement {
      */
     public void updateLine(IFitsHeader key, HeaderCard card) throws HeaderCardException {
         updateLine(key.key(), card);
+    }
+
+    private void updateValue(IFitsHeader key, Boolean value) {
+        HeaderCard prior = cards.get(key.key());
+        if (prior != null) {
+            prior.setValue(value);
+        } else {
+            addValue(key, value);
+        }
+    }
+
+    private void updateValue(IFitsHeader key, Number value) {
+        HeaderCard prior = cards.get(key.key());
+        if (prior != null) {
+            prior.setValue(value);
+        } else {
+            addValue(key, value);
+        }
+    }
+
+    private void updateValue(IFitsHeader key, String value) {
+        HeaderCard prior = cards.get(key.key());
+        if (prior != null) {
+            prior.setValue(value);
+        } else {
+            addValue(key, value);
+        }
     }
 
     /**
@@ -2470,7 +2511,7 @@ public class Header implements FitsElement {
             }
 
             // Make sure we have SIMPLE
-            addValue(SIMPLE, true);
+            updateValue(SIMPLE, true);
         } else {
             // Delete keys that cannot be in extensions
             deleteKey(SIMPLE);
@@ -2479,25 +2520,25 @@ public class Header implements FitsElement {
             deleteKey(EXTEND);
 
             // Make sure we have XTENSION
-            addValue(XTENSION, xType);
+            updateValue(XTENSION, xType);
         }
 
         // Make sure we have BITPIX
-        addValue(BITPIX, getIntValue(BITPIX, Bitpix.VALUE_FOR_INT));
+        updateValue(BITPIX, getIntValue(BITPIX, Bitpix.VALUE_FOR_INT));
 
         int naxes = getIntValue(NAXIS, 0);
-        addValue(NAXIS, naxes);
+        updateValue(NAXIS, naxes);
 
         for (int i = 1; i <= naxes; i++) {
             IFitsHeader naxisi = NAXISn.n(i);
-            addValue(naxisi, getIntValue(naxisi, 1));
+            updateValue(naxisi, getIntValue(naxisi, 1));
         }
 
         if (xType == null) {
-            addValue(EXTEND, true);
+            updateValue(EXTEND, true);
         } else {
-            addValue(PCOUNT, getIntValue(PCOUNT, 0));
-            addValue(GCOUNT, getIntValue(GCOUNT, 1));
+            updateValue(PCOUNT, getIntValue(PCOUNT, 0));
+            updateValue(GCOUNT, getIntValue(GCOUNT, 1));
         }
     }
 
@@ -2528,36 +2569,69 @@ public class Header implements FitsElement {
         if (headerSorter != null) {
             cards.sort(headerSorter);
         }
+
         checkBeginning();
         checkEnd();
+
+        updateChecksum();
+    }
+
+    private void updateChecksum() throws FitsException {
+        if (containsKey(Checksum.CHECKSUM)) {
+            HeaderCard dsum = getCard(Checksum.DATASUM);
+            if (dsum != null) {
+                FitsCheckSum.setDatasum(this, dsum.getValue(Long.class, 0L));
+            } else {
+                deleteKey(Checksum.CHECKSUM);
+            }
+        }
+    }
+
+    /**
+     * (<i>for internal use</i>) Similar to {@link #write(ArrayDataOutput)}, but writes the header as is, without
+     * ensuring that mandatory keys are present, and in the correct order, or that checksums are updated.
+     * 
+     * @param  out           The output file or stream to which to write
+     * 
+     * @throws FitsException if there was a violation of the FITS standard
+     * @throws IOException   if the output was not accessible
+     * 
+     * @since                1.20.1
+     *
+     * @see                  #write(ArrayDataOutput)
+     * @see                  #validate(boolean)
+     */
+    public void writeUnchecked(ArrayDataOutput out) throws FitsException, IOException {
+        FitsSettings settings = FitsFactory.current();
+        fileOffset = FitsUtil.findOffset(out);
+
+        Cursor<String, HeaderCard> writeIterator = cards.iterator(0);
+
+        int size = 0;
+
+        while (writeIterator.hasNext()) {
+            HeaderCard card = writeIterator.next();
+            byte[] b = AsciiFuncs.getBytes(card.toString(settings));
+            size += b.length;
+
+            if (END.key().equals(card.getKey()) && minCards * HeaderCard.FITS_HEADER_CARD_SIZE > size) {
+                // AK: Add preallocated blank header space before the END key.
+                writeBlankCards(out, minCards - size / HeaderCard.FITS_HEADER_CARD_SIZE);
+                size = minCards * HeaderCard.FITS_HEADER_CARD_SIZE;
+            }
+
+            out.write(b);
+        }
+        FitsUtil.pad(out, size, (byte) ' ');
+        out.flush();
     }
 
     @Override
-    public void write(ArrayDataOutput dos) throws FitsException {
+    public void write(ArrayDataOutput out) throws FitsException {
         validate();
 
-        FitsSettings settings = FitsFactory.current();
-        fileOffset = FitsUtil.findOffset(dos);
-
-        Cursor<String, HeaderCard> writeIterator = cards.iterator(0);
         try {
-            int size = 0;
-
-            while (writeIterator.hasNext()) {
-                HeaderCard card = writeIterator.next();
-                byte[] b = AsciiFuncs.getBytes(card.toString(settings));
-                size += b.length;
-
-                if (END.key().equals(card.getKey()) && minCards * HeaderCard.FITS_HEADER_CARD_SIZE > size) {
-                    // AK: Add preallocated blank header space before the END key.
-                    writeBlankCards(dos, minCards - size / HeaderCard.FITS_HEADER_CARD_SIZE);
-                    size = minCards * HeaderCard.FITS_HEADER_CARD_SIZE;
-                }
-
-                dos.write(b);
-            }
-            FitsUtil.pad(dos, size, (byte) ' ');
-            dos.flush();
+            writeUnchecked(out);
         } catch (IOException e) {
             throw new FitsException("IO Error writing header", e);
         }
@@ -2598,7 +2672,7 @@ public class Header implements FitsElement {
         }
         HeaderCard card = iter.next();
         if (!card.getKey().equals(key)) {
-            throw new FitsException("Key " + key + " not found where expected." + "Found " + card.getKey());
+            throw new FitsException("Key " + key + " not found where expected. Found " + card.getKey());
         }
     }
 
@@ -2951,6 +3025,7 @@ public class Header implements FitsElement {
      * 
      * @since                               1.17
      */
+    @Deprecated
     public static void setCommentAlignPosition(int pos) throws IllegalArgumentException {
         if (pos < Header.MIN_COMMENT_ALIGN || pos > Header.MAX_COMMENT_ALIGN) {
             throw new IllegalArgumentException(

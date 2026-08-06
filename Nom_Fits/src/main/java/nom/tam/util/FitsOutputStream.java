@@ -55,6 +55,9 @@ public class FitsOutputStream extends ArrayOutputStream implements FitsOutput {
     /** Unencoded output byte count */
     private int unencodedCount;
 
+    /** For thread synchronization */
+    private Object lock = new Object();
+
     /**
      * Use the BufferedOutputStream constructor
      *
@@ -86,15 +89,19 @@ public class FitsOutputStream extends ArrayOutputStream implements FitsOutput {
     }
 
     @Override
-    public void write(int b) throws IOException {
-        super.write(b);
-        unencodedCount++;
+    public synchronized void write(int b) throws IOException {
+        synchronized (lock) {
+            super.write(b);
+            unencodedCount++;
+        }
     }
 
     @Override
-    public void write(byte[] b, int start, int length) throws IOException {
-        super.write(b, start, length);
-        unencodedCount += length;
+    public synchronized void write(byte[] b, int start, int length) throws IOException {
+        synchronized (lock) {
+            super.write(b, start, length);
+            unencodedCount += length;
+        }
     }
 
     @Override

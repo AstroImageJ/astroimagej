@@ -31,13 +31,16 @@ package nom.tam.fits;
  * #L%
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.compress.CompressionManager;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.*;
+import static nom.tam.fits.header.Standard.EXTNAME;
+import static nom.tam.fits.header.Standard.EXTVER;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -47,8 +50,18 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.EXTVER;
+import nom.tam.fits.compress.CompressionManager;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.FitsFile;
+import nom.tam.util.FitsIO;
+import nom.tam.util.FitsInputStream;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.RandomAccess;
+import nom.tam.util.RandomAccessFileIO;
+import nom.tam.util.SafeClose;
 
 /**
  * <p>
@@ -140,7 +153,7 @@ import static nom.tam.fits.header.Standard.EXTVER;
  * 
  * @see     FitsFactory
  *
- * @version 1.20
+ * @version 1.22
  */
 @SuppressWarnings("deprecation")
 public class Fits implements Closeable {
@@ -228,6 +241,7 @@ public class Fits implements Closeable {
      *
      * @see                      #Fits(File)
      */
+    @Deprecated
     public Fits(File myFile, boolean compressed) throws FitsException {
         fileInit(myFile, compressed);
     }
@@ -409,6 +423,7 @@ public class Fits implements Closeable {
      * @see                      #Fits(String)
      **/
     @SuppressWarnings("resource")
+    @Deprecated
     public Fits(String filename, boolean compressed) throws FitsException {
         if (filename == null) {
             throw new FitsException("Null FITS Identifier String");
@@ -595,6 +610,7 @@ public class Fits implements Closeable {
      *
      * @param      in the input stream to close.
      */
+    @Deprecated
     public static void saveClose(InputStream in) {
         SafeClose.close(in);
     }
@@ -662,7 +678,6 @@ public class Fits implements Closeable {
     // TODO Make private
     @Deprecated
     @SuppressWarnings("resource")
-    @SuppressFBWarnings(value = "OBL_UNSATISFIED_OBLIGATION", justification = "stream stays open, and will be read when nessesary.")
     protected void fileInit(File myFile, boolean compressed) throws FitsException {
         try {
             if (compressed) {
@@ -1116,6 +1131,7 @@ public class Fits implements Closeable {
      * @deprecated               Use {@link #Fits(InputStream)} constructor instead. We will remove this method in the
      *                               future.
      */
+    @Deprecated
     public void read(InputStream is) throws FitsException {
         is = CompressionManager.decompress(is);
 
@@ -1238,8 +1254,6 @@ public class Fits implements Closeable {
      * @throws FitsException if there was an error during the checksumming operation
      * @throws IOException   if there was an I/O error while accessing the data from the input
      *
-     * @author               R J Mather, Attila Kovacs
-     *
      * @see                  #setChecksum(int)
      * @see                  BasicHDU#getStoredDatasum()
      * @see                  #rewrite()
@@ -1324,6 +1338,7 @@ public class Fits implements Closeable {
      *
      * @since                    1.17
      */
+    @Deprecated
     public long calcChecksum(int hduIndex) throws FitsException, IOException {
         return FitsCheckSum.sumOf(FitsCheckSum.checksum(getHDU(hduIndex).getHeader()), calcDatasum(hduIndex));
     }
@@ -1498,8 +1513,8 @@ public class Fits implements Closeable {
      * @see                  #write(FitsOutputStream)
      */
     public void write(File file) throws IOException, FitsException {
-        try (FileOutputStream o = new FileOutputStream(file)) {
-            write(new FitsOutputStream(o));
+        try (FileOutputStream o = new FileOutputStream(file); FitsOutputStream fo = new FitsOutputStream(o)) {
+            write(fo);
             o.flush();
         }
     }
@@ -1592,27 +1607,27 @@ public class Fits implements Closeable {
         if (os instanceof FitsFile) {
             try {
                 write((FitsFile) os);
+                return;
             } catch (IOException e) {
                 throw new FitsException("Error writing to FITS file: " + e, e);
             }
-            return;
         }
 
         if (os instanceof FitsOutputStream) {
             try {
                 write((FitsOutputStream) os);
+                return;
             } catch (IOException e) {
                 throw new FitsException("Error writing to FITS output stream: " + e, e);
             }
-            return;
         }
 
         if (!(os instanceof DataOutputStream)) {
             throw new FitsException("Cannot create FitsOutputStream from class " + os.getClass().getName());
         }
 
-        try {
-            write(new FitsOutputStream((DataOutputStream) os));
+        try (FitsOutputStream fos = new FitsOutputStream((DataOutputStream) os)) {
+            write(fos);
         } catch (IOException e) {
             throw new FitsException("Error writing to the FITS output stream: " + e, e);
         }

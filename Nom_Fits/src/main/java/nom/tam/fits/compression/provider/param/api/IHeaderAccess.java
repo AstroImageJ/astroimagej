@@ -59,6 +59,7 @@ import nom.tam.fits.header.IFitsHeader;
  *                 <code>HeaderCardException</code> to be soft exceptions itself, there is no reason to convert. It just
  *                 adds confusion.
  */
+@Deprecated
 public interface IHeaderAccess {
 
     /**
@@ -68,6 +69,7 @@ public interface IHeaderAccess {
      * 
      * @since  1.19
      */
+    @Deprecated
     Header getHeader();
 
     /**
@@ -80,6 +82,7 @@ public interface IHeaderAccess {
      * 
      * @deprecated                          Just add values to the header directly
      */
+    @Deprecated
     default void addValue(IFitsHeader key, int value) throws IllegalArgumentException {
         getHeader().addValue(key, value);
     }
@@ -94,6 +97,7 @@ public interface IHeaderAccess {
      * 
      * @deprecated                          Just add values to the header directly
      */
+    @Deprecated
     default void addValue(IFitsHeader key, String value) throws IllegalArgumentException {
         getHeader().addValue(key, value);
     }
@@ -108,6 +112,7 @@ public interface IHeaderAccess {
      * 
      * @deprecated     Use {@link Header#getCard(IFitsHeader)} instead.
      */
+    @Deprecated
     default HeaderCard findCard(IFitsHeader key) {
         return getHeader().findCard(key);
     }
@@ -122,6 +127,7 @@ public interface IHeaderAccess {
      * 
      * @deprecated     Use {@link Header#getCard(String)} instead.
      */
+    @Deprecated
     default HeaderCard findCard(String key) {
         return getHeader().findCard(key);
     }

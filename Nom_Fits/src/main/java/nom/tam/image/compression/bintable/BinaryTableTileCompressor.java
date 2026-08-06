@@ -31,6 +31,11 @@ package nom.tam.image.compression.bintable;
  * #L%
  */
 
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.image.compression.hdu.CompressedTableData;
@@ -39,11 +44,6 @@ import nom.tam.util.ByteBufferOutputStream;
 import nom.tam.util.ColumnTable;
 import nom.tam.util.FitsOutputStream;
 import nom.tam.util.type.ElementType;
-
-import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * (<i>for internal use</i>) Handles the compression of binary table 'tiles'.
@@ -70,6 +70,7 @@ public class BinaryTableTileCompressor extends BinaryTableTile {
      *                 take a BinaryTable as its argument with heap and all. It cannot be used for compressing binary
      *                 tables with variable-length columns.
      */
+    @Deprecated
     public BinaryTableTileCompressor(CompressedTableData compressedTable, ColumnTable<?> columnTable,
             BinaryTableTileDescription description) {
         super(columnTable, description);

@@ -1,9 +1,18 @@
 package nom.tam.fits;
 
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.util.LoggerHelper.getLogger;
+
 import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.StandardImageTiler;
 import nom.tam.util.ArrayFuncs;
@@ -38,14 +47,6 @@ import nom.tam.util.ArrayFuncs;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * Header/data unit for images. Image HDUs are suitable for storing monolithic regular numerical arrays in 1 to 255
@@ -89,6 +90,7 @@ public class ImageHDU extends BasicHDU<ImageData> {
      *
      * @param      o The Object being tested.
      */
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     @Deprecated
     public static boolean isData(Object o) {
         try {
@@ -108,6 +110,7 @@ public class ImageHDU extends BasicHDU<ImageData> {
      *
      * @return         <CODE>true</CODE> if this HDU has a valid header.
      */
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     @Deprecated
     public static boolean isHeader(Header hdr) {
         boolean found = hdr.getBooleanValue(SIMPLE);
@@ -171,6 +174,7 @@ public class ImageHDU extends BasicHDU<ImageData> {
      * @param      h the header for the image.
      * @param      d the data used in the image.
      */
+    @Deprecated
     public ImageHDU(Header h, ImageData d) {
         super(h, d);
     }

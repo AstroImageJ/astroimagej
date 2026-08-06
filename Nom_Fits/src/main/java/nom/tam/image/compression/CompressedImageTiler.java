@@ -1,12 +1,51 @@
 package nom.tam.image.compression;
 
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
+
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 2004 - 2024 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
+
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
 import nom.tam.fits.compression.provider.CompressorProvider;
+import nom.tam.fits.compression.provider.param.api.ICompressParameters;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
@@ -15,14 +54,6 @@ import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.type.ElementType;
-
-import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Class to extract individually compressed tiles from a compressed image. This class supports the FITS 3.0 standard and
@@ -213,10 +244,13 @@ public class CompressedImageTiler implements ImageTiler {
     }
 
     int[] getTileIndexes(final int[] pixelPositions, final int[] tileDimensions) {
-        final int[] tileIndexes = new int[pixelPositions.length];
+        final int n = pixelPositions.length;
+        final int[] tileIndexes = new int[n];
 
-        for (int i = 0; i < pixelPositions.length; i++) {
-            tileIndexes[i] = pixelPositions[i] / tileDimensions[i];
+        for (int i = 0; i < n; i++) {
+            // Positions and tile dimensions are in image index order (ZNAXISn reversed). Table rows use FITS axis
+            // order (NAXIS1 varies fastest), so map each image axis to the corresponding FITS axis index.
+            tileIndexes[n - 1 - i] = pixelPositions[i] / tileDimensions[i];
         }
 
         return tileIndexes;
@@ -262,12 +296,12 @@ public class CompressedImageTiler implements ImageTiler {
      *
      * @return            Buffer instance. Never null.
      */
-    Buffer decompressIntoBuffer(final Object[] row, final ByteBuffer compressed) {
+    Buffer decompressIntoBuffer(final Object[] row, final ByteBuffer compressed) throws FitsException {
         final ElementType<Buffer> bufferElementType = getBaseType();
         final Buffer tileBuffer = bufferElementType.newBuffer(getTileSize());
         tileBuffer.rewind();
         final ICompressorControl compressorControl = getCompressorControl(getBaseType());
-        final ICompressOption option = initCompressionOption(compressorControl.option(), bufferElementType.size());
+        final ICompressOption option = initCompressionOption(compressorControl.option());
         initRowOption(option, row);
         compressorControl.decompress(compressed, tileBuffer, option);
 
@@ -280,12 +314,10 @@ public class CompressedImageTiler implements ImageTiler {
                 elementType.primitiveClass());
     }
 
-    ICompressOption initCompressionOption(final ICompressOption option, final int bytePix) {
-        if (option instanceof RiceCompressOption) {
-            ((RiceCompressOption) option).setBlockSize(getBlockSize());
-            ((RiceCompressOption) option).setBytePix(bytePix);
-        } else if (option instanceof QuantizeOption) {
-            initCompressionOption(((QuantizeOption) option).getCompressOption(), bytePix);
+    ICompressOption initCompressionOption(final ICompressOption option) throws FitsException {
+        final ICompressParameters parameters = option.getCompressionParameters();
+        if (parameters != null) {
+            parameters.getValuesFromHeader(getHeader());
         }
 
         option.setTileHeight(getTileHeight()).setTileWidth(getTileWidth());
@@ -324,8 +356,7 @@ public class CompressedImageTiler implements ImageTiler {
      * @throws FitsException  If the row doesn't exist, or cannot be read.
      */
     Object[] getRow(final int[] positions, final int[] tileDimensions) throws FitsException {
-        final int[] tileIndexes = getTileIndexes(ArrayFuncs.reverseIndices(positions),
-                ArrayFuncs.reverseIndices(tileDimensions));
+        final int[] tileIndexes = getTileIndexes(positions, tileDimensions);
         final int rowNumber = getRowNumber(tileIndexes);
         return compressedImageHDU.getRow(rowNumber);
     }

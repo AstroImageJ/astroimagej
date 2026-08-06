@@ -31,17 +31,31 @@ package nom.tam.fits;
  * #L%
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.*;
+import static nom.tam.fits.header.Standard.NAXIS1;
+import static nom.tam.fits.header.Standard.NAXIS2;
+import static nom.tam.fits.header.Standard.TBCOLn;
+import static nom.tam.fits.header.Standard.TDMAXn;
+import static nom.tam.fits.header.Standard.TDMINn;
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.fits.header.Standard.TFORMn;
+import static nom.tam.fits.header.Standard.TLMAXn;
+import static nom.tam.fits.header.Standard.TLMINn;
+import static nom.tam.fits.header.Standard.TNULLn;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-import static nom.tam.fits.header.Standard.*;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.ByteFormatter;
+import nom.tam.util.ByteParser;
+import nom.tam.util.Cursor;
+import nom.tam.util.FormatException;
 
 /**
  * ASCII table data. ASCII tables are meant for human readability without any special tools. However, they are far less
@@ -138,6 +152,7 @@ public class AsciiTable extends AbstractTableData {
      * 
      * @deprecated               (<i>for internal use</i>) Visibility may be reduced to the package level in the future.
      */
+    @Deprecated
     public AsciiTable(Header hdr) throws FitsException {
         this(hdr, isI10PreferInt);
     }
@@ -163,6 +178,7 @@ public class AsciiTable extends AbstractTableData {
      * 
      * @deprecated               Use {@link #setI10PreferInt(boolean)} instead prior to reading ASCII tables.
      */
+    @Deprecated
     public AsciiTable(Header hdr, boolean preferInt) throws FitsException {
         String ext = hdr.getStringValue(Standard.XTENSION, Standard.XTENSION_IMAGE);
 
@@ -193,7 +209,16 @@ public class AsciiTable extends AbstractTableData {
             if (s.indexOf('.') > 0) {
                 s = s.substring(0, s.indexOf('.'));
             }
-            lengths[i] = Integer.parseInt(s);
+
+            try {
+                lengths[i] = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                throw new HeaderCardException("Invalid " + TFORMn.n(i + 1).key() + " value: '" + s + "'");
+            }
+
+            if (lengths[i] < 0) {
+                throw new HeaderCardException("Invalid " + TFORMn.n(i + 1).key() + " value: '" + s + "'");
+            }
 
             switch (c) {
             case 'A':
@@ -742,7 +767,6 @@ public class AsciiTable extends AbstractTableData {
     }
 
     @Override
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
     protected Object[] getCurrentData() {
         return data;
     }
@@ -970,6 +994,7 @@ public class AsciiTable extends AbstractTableData {
      *                 new HDU and editing the header as necessary to incorporate custom entries. May be removed from
      *                 the API in the future.
      */
+    @Deprecated
     @Override
     public void updateAfterDelete(int oldNCol, Header hdr) throws FitsException {
 

@@ -39,25 +39,30 @@ import java.util.Arrays;
  * 
  * @deprecated (<i>for internal use</i>) This class sohuld have visibility reduced to the package level
  */
+@Deprecated
 @SuppressWarnings("javadoc")
 public class Quantize {
 
-    class DoubleArrayPointer {
+    @Deprecated
+    static class DoubleArrayPointer {
 
         private final double[] array;
 
         private int startIndex;
 
+        @Deprecated
         DoubleArrayPointer(double[] arrayIn) {
             array = arrayIn;
         }
 
+        @Deprecated
         public DoubleArrayPointer copy(long l) {
             DoubleArrayPointer result = new DoubleArrayPointer(array);
             result.startIndex = (int) l;
             return result;
         }
 
+        @Deprecated
         public double get(int ii) {
             return array[ii + startIndex];
         }
@@ -124,6 +129,7 @@ public class Quantize {
 
     private double xnoise5;
 
+    @Deprecated
     public Quantize(QuantizeOption quantizeOption) {
         parameter = quantizeOption;
     }
@@ -136,11 +142,9 @@ public class Quantize {
      * flux(i-2) - flux(i+2))) The returned estimates are the median of the values that are computed for each row of the
      * image.
      * 
-     * @param arrayIn   2 dimensional tiledImageOperation of image pixels
-     * @param nx        number of pixels in each row of the image
-     * @param ny        number of rows in the image
-     * @param nullcheck check for null values, if true
-     * @param nullvalue value of null pixels, if nullcheck is true
+     * @param arrayIn 2 dimensional tiledImageOperation of image pixels
+     * @param nx      number of pixels in each row of the image
+     * @param ny      number of rows in the image
      */
     private void calculateNoise(double[] arrayIn, int nx, int ny) {
         DoubleArrayPointer array = new DoubleArrayPointer(arrayIn);
@@ -165,7 +169,7 @@ public class Quantize {
         double[] diffs5 = new double[ny];
         /* loop over each row of the image */
         for (int jj = 0; jj < ny; jj++) {
-            rowpix = array.copy(jj * nx); /* point to first pixel in the row */
+            rowpix = array.copy((long) jj * nx); /* point to first pixel in the row */
             int ii = 0;
             ii = findNextValidPixelWithNullCheck(nx, rowpix, ii);
             if (ii == nx) {
@@ -298,6 +302,7 @@ public class Quantize {
         return false;
     }
 
+    @Deprecated
     protected void computeMedianOfValuesEachRow(int nrows, int nrows2, double[] diffs2, double[] diffs3, double[] diffs5) {
         // compute median of the values for each row.
         if (nrows == 0) {
@@ -322,6 +327,7 @@ public class Quantize {
         }
     }
 
+    @Deprecated
     protected int findNextValidPixelWithNullCheck(int nx, DoubleArrayPointer rowpix, int ii) {
         return ii;
     }
@@ -337,14 +343,17 @@ public class Quantize {
         return pixelValue;
     }
 
+    @Deprecated
     protected double getNoise2() {
         return noise2;
     }
 
+    @Deprecated
     protected double getNoise3() {
         return noise3;
     }
 
+    @Deprecated
     protected double getNoise5() {
         return noise5;
     }
@@ -357,6 +366,7 @@ public class Quantize {
         xmaxval = Double.MIN_VALUE;
     }
 
+    @Deprecated
     protected boolean isNull(double d) {
         return false;
     }
@@ -389,6 +399,7 @@ public class Quantize {
      * 
      * @return       true if the quantification was possible
      */
+    @Deprecated
     public boolean quantize(double[] fdata, int nxpix, int nypix) {
         // MAD 2nd, 3rd, and 5th order noise values
         double stdev;

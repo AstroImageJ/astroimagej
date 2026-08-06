@@ -39,9 +39,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
@@ -58,7 +55,10 @@ import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.SafeClose;
 import nom.tam.util.type.PrimitiveTypes;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"javadoc", "deprecation"})
 public class RiceCompressTest {
 
     private static final RiceCompressOption option = new RiceCompressOption().setBlockSize(32);
@@ -72,14 +72,10 @@ public class RiceCompressTest {
                 throw new CloneNotSupportedException("this can not be cloned");
             }
         };
+
         option.setParameters(new RiceCompressParameters(option));
-        IllegalStateException expected = null;
-        try {
-            option.copy();
-        } catch (IllegalStateException e) {
-            expected = e;
-        }
-        Assert.assertNotNull(expected);
+        Assertions.assertThrows(IllegalStateException.class, () -> option.copy());
+
         Header header = new Header();
 
         header.addValue(Compression.ZNAMEn.n(1).key(), Compression.BLOCKSIZE, null);
@@ -88,10 +84,10 @@ public class RiceCompressTest {
         header.addValue(Compression.ZVALn.n(2).key(), 8, null);
         option.getCompressionParameters().getValuesFromHeader(new HeaderAccess(header));
 
-        Assert.assertEquals(32, option.getBlockSize());
-        Assert.assertEquals(8, option.getBytePix());
+        Assertions.assertEquals(32, option.getBlockSize());
+        Assertions.assertEquals(8, option.getBytePix());
 
-        Assert.assertNull(option.unwrap(String.class));
+        Assertions.assertNull(option.unwrap(String.class));
     }
 
     @Test
@@ -114,12 +110,12 @@ public class RiceCompressTest {
             byte[] compressedArray = new byte[compressed.position()];
             compressed.position(0);
             compressed.get(compressedArray, 0, compressedArray.length);
-            Assert.assertArrayEquals(expectedBytes, compressedArray);
+            Assertions.assertArrayEquals(expectedBytes, compressedArray);
 
             byte[] decompressedArray = new byte[bytes.length];
             compressed.position(0);
             compressor.decompress(compressed, ByteBuffer.wrap(decompressedArray));
-            Assert.assertArrayEquals(bytes, decompressedArray);
+            Assertions.assertArrayEquals(bytes, decompressedArray);
         } finally {
             SafeClose.close(expected);
             SafeClose.close(file);
@@ -148,12 +144,12 @@ public class RiceCompressTest {
             byte[] compressedArray = new byte[compressed.position()];
             compressed.position(0);
             compressed.get(compressedArray, 0, compressedArray.length);
-            Assert.assertArrayEquals(expectedBytes, compressedArray);
+            Assertions.assertArrayEquals(expectedBytes, compressedArray);
 
             int[] decompressedArray = new int[intArray.length];
             compressed.position(0);
             compressor.decompress(compressed, IntBuffer.wrap(decompressedArray));
-            Assert.assertArrayEquals(intArray, decompressedArray);
+            Assertions.assertArrayEquals(intArray, decompressedArray);
         } finally {
             SafeClose.close(expected);
             SafeClose.close(file);
@@ -182,12 +178,12 @@ public class RiceCompressTest {
             byte[] compressedArray = new byte[compressed.position()];
             compressed.position(0);
             compressed.get(compressedArray, 0, compressedArray.length);
-            Assert.assertArrayEquals(expectedBytes, compressedArray);
+            Assertions.assertArrayEquals(expectedBytes, compressedArray);
 
             short[] decompressedArray = new short[shortArray.length];
             compressed.position(0);
             compressor.decompress(compressed, ShortBuffer.wrap(decompressedArray));
-            Assert.assertArrayEquals(shortArray, decompressedArray);
+            Assertions.assertArrayEquals(shortArray, decompressedArray);
         } finally {
             SafeClose.close(expected);
             SafeClose.close(file);
@@ -201,72 +197,71 @@ public class RiceCompressTest {
         BitBuffer bitBuffer = new BitBuffer(ByteBuffer.wrap(bytes));
         bitBuffer.putInt(99, 0);
         bitBuffer.putLong(99L, 0);
-        Assert.assertArrayEquals(expected, bytes);
+        Assertions.assertArrayEquals(expected, bytes);
         bitBuffer.putLong(2L * (Integer.MAX_VALUE), 40);
         expected = new byte[] {0, -1, -1, -1, -2, 0, 0, 0};
-        Assert.assertArrayEquals(expected, bytes);
+        Assertions.assertArrayEquals(expected, bytes);
         bytes = new byte[8];
         bitBuffer = new BitBuffer(ByteBuffer.wrap(bytes));
         bitBuffer.putLong(3L, 3);
         expected = new byte[] {96, 0, 0, 0, 0, 0, 0, 0};
-        Assert.assertArrayEquals(expected, bytes);
+        Assertions.assertArrayEquals(expected, bytes);
 
     }
 
-    @Test(expected = BufferUnderflowException.class)
+    @Test
     public void testAdditionalBytes() throws Exception {
-        RandomAccessFile compressedFile = null;
-        try {
-            compressedFile = new RandomAccessFile("src/test/resources/nom/tam/image/comp/rise/test100Data8.rise", "r");//
+        try (RandomAccessFile compressedFile = new RandomAccessFile(
+                "src/test/resources/nom/tam/image/comp/rise/test100Data8.rise", "r")) {
             byte[] compressedBytes = new byte[(int) compressedFile.length()];
             compressedFile.read(compressedBytes);
 
             byte[] decompressedArray = new byte[10100];
             ByteBuffer compressed = ByteBuffer.wrap(compressedBytes);
             ByteRiceCompressor compressor = new ByteRiceCompressor(option.setBytePix(PrimitiveTypes.BYTE.size()));
-            compressor.decompress(compressed, ByteBuffer.wrap(decompressedArray));
-        } finally {
-            SafeClose.close(compressedFile);
+
+            Assertions.assertThrows(BufferUnderflowException.class,
+                    () -> compressor.decompress(compressed, ByteBuffer.wrap(decompressedArray)));
         }
-
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWrongBytePix() throws Exception {
-        option.setBytePix(7);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> option.setBytePix(7));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWrongBytePix2() throws Exception {
-        option.setBytePix(16);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> option.setBytePix(16));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testUnsupportedBytePix2() throws Exception {
+        Assertions.assertThrows(UnsupportedOperationException.class, () ->
         // BYTEPIX=8 is legal but is not implemented (in cfitsio either)
-        new RiceCompressor.IntRiceCompressor(option.setBytePix(8));
+        new RiceCompressor.IntRiceCompressor(option.setBytePix(8)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWrongBlockSize() throws Exception {
-        option.setBlockSize(31);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> option.setBlockSize(31));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWrongBlockSize2() throws Exception {
-        option.setBlockSize(64);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> option.setBlockSize(64));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWrongParameters() throws Exception {
         RiceCompressOption o = new RiceCompressOption();
-        o.setParameters(new HCompressParameters(null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> o.setParameters(new HCompressParameters(null)));
     }
 
     @Test
     public void testCopyWrongOption() throws Exception {
         RiceCompressParameters p = new RiceCompressParameters(null);
-        Assert.assertNull(p.copy(new HCompressorOption()));
+        Assertions.assertNull(p.copy(new HCompressorOption()));
     }
 
     @Test
@@ -299,7 +294,7 @@ public class RiceCompressTest {
 
             float[] decompressedArray = new float[floatArray.length];
             floatCompress.decompress(ByteBuffer.wrap(compressedArray), FloatBuffer.wrap(decompressedArray));
-            Assert.assertArrayEquals(floatArray, decompressedArray, (float) (quant.getBScale() * 1.5));
+            Assertions.assertArrayEquals(floatArray, decompressedArray, (float) (quant.getBScale() * 1.5));
         } finally {
             SafeClose.close(file);
         }
@@ -335,7 +330,7 @@ public class RiceCompressTest {
 
             double[] decompressedArray = new double[doubleArray.length];
             doubleCompress.decompress(ByteBuffer.wrap(compressedArray), DoubleBuffer.wrap(decompressedArray));
-            Assert.assertArrayEquals(doubleArray, decompressedArray, quant.getBScale() * 1.5);
+            Assertions.assertArrayEquals(doubleArray, decompressedArray, quant.getBScale() * 1.5);
         } finally {
             SafeClose.close(file);
         }
@@ -349,8 +344,8 @@ public class RiceCompressTest {
         o.setTileWidth(20);
 
         // Rice does not have tile settings, so we should get back zeroes.
-        Assert.assertEquals(0, o.getTileHeight());
-        Assert.assertEquals(0, o.getTileWidth());
+        Assertions.assertEquals(0, o.getTileHeight());
+        Assertions.assertEquals(0, o.getTileWidth());
     }
 
     private Object testRoundtrip(Object data) throws Exception {
@@ -362,14 +357,15 @@ public class RiceCompressTest {
         c.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1);
         c.compress();
 
-        Fits cf = new Fits();
-        cf.addHDU(c);
-        cf.write(fileName);
+        try (Fits cf = new Fits()) {
+            cf.addHDU(c);
+            cf.write(fileName);
+        }
 
-        cf = new Fits(fileName);
-        c = (CompressedImageHDU) cf.getHDU(1);
-
-        return c.asImageHDU().getKernel();
+        try (Fits cf = new Fits(fileName)) {
+            c = (CompressedImageHDU) cf.getHDU(1);
+            return c.asImageHDU().getKernel();
+        }
     }
 
     @Test
@@ -384,7 +380,7 @@ public class RiceCompressTest {
         byte[][] back = (byte[][]) testRoundtrip(data);
 
         for (int i = 0; i < data.length; i++) {
-            Assert.assertArrayEquals(data, back);
+            Assertions.assertArrayEquals(data, back);
         }
     }
 
@@ -400,7 +396,7 @@ public class RiceCompressTest {
         short[][] back = (short[][]) testRoundtrip(data);
 
         for (int i = 0; i < data.length; i++) {
-            Assert.assertArrayEquals(data, back);
+            Assertions.assertArrayEquals(data, back);
         }
     }
 
@@ -416,7 +412,7 @@ public class RiceCompressTest {
         int[][] back = (int[][]) testRoundtrip(data);
 
         for (int i = 0; i < data.length; i++) {
-            Assert.assertArrayEquals(data, back);
+            Assertions.assertArrayEquals(data, back);
         }
     }
 
@@ -424,7 +420,7 @@ public class RiceCompressTest {
     public void testRiceQuantizeCompressIption() {
         RiceCompressOption c = new RiceCompressOption();
         RiceQuantizeCompressOption o = new RiceQuantizeCompressOption(c);
-        Assert.assertEquals(c, o.getRiceCompressOption());
+        Assertions.assertEquals(c, o.getRiceCompressOption());
     }
 
 }

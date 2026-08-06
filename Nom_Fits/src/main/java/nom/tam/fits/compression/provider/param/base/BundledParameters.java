@@ -31,12 +31,12 @@ package nom.tam.fits.compression.provider.param.base;
  * #L%
  */
 
+import java.util.ArrayList;
+
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
-
-import java.util.ArrayList;
 
 /**
  * (<i>for internal use</i>) Compression parameters that are bundled together from distinct sets of component

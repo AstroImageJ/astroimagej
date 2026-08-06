@@ -31,11 +31,11 @@
 
 package nom.tam.util;
 
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.LongValueException;
-
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
+
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.LongValueException;
 
 /**
  * <p>

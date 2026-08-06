@@ -41,8 +41,6 @@ import nom.tam.util.ArrayFuncs;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsEncoder;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * A container for unknown binary data types. We can still retrieve the data as a <code>byte[]</code> array, we just
  * don't know how to interpret it ourselves. This class makes sure we don't break when we encouter HDUs that we don't
@@ -74,6 +72,7 @@ public class UndefinedData extends Data {
      * @deprecated               (<i>for internal use</i>). Visibility will be reduced to the package level in the
      *                               future.
      */
+    @Deprecated
     public UndefinedData(Header h) throws FitsException {
         extensionType = h.getStringValue(Standard.XTENSION, XTENSION_UNKNOWN);
 
@@ -110,6 +109,7 @@ public class UndefinedData extends Data {
      * @throws     IllegalArgumentException If the object is not an array or contains elements that do not have a known
      *                                          binary size.
      */
+    @Deprecated
     public UndefinedData(Object x) throws IllegalArgumentException {
         byteSize = (int) FitsEncoder.computeSize(x);
         dims = ArrayFuncs.getDimensions(x);
@@ -144,7 +144,6 @@ public class UndefinedData extends Data {
     }
 
     @Override
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
     protected byte[] getCurrentData() {
         return data;
     }

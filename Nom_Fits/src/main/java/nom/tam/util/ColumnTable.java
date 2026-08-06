@@ -31,14 +31,13 @@ package nom.tam.util;
  * #L%
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.util.type.ElementType;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import nom.tam.util.type.ElementType;
 
 /**
  * <p>
@@ -158,13 +157,16 @@ public class ColumnTable<T> implements DataTable, Cloneable {
             return 1;
         }
 
+        int[] dims = null;
+
         try {
-            int[] dims = ArrayFuncs.checkRegularArray(newColumn, false);
-            if (dims.length != 2) {
-                throw new TableException("Not a 2D array: " + newColumn.getClass());
-            }
+            dims = ArrayFuncs.checkRegularArray(newColumn, false);
         } catch (Exception e) {
             throw new TableException(e);
+        }
+
+        if (dims.length != 2) {
+            throw new TableException("Not a 2D array: " + newColumn.getClass());
         }
 
         Object[] entries = (Object[]) newColumn;
@@ -175,6 +177,10 @@ public class ColumnTable<T> implements DataTable, Cloneable {
         Object first = entries[0];
         if (!first.getClass().getComponentType().isPrimitive()) {
             throw new TableException("Entries are not a primitive arrays: " + first.getClass());
+        }
+
+        if (getNRows() > 0 && dims[0] != getNRows()) {
+            throw new TableException("Mismatched row count: got " + dims[0] + ", expected " + getNRows());
         }
 
         return Array.getLength(first);
@@ -592,6 +598,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
      * 
      * @see        #getElementClass(int)
      */
+    @Deprecated
     public Class<?>[] getBases() {
         Class<?>[] bases = new Class<?>[columns.size()];
         for (int i = 0; i < bases.length; i++) {
@@ -680,6 +687,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
      * 
      * @deprecated (<i>for internal use</i>) No longer used, will be removed in the future.
      */
+    @Deprecated
     public T getExtraState() {
         return extraState;
     }
@@ -732,6 +740,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
      * 
      * @since      1.18
      */
+    @Deprecated
     public int[] getSizes() {
         int[] sizes = new int[columns.size()];
         for (int i = 0; i < sizes.length; i++) {
@@ -762,6 +771,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
      * 
      * @see        #getTypeChar(int)
      */
+    @Deprecated
     public char[] getTypes() {
         char[] types = new char[columns.size()];
         for (int i = 0; i < types.length; i++) {
@@ -892,6 +902,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
      *                        from the enclosing object, it should be handled by passing the enclsing object, and not
      *                        this enclosed table.
      */
+    @Deprecated
     public void setExtraState(T opaque) {
         extraState = opaque;
     }
@@ -1146,7 +1157,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
          * 
          * @param  from        the zero-based row index of the first column entry to write
          * @param  n           the number of consecutive rows to write
-         * @param  in          the output to write to
+         * @param  out         the output to write to
          * 
          * @throws IOException if the entry could not be written
          */
@@ -1393,7 +1404,6 @@ public class ColumnTable<T> implements DataTable, Cloneable {
             out.writeChar(data[index]);
         }
 
-        @SuppressFBWarnings(value = "RR_NOT_CHECKED", justification = "not exposed and never needed locally")
         @Override
         int read(int from, int n, ArrayDataInput in) throws IOException {
             return in.read(data, from, n);
@@ -1447,7 +1457,6 @@ public class ColumnTable<T> implements DataTable, Cloneable {
             out.writeShort(data[index]);
         }
 
-        @SuppressFBWarnings(value = "RR_NOT_CHECKED", justification = "not exposed and never needed locally")
         @Override
         int read(int from, int n, ArrayDataInput in) throws IOException {
             return in.read(data, from, n);

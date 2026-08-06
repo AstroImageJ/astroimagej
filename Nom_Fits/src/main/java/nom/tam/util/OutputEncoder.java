@@ -74,6 +74,9 @@ public abstract class OutputEncoder {
      */
     private OutputBuffer buf;
 
+    /** For thread synchronization */
+    protected Object lock = new Object();
+
     /**
      * Instantiates a new Java-to-binary encoder for arrays. To be used by subclass implementations only
      *
@@ -98,8 +101,10 @@ public abstract class OutputEncoder {
      *
      * @param o the new output to which encoded data is to be written.
      */
-    protected synchronized void setOutput(OutputWriter o) {
-        out = o;
+    protected void setOutput(OutputWriter o) {
+        synchronized (lock) {
+            out = o;
+        }
     }
 
     /**
@@ -110,13 +115,15 @@ public abstract class OutputEncoder {
      *
      * @see    RandomAccess#getFilePointer()
      */
-    public synchronized long getCount() {
-        return count + buf.buffer.position();
+    public long getCount() {
+        synchronized (lock) {
+            return count + buf.buffer.position();
+        }
     }
 
     /**
      * Returns the buffer that is used for conversion, which can be used to collate more elements for writing before
-     * bulk flushing data to the output (see {@link OutputBuffer#flush()}).
+     * bulk flushing data to the output (see {@link #flush()}).
      *
      * @return the conversion buffer used by this encoder.
      */
@@ -150,11 +157,13 @@ public abstract class OutputEncoder {
      *
      * @throws IOException if there was an IO error writing the contents of this buffer to the output.
      */
-    protected synchronized void flush() throws IOException {
-        int n = buf.buffer.position();
-        out.write(buf.data, 0, n);
-        count += n;
-        buf.rewind();
+    protected void flush() throws IOException {
+        synchronized (lock) {
+            int n = buf.buffer.position();
+            out.write(buf.data, 0, n);
+            count += n;
+            buf.rewind();
+        }
     }
 
     /**
@@ -167,9 +176,11 @@ public abstract class OutputEncoder {
      *
      * @see                java.io.DataOutputStream#write(int)
      */
-    protected synchronized void write(int b) throws IOException {
-        flush();
-        out.write(b);
+    protected void write(int b) throws IOException {
+        synchronized (lock) {
+            flush();
+            out.write(b);
+        }
     }
 
     /**
@@ -185,9 +196,11 @@ public abstract class OutputEncoder {
      *
      * @see                java.io.DataOutputStream#write(byte[], int, int)
      */
-    protected synchronized void write(byte[] b, int start, int length) throws IOException {
-        flush();
-        out.write(b, start, length);
+    protected void write(byte[] b, int start, int length) throws IOException {
+        synchronized (lock) {
+            flush();
+            out.write(b, start, length);
+        }
     }
 
     /**
@@ -214,12 +227,12 @@ public abstract class OutputEncoder {
      * {@link #flush()} call to the output. The caller need not worry about space remaining in the buffer. As new data
      * is placed (put) into the buffer, the buffer will automatically flush the contents to the output to make space for
      * new elements as it goes. The caller only needs to call the final {@link #flush()}, to ensure that all elements
-     * bufferes so far are written to the output.
+     * buffered so far are written to the output.
      * </p>
      *
      * <pre>
      * short[] shortArray = new short[100];
-     * float[] floaTarray = new float[48];
+     * float[] floatTarray = new float[48];
      *
      * // populate the arrays with data...
      *
@@ -369,8 +382,8 @@ public abstract class OutputEncoder {
         }
 
         /**
-         * Puts an 4-byte single-precision floating point value into the conversion buffer, making space for it as
-         * needed by flushing the current buffer contents to the output as necessary.
+         * Puts a 4-byte single-precision floating point value into the conversion buffer, making space for it as needed
+         * by flushing the current buffer contents to the output as necessary.
          *
          * @param  f           the 32-bit single-precision floating point value
          *
@@ -531,8 +544,8 @@ public abstract class OutputEncoder {
          * Puts an array of 64-bit values into the conversion buffer, flushing the buffer intermittently as necessary to
          * make room as it goes.
          *
-         * @param  the         FITS element type of the the 1D array
-         * @param  src         a 1D array of values of the specified element type
+         * @param  e           FITS element type of the the 1D array
+         * @param  array       a 1D array of values of the specified element type
          * @param  start       the index of the first element to convert
          * @param  length      the number of elements to convert
          *
@@ -540,15 +553,15 @@ public abstract class OutputEncoder {
          *                         conversion.
          */
         @SuppressWarnings("unchecked")
-        private <B extends Buffer> void put(ElementType<B> e, Object dst, int from, int n)
+        private <B extends Buffer> void put(ElementType<B> e, Object array, int start, int length)
                 throws EOFException, IOException {
             int got = 0;
 
-            while (got < n) {
+            while (got < length) {
                 need(e.size());
                 assertView(e);
-                int m = Math.min(n - got, view.remaining());
-                e.putArray((B) view, dst, from + got, m);
+                int m = Math.min(length - got, view.remaining());
+                e.putArray((B) view, array, start + got, m);
                 buffer.position(buffer.position() + m * e.size());
                 got += m;
             }

@@ -31,13 +31,13 @@ package nom.tam.util;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("javadoc")
 public class FitsStreamTest {
 
     @Test
@@ -46,21 +46,21 @@ public class FitsStreamTest {
 
         Boolean[] b = new Boolean[] {Boolean.TRUE, Boolean.FALSE, null};
 
-        FitsOutputStream o = new FitsOutputStream(bo);
-        o.write(b);
-        o.writeBoolean(b[0]);
-        o.flush();
-
-        FitsInputStream i = new FitsInputStream(new ByteArrayInputStream(bo.toByteArray()));
-
-        Boolean[] b2 = new Boolean[b.length];
-        i.read(b2);
-
-        for (int k = 0; k < b.length; k++) {
-            assertEquals("[" + k + "]", b[k], b2[k]);
+        try (FitsOutputStream o = new FitsOutputStream(bo)) {
+            o.write(b);
+            o.writeBoolean(b[0]);
         }
 
-        assertEquals("standalone", b[0].booleanValue(), i.readBoolean());
+        try (FitsInputStream i = new FitsInputStream(new ByteArrayInputStream(bo.toByteArray()))) {
+            Boolean[] b2 = new Boolean[b.length];
+            i.read(b2);
+
+            for (int k = 0; k < b.length; k++) {
+                Assertions.assertEquals(b[k], b2[k], "[" + k + "]");
+            }
+
+            Assertions.assertEquals(b[0].booleanValue(), i.readBoolean());
+        }
     }
 
 }

@@ -56,13 +56,18 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
 
     protected ICompressOption tileOptions;
 
+    /** For thread synchronization */
+    protected Object lock = new Object();
+
     protected TileCompressionOperation(TiledImageCompressionOperation operation, int tileIndex, TileArea area) {
         super(operation, tileIndex, area);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(" + getTileIndex() + "," + compressionType + "," + compressedOffset + ")";
+        synchronized (lock) {
+            return getClass().getSimpleName() + "(" + getTileIndex() + "," + compressionType + "," + compressedOffset + ")";
+        }
     }
 
     private ByteBuffer convertToBuffer(Object data) {
@@ -79,10 +84,12 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
     }
 
     protected byte[] getCompressedData() {
-        byte[] data = new byte[compressedData.limit()];
-        compressedData.rewind();
-        ElementType.BYTE.getArray(compressedData, data);
-        return data;
+        synchronized (lock) {
+            byte[] data = new byte[compressedData.limit()];
+            compressedData.rewind();
+            ElementType.BYTE.getArray(compressedData, data);
+            return data;
+        }
     }
 
     protected ByteBuffer getCompressedWholeArea() {
@@ -90,7 +97,9 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
     }
 
     protected TileCompressionType getCompressionType() {
-        return compressionType;
+        synchronized (lock) {
+            return compressionType;
+        }
     }
 
     protected ICompressorControl getCompressorControl() {
@@ -102,23 +111,29 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
     }
 
     protected TileCompressionOperation initTileOptions() {
-        tileOptions = getTiledImageOperation().compressOptions().copy() //
-                .setTileWidth(getTileBuffer().getWidth()) //
-                .setTileHeight(getTileBuffer().getHeight());
+        synchronized (lock) {
+            tileOptions = getTiledImageOperation().compressOptions().copy() //
+                    .setTileWidth(getTileBuffer().getWidth()) //
+                    .setTileHeight(getTileBuffer().getHeight());
+        }
         return this;
     }
 
     protected TileCompressionOperation setCompressed(Object data, TileCompressionType type) {
         if (data != null && Array.getLength(data) > 0) {
-            compressionType = type;
-            compressedData = convertToBuffer(data);
-            compressedOffset = 0;
+            synchronized (lock) {
+                compressionType = type;
+                compressedData = convertToBuffer(data);
+                compressedOffset = 0;
+            }
         }
         return this;
     }
 
     protected TileCompressionOperation setCompressedOffset(int value) {
-        compressedOffset = value;
+        synchronized (lock) {
+            compressedOffset = value;
+        }
         return this;
     }
 
@@ -137,11 +152,13 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
      * @param compressed the buffer that describes the whole image.
      */
     protected void setWholeImageCompressedBuffer(ByteBuffer compressed) {
-        compressed.position(compressedOffset * getBaseType().size());
-        compressedData = compressed.slice();
-        compressedOffset = 0;
-        // we do not limit this buffer but is expected not to write more than
-        // the uncompressed size.
+        synchronized (lock) {
+            compressed.position(compressedOffset * getBaseType().size());
+            compressedData = compressed.slice();
+            compressedOffset = 0;
+            // we do not limit this buffer but is expected not to write more than
+            // the uncompressed size.
+        }
     }
 
     protected abstract AbstractNullPixelMask createImageNullPixelMask(ImageNullPixelMask imageNullPixelMask);

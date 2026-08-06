@@ -31,10 +31,10 @@ package nom.tam.util;
  * #L%
  */
 
-import nom.tam.fits.FitsFactory;
-
 import java.io.Closeable;
 import java.io.IOException;
+
+import nom.tam.fits.FitsFactory;
 
 /**
  * Base interface for reading and writing FITS. It defines the necessary constants common for all reader and writers.

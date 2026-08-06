@@ -31,13 +31,13 @@
 
 package nom.tam.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.FitsFactory;
-import nom.tam.util.type.ElementType;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Array;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.FitsFactory;
+import nom.tam.util.type.ElementType;
 
 /**
  * Decodes FITS-formatted binary data into Java arrays (<i>primarily for internal use</i>)
@@ -121,7 +121,7 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized boolean readBoolean() throws EOFException, IOException {
+    protected boolean readBoolean() throws EOFException, IOException {
         return booleanFor(readByte());
     }
 
@@ -135,7 +135,7 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized char readChar() throws EOFException, IOException {
+    protected char readChar() throws EOFException, IOException {
         int b = FitsFactory.isUseUnicodeChars() ? readUnsignedShort() : read();
         if (b < 0) {
             throw new EOFException();
@@ -169,7 +169,7 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException if there was an IO error reading from the input, other than the end-of-file.
      */
     @Deprecated
-    protected synchronized int readUnsignedByte() throws IOException {
+    protected int readUnsignedByte() throws IOException {
         return read();
     }
 
@@ -200,9 +200,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized int readUnsignedShort() throws IOException {
-        getInputBuffer().loadOne(Short.BYTES);
-        return getInputBuffer().getUnsignedShort();
+    protected int readUnsignedShort() throws IOException {
+        synchronized (lock) {
+            getInputBuffer().loadOne(Short.BYTES);
+            return getInputBuffer().getUnsignedShort();
+        }
     }
 
     /**
@@ -215,9 +217,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized int readInt() throws EOFException, IOException {
-        getInputBuffer().loadOne(Integer.BYTES);
-        return getInputBuffer().getInt();
+    protected int readInt() throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadOne(Integer.BYTES);
+            return getInputBuffer().getInt();
+        }
     }
 
     /**
@@ -230,9 +234,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized long readLong() throws EOFException, IOException {
-        getInputBuffer().loadOne(Long.BYTES);
-        return getInputBuffer().getLong();
+    protected long readLong() throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadOne(Long.BYTES);
+            return getInputBuffer().getLong();
+        }
     }
 
     /**
@@ -245,9 +251,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized float readFloat() throws EOFException, IOException {
-        getInputBuffer().loadOne(Float.BYTES);
-        return getInputBuffer().getFloat();
+    protected float readFloat() throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadOne(Float.BYTES);
+            return getInputBuffer().getFloat();
+        }
     }
 
     /**
@@ -260,9 +268,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized double readDouble() throws EOFException, IOException {
-        getInputBuffer().loadOne(Double.BYTES);
-        return getInputBuffer().getDouble();
+    protected double readDouble() throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadOne(Double.BYTES);
+            return getInputBuffer().getDouble();
+        }
     }
 
     /**
@@ -275,21 +285,25 @@ public class FitsDecoder extends InputDecoder {
      * @throws     IOException  if there was an IO error reading from the input.
      */
     @Deprecated
-    protected synchronized String readAsciiLine() throws EOFException, IOException {
+    protected String readAsciiLine() throws EOFException, IOException {
         StringBuffer str = new StringBuffer();
-        for (;;) {
-            int c = read();
-            if (c < 0) {
-                if (str.length() > 0) {
+
+        synchronized (lock) {
+            for (;;) {
+                int c = read();
+                if (c < 0) {
+                    if (str.length() > 0) {
+                        break;
+                    }
+                    throw new EOFException();
+                }
+                if (c == '\n') {
                     break;
                 }
-                throw new EOFException();
+                str.append((char) c);
             }
-            if (c == '\n') {
-                break;
-            }
-            str.append((char) c);
         }
+
         return new String(str);
     }
 
@@ -307,7 +321,7 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(boolean[] b, int start, int length) throws EOFException, IOException {
+    protected int read(boolean[] b, int start, int length) throws EOFException, IOException {
         if (length == 0) {
             return 0;
         }
@@ -340,7 +354,7 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(Boolean[] b, int start, int length) throws EOFException, IOException {
+    protected int read(Boolean[] b, int start, int length) throws EOFException, IOException {
         if (length == 0) {
             return 0;
         }
@@ -377,7 +391,7 @@ public class FitsDecoder extends InputDecoder {
      *
      * @see                 FitsFactory#setUseUnicodeChars(boolean)
      */
-    protected synchronized int read(char[] c, int start, int length) throws EOFException, IOException {
+    protected int read(char[] c, int start, int length) throws EOFException, IOException {
         if (length == 0) {
             return 0;
         }
@@ -394,11 +408,13 @@ public class FitsDecoder extends InputDecoder {
                 c[start + i] = (char) (ascii[i] & FitsIO.BYTE_MASK);
             }
         } else {
-            getInputBuffer().loadBytes(length, Short.BYTES);
-            short[] s = new short[length];
-            length = getInputBuffer().get(s, 0, length);
-            for (int i = 0; i < length; i++) {
-                c[start + i] = (char) (s[i] & FitsIO.SHORT_MASK);
+            synchronized (lock) {
+                getInputBuffer().loadBytes(length, Short.BYTES);
+                short[] s = new short[length];
+                length = getInputBuffer().get(s, 0, length);
+                for (int i = 0; i < length; i++) {
+                    c[start + i] = (char) (s[i] & FitsIO.SHORT_MASK);
+                }
             }
         }
 
@@ -417,9 +433,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(short[] s, int start, int length) throws EOFException, IOException {
-        getInputBuffer().loadBytes(length, Short.BYTES);
-        return getInputBuffer().get(s, start, length) * Short.BYTES;
+    protected int read(short[] s, int start, int length) throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadBytes(length, Short.BYTES);
+            return getInputBuffer().get(s, start, length) * Short.BYTES;
+        }
     }
 
     /**
@@ -434,9 +452,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(int[] j, int start, int length) throws EOFException, IOException {
-        getInputBuffer().loadBytes(length, Integer.BYTES);
-        return getInputBuffer().get(j, start, length) * Integer.BYTES;
+    protected int read(int[] j, int start, int length) throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadBytes(length, Integer.BYTES);
+            return getInputBuffer().get(j, start, length) * Integer.BYTES;
+        }
     }
 
     /**
@@ -451,9 +471,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(long[] l, int start, int length) throws EOFException, IOException {
-        getInputBuffer().loadBytes(length, Long.BYTES);
-        return getInputBuffer().get(l, start, length) * Long.BYTES;
+    protected int read(long[] l, int start, int length) throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadBytes(length, Long.BYTES);
+            return getInputBuffer().get(l, start, length) * Long.BYTES;
+        }
     }
 
     /**
@@ -468,9 +490,11 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(float[] f, int start, int length) throws EOFException, IOException {
-        getInputBuffer().loadBytes(length, Float.BYTES);
-        return getInputBuffer().get(f, start, length) * Float.BYTES;
+    protected int read(float[] f, int start, int length) throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadBytes(length, Float.BYTES);
+            return getInputBuffer().get(f, start, length) * Float.BYTES;
+        }
     }
 
     /**
@@ -485,13 +509,15 @@ public class FitsDecoder extends InputDecoder {
      * @throws EOFException if already at the end of file.
      * @throws IOException  if there was an IO error before, before requested number of bytes could be read
      */
-    protected synchronized int read(double[] d, int start, int length) throws EOFException, IOException {
-        getInputBuffer().loadBytes(length, Double.BYTES);
-        return getInputBuffer().get(d, start, length) * Double.BYTES;
+    protected int read(double[] d, int start, int length) throws EOFException, IOException {
+        synchronized (lock) {
+            getInputBuffer().loadBytes(length, Double.BYTES);
+            return getInputBuffer().get(d, start, length) * Double.BYTES;
+        }
     }
 
     @Override
-    public synchronized long readArray(Object o) throws IOException, IllegalArgumentException {
+    public long readArray(Object o) throws IOException, IllegalArgumentException {
         if (o == null) {
             return 0L;
         }

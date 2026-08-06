@@ -1,5 +1,34 @@
 package nom.tam.fits;
 
+import static nom.tam.fits.header.Standard.AUTHOR;
+import static nom.tam.fits.header.Standard.BLANK;
+import static nom.tam.fits.header.Standard.BSCALE;
+import static nom.tam.fits.header.Standard.BUNIT;
+import static nom.tam.fits.header.Standard.BZERO;
+import static nom.tam.fits.header.Standard.DATAMAX;
+import static nom.tam.fits.header.Standard.DATAMIN;
+import static nom.tam.fits.header.Standard.DATE;
+import static nom.tam.fits.header.Standard.DATE_OBS;
+import static nom.tam.fits.header.Standard.EPOCH;
+import static nom.tam.fits.header.Standard.EQUINOX;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.INSTRUME;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.OBJECT;
+import static nom.tam.fits.header.Standard.OBSERVER;
+import static nom.tam.fits.header.Standard.ORIGIN;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.REFERENC;
+import static nom.tam.fits.header.Standard.TELESCOP;
+import static nom.tam.util.LoggerHelper.getLogger;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Checksum;
 import nom.tam.fits.header.IFitsHeader;
@@ -10,14 +39,36 @@ import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.FitsOutput;
 import nom.tam.util.RandomAccess;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static nom.tam.fits.header.Standard.*;
-import static nom.tam.util.LoggerHelper.getLogger;
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 2004 - 2024 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
 /**
  * Abstract base class for all header-data unit (HDU) types. A HDU is a self-contained building block of the FITS files,
@@ -85,6 +136,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * @param      myHeader the FITS header describing the data and any user-specific keywords
      * @param      myData   the corresponding data object
      */
+    @Deprecated
     protected BasicHDU(Header myHeader, DataClass myData) {
         setHeader(myHeader);
         this.myData = myData;
@@ -117,6 +169,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @return            <CODE>true</CODE> if this is a valid header.
      */
+    @Deprecated
     public static boolean isHeader(Header header) {
         return false;
     }
@@ -129,6 +182,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @param      o The Object being tested.
      */
+    @Deprecated
     public static boolean isData(Object o) {
         return false;
     }
@@ -344,8 +398,6 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * @throws FitsException if the BITPIX value in the header is absent or invalid.
      *
      * @since                1.16
-     *
-     * @see                  #getBitPix()
      */
     public Bitpix getBitpix() throws FitsException {
         return Bitpix.fromHeader(myHeader);
@@ -362,6 +414,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * 
      * @see                      #getBitpix()
      */
+    @Deprecated
     public final int getBitPix() throws FitsException {
         return getBitpix().getHeaderValue();
     }
@@ -375,6 +428,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * @return     the standard name of the physical unit in which the image is expressed, e.g.
      *                 <code>"Jy beam^{-1}"</code>.
      */
+    @Deprecated
     public String getBUnit() {
         return myHeader.getStringValue(BUNIT);
     }
@@ -389,6 +443,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * 
      * @throws     FitsException if the header does not specify a blanking value.
      */
+    @Deprecated
     public long getBlankValue() throws FitsException {
         if (!myHeader.containsKey(BLANK.key())) {
             throw new FitsException("BLANK undefined");
@@ -489,6 +544,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * 
      * @see        #getParameterCount()
      */
+    @Deprecated
     public int getGroupCount() {
         return myHeader.getIntValue(GCOUNT, 1);
     }
@@ -514,6 +570,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @since                    1.17
      */
+    @Deprecated
     public long getStoredChecksum() throws FitsException {
         return FitsCheckSum.getStoredChecksum(myHeader);
     }
@@ -647,6 +704,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @since                    1.17
      */
+    @Deprecated
     public long calcChecksum() throws FitsException {
         return FitsCheckSum.checksum(this);
     }
@@ -767,6 +825,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * 
      * @see        #getGroupCount()
      */
+    @Deprecated
     public int getParameterCount() {
         return myHeader.getIntValue(PCOUNT, 0);
     }
@@ -815,6 +874,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @return             either <CODE>null</CODE> or a String with leading/trailing blanks stripped.
      */
+    @Deprecated
     public String getTrimmedString(String keyword) {
         String s = myHeader.getStringValue(keyword);
         if (s != null) {
@@ -836,6 +896,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @return             either <CODE>null</CODE> or a String with leading/trailing blanks stripped.
      */
+    @Deprecated
     public String getTrimmedString(IFitsHeader keyword) {
         return getTrimmedString(keyword.key());
     }

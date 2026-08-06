@@ -47,7 +47,7 @@ import nom.tam.fits.Header;
  * enum provides an implementation of that for this library.
  * </p>
  * <p>
- * An dataset may typically contain 4 or 8 Stokes parameters (or fewer), which depending on the type of measurement can
+ * A dataset may typically contain 4 or 8 Stokes parameters (or fewer), which depending on the type of measurement can
  * be (I, Q, U, [V]), or (RR, LL, RL, LR) and/or (XX, YY, XY, YX). As such, the corresponding {@link WCS#CRPIXna} is
  * typically 0 and {@link WCS#CDELTna} is +/- 1, and depending on the type of measurement {@link WCS#CRVALna} is 1, or
  * -1, or -5. You can use the {@link Parameters} subclass to help populate or interpret Stokes parameters in headers.
@@ -70,7 +70,7 @@ public enum Stokes {
     /** Stokes U: linear polarization U component */
     U(3),
 
-    /** Stokes V: circularly polarization */
+    /** Stokes V: circular polarization */
     V(4),
 
     /** circular cross-polarization between two right-handed wave components */
@@ -79,10 +79,10 @@ public enum Stokes {
     /** circular cross-polarization between two left-handed wave components */
     LL(-2),
 
-    /** circular cross-polarization between a right-handled (input 1) and a left-handed (input 2) wave component */
+    /** circular cross-polarization between a right-handed (input 1) and a left-handed (input 2) wave component */
     RL(-3),
 
-    /** circular cross-polarization between a left-handled (input 1) and a right-handed (input 2) wave component */
+    /** circular cross-polarization between a left-handed (input 1) and a right-handed (input 2) wave component */
     LR(-4),
 
     /** linear cross-polarization between two 'horizontal' wave components (in local orientation) */
@@ -137,14 +137,21 @@ public enum Stokes {
      * 
      * @param  value                     The image coordinate value
      * 
-     * @return                           The Stokes parameter, which corresponds to that coordinate value.
+     * @return                           The Stokes parameter, which corresponds to that coordinate value. For values
+     *                                       1--4, the singular Stokes parameters I, Q, U, or V is returned. For
+     *                                       negative values, -1 through -8, the cross polarization parameters are
+     *                                       returned. For all other values and `IndexOutOfBoundsException` is thrown
      * 
-     * @throws IndexOutOfBoundsException if the coordinate value is outt of the range of acceptable Stokes coordinate
-     *                                       values.
+     * @throws IndexOutOfBoundsException if the coordinate value is 0 or out of the range of acceptable Stokes
+     *                                       coordinate values.
      * 
      * @see                              #getCoordinateValue()
      */
     public static Stokes forCoordinateValue(int value) throws IndexOutOfBoundsException {
+        if (value == 0) {
+            throw new IndexOutOfBoundsException(
+                    "Value must be in the range [1:4] for single-ended or else [-1:-8] for cross-polarization.");
+        }
         return ordered[value - YX.getCoordinateValue()];
     }
 
@@ -280,8 +287,6 @@ public enum Stokes {
          * @see                              #getAvailableParameters()
          * 
          * @since                            1.19.1
-         * 
-         * @author                           Attila Kovacs
          */
         public Stokes getParameter(int idx) throws IndexOutOfBoundsException {
             if (idx < 0 || idx >= count) {
@@ -316,8 +321,6 @@ public enum Stokes {
          * @see      #getParameter(int)
          * 
          * @since    1.20
-         * 
-         * @author   Attila Kovacs
          */
         public int getArrayIndex(Stokes s) {
             return (s.getCoordinateValue() - offset) / step;
@@ -341,8 +344,6 @@ public enum Stokes {
          * @see                              Stokes#fromImageHeader(Header)
          * 
          * @since                            1.20
-         * 
-         * @author                           Attila Kovacs
          */
         public void fillImageHeader(Header header, int coordinateIndex) throws FitsException {
             int n = header.getIntValue(Standard.NAXIS);
@@ -381,8 +382,6 @@ public enum Stokes {
          * @see                              Stokes#fromTableHeader(Header, int)
          * 
          * @since                            1.20
-         * 
-         * @author                           Attila Kovacs
          */
         public void fillTableHeader(Header header, int column, int coordinateIndex)
                 throws IndexOutOfBoundsException, FitsException {
@@ -505,8 +504,6 @@ public enum Stokes {
      * @see                  Parameters#fillImageHeader(Header, int)
      * 
      * @since                1.20
-     * 
-     * @author               Attila Kovacs
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static Map.Entry<Integer, Parameters> fromImageHeader(Header header) throws FitsException {
@@ -554,8 +551,6 @@ public enum Stokes {
      * @see                              Parameters#fillTableHeader(Header, int, int)
      * 
      * @since                            1.20
-     * 
-     * @author                           Attila Kovacs
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static Map.Entry<Integer, Parameters> fromTableHeader(Header header, int column)
@@ -581,10 +576,14 @@ public enum Stokes {
                             + header.getDoubleValue(WCS.nCRPXn.n(i, column)) + ", expected 1");
                 }
 
-                Parameters p = forCoords(header.getDoubleValue(WCS.nCRVLn.n(i, column), 0.0),
-                        header.getDoubleValue(WCS.nCDLTn.n(i, column), 1.0), Integer.parseInt(d));
-
-                return new AbstractMap.SimpleImmutableEntry(n - i, p);
+                try {
+                    Parameters p = forCoords(header.getDoubleValue(WCS.nCRVLn.n(i, column), 0.0),
+                            header.getDoubleValue(WCS.nCDLTn.n(i, column), 1.0), Integer.parseInt(d));
+                    return new AbstractMap.SimpleImmutableEntry(n - i, p);
+                } catch (NumberFormatException e) {
+                    throw new FitsException("Invalid " + Standard.TDIMn.n(column).key() + " value: '" + dims
+                            + "' (component: '" + d + "')");
+                }
             }
         }
 

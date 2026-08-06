@@ -31,9 +31,9 @@ package nom.tam.util.type;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-
 import java.nio.ByteBuffer;
+
+import nom.tam.fits.header.Bitpix;
 
 /**
  * A FITS byte element (signed).

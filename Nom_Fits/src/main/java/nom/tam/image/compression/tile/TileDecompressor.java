@@ -71,33 +71,37 @@ public class TileDecompressor extends TileCompressionOperation {
     }
 
     private void decompress() {
-        initTileOptions();
+        synchronized (lock) {
+            initTileOptions();
 
-        tileOptions.getCompressionParameters().setTileIndex(getTileIndex());
+            tileOptions.getCompressionParameters().setTileIndex(getTileIndex());
 
-        if (compressionType == TileCompressionType.COMPRESSED) {
-            tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
-            getCompressorControl().decompress(compressedData, getTileBuffer().getBuffer(), tileOptions);
-            if (nullPixelMaskRestorer != null) {
-                nullPixelMaskRestorer.restoreNulls();
+            if (compressionType == TileCompressionType.COMPRESSED) {
+                tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
+                getCompressorControl().decompress(compressedData, getTileBuffer().getBuffer(), tileOptions);
+                if (nullPixelMaskRestorer != null) {
+                    nullPixelMaskRestorer.restoreNulls();
+                }
+            } else if (compressionType == TileCompressionType.GZIP_COMPRESSED) {
+                tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
+                getGzipCompressorControl().decompress(compressedData, getTileBuffer().getBuffer(), null);
+            } else if (compressionType == TileCompressionType.UNCOMPRESSED) {
+                Buffer typedBuffer = getBaseType().asTypedBuffer(compressedData);
+                getBaseType().appendBuffer(getTileBuffer().getBuffer(), typedBuffer);
+            } else {
+                LOG.severe("Unknown compression column");
+                throw new IllegalStateException("Unknown compression column");
             }
-        } else if (compressionType == TileCompressionType.GZIP_COMPRESSED) {
-            tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
-            getGzipCompressorControl().decompress(compressedData, getTileBuffer().getBuffer(), null);
-        } else if (compressionType == TileCompressionType.UNCOMPRESSED) {
-            Buffer typedBuffer = getBaseType().asTypedBuffer(compressedData);
-            getBaseType().appendBuffer(getTileBuffer().getBuffer(), typedBuffer);
-        } else {
-            LOG.severe("Unknown compression column");
-            throw new IllegalStateException("Unknown compression column");
         }
     }
 
     @Override
     protected NullPixelMaskRestorer createImageNullPixelMask(ImageNullPixelMask imageNullPixelMask) {
-        if (imageNullPixelMask != null) {
-            nullPixelMaskRestorer = imageNullPixelMask.createTileRestorer(getTileBuffer(), getTileIndex());
+        synchronized (lock) {
+            if (imageNullPixelMask != null) {
+                nullPixelMaskRestorer = imageNullPixelMask.createTileRestorer(getTileBuffer(), getTileIndex());
+            }
+            return nullPixelMaskRestorer;
         }
-        return nullPixelMaskRestorer;
     }
 }

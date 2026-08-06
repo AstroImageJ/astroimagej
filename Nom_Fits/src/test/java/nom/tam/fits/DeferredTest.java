@@ -1,5 +1,10 @@
 package nom.tam.fits;
 
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 /*-
  * #%L
  * nom.tam FITS library
@@ -31,42 +36,37 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import org.junit.Test;
-
-import static org.junit.Assert.assertFalse;
-
+@SuppressWarnings({"javadoc", "deprecation"})
 public class DeferredTest {
 
     @Test
     public void isDeferredAsciiTableNew() throws Exception {
-        assertFalse(new AsciiTable().isDeferred());
+        Assertions.assertFalse(new AsciiTable().isDeferred());
     }
 
     @Test
     public void isDeferredBinaryTableNew() throws Exception {
-        assertFalse(new BinaryTable().isDeferred());
+        Assertions.assertFalse(new BinaryTable().isDeferred());
     }
 
     @Test
     public void isDeferredImageDataNew() throws Exception {
-        assertFalse(new ImageData().isDeferred());
+        Assertions.assertFalse(new ImageData().isDeferred());
     }
 
     @Test
     public void isDeferredRandomGroupsDataNew() throws Exception {
-        assertFalse(new RandomGroupsData().isDeferred());
+        Assertions.assertFalse(new RandomGroupsData().isDeferred());
     }
 
     @Test
     public void isDeferredUndefinedDataNew() throws Exception {
-        assertFalse(new UndefinedData(new int[10]).isDeferred());
+        Assertions.assertFalse(new UndefinedData(new int[10]).isDeferred());
     }
 
     @Test
     public void isDeferredDataNew() throws Exception {
-        assertFalse(new DefaultData().isDeferred());
+        Assertions.assertFalse(new DefaultData().isDeferred());
     }
 
     @Test

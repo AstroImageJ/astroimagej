@@ -33,15 +33,15 @@ package nom.tam.manual.intergration;
 
 import java.io.IOException;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.util.BlackBoxImages;
 import nom.tam.util.SafeClose;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"javadoc", "deprecation"})
 public class TestFitsFileWithVeryBigHeaders {
 
     private BasicHDU<?> hdu;
@@ -61,7 +61,7 @@ public class TestFitsFileWithVeryBigHeaders {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testFileWithVeryBigHeaders() throws Exception {
 
         for (int i = 0; i < 100; i++) {
@@ -70,7 +70,7 @@ public class TestFitsFileWithVeryBigHeaders {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testFileWithVeryBigHeadersAndGC() throws Exception {
         oneTest(0);
         hdu = null;

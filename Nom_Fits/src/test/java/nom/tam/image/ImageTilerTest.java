@@ -99,28 +99,20 @@ package nom.tam.image;
  * #L%
  */
 
-import org.junit.Assert;
-import org.junit.Test;
+import nom.tam.fits.ImageData;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("javadoc")
 public class ImageTilerTest {
     @Test
     public void defaultImplementation() throws Exception {
         final ImageTiler testSubject = new TestBaseImageTiler();
-        try {
-            testSubject.getTile(new double[100], new int[2], new int[2], new int[2]);
-        } catch (UnsupportedOperationException unsupportedOperationException) {
-            // Good
-            Assert.assertEquals("Wrong message.", "Striding feature not yet implemented.",
-                    unsupportedOperationException.getMessage());
-        }
 
-        try {
-            testSubject.getTile(new int[2], new int[2], new int[2]);
-        } catch (UnsupportedOperationException unsupportedOperationException) {
-            // Good
-            Assert.assertEquals("Wrong message.", "Striding feature not yet implemented.",
-                    unsupportedOperationException.getMessage());
-        }
+        Assertions.assertThrows(UnsupportedOperationException.class,
+                () -> testSubject.getTile(new double[100], new int[2], new int[2], new int[2]));
+        Assertions.assertThrows(UnsupportedOperationException.class,
+                () -> testSubject.getTile(new int[2], new int[2], new int[2]));
     }
 
     static final class TestBaseImageTiler implements ImageTiler {
@@ -138,5 +130,13 @@ public class ImageTilerTest {
         public Object getCompleteImage() {
             return null;
         }
+    }
+
+    @Test
+    public void testDefaultTiler() throws Exception {
+        ImageData im = new ImageData();
+        ImageTiler tiler = im.getTiler();
+
+        Assertions.assertNotNull(tiler);
     }
 }

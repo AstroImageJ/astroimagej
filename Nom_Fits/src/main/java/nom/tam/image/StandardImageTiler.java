@@ -42,8 +42,6 @@ import nom.tam.util.ArrayFuncs;
 import nom.tam.util.RandomAccess;
 import nom.tam.util.type.ElementType;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * <p>
  * Standard image tiling implementation. FITS tiles are always 2-dimentional, but really images of any dimensions may be
@@ -55,6 +53,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public abstract class StandardImageTiler implements ImageTiler {
     /**
+     * Returns the linear element offset in the image data for a given index position.
+     * 
      * @param  dims The dimensions of the array.
      * @param  pos  The index requested.
      *
@@ -129,7 +129,6 @@ public abstract class StandardImageTiler implements ImageTiler {
      * @param dims       The actual dimensions of the image.
      * @param base       The base class (should be a primitive type) of the image.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
     public StandardImageTiler(RandomAccess f, long fileOffset, int[] dims, Class<?> base) {
         randomAccessFile = f;
         this.fileOffset = fileOffset;
@@ -148,7 +147,6 @@ public abstract class StandardImageTiler implements ImageTiler {
      *
      * @throws IOException  if the underlying stream failed
      */
-    @SuppressFBWarnings(value = "RR_NOT_CHECKED", justification = "this read will never return less than the requested length")
     protected void fillFileData(Object output, long delta, int outputOffset, int segment) throws IOException {
         fillFileData(output, delta, outputOffset, segment, 1);
     }
@@ -206,7 +204,6 @@ public abstract class StandardImageTiler implements ImageTiler {
      *
      * @throws IOException if the underlying stream failed
      */
-    @SuppressFBWarnings(value = "RR_NOT_CHECKED", justification = "this read will never return less than the requested length")
     protected void fillFileData(ArrayDataOutput output, long delta, int segment) throws IOException {
         fillFileData(output, delta, segment, 1);
     }
@@ -225,7 +222,6 @@ public abstract class StandardImageTiler implements ImageTiler {
      *
      * @since              1.18
      */
-    @SuppressFBWarnings(value = "RR_NOT_CHECKED", justification = "this read will never return less than the requested length")
     protected void fillFileData(ArrayDataOutput output, long delta, int segment, int step) throws IOException {
         final int byteSize = ElementType.forClass(base).size();
 

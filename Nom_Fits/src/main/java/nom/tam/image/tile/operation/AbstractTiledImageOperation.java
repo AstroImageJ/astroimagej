@@ -31,14 +31,14 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
-import nom.tam.fits.FitsException;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.type.ElementType;
-
 import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import nom.tam.fits.FitsException;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.type.ElementType;
 
 /**
  * A base implementation of 2D image tile compression.
@@ -69,6 +69,7 @@ public abstract class AbstractTiledImageOperation<OPERATION extends ITileOperati
      * 
      * @deprecated                (<i>for internal use</i>) This constructor should have protected visibility.
      */
+    @Deprecated
     public AbstractTiledImageOperation(Class<OPERATION> operationClass) {
         this.operationClass = operationClass;
     }

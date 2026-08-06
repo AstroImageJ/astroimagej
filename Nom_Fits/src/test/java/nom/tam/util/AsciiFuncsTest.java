@@ -31,10 +31,10 @@ package nom.tam.util;
  * #L%
  */
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.text.ParsePosition;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("javadoc")
 public class AsciiFuncsTest {
@@ -42,22 +42,22 @@ public class AsciiFuncsTest {
     @Test
     public void testParseSimpleInteger() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        Assert.assertEquals(-123, AsciiFuncs.parseInteger("-123", pos));
-        Assert.assertEquals(4, pos.getIndex());
+        Assertions.assertEquals(-123, AsciiFuncs.parseInteger("-123", pos));
+        Assertions.assertEquals(4, pos.getIndex());
     }
 
     @Test
     public void testParseIntegerToNonDigit() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        Assert.assertEquals(-123, AsciiFuncs.parseInteger("-123x", pos));
-        Assert.assertEquals(4, pos.getIndex());
+        Assertions.assertEquals(-123, AsciiFuncs.parseInteger("-123x", pos));
+        Assertions.assertEquals(4, pos.getIndex());
     }
 
     @Test
     public void testParseIntegerLeadingSpace() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        Assert.assertEquals(-123, AsciiFuncs.parseInteger("\t -123", pos));
-        Assert.assertEquals(6, pos.getIndex());
+        Assertions.assertEquals(-123, AsciiFuncs.parseInteger("\t -123", pos));
+        Assertions.assertEquals(6, pos.getIndex());
     }
 
 }

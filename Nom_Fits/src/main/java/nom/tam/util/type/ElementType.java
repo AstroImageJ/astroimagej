@@ -31,20 +31,27 @@ package nom.tam.util.type;
  * #L%
  */
 
-import nom.tam.fits.FitsException;
-import nom.tam.fits.header.Bitpix;
-
 import java.lang.reflect.Array;
-import java.nio.*;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import nom.tam.fits.FitsException;
+import nom.tam.fits.header.Bitpix;
 
 /**
  * A base data element type in a FITS image or table column, with associated functions.
  *
  * @param <B> the generic type of data buffer
  */
+@SuppressWarnings("deprecation")
 public abstract class ElementType<B extends Buffer> {
 
     /**
@@ -57,6 +64,7 @@ public abstract class ElementType<B extends Buffer> {
      * 
      * @deprecated (<i>for internal use</i>) It's visibility may be reduced to the package level in the future.
      */
+    @Deprecated
     public static final int COPY_BLOCK_SIZE = 1024;
 
     /** The BITPIX integer value associated with this type of element */

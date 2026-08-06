@@ -1,7 +1,5 @@
 package nom.tam.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /*
  * #%L
  * nom.tam FITS library
@@ -112,7 +110,7 @@ public class ByteParser {
      * @param input The byte array to be parsed. Note that the array can be re-used by refilling its contents and
      *                  resetting the offset.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
+    @Deprecated
     public ByteParser(byte[] input) {
         this.input = input;
         offset = 0;
@@ -164,21 +162,28 @@ public class ByteParser {
     }
 
     /**
+     * Returns the next <code>boolean</code> value from the current parse position.
+     * 
      * @return                 a boolean value from the beginning of the buffer.
      *
      * @throws FormatException if the double was in an unknown format
      */
+    @Deprecated
     public boolean getBoolean() throws FormatException {
         return getBoolean(input.length - offset);
     }
 
     /**
+     * Returns the next <code>double</code> value from the current parse position, consuming at most the specified
+     * number of bytes from the input.
+     * 
      * @return                 a boolean value from a specified region of the buffer
      *
      * @param  length          The maximum number of characters used to parse this boolean.
      *
      * @throws FormatException if the double was in an unknown format
      */
+    @Deprecated
     public boolean getBoolean(int length) throws FormatException {
 
         int startOffset = offset;
@@ -201,25 +206,32 @@ public class ByteParser {
     }
 
     /**
+     * Returns the underlying buffer to this parser.
+     * 
      * @return the buffer being used by the parser
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
+    @Deprecated
     public byte[] getBuffer() {
         return input;
     }
 
     /**
-     * Read in the buffer until a double is read. This will read the entire buffer if fillFields is set.
+     * Returns the next <code>long</code> value from the current parse position, consuming at most the specified number
+     * of bytes from the input. This will read the entire buffer if fillFields is set.
      *
      * @return                 The value found.
      *
      * @throws FormatException if the double was in an unknown format
      */
+    @Deprecated
     public double getDouble() throws FormatException {
         return getDouble(input.length - offset);
     }
 
     /**
+     * Returns the next <code>double</code> value from the current parse position, consuming at most the specified
+     * number of bytes from the input.
+     * 
      * @return                 a parsed double from the buffer. Leading spaces are ignored.
      *
      * @param  length          The maximum number of characters used to parse this number. If fillFields is specified
@@ -227,6 +239,7 @@ public class ByteParser {
      *
      * @throws FormatException if the double was in an unknown format
      */
+    @Deprecated
     public double getDouble(int length) throws FormatException {
         int startOffset = offset;
         boolean error = true;
@@ -313,35 +326,48 @@ public class ByteParser {
     }
 
     /**
+     * Returns the next <code>float</code> value from the current parse position.
+     * 
      * @return                 a floating point value from the buffer. (see getDouble(int())
      *
      * @throws FormatException if the float was in an unknown format
      */
+    @Deprecated
     public float getFloat() throws FormatException {
         return (float) getDouble(input.length - offset);
     }
 
     /**
+     * Returns the next <code>float</code> value from the current parse position, consuming at most the specified number
+     * of bytes from the input.
+     * 
      * @return                 a floating point value in a region of the buffer
      *
      * @param  length          The maximum number of characters used to parse this float.
      *
      * @throws FormatException if the float was in an unknown format
      */
+    @Deprecated
     public float getFloat(int length) throws FormatException {
         return (float) getDouble(length);
     }
 
     /**
+     * Returns the next <code>in</code> value from the current parse position.
+     * 
      * @return                 an integer at the beginning of the buffer
      *
      * @throws FormatException if the integer was in an unknown format
      */
+    @Deprecated
     public int getInt() throws FormatException {
         return getInt(input.length - offset);
     }
 
     /**
+     * Returns the next <code>int</code> value from the current parse position, consuming at most the specified number
+     * of bytes from the input.
+     * 
      * @return                 a region of the buffer to an integer
      *
      * @param  length          The maximum number of characters used to parse this integer. @throws FormatException if
@@ -349,6 +375,7 @@ public class ByteParser {
      *
      * @throws FormatException if the integer was in an unknown format
      */
+    @Deprecated
     public int getInt(int length) throws FormatException {
         int startOffset = offset;
 
@@ -383,12 +410,16 @@ public class ByteParser {
     }
 
     /**
+     * Returns the next <code>long</code> value from the current parse position, consuming at most the specified number
+     * of bytes from the input.
+     * 
      * @return                 a long in a specified region of the buffer
      *
      * @param  length          The maximum number of characters used to parse this long.
      *
      * @throws FormatException if the long was in an unknown format
      */
+    @Deprecated
     public long getLong(int length) throws FormatException {
 
         int startOffset = offset;
@@ -425,9 +456,12 @@ public class ByteParser {
     }
 
     /**
+     * Returns the length of the previous string returned (that is the number that was parse last).
+     * 
      * @return the number of characters used to parse the previous number (or the length of the previous String
      *             returned).
      */
+    @Deprecated
     public int getNumberLength() {
         return numberLength;
     }
@@ -437,17 +471,20 @@ public class ByteParser {
      *
      * @return The current offset within the buffer.
      */
+    @Deprecated
     public int getOffset() {
         return offset;
     }
 
     /**
+     * Returns the specified number of bytes as a string.
+     * 
      * @return        a string.
      *
      * @param  length The length of the string.
      */
+    @Deprecated
     public String getString(int length) {
-
         String s = AsciiFuncs.asciiString(input, offset, length);
         offset += length;
         numberLength = length;
@@ -471,7 +508,7 @@ public class ByteParser {
      *
      * @param buf buffer to set
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
+    @Deprecated
     public void setBuffer(byte[] buf) {
         input = buf;
         offset = 0;
@@ -482,6 +519,7 @@ public class ByteParser {
      *
      * @param offset The desired offset from the beginning of the array.
      */
+    @Deprecated
     public void setOffset(int offset) {
         this.offset = offset;
     }
@@ -491,6 +529,7 @@ public class ByteParser {
      *
      * @param nBytes number of bytes to skip
      */
+    @Deprecated
     public void skip(int nBytes) {
         offset += nBytes;
     }
@@ -502,6 +541,7 @@ public class ByteParser {
      *
      * @param  length The maximum number of characters to skip.
      */
+    @Deprecated
     public int skipWhite(int length) {
         int i;
         for (i = 0; i < length; i++) {

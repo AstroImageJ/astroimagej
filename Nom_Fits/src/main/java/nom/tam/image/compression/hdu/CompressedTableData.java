@@ -1,5 +1,13 @@
 package nom.tam.image.compression.hdu;
 
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -12,13 +20,36 @@ import nom.tam.image.compression.bintable.BinaryTableTileDecompressor;
 import nom.tam.image.compression.bintable.BinaryTableTileDescription;
 import nom.tam.util.ColumnTable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2024 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
 /**
  * FITS representation of a compressed binary table. It itself is a binary table, but one in which each row represents
@@ -42,6 +73,9 @@ public class CompressedTableData extends BinaryTable {
     private boolean isPrepped;
 
     private String[] colAlgorithm;
+
+    /** For thread synchronization */
+    private Object lock = new Object();
 
     /**
      * Creates a new empty compressed table data to be initialized at a later point
@@ -84,14 +118,16 @@ public class CompressedTableData extends BinaryTable {
     }
 
     @Override
-    public synchronized long defragment() throws FitsException {
-        if (orig != null && orig.containsHeap()) {
-            // Don't defragment if the original had VLAs, since these are stored on the heap
-            // with a dual-set of descriptors, includeing compressed ones on the heap itself
-            // which are not trivial to de-fragment.
-            return 0L;
+    public long defragment() throws FitsException {
+        synchronized (lock) {
+            if (orig != null && orig.containsHeap()) {
+                // Don't defragment if the original had VLAs, since these are stored on the heap
+                // with a dual-set of descriptors, includeing compressed ones on the heap itself
+                // which are not trivial to de-fragment.
+                return 0L;
+            }
+            return super.defragment();
         }
-        return super.defragment();
     }
 
     @Override
@@ -122,6 +158,7 @@ public class CompressedTableData extends BinaryTable {
      * 
      * @param      data The original (uncompressed) table data.
      */
+    @Deprecated
     @SuppressWarnings("javadoc")
     public void prepareUncompressedData(ColumnTable<?> data) throws FitsException {
         tiles = new ArrayList<>();
@@ -275,7 +312,9 @@ public class CompressedTableData extends BinaryTable {
      * @return the number of table rows compressed together as a block.
      */
     protected final int getRowsPerTile() {
-        return rowsPerTile;
+        synchronized (lock) {
+            return rowsPerTile;
+        }
     }
 
     private String getAlgorithm(int column) {
@@ -318,7 +357,9 @@ public class CompressedTableData extends BinaryTable {
      */
     @SuppressWarnings("javadoc")
     protected CompressedTableData setRowsPerTile(int value) {
-        rowsPerTile = value;
-        return this;
+        synchronized (lock) {
+            rowsPerTile = value;
+            return this;
+        }
     }
 }

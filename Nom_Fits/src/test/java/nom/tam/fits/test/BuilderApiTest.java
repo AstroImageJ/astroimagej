@@ -1,15 +1,59 @@
 package nom.tam.fits.test;
 
-import nom.tam.fits.*;
-import nom.tam.fits.header.Standard;
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.Standard.AUTHOR;
+import static nom.tam.fits.header.Standard.COMMENT;
+import static nom.tam.fits.header.Standard.DATAMAX;
+import static nom.tam.fits.header.Standard.DATAMIN;
+import static nom.tam.fits.header.Standard.DATE_OBS;
+import static nom.tam.fits.header.Standard.INSTRUME;
+import static nom.tam.fits.header.Standard.ORIGIN;
+import static nom.tam.fits.header.Standard.THEAP;
+import static nom.tam.fits.header.Standard.TZEROn;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
-import static nom.tam.fits.header.Standard.*;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsDate;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.fits.header.Standard;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2024 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
+
+@SuppressWarnings({"javadoc", "deprecation"})
 public class BuilderApiTest {
 
     public Header createHeader() throws FitsException {
@@ -41,22 +85,22 @@ public class BuilderApiTest {
                 .card(TZEROn.n(2)).value(new BigDecimal("1.99999"))//
                 .card(AUTHOR).value(true);
 
-        Assert.assertEquals("2015-07-11T05:21:25.446", header.getStringValue(DATE_OBS));
-        Assert.assertEquals("observe date", header.findCard(DATE_OBS).getComment());
-        Assert.assertEquals("The very best", header.getStringValue(INSTRUME));
-        Assert.assertEquals("private", header.getStringValue(ORIGIN));
-        Assert.assertEquals("something to comment", header.findCard(COMMENT).getComment());
-        Assert.assertEquals(null, header.getStringValue(COMMENT));
-        Assert.assertEquals(2L, header.getLongValue(THEAP));
-        Assert.assertEquals(1, header.getIntValue(DATAMIN));
-        Assert.assertEquals(2.0, header.getFloatValue(DATAMAX), 0.000001);
-        Assert.assertEquals(3.0, header.getDoubleValue(Standard.BSCALE), 0.000001);
-        Assert.assertEquals(6.6, header.getDoubleValue(Standard.BZERO), 0.11);
-        Assert.assertEquals(5.6, header.getDoubleValue(Standard.EQUINOX), 0.11);
-        Assert.assertEquals(5.6, header.getFloatValue(TZEROn.n(5)), 0.11);
-        Assert.assertEquals(1.99999, header.getDoubleValue(TZEROn.n(1)), 0.000001);
-        Assert.assertEquals(1.99999, header.getDoubleValue(TZEROn.n(2)), 0.000001);
-        Assert.assertEquals(true, header.getBooleanValue(AUTHOR));
+        Assertions.assertEquals("2015-07-11T05:21:25.446", header.getStringValue(DATE_OBS));
+        Assertions.assertEquals("observe date", header.findCard(DATE_OBS).getComment());
+        Assertions.assertEquals("The very best", header.getStringValue(INSTRUME));
+        Assertions.assertEquals("private", header.getStringValue(ORIGIN));
+        Assertions.assertEquals("something to comment", header.findCard(COMMENT).getComment());
+        Assertions.assertEquals(null, header.getStringValue(COMMENT));
+        Assertions.assertEquals(2L, header.getLongValue(THEAP));
+        Assertions.assertEquals(1, header.getIntValue(DATAMIN));
+        Assertions.assertEquals(2.0, header.getFloatValue(DATAMAX), 0.000001);
+        Assertions.assertEquals(3.0, header.getDoubleValue(Standard.BSCALE), 0.000001);
+        Assertions.assertEquals(6.6, header.getDoubleValue(Standard.BZERO), 0.11);
+        Assertions.assertEquals(5.6, header.getDoubleValue(Standard.EQUINOX), 0.11);
+        Assertions.assertEquals(5.6, header.getFloatValue(TZEROn.n(5)), 0.11);
+        Assertions.assertEquals(1.99999, header.getDoubleValue(TZEROn.n(1)), 0.000001);
+        Assertions.assertEquals(1.99999, header.getDoubleValue(TZEROn.n(2)), 0.000001);
+        Assertions.assertTrue(header.getBooleanValue(AUTHOR));
 
         date = new FitsDate("2015-07-12T05:21:25.446").toDate();
         BasicHDU<?> hdu = Fits.makeHDU(header);
@@ -79,24 +123,24 @@ public class BuilderApiTest {
                 .card(TZEROn.n(4)).value(101.999)//
                 .card(AUTHOR).value(false);
 
-        Assert.assertEquals("2015-07-12T05:21:25.446", header.getStringValue(DATE_OBS));
-        Assert.assertEquals("observation date", header.findCard(DATE_OBS).getComment());
-        Assert.assertEquals("The very very best", header.getStringValue(INSTRUME));
-        Assert.assertEquals("other", header.getStringValue(ORIGIN));
-        Assert.assertEquals("something else to comment", header.findCard(COMMENT).getComment());
-        Assert.assertEquals(null, header.getStringValue(COMMENT));
-        Assert.assertEquals(200L, header.getLongValue(THEAP));
-        Assert.assertEquals(100, header.getIntValue(DATAMIN));
-        Assert.assertEquals(200.0, header.getFloatValue(DATAMAX), 0.000001);
-        Assert.assertEquals(300.0, header.getDoubleValue(Standard.BSCALE), 0.000001);
-        Assert.assertEquals(500.06f, header.getFloatValue(Standard.BZERO), 0.011f);
-        Assert.assertEquals(500.06, header.getDoubleValue(Standard.EQUINOX), 0.000001);
-        Assert.assertEquals(100.99999, header.getDoubleValue(TZEROn.n(1)), 0.000001);
-        Assert.assertEquals(100.99999, header.getDoubleValue(TZEROn.n(2)), 0.000001);
-        Assert.assertEquals(600.06f, header.getFloatValue(TZEROn.n(3)), 0.011f);
-        Assert.assertEquals(101.999, header.getFloatValue(TZEROn.n(4)), 0.000001);
-        Assert.assertEquals(false, header.getBooleanValue(AUTHOR));
-        Assert.assertEquals(50.55, header.getFloatValue(TZEROn.n(5)), 0.000001);
+        Assertions.assertEquals("2015-07-12T05:21:25.446", header.getStringValue(DATE_OBS));
+        Assertions.assertEquals("observation date", header.findCard(DATE_OBS).getComment());
+        Assertions.assertEquals("The very very best", header.getStringValue(INSTRUME));
+        Assertions.assertEquals("other", header.getStringValue(ORIGIN));
+        Assertions.assertEquals("something else to comment", header.findCard(COMMENT).getComment());
+        Assertions.assertEquals(null, header.getStringValue(COMMENT));
+        Assertions.assertEquals(200L, header.getLongValue(THEAP));
+        Assertions.assertEquals(100, header.getIntValue(DATAMIN));
+        Assertions.assertEquals(200.0, header.getFloatValue(DATAMAX), 0.000001);
+        Assertions.assertEquals(300.0, header.getDoubleValue(Standard.BSCALE), 0.000001);
+        Assertions.assertEquals(500.06f, header.getFloatValue(Standard.BZERO), 0.011f);
+        Assertions.assertEquals(500.06, header.getDoubleValue(Standard.EQUINOX), 0.000001);
+        Assertions.assertEquals(100.99999, header.getDoubleValue(TZEROn.n(1)), 0.000001);
+        Assertions.assertEquals(100.99999, header.getDoubleValue(TZEROn.n(2)), 0.000001);
+        Assertions.assertEquals(600.06f, header.getFloatValue(TZEROn.n(3)), 0.011f);
+        Assertions.assertEquals(101.999, header.getFloatValue(TZEROn.n(4)), 0.000001);
+        Assertions.assertFalse(header.getBooleanValue(AUTHOR));
+        Assertions.assertEquals(50.55, header.getFloatValue(TZEROn.n(5)), 0.000001);
 
     }
 }

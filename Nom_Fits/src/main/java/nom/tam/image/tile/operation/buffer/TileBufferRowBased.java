@@ -44,18 +44,22 @@ import nom.tam.util.type.ElementType;
  * @deprecated Use {@link TileBufferFactory} instead to construct and access via {@link TileBuffer} interface. Its
  *                 visiv=bility should be reduced to the package level in the future.
  */
+@Deprecated
 @SuppressWarnings("javadoc")
 public class TileBufferRowBased extends TileBuffer {
 
+    @Deprecated
     public TileBufferRowBased(ElementType<Buffer> baseType, int dataOffset, int width, int height) {
         super(baseType, dataOffset, width, height);
     }
 
+    @Deprecated
     @Override
     public Buffer getBuffer() {
         return getImageBuffer();
     }
 
+    @Deprecated
     @Override
     public TileBufferRowBased setData(Buffer value) {
         super.setData(value);

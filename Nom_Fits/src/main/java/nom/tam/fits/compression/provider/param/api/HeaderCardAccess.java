@@ -59,6 +59,7 @@ import nom.tam.fits.header.IFitsHeader;
  *                 <code>HeaderCardException</code> to be soft exceptions itself, there is no reason to convert. It just
  *                 adds confusion.
  */
+@Deprecated
 public class HeaderCardAccess implements IHeaderAccess {
 
     private final HeaderCard headerCard;
@@ -79,6 +80,7 @@ public class HeaderCardAccess implements IHeaderAccess {
      * 
      * @throws IllegalArgumentException if the header card could not be created
      */
+    @Deprecated
     public HeaderCardAccess(IFitsHeader headerCard, String value) throws IllegalArgumentException {
         try {
             this.headerCard = new HeaderCard(headerCard.key(), value, null);
@@ -87,6 +89,7 @@ public class HeaderCardAccess implements IHeaderAccess {
         }
     }
 
+    @Deprecated
     @Override
     public final Header getHeader() {
         Header header = new Header();
@@ -101,10 +104,12 @@ public class HeaderCardAccess implements IHeaderAccess {
      * 
      * @since  1.19
      */
+    @Deprecated
     public final HeaderCard getHeaderCard() {
         return headerCard;
     }
 
+    @Deprecated
     @Override
     public void addValue(IFitsHeader key, int value) {
         if (headerCard.getKey().equals(key.key())) {
@@ -112,6 +117,7 @@ public class HeaderCardAccess implements IHeaderAccess {
         }
     }
 
+    @Deprecated
     @Override
     public void addValue(IFitsHeader key, String value) {
         if (headerCard.getKey().equals(key.key())) {
@@ -119,11 +125,13 @@ public class HeaderCardAccess implements IHeaderAccess {
         }
     }
 
+    @Deprecated
     @Override
     public HeaderCard findCard(IFitsHeader key) {
         return findCard(key.key());
     }
 
+    @Deprecated
     @Override
     public HeaderCard findCard(String key) {
         if (headerCard.getKey().equals(key)) {

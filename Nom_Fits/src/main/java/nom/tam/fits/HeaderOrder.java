@@ -1,8 +1,5 @@
 package nom.tam.fits;
 
-import java.io.Serializable;
-import java.util.Hashtable;
-
 import static nom.tam.fits.header.Standard.BITPIX;
 import static nom.tam.fits.header.Standard.BLOCKED;
 import static nom.tam.fits.header.Standard.END;
@@ -14,6 +11,9 @@ import static nom.tam.fits.header.Standard.SIMPLE;
 import static nom.tam.fits.header.Standard.TFIELDS;
 import static nom.tam.fits.header.Standard.THEAP;
 import static nom.tam.fits.header.Standard.XTENSION;
+
+import java.io.Serializable;
+import java.util.Hashtable;
 
 /*
  * #%L
@@ -51,6 +51,7 @@ import static nom.tam.fits.header.Standard.XTENSION;
  * 
  * @deprecated (<i>for internal use</i>) Visibility should be reduced to package level in the future
  */
+@Deprecated
 public class HeaderOrder implements java.util.Comparator<String>, Serializable {
 
     /**
@@ -133,6 +134,7 @@ public class HeaderOrder implements java.util.Comparator<String>, Serializable {
      *             1 if the second argument should be written first <br>
      *             0 if either is legal.
      */
+    @Deprecated
     @Override
     public int compare(String c1, String c2) {
         int i1 = indexOf(c1);

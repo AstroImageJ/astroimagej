@@ -1,11 +1,22 @@
 package nom.tam.fits;
 
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
+
 import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Set;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataOutput;
@@ -42,16 +53,6 @@ import nom.tam.util.FitsOutput;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
 
 /**
  * Random groups header/data unit. Random groups were an early attempt at extending FITS support beyond images, and was
@@ -140,6 +141,7 @@ public class RandomGroupsHDU extends BasicHDU<RandomGroupsData> {
      *
      * @return                   is this data compatible with Random Groups structure
      */
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     @Deprecated
     public static boolean isData(Object potentialData) {
         if (potentialData instanceof Object[][]) {
@@ -162,6 +164,7 @@ public class RandomGroupsHDU extends BasicHDU<RandomGroupsData> {
      *
      * @param      hdr The header to be tested.
      */
+    @SuppressFBWarnings(value = "HSM_HIDING_METHOD", justification = "deprecated existing method, kept for compatibility")
     @Deprecated
     public static boolean isHeader(Header hdr) {
 
@@ -285,6 +288,7 @@ public class RandomGroupsHDU extends BasicHDU<RandomGroupsData> {
      * @param      header header to use
      * @param      data   data to use
      */
+    @Deprecated
     public RandomGroupsHDU(Header header, RandomGroupsData data) {
         super(header, data);
 

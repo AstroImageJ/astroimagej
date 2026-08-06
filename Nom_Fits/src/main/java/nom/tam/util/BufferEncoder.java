@@ -47,6 +47,8 @@ public abstract class BufferEncoder extends FitsEncoder {
     private BufferPointer p;
 
     /**
+     * Instantiates a new encoder for FITS data types.
+     * 
      * @param p Unused, but the position and length fields are set/reset as to pretend that the buffer is perpetually
      *              half filled with data, and with position at 0. However, at no point will there be any data actually
      *              in the buffer of this object. You should by all means avoid directly writing data from this buffer
@@ -54,6 +56,7 @@ public abstract class BufferEncoder extends FitsEncoder {
      *              <code>needBuffer(int)</code> implementation (and it's safest if you don't override or ever call
      *              <code>needBuffer(int)</code> from your code!).
      */
+    @Deprecated
     public BufferEncoder(BufferPointer p) {
         super();
 
@@ -102,12 +105,14 @@ public abstract class BufferEncoder extends FitsEncoder {
     protected void needBuffer(int need) throws IOException {
     }
 
+    @Deprecated
     @Override
     void need(int bytes) throws IOException {
         pretendHalfPopulated();
         super.need(bytes);
     }
 
+    @Deprecated
     @Override
     protected void write(byte[] b, int from, int len) throws IOException {
         throw new UnsupportedOperationException(
@@ -127,6 +132,7 @@ public abstract class BufferEncoder extends FitsEncoder {
      * @throws IllegalStateException if there was an IO error flushing the conversion buffer or writing the new byte
      *                                   after it.
      */
+    @Deprecated
     protected void writeUncheckedByte(byte b) throws IllegalStateException {
         try {
             flush();

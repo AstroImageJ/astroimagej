@@ -12,6 +12,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -73,6 +76,11 @@ public class FolderOpener implements PlugIn, TextListener {
 	public static boolean virtualIntended;
 	@AstroImageJ(reason = "Setup automatic wcs shape generation")
 	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(false, FolderOpener.class);
+	private boolean enableMT;
+	private int maxThreads;
+	private boolean limitThreads;
+	private boolean limitLookahead;
+	private boolean useVirtualThreads;
 
 	
 	/** Opens the images in the specified directory as a stack. Displays
@@ -144,10 +152,13 @@ public class FolderOpener implements PlugIn, TextListener {
 		return image;
 	}
 
-	@AstroImageJ(reason = "When opening images that individually go to a stack, preserve stack title. This allows" +
-			" MultiAperture to run on a folder of 3D fits images, otherwise WCS and other information is lost;" +
-			" If filter fails to match any files, after closing the error reopen dialog;" +
-			" resize images to open into single stack.",
+	@AstroImageJ(reason = """
+            When opening images that individually go to a stack, preserve stack title. This allows\
+            MultiAperture to run on a folder of 3D fits images, otherwise WCS and other information is lost;\
+            If filter fails to match any files, after closing the error reopen dialog;\
+            resize images to open into single stack.
+            Multithread stack opening.
+            """,
 			modified = true)
 	public void run(String arg) {
 		boolean isMacro = Macro.getOptions()!=null;
@@ -289,155 +300,228 @@ public class FolderOpener implements PlugIn, TextListener {
 			ImagePlus imp = null;
 			boolean firstMessage = true;
 			boolean fileInfoStack = false;
-			
-			// open images as stack
-			for (int i=this.start-1; i<list.length; i++) {
-				if ((counter++%this.step)!=0)
-					continue;
-				Opener opener = new Opener();
-				opener.setSilentMode(true);
-				IJ.redirectErrorMessages(true);
-				if ("RoiSet.zip".equals(list[i])) {
-					IJ.open(directory+list[i]);
-					imp = null;
-				} else if (!openAsVirtualStack||stack==null) {
-					imp = opener.openTempImage(directory, list[i]);
-					stackSize = imp!=null?imp.getStackSize():1;
-				}
-				IJ.redirectErrorMessages(false);
-				if (imp!=null && stack==null) {
-					width = imp.getWidth();
-					height = imp.getHeight();
-					if (stackWidth>0 && stackHeight>0) {
-						width = stackWidth;
-						height = stackHeight;
-					}
-					if (bitDepth==0)
-						bitDepth = imp.getBitDepth();
-					fi = imp.getOriginalFileInfo();
-					ImageProcessor ip = imp.getProcessor();
-					min = ip.getMin();
-					max = ip.getMax();
-					cal = imp.getCalibration();
-					ColorModel cm = imp.getProcessor().getColorModel();
-					if (openAsVirtualStack) {
-						if (stackSize>1) {
-							stack = new FileInfoVirtualStack();
-							fileInfoStack = true;
-						} else {
-							if (stackWidth>0 && stackHeight>0)
-								stack = new VirtualStack(stackWidth, stackHeight, cm, directory);
-							else
-								stack = new VirtualStack(width, height, cm, directory);
-						}
-					}  else if (this.scale<100.0)						
-						stack = new ImageStack((int)(width*this.scale/100.0), (int)(height*this.scale/100.0), cm);
-					else
-						stack = new ImageStack(width, height, cm);
-					if (bitDepth!=0)
-						stack.setBitDepth(bitDepth);
-					info1 = (String)imp.getProperty("Info");
-				}
-				if (imp==null)
-					continue;
-				if (imp.getWidth()!=width || imp.getHeight()!=height) {
-					if (stackWidth>0 && stackHeight>0) {
-						ImagePlus imp2 = imp.createImagePlus();
-						ImageProcessor ip = imp.getProcessor();
-						ImageProcessor ip2 = ip.createProcessor(width,height);
-						// AIJ change
-						ip2.insert(ip, 0, stackHeight - imp.getHeight());
-						imp2.setProcessor(ip2);
-						if (stackWidth < imp.getWidth() || stackHeight < imp.getHeight()) {
-							AIJLogger.setLogAutoCloses(true);
-							AIJLogger.log(list[i] + ": wrong size; "+stackWidth+"x"+stackHeight+" expected, "+imp.getWidth()+"x"+imp.getHeight()+" found");
-						}
-						// AIJ use
 
-						if (imp.getProperties() != null) {
-							imp2.setProperty("", null);
-							imp2.getProperties().putAll(imp.getProperties());
-						}
-						imp2.setFileInfo(imp.getOriginalFileInfo());
-						imp2.setTitle(imp.getTitle());
-						// AIJ use
-						imp = imp2;
+			// Build list of indexes to be opened
+			var idxList = new ArrayList<Integer>();
+			int c = 0;
+			for (int i=this.start-1; i<list.length; i++) {
+				if ((c++%this.step)==0) {
+					idxList.add(i);
+				}
+			}
+
+			var indices = new int[idxList.size()];
+			for (int k=0; k<indices.length; k++) {
+				indices[k] = idxList.get(k);
+			}
+
+			var multithreadOpen = !openAsVirtualStack && indices.length>1 && enableMT;
+
+			// Setup multithreaded run
+			ExecutorService openExecutor = null;
+			Future<ImagePlus>[] openFutures = null;
+			var nextToSubmit = 0;
+			var prefetchWindow = 1;
+			if (multithreadOpen) {
+				var nThreads = Math.clamp(Runtime.getRuntime().availableProcessors(), 1, maxThreads);
+				nThreads = Math.min(nThreads, indices.length);
+				if (useVirtualThreads) {
+					if (limitThreads) {
+						openExecutor = Executors.newFixedThreadPool(nThreads, Thread.ofVirtual().factory());
 					} else {
-						IJ.log(list[i] + ": wrong size; "+width+"x"+height+" expected, "+imp.getWidth()+"x"+imp.getHeight()+" found");
-						continue;
+						openExecutor = Executors.newVirtualThreadPerTaskExecutor();
 					}
-				}
-				String label = imp.getTitle();
-				if (stackSize==1) {
-					String info = (String)imp.getProperty("Info");
-					if (info!=null) {
-						if (useInfo(info))
-							label += "\n" + info;
-					} else if (imp.getStackSize()>0) {
-						String sliceLabel = imp.getStack().getSliceLabel(1);
-						if (useInfo(sliceLabel))
-							label =  sliceLabel;
-					}
-				}
-				if (Math.abs(imp.getCalibration().pixelWidth-cal.pixelWidth)>0.0000000001)
-					allSameCalibration = false;
-				ImageStack inputStack = imp.getStack();
-				Overlay overlay2 = imp.getOverlay();
-				if (overlay2!=null && !openAsVirtualStack) {
-					if (overlay==null)
-						overlay = new Overlay();
-					for (int j=0; j<overlay2.size(); j++) {
-						Roi roi = overlay2.get(j);
-						int position = roi.getPosition();
-						if (position==0)
-							roi.setPosition(count+1);
-						overlay.add(roi);
-					}
-				}				
-				if (openAsVirtualStack) { 
-					if (fileInfoStack)
-						openAsFileInfoStack((FileInfoVirtualStack)stack, directory+list[i]);
-					else
-						((VirtualStack)stack).addSlice(list[i]);
 				} else {
-					for (int slice=1; slice<=stackSize; slice++) {
-						int bitDepth2 = imp.getBitDepth();
-						String label2 = label;
-						ImageProcessor ip = null;
-						if (stackSize>1) {
-							String sliceLabel = inputStack.getSliceLabel(slice);
-							label2 = "Image " + (i+1) + " : " + sliceLabel;
-						}
-						ip = inputStack.getProcessor(slice);
-						if (bitDepth2!=bitDepth) {
-							if (dicomImages && bitDepth==16 && bitDepth2==32 && this.scale==100) {
-								ip = ip.convertToFloat();
-								bitDepth = 32;
-								ImageStack stack2 = new ImageStack(width, height, stack.getColorModel());
-								for (int n=1; n<=stack.size(); n++) {
-									ImageProcessor ip2 = stack.getProcessor(n);
-									ip2 = ip2.convertToFloat();
-									ip2.subtract(32768);
-									String sliceLabel = stack.getSliceLabel(n);
-									stack2.addSlice(sliceLabel, ip2.convertToFloat());
-								}
-								stack = stack2;
-							}
-						}
-						if (this.scale<100.0)
-							ip = ip.resize((int)(width*this.scale/100.0), (int)(height*this.scale/100.0));
-						if (ip.getMin()<min) min = ip.getMin();
-						if (ip.getMax()>max) max = ip.getMax();
-						stack.addSlice(label2, ip);
-					}
+					openExecutor = Executors.newWorkStealingPool(nThreads);
 				}
-				count++;
-				IJ.showStatus("!"+count+"/"+this.nFiles);
-				IJ.showProgress(count, this.nFiles);
-				if (count>=this.nFiles) 
-					break;
-				if (IJ.escapePressed())
+
+				if (limitLookahead) {
+					prefetchWindow = nThreads*2;
+				} else {
+					prefetchWindow = indices.length;
+				}
+				openFutures = new Future[indices.length];
+				IJ.redirectErrorMessages(true);
+
+				// Begin prefetch
+				while (nextToSubmit<Math.min(prefetchWindow, indices.length)) {
+					if (IJ.escapePressed()) {
+						IJ.beep();
+						break;
+					}
+					submitOpen(openExecutor, openFutures, nextToSubmit++, indices, list, directory);
+				}
+			}
+
+			// open images as stack
+			try {
+				for (int pos=0; pos<indices.length; pos++) {
+					int i = indices[pos];
+					// Submit more images for opening
+					if (multithreadOpen && nextToSubmit<indices.length) {
+						submitOpen(openExecutor, openFutures, nextToSubmit++, indices, list, directory);
+					}
+					if (!multithreadOpen) {
+						IJ.redirectErrorMessages(true);
+					}
+					if ("RoiSet.zip".equals(list[i])) {
+						IJ.open(directory+list[i]);
+						imp = null;
+					} else if (multithreadOpen) {
+						try {
+							imp = openFutures[pos]!=null ? openFutures[pos].get() : null;
+						} catch (Exception ex) {
+							imp = null;
+						}
+						stackSize = imp!=null?imp.getStackSize():1;
+					} else if (!openAsVirtualStack||stack==null) {
+						Opener opener = new Opener();
+						opener.setSilentMode(true);
+						imp = opener.openTempImage(directory, list[i]);
+						stackSize = imp!=null?imp.getStackSize():1;
+					}
+					if (!multithreadOpen) {
+						IJ.redirectErrorMessages(false);
+					}
+					if (imp!=null && stack==null) {
+						width = imp.getWidth();
+						height = imp.getHeight();
+						if (stackWidth>0 && stackHeight>0) {
+							width = stackWidth;
+							height = stackHeight;
+						}
+						if (bitDepth==0)
+							bitDepth = imp.getBitDepth();
+						fi = imp.getOriginalFileInfo();
+						ImageProcessor ip = imp.getProcessor();
+						min = ip.getMin();
+						max = ip.getMax();
+						cal = imp.getCalibration();
+						ColorModel cm = imp.getProcessor().getColorModel();
+						if (openAsVirtualStack) {
+							if (stackSize>1) {
+								stack = new FileInfoVirtualStack();
+								fileInfoStack = true;
+							} else {
+								if (stackWidth>0 && stackHeight>0)
+									stack = new VirtualStack(stackWidth, stackHeight, cm, directory);
+								else
+									stack = new VirtualStack(width, height, cm, directory);
+							}
+						}  else if (this.scale<100.0)
+							stack = new ImageStack((int)(width*this.scale/100.0), (int)(height*this.scale/100.0), cm);
+						else
+							stack = new ImageStack(width, height, cm);
+						if (bitDepth!=0)
+							stack.setBitDepth(bitDepth);
+						info1 = (String)imp.getProperty("Info");
+					}
+					if (imp==null)
+						continue;
+					if (imp.getWidth()!=width || imp.getHeight()!=height) {
+						if (stackWidth>0 && stackHeight>0) {
+							ImagePlus imp2 = imp.createImagePlus();
+							ImageProcessor ip = imp.getProcessor();
+							ImageProcessor ip2 = ip.createProcessor(width,height);
+							// AIJ change
+							ip2.insert(ip, 0, stackHeight - imp.getHeight());
+							imp2.setProcessor(ip2);
+							if (stackWidth < imp.getWidth() || stackHeight < imp.getHeight()) {
+								AIJLogger.setLogAutoCloses(true);
+								AIJLogger.log(list[i] + ": wrong size; "+stackWidth+"x"+stackHeight+" expected, "+imp.getWidth()+"x"+imp.getHeight()+" found");
+							}
+							// AIJ use
+
+							if (imp.getProperties() != null) {
+								imp2.setProperty("", null);
+								imp2.getProperties().putAll(imp.getProperties());
+							}
+							imp2.setFileInfo(imp.getOriginalFileInfo());
+							imp2.setTitle(imp.getTitle());
+							// AIJ use
+							imp = imp2;
+						} else {
+							IJ.log(list[i] + ": wrong size; "+width+"x"+height+" expected, "+imp.getWidth()+"x"+imp.getHeight()+" found");
+							continue;
+						}
+					}
+					String label = imp.getTitle();
+					if (stackSize==1) {
+						String info = (String)imp.getProperty("Info");
+						if (info!=null) {
+							if (useInfo(info))
+								label += "\n" + info;
+						} else if (imp.getStackSize()>0) {
+							String sliceLabel = imp.getStack().getSliceLabel(1);
+							if (useInfo(sliceLabel))
+								label =  sliceLabel;
+						}
+					}
+					if (Math.abs(imp.getCalibration().pixelWidth-cal.pixelWidth)>0.0000000001)
+						allSameCalibration = false;
+					ImageStack inputStack = imp.getStack();
+					Overlay overlay2 = imp.getOverlay();
+					if (overlay2!=null && !openAsVirtualStack) {
+						if (overlay==null)
+							overlay = new Overlay();
+						for (int j=0; j<overlay2.size(); j++) {
+							Roi roi = overlay2.get(j);
+							int position = roi.getPosition();
+							if (position==0)
+								roi.setPosition(count+1);
+							overlay.add(roi);
+						}
+					}
+					if (openAsVirtualStack) {
+						if (fileInfoStack)
+							openAsFileInfoStack((FileInfoVirtualStack)stack, directory+list[i]);
+						else
+							((VirtualStack)stack).addSlice(list[i]);
+					} else {
+						for (int slice=1; slice<=stackSize; slice++) {
+							int bitDepth2 = imp.getBitDepth();
+							String label2 = label;
+							ImageProcessor ip = null;
+							if (stackSize>1) {
+								String sliceLabel = inputStack.getSliceLabel(slice);
+								label2 = "Image " + (i+1) + " : " + sliceLabel;
+							}
+							ip = inputStack.getProcessor(slice);
+							if (bitDepth2!=bitDepth) {
+								if (dicomImages && bitDepth==16 && bitDepth2==32 && this.scale==100) {
+									ip = ip.convertToFloat();
+									bitDepth = 32;
+									ImageStack stack2 = new ImageStack(width, height, stack.getColorModel());
+									for (int n=1; n<=stack.size(); n++) {
+										ImageProcessor ip2 = stack.getProcessor(n);
+										ip2 = ip2.convertToFloat();
+										ip2.subtract(32768);
+										String sliceLabel = stack.getSliceLabel(n);
+										stack2.addSlice(sliceLabel, ip2.convertToFloat());
+									}
+									stack = stack2;
+								}
+							}
+							if (this.scale<100.0)
+								ip = ip.resize((int)(width*this.scale/100.0), (int)(height*this.scale/100.0));
+							if (ip.getMin()<min) min = ip.getMin();
+							if (ip.getMax()>max) max = ip.getMax();
+							stack.addSlice(label2, ip);
+						}
+					}
+					count++;
+					IJ.showStatus("!"+count+"/"+this.nFiles);
+					IJ.showProgress(count, this.nFiles);
+					if (count>=this.nFiles)
+						break;
+					if (IJ.escapePressed())
 					{IJ.beep(); break;}
+				}
+			} finally {
+				if (openExecutor!=null) {
+					openExecutor.shutdownNow();
+					IJ.redirectErrorMessages(false);
+				}
 			}  // open images as stack
 			
 		} catch(OutOfMemoryError e) {
@@ -587,7 +671,22 @@ public class FolderOpener implements PlugIn, TextListener {
 	public static boolean useInfo(String info) {
 		return info!=null && !(info.startsWith("Software")||info.startsWith("ImageDescription"));
 	 }
-	
+
+	private void submitOpen(ExecutorService executor, Future<ImagePlus>[] futures, int pos, int[] indices, String[] list, String directory) {
+		final var name = list[indices[pos]];
+		if ("RoiSet.zip".equals(name)) {
+			futures[pos] = null;
+			return;
+		}
+		futures[pos] = executor.submit(() -> {
+			if (Thread.interrupted())
+				return null;
+			var opener = new Opener();
+			opener.setSilentMode(true);
+			return opener.openTempImage(directory, name);
+		});
+	}
+
 	private void openAsFileInfoStack(FileInfoVirtualStack stack, String path) {
 		FileInfo[] info = Opener.getTiffFileInfo(path);
 		if (info==null || info.length==0)
@@ -698,6 +797,15 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addMessage("Estimated stack size: " + initialSizes.second() + " MB");
 		var filterSizeDisplay = (Label) gd.getComponent(gd.getComponentCount() - 1);
 
+		// Experimental Options
+		{
+			gd.addCheckbox("Multithreaded Opening", false);
+			gd.addCheckbox("Use Virtual Threads", false);
+			gd.addCheckbox("Limit Lookahead Window", false);
+			gd.addCheckbox("Limit Number of Threads", false);
+			gd.addNumericField("Max Threads", Runtime.getRuntime().availableProcessors(), 0);
+		}
+
 		for (Object stringField : gd.getStringFields()) {
 			((TextField) stringField).addTextListener(_ -> {
 				filterCountDisplay.setText("Matched files: " + 0);
@@ -743,6 +851,21 @@ public class FolderOpener implements PlugIn, TextListener {
 		if (openAsVirtualStack)
 			scale = 100.0;
 		openAsSeparateImages = gd.getNextBoolean();
+
+		// Experimental Options
+		{
+			gd.addCheckbox("Multithreaded Opening", false);
+			gd.addCheckbox("Use Virtual Threads", false);
+			gd.addCheckbox("Limit Lookahead Window", false);
+			gd.addCheckbox("Limit Number of Virtual Threads", false);
+			gd.addNumericField("Max Threads", Runtime.getRuntime().availableProcessors(), 0);
+			enableMT = gd.getNextBoolean();
+			useVirtualThreads = gd.getNextBoolean();
+			limitLookahead = gd.getNextBoolean();
+			limitThreads = gd.getNextBoolean();
+			maxThreads = (int)gd.getNextNumber();
+		}
+
 		if (openAsSeparateImages)
 			openAsVirtualStack = true;
 		if (!IJ.macroRunning()) {

@@ -107,7 +107,7 @@ public class FitsReader implements AutoCloseable {
             throw new FitsException("Null filename.");
         }
 
-        IJ.showStatus("Opening: " + directory + fileName);
+        //IJ.showStatus("Opening: " + directory + fileName);
 
         if (isFileWithinZip(path)) {
             var s = path.split("\\.zip");

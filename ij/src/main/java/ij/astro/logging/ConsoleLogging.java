@@ -1,12 +1,16 @@
 package ij.astro.logging;
 
-import ij.IJ;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import ij.IJ;
 
 public class ConsoleLogging {
     public static void duplicateConsole2File() {
@@ -14,9 +18,13 @@ public class ConsoleLogging {
         System.out.println("Logging to " + p);
 
         try {
-            Files.deleteIfExists(p);
+            if (!Files.isWritable(p)) {
+                Files.deleteIfExists(p);
+            }
             Files.createDirectories(p.getParent());
-            Files.createFile(p);
+            if (Files.notExists(p)) {
+                Files.createFile(p);
+            }
             var os = Files.newOutputStream(p);
             var duplicatingOut = new DuplicatingPrintStream(os, System.out);
             var duplicatingErr = new DuplicatingPrintStream(os, System.err);

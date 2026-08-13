@@ -335,7 +335,7 @@ public class FolderOpener implements PlugIn, TextListener {
 				openFutures = new Future[indices.length];
 				IJ.redirectErrorMessages(true);
 
-				openSemaphore = new Semaphore(maxThreads);
+				openSemaphore = new Semaphore(maxThreads, true);
 
 				submitOpen(openExecutor, openSemaphore, openFutures, nextToSubmit++, indices, list, directory);
 			}

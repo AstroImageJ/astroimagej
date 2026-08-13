@@ -79,7 +79,6 @@ public class FolderOpener implements PlugIn, TextListener {
 	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(false, FolderOpener.class);
 	private boolean enableMT;
 	private int maxThreads;
-	private boolean useVirtualThreads;
 
 	
 	/** Opens the images in the specified directory as a stack. Displays
@@ -322,15 +321,10 @@ public class FolderOpener implements PlugIn, TextListener {
 			Future<ImagePlus>[] openFutures = null;
 			Semaphore openSemaphore = null;
 			var nextToSubmit = 0;
-			var prefetchWindow = 1;
 			if (multithreadOpen) {
-				var nThreads = Math.clamp(Runtime.getRuntime().availableProcessors(), 1, maxThreads);
+				var nThreads = Math.clamp(Runtime.getRuntime().availableProcessors()-1, 1, maxThreads);
 				nThreads = Math.min(nThreads, indices.length);
-				if (useVirtualThreads) {
-					openExecutor = Executors.newVirtualThreadPerTaskExecutor();
-				} else {
-					openExecutor = Executors.newFixedThreadPool(nThreads);
-				}
+				openExecutor = Executors.newFixedThreadPool(nThreads);
 
 				openFutures = new Future[indices.length];
 				IJ.redirectErrorMessages(true);
@@ -622,7 +616,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		virtualIntended = false;
 		FITS_Reader.resetFilter();
 		IO.println("FolderOpener: "+(System.currentTimeMillis()-t0)/1000.0+" seconds" +
-				(enableMT ? " (MT"+(useVirtualThreads ? " virtual" : "")+" maxThreads: " + maxThreads +")" : ""));
+				(enableMT ? " (MT"+" maxThreads: " + maxThreads +")" : ""));
 	}
 
 
@@ -797,8 +791,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		// Experimental Options
 		{
 			gd.addCheckbox("Multithreaded Opening", false);
-			gd.addCheckbox("Use Virtual Threads", false);
-			gd.addNumericField("Max Threads", Runtime.getRuntime().availableProcessors(), 0);
+			gd.addNumericField("Max Threads", Math.max(Runtime.getRuntime().availableProcessors(), 1), 0);
 		}
 
 		for (Object stringField : gd.getStringFields()) {
@@ -850,7 +843,6 @@ public class FolderOpener implements PlugIn, TextListener {
 		// Experimental Options
 		{
 			enableMT = gd.getNextBoolean();
-			useVirtualThreads = gd.getNextBoolean();
 			maxThreads = (int)gd.getNextNumber();
 		}
 

@@ -798,8 +798,6 @@ public class FolderOpener implements PlugIn, TextListener {
 		{
 			gd.addCheckbox("Multithreaded Opening", false);
 			gd.addCheckbox("Use Virtual Threads", false);
-			gd.addCheckbox("Limit Lookahead Window", false);
-			gd.addCheckbox("Limit Number of Threads", false);
 			gd.addNumericField("Max Threads", Runtime.getRuntime().availableProcessors(), 0);
 		}
 

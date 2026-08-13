@@ -15,6 +15,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -78,8 +79,6 @@ public class FolderOpener implements PlugIn, TextListener {
 	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(false, FolderOpener.class);
 	private boolean enableMT;
 	private int maxThreads;
-	private boolean limitThreads;
-	private boolean limitLookahead;
 	private boolean useVirtualThreads;
 
 	
@@ -161,6 +160,7 @@ public class FolderOpener implements PlugIn, TextListener {
             """,
 			modified = true)
 	public void run(String arg) {
+		var t0 = System.currentTimeMillis();
 		boolean isMacro = Macro.getOptions()!=null;
 		if (!directorySet)
 			directory = null;
@@ -320,37 +320,24 @@ public class FolderOpener implements PlugIn, TextListener {
 			// Setup multithreaded run
 			ExecutorService openExecutor = null;
 			Future<ImagePlus>[] openFutures = null;
+			Semaphore openSemaphore = null;
 			var nextToSubmit = 0;
 			var prefetchWindow = 1;
 			if (multithreadOpen) {
 				var nThreads = Math.clamp(Runtime.getRuntime().availableProcessors(), 1, maxThreads);
 				nThreads = Math.min(nThreads, indices.length);
 				if (useVirtualThreads) {
-					if (limitThreads) {
-						openExecutor = Executors.newFixedThreadPool(nThreads, Thread.ofVirtual().factory());
-					} else {
-						openExecutor = Executors.newVirtualThreadPerTaskExecutor();
-					}
+					openExecutor = Executors.newVirtualThreadPerTaskExecutor();
 				} else {
-					openExecutor = Executors.newWorkStealingPool(nThreads);
+					openExecutor = Executors.newFixedThreadPool(nThreads);
 				}
 
-				if (limitLookahead) {
-					prefetchWindow = nThreads*2;
-				} else {
-					prefetchWindow = indices.length;
-				}
 				openFutures = new Future[indices.length];
 				IJ.redirectErrorMessages(true);
 
-				// Begin prefetch
-				while (nextToSubmit<Math.min(prefetchWindow, indices.length)) {
-					if (IJ.escapePressed()) {
-						IJ.beep();
-						break;
-					}
-					submitOpen(openExecutor, openFutures, nextToSubmit++, indices, list, directory);
-				}
+				openSemaphore = new Semaphore(maxThreads);
+
+				submitOpen(openExecutor, openSemaphore, openFutures, nextToSubmit++, indices, list, directory);
 			}
 
 			// open images as stack
@@ -358,8 +345,8 @@ public class FolderOpener implements PlugIn, TextListener {
 				for (int pos=0; pos<indices.length; pos++) {
 					int i = indices[pos];
 					// Submit more images for opening
-					if (multithreadOpen && nextToSubmit<indices.length) {
-						submitOpen(openExecutor, openFutures, nextToSubmit++, indices, list, directory);
+					while (multithreadOpen && nextToSubmit<indices.length && openSemaphore.availablePermits()>0) {
+						submitOpen(openExecutor, openSemaphore, openFutures, nextToSubmit++, indices, list, directory);
 					}
 					if (!multithreadOpen) {
 						IJ.redirectErrorMessages(true);
@@ -370,6 +357,8 @@ public class FolderOpener implements PlugIn, TextListener {
 					} else if (multithreadOpen) {
 						try {
 							imp = openFutures[pos]!=null ? openFutures[pos].get() : null;
+							openSemaphore.release();
+							openFutures[pos] = null;
 						} catch (Exception ex) {
 							imp = null;
 						}
@@ -520,6 +509,7 @@ public class FolderOpener implements PlugIn, TextListener {
 			} finally {
 				if (openExecutor!=null) {
 					openExecutor.shutdownNow();
+					openExecutor.close();
 					IJ.redirectErrorMessages(false);
 				}
 			}  // open images as stack
@@ -631,6 +621,8 @@ public class FolderOpener implements PlugIn, TextListener {
 		}
 		virtualIntended = false;
 		FITS_Reader.resetFilter();
+		IO.println("FolderOpener: "+(System.currentTimeMillis()-t0)/1000.0+" seconds" +
+				(enableMT ? " (MT"+(useVirtualThreads ? " virtual" : "")+" maxThreads: " + maxThreads +")" : ""));
 	}
 
 
@@ -672,7 +664,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		return info!=null && !(info.startsWith("Software")||info.startsWith("ImageDescription"));
 	 }
 
-	private void submitOpen(ExecutorService executor, Future<ImagePlus>[] futures, int pos, int[] indices, String[] list, String directory) {
+	private void submitOpen(ExecutorService executor, Semaphore openSemaphore, Future<ImagePlus>[] futures, int pos, int[] indices, String[] list, String directory) {
 		final var name = list[indices[pos]];
 		if ("RoiSet.zip".equals(name)) {
 			futures[pos] = null;
@@ -681,7 +673,12 @@ public class FolderOpener implements PlugIn, TextListener {
 		futures[pos] = executor.submit(() -> {
 			if (Thread.interrupted())
 				return null;
-			var opener = new Opener();
+            try {
+                openSemaphore.acquire();
+            } catch (InterruptedException e) {
+                return null;
+            }
+            var opener = new Opener();
 			opener.setSilentMode(true);
 			return opener.openTempImage(directory, name);
 		});
@@ -854,15 +851,8 @@ public class FolderOpener implements PlugIn, TextListener {
 
 		// Experimental Options
 		{
-			gd.addCheckbox("Multithreaded Opening", false);
-			gd.addCheckbox("Use Virtual Threads", false);
-			gd.addCheckbox("Limit Lookahead Window", false);
-			gd.addCheckbox("Limit Number of Virtual Threads", false);
-			gd.addNumericField("Max Threads", Runtime.getRuntime().availableProcessors(), 0);
 			enableMT = gd.getNextBoolean();
 			useVirtualThreads = gd.getNextBoolean();
-			limitLookahead = gd.getNextBoolean();
-			limitThreads = gd.getNextBoolean();
 			maxThreads = (int)gd.getNextNumber();
 		}
 

@@ -109,12 +109,7 @@ public class QuantizeProcessor {
             IntBuffer intData = IntBuffer.wrap(new int[quantizeOption.getTileHeight() * quantizeOption.getTileWidth()]);
             postCompressor.decompress(compressed, intData);
             intData.rewind();
-            double[] doubles = new double[quantizeOption.getTileHeight() * quantizeOption.getTileWidth()];
-            DoubleBuffer doubleBuffer = DoubleBuffer.wrap(doubles);
-            unquantize(intData, doubleBuffer);
-            for (double d : doubles) {
-                buffer.put((float) d);
-            }
+            unquantize(intData, buffer);
         }
     }
 
@@ -360,6 +355,13 @@ public class QuantizeProcessor {
     public void unquantize(final IntBuffer intData, final DoubleBuffer fdata) {
         while (fdata.hasRemaining()) {
             fdata.put(pixelFilter.toDouble(intData.get()));
+            pixelFilter.nextPixel();
+        }
+    }
+
+    public void unquantize(final IntBuffer intData, final FloatBuffer fdata) {
+        while (fdata.hasRemaining()) {
+            fdata.put((float) pixelFilter.toDouble(intData.get()));
             pixelFilter.nextPixel();
         }
     }

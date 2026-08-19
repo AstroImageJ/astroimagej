@@ -16,8 +16,7 @@ public class ConfigHandler {
     private ConfigHandler() {}
 
     public static List<Line> readOptions() {
-        var p = configFilePath();
-        ensureOverlayConfigExists(p);
+        var p = getPath();
 
         if (!Files.exists(p)) {
             IJ.error("Config Editor", "Failed to find 'AstroImageJ.cfg'");
@@ -53,8 +52,7 @@ public class ConfigHandler {
     }
 
     public static void writeOptions(List<Line> lines) {
-        var p = configFilePath();
-        ensureOverlayConfigExists(p);
+        var p = getPath();
 
         try {
             Files.write(p, (Iterable<String>) () -> lines.stream().filter(Objects::nonNull).map(l -> {
@@ -134,6 +132,12 @@ public class ConfigHandler {
                 lines.add(new Option(opt));
             }
         }
+    }
+
+    public static Path getPath() {
+        var p = configFilePath();
+        ensureOverlayConfigExists(p);
+        return p;
     }
 
     private static void ensureOverlayConfigExists(Path p) {

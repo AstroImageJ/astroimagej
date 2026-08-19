@@ -124,6 +124,7 @@ public class Menus {
             Rename IJ to AIJ
             Remove IJ news
             Always set menubar font to that the default font is replaced
+            Add ways to open AIJ locations
             """, modified = true)
 	String addMenuBar() {
 		scale = Prefs.getGuiScale();
@@ -273,6 +274,7 @@ public class Menus {
 
 		Menu help = getMenu("Help");
 		addPlugInItem(help, "ImageJ Website...", "ij.plugin.BrowserLauncher", 0, false);
+		addPlugInItem(help, "AstroImageJ Website...", "ij.plugin.BrowserLauncher(\"https://astroimagej.com\")", 0, false);
 		help.addSeparator();
 		addPlugInItem(help, "Dev. Resources...", "ij.plugin.BrowserLauncher(\""+IJ.URL2+"/developer/index.html\")", 0, false);
 		addPlugInItem(help, "Macro Functions...", "ij.plugin.BrowserLauncher(\"https://wsr.imagej.net/developer/macro/functions.html\")", 0, false);
@@ -287,7 +289,11 @@ public class Menus {
 		Menu aboutMenu = getMenu("Help>About Plugins", true);
 		//addPlugInItem(help, "About ImageJ...", "ij.plugin.AboutBox", 0, false);
 		addPlugInItem(help, "About AstroImageJ...", "ij.plugin.AboutBox", 0, false);
-				
+		help.addSeparator();
+		addPlugInItem(help, "Open Log Location", "ij.astro.util.OpenDirectory(\"log\")", 0, false);
+		addPlugInItem(help, "Open Prefs Location", "ij.astro.util.OpenDirectory(\"prefs\")", 0, false);
+		addPlugInItem(help, "Open Config Location", "ij.astro.util.OpenDirectory(\"config\")", 0, false);
+
 		if (applet==null) {
 			menuSeparators = new Properties();
 			installPlugins();

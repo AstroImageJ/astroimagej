@@ -43,6 +43,7 @@ import nom.tam.fits.compression.algorithm.api.ICompressor;
  */
 @SuppressWarnings({"javadoc", "deprecation"})
 public class QuantizeProcessor {
+    private static final boolean USE_FMA = Boolean.getBoolean("nom.tam.fits.useFMA");
 
     public static class DoubleQuantCompressor extends QuantizeProcessor implements ICompressor<DoubleBuffer> {
 
@@ -125,7 +126,11 @@ public class QuantizeProcessor {
 
         @Override
         protected double toDouble(int pixel) {
-            return (pixel + ROUNDING_HALF) * bScale + bZero;
+            if (USE_FMA) {
+                return Math.fma(pixel + ROUNDING_HALF, bScale, bZero);
+            } else {
+                return (pixel + ROUNDING_HALF) * bScale + bZero;
+            }
         }
 
         @Override
@@ -174,7 +179,11 @@ public class QuantizeProcessor {
 
         @Override
         protected double toDouble(int pixel) {
-            return (pixel - nextRandom() + ROUNDING_HALF) * bScale + bZero;
+            if (USE_FMA) {
+                return Math.fma(pixel - nextRandom() + ROUNDING_HALF, bScale, bZero);
+            } else {
+                return (pixel - nextRandom() + ROUNDING_HALF) * bScale + bZero;
+            }
         }
 
         @Override

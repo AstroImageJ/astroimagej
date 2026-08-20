@@ -76,6 +76,7 @@ import nom.tam.fits.header.Standard;
  * @since 1.20
  */
 public class Quantizer {
+    private static final boolean USE_FMA = Boolean.getBoolean("nom.tam.fits.useFMA");
 
     private Long blankingValue;
 
@@ -151,7 +152,11 @@ public class Quantizer {
         if (blankingValue != null && value == blankingValue) {
             return Double.NaN;
         }
-        return scale * value + offset;
+        if (USE_FMA) {
+            return Math.fma(scale, value, offset);
+        } else {
+            return scale * value + offset;
+        }
     }
 
     /**

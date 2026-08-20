@@ -617,6 +617,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		FITS_Reader.resetFilter();
 		IO.println("FolderOpener: "+(System.currentTimeMillis()-t0)/1000.0+" seconds" +
 				(ENABLE_MT.get() ? " (MT"+" maxThreads: " + MAX_THREADS +")" : ""));
+		IO.println("FMA Enabled: " + Boolean.getBoolean("nom.tam.fits.useFMA"));
 	}
 
 

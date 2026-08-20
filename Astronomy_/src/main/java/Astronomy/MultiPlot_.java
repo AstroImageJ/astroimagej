@@ -1482,8 +1482,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 refStarPanelWasShowing = false;
             }
             if (addAstroDataFrame != null) {
-                addAstroDataFrameWasShowing = addAstroDataFrame.isVisible();
+                var addAstroDataFrameWasShowing = addAstroDataFrame.isVisible();
                 closeAddAstroDataFrame();
+                MultiPlot_.addAstroDataFrameWasShowing = addAstroDataFrameWasShowing;
             } else {
                 addAstroDataFrameWasShowing = false;
             }

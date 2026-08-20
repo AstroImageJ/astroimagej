@@ -449,6 +449,8 @@ public class FitsReader implements AutoCloseable {
             AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
         }
 
+        var pm = new ProgressMonitor(IJ.getInstance(), "Reading FITS file", "Processing Image HDUs...",
+                0, countStackableImagesFromDescriptors());
         for (int i = 0; i < hduDescriptors.size(); i++) {
             var header = hduDescriptors.get(i).getFormedHeader();
             if (header.getIntValue(NAXIS) == 0) {
@@ -461,6 +463,7 @@ public class FitsReader implements AutoCloseable {
             headers.add(headerToString(header));
             if (includeProcessors) {
                 processors.add(twoDimensionalImageData2Processor(i));
+                pm.setProgress(i);
             }
         }
 

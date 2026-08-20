@@ -138,7 +138,7 @@ public class ResolverContext {
             if (ids != null) {
                 for (int idd : ids) {
                     id = WindowManager.getImage(idd);
-                    if ((id.getWindow() instanceof AstroStackWindow)) {
+                    if (id != null && (id.getWindow() instanceof AstroStackWindow)) {
                         return id;
                     }
                 }

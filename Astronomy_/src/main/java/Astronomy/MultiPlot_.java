@@ -5598,6 +5598,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             saveAstroPanelPrefs();
             checkAndLockTable();
+            var autoUpdateOn = autoAstroDataUpdate;
             currentTask = astroExecutor.submit(() -> {
                 try {
                     var oSharedSkies = acc.useSharedSkies();
@@ -5653,7 +5654,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         acc.clearBulkTimes();
                         table.show();
                         table.setLock(false);
-                        if (!autoAstroDataUpdateRunning) updatePlot(updateAllFits(), false);
+                        if (!autoUpdateOn) updatePlot(updateAllFits(), false);
                         Thread t2 = new Thread(() -> {
                             if (OKbutton != null) {
                                 OKbutton.setForeground(defaultOKForeground);

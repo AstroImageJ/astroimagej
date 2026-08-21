@@ -1137,6 +1137,8 @@ ImagePlus openJpegOrGifUsingURL(String title, URL url) {
 			} else {
 				return null;
 			}
+		} else {
+			ZipOpenerUtil.closeZipFile(path);
 		}
 		// End open zip as folder
 

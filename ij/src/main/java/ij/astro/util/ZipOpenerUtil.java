@@ -1,19 +1,28 @@
 package ij.astro.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.FolderOpener;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Utilities for opening a zip file as a folder.
  */
 public class ZipOpenerUtil {
+    private static final Map<Path, FileSystem> ZIPS = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, Path> PATHS = Collections.synchronizedMap(new HashMap<>());
 
     public static boolean getOption() {
         var gd = new GenericDialog("Zip File Opener");
@@ -80,6 +89,17 @@ public class ZipOpenerUtil {
             internalPath = "";
         }
 
+        var absPath = PATHS.computeIfAbsent(zipFilePath, _ -> zipFileOnDisk.toPath().toAbsolutePath());
+
+        //noinspection resource
+        ZIPS.computeIfAbsent(absPath, k -> {
+            try {
+                return FileSystems.newFileSystem(k);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         try (ZipFile zip = new ZipFile(zipFilePath)) {
             return zip.stream()
                     .map(InternalZipFile::buildFromEntry)
@@ -88,6 +108,45 @@ public class ZipOpenerUtil {
                     .filter(entry -> internalPath.isEmpty() || entry.path.startsWith(internalPath))
                     .toArray(InternalZipFile[]::new);
         }
+    }
+
+    /// @param path the path to the zip file
+    /// @return the ZipFile
+    public static FileSystem getZipFile(String path) {
+        String lowerCasePath = path.toLowerCase();
+        int zipIndex = lowerCasePath.indexOf(".zip");
+        if (zipIndex < 0) {
+            return null;
+        }
+
+        String zipFilePath = path.substring(0, zipIndex + 4);
+
+        var absPath = PATHS.computeIfAbsent(zipFilePath, k -> Paths.get(k).toAbsolutePath());
+
+        return ZIPS.computeIfAbsent(absPath, k -> {
+            try {
+                return FileSystems.newFileSystem(k);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static void closeZipFile(String path) {
+        String lowerCasePath = path.toLowerCase();
+        int zipIndex = lowerCasePath.indexOf(".zip");
+        if (zipIndex < 0) return;
+
+        String zipFilePath = path.substring(0, zipIndex + 4);
+
+        var absPath = PATHS.computeIfAbsent(zipFilePath, k -> Paths.get(k).toAbsolutePath());
+
+        try {
+            ZIPS.remove(absPath).close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public record InternalZipFile(String path, long uncompressedSizeInBytes) {

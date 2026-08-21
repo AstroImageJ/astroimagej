@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -32,11 +33,13 @@ import javax.swing.ProgressMonitor;
 import javax.swing.ProgressMonitorInputStream;
 
 import ij.IJ;
+import ij.ImagePlus;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
 import ij.astro.util.SkyAlgorithmsTimeUtil;
+import ij.astro.util.ZipOpenerUtil;
 import ij.io.FileInfo;
 import ij.io.OpenDialog;
 import ij.io.Opener;
@@ -112,11 +115,17 @@ public class FitsReader implements AutoCloseable {
         if (isFileWithinZip(path)) {
             var s = path.split("\\.zip");
 
-            try (var zip = new ZipFile(s[0] + ".zip")) {
-                var m = new ProgressMonitorInputStream(IJ.getInstance(),
-                        "Reading FITS image", zip.getInputStream(zip.getEntry(s[1].substring(1))));
-                FitsFactory.setAllowHeaderRepairs(true);
-                return new FitsReader(new Fits(m), directory, fileName);
+            FileSystem zipFileSystem;
+            if (ImagePlus.TEMPORARY_IMAGE.orElse(false) &&
+                    (zipFileSystem = ZipOpenerUtil.getZipFile(s[0] + ".zip")) != null) {
+                return new FitsReader(new Fits(Files.newInputStream(zipFileSystem.getPath(s[1].substring(1)))), directory, fileName);
+            } else {
+                try (var zip = new ZipFile(s[0] + ".zip")) {
+                    var m = new ProgressMonitorInputStream(IJ.getInstance(),
+                            "Reading FITS image", zip.getInputStream(zip.getEntry(s[1].substring(1))));
+                    FitsFactory.setAllowHeaderRepairs(true);
+                    return new FitsReader(new Fits(m), directory, fileName);
+                }
             }
         }
 

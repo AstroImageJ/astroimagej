@@ -21,6 +21,7 @@ import java.awt.image.PixelGrabber;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ij.astro.AstroImageJ;
 import ij.astro.util.VectorPlotDrawing;
@@ -140,7 +141,8 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	private int imageType = GRAY8;
 	private boolean typeSet;
 	private ImageStack stack;
-	private static int currentID = -1;
+	@AstroImageJ(reason = "Support multithreaded image opening", modified = true)
+	private static final AtomicInteger currentID = new AtomicInteger(-1);
 	private int ID;
 	private static Component comp;
 	private boolean imageLoaded;
@@ -229,14 +231,16 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
     	setID();
     }
 
+	@AstroImageJ(reason = "Support multithreaded image opening", modified = true)
     private void setID() {
-    	ID = --currentID;
+    	ID = currentID.decrementAndGet();
 	}
-	
+
+	@AstroImageJ(reason = "Support multithreaded image opening", modified = true)
 	public void setTemporary() {
 		if (!temporary) {
 			temporary = true;		
-			currentID++;
+			currentID.incrementAndGet();
 			ID = -Integer.MAX_VALUE;
 		}
 	}

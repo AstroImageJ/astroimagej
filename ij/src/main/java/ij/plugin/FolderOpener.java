@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -73,11 +74,15 @@ public class FolderOpener implements PlugIn, TextListener {
 	private boolean openAsSeparateImages;
 	private boolean runningOpen;
 	private TextField dirField, filterField, startField, countField, stepField;
+	@AstroImageJ(reason = "Multithread FolderOpening")
+	private final AtomicInteger progressCounter = new AtomicInteger(0);
 	@AstroImageJ(reason = "Allow FITS reader to track virtual stack")
 	public static boolean virtualIntended;
 	@AstroImageJ(reason = "Setup automatic wcs shape generation")
 	public static final Property<Boolean> AUTOMATIC_WCS_SHAPE_GENERATION = new Property<>(false, FolderOpener.class);
+	@AstroImageJ(reason = "Multithread FolderOpening")
 	private static final Property<Boolean> ENABLE_MT = new Property<>(true, FolderOpener.class);
+	@AstroImageJ(reason = "Multithread FolderOpening")
 	private static final int MAX_THREADS = getThreadCount();
 
 	
@@ -493,8 +498,9 @@ public class FolderOpener implements PlugIn, TextListener {
 						}
 					}
 					count++;
-					IJ.showStatus("!"+count+"/"+this.nFiles);
-					IJ.showProgress(count, this.nFiles);
+					var progress = multithreadOpen ? progressCounter.get() : count;
+					IJ.showStatus("!"+progress+"/"+this.nFiles);
+					IJ.showProgress(progress, this.nFiles);
 					if (count>=this.nFiles)
 						break;
 					if (IJ.escapePressed())
@@ -677,7 +683,11 @@ public class FolderOpener implements PlugIn, TextListener {
             }
             var opener = new Opener();
 			opener.setSilentMode(true);
-			return opener.openTempImage(directory, name);
+			ImagePlus imagePlus = opener.openTempImage(directory, name);
+			var progress = progressCounter.incrementAndGet();
+			IJ.showStatus("!"+progress+"/"+this.nFiles);
+			IJ.showProgress(progress, nFiles);
+			return imagePlus;
 		});
 	}
 

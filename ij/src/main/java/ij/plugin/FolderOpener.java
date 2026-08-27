@@ -10,6 +10,7 @@ import java.awt.image.ColorModel;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
@@ -28,6 +29,7 @@ import ij.astro.AstroImageJ;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
+import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ZipOpenerUtil;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
@@ -319,7 +321,8 @@ public class FolderOpener implements PlugIn, TextListener {
 				indices[k] = idxList.get(k);
 			}
 
-			var multithreadOpen = !openAsVirtualStack && !openAsSeparateImages && indices.length>1 && ENABLE_MT.get();
+			var multithreadOpen = !openAsVirtualStack && !openAsSeparateImages && indices.length>1 &&
+					ENABLE_MT.get() && Arrays.stream(list).allMatch(FitsExtensionUtil::isFitsFile);
 
 			// Setup multithreaded run
 			ExecutorService openExecutor = null;

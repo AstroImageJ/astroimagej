@@ -27,6 +27,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
 
 import javax.swing.ProgressMonitor;
@@ -62,10 +67,12 @@ import nom.tam.fits.header.Standard;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.image.compression.hdu.CompressedTableHDU;
 import nom.tam.util.Cursor;
+import nom.tam.util.FitsFile;
 
 public class FitsReader implements AutoCloseable {
     public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
     private static final LeapSeconds LEAP_SECONDS = new LeapSeconds();
+    private static final int MAX_THREADS = getThreadCount();
     private final Fits fits;
     private final List<HDUDescriptor> hduDescriptors;
     private final BasicHDU<?>[] hdus;
@@ -109,6 +116,7 @@ public class FitsReader implements AutoCloseable {
         if (fileName == null) {
             throw new FitsException("Null filename.");
         }
+        path = od.getPath();
 
         //IJ.showStatus("Opening: " + directory + fileName);
 
@@ -439,7 +447,7 @@ public class FitsReader implements AutoCloseable {
      * Create a stack from a fits file that only contains multiple images
      */
     private ProcessedFits processorsFromManyHdu(boolean includeProcessors) throws IOException {
-        var processors = new ArrayList<ImageProcessor>();
+        List<ImageProcessor> processors = new ArrayList<>();
         var headers = new ArrayList<String>();
 
         var noExtensionNames =
@@ -458,8 +466,13 @@ public class FitsReader implements AutoCloseable {
             AIJLogger.log("Multi-image file must contain at least one HDU with the name of 'SCI'");
         }
 
+        int expectedImages = countStackableImagesFromDescriptors();
         var pm = new ProgressMonitor(IJ.getInstance(), "Reading FITS file", "Processing Image HDUs...",
-                0, countStackableImagesFromDescriptors());
+                0, expectedImages);
+        var multithreadFits3d = includeProcessors && //false &&
+                fits.getStream() instanceof FitsFile && expectedImages > MAX_THREADS
+                && !ImagePlus.TEMPORARY_IMAGE.orElse(false);
+        var hdusToUnpack = new ArrayList<Integer>();
         for (int i = 0; i < hduDescriptors.size(); i++) {
             var header = hduDescriptors.get(i).getFormedHeader();
             if (header.getIntValue(NAXIS) == 0) {
@@ -471,8 +484,61 @@ public class FitsReader implements AutoCloseable {
 
             headers.add(headerToString(header));
             if (includeProcessors) {
-                processors.add(twoDimensionalImageData2Processor(i));
-                pm.setProgress(i);
+                if (multithreadFits3d) {
+                    hdusToUnpack.add(i);
+                } else {
+                    processors.add(twoDimensionalImageData2Processor(i));
+                    pm.setProgress(i);
+                }
+            }
+        }
+
+        if (multithreadFits3d) {
+            try (var executor = Executors.newWorkStealingPool(MAX_THREADS)) {
+                var hasFailure = new AtomicBoolean(false);
+                var pros = new ImageProcessor[hdusToUnpack.size()];
+                var c = new AtomicInteger();
+                var futures = new ArrayList<Future<?>>();
+                var path = Path.of(directory, fileName).toFile();
+                for (int i = 0; i < hdusToUnpack.size(); i++) {
+                    var finalI = i;
+                    futures.add(executor.submit(() -> {
+                        var hdu = fits.getHDU(hdusToUnpack.get(finalI));
+                        try (var f = new Fits(path)) {
+                            hdu.getData().relink((FitsFile)f.getStream());
+                            pros[finalI] = twoDimensionalImageData2Processor(hdu);
+                            pm.setProgress(c.incrementAndGet());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            hasFailure.set(true);
+                        } finally {
+                            // Restore data source
+                            hdu.getData().relink((FitsFile)fits.getStream());
+                        }
+                        return null;
+                    }));
+                }
+
+                futures.forEach(f -> {
+                    try {
+                        f.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                        hasFailure.set(true);
+                    }
+                });
+
+                // Failed to read all hdus, try normally
+                if (hasFailure.get()) {
+                    for (int i = 0; i < pros.length; i++) {
+                        if (pros[i] == null) {
+                            pros[i] = twoDimensionalImageData2Processor(hdusToUnpack.get(i));
+                            pm.setProgress(c.incrementAndGet());
+                        }
+                    }
+                }
+
+                processors = Arrays.asList(pros);
             }
         }
 
@@ -486,8 +552,22 @@ public class FitsReader implements AutoCloseable {
      * (see {@link ImageProcessor#getPixelValue(int, int)})
      */
     private ImageProcessor twoDimensionalImageData2Processor(int imageIndex) throws IOException {
+        return twoDimensionalImageData2Processor(fits, imageIndex);
+    }
+
+    /**
+     * Convert 2D image data into an ImageProcessor, scale image data
+     * <p>
+     * Data is transposed to match {@link ImageProcessor} implementations
+     * (see {@link ImageProcessor#getPixelValue(int, int)})
+     */
+    private ImageProcessor twoDimensionalImageData2Processor(Fits fits, int imageIndex) throws IOException {
         var hdu = fits.getHDU(imageIndex);
-        Object imageData = null;
+        return twoDimensionalImageData2Processor(hdu);
+    }
+
+    private ImageProcessor twoDimensionalImageData2Processor(BasicHDU<?> hdu) {
+        Object imageData;
         if (hdu instanceof CompressedImageHDU compressedImageHDU) {
             imageData = compressedImageHDU.asImageHDU().getKernel();
         } else if (hdu instanceof ImageHDU imageHDU) {
@@ -957,6 +1037,11 @@ public class FitsReader implements AutoCloseable {
 
     public int getDepth() {
         return depth;
+    }
+
+    private static int getThreadCount() {
+        final int maxRealThreads = Runtime.getRuntime().availableProcessors();
+        return Math.max(1 + (maxRealThreads / 3), maxRealThreads - 4);
     }
 
     private record ProcessedFits(List<ImageProcessor> processors, List<String> headers) {}

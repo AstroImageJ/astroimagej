@@ -210,6 +210,10 @@ public abstract class Data implements FitsElement {
         return fileOffset;
     }
 
+    public void relink(RandomAccess input) {
+        this.input = input;
+    }
+
     /**
      * Same as {@link #getData()}.
      *

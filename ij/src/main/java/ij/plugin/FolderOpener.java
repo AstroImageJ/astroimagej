@@ -166,7 +166,6 @@ public class FolderOpener implements PlugIn, TextListener {
             """,
 			modified = true)
 	public void run(String arg) {
-		var t0 = System.currentTimeMillis();
 		boolean isMacro = Macro.getOptions()!=null;
 		if (!directorySet)
 			directory = null;
@@ -291,7 +290,7 @@ public class FolderOpener implements PlugIn, TextListener {
 				return;
 			}
 			IJ.showStatus("");
-			t0 = System.currentTimeMillis();
+			var t0 = System.currentTimeMillis();
 			if (dicomImages && !IJ.isMacOSX() && !sortFileNames)
 				list = StringSorter.sortNumerically(list);
 
@@ -625,9 +624,9 @@ public class FolderOpener implements PlugIn, TextListener {
 		virtualIntended = false;
 		FITS_Reader.resetFilter();
 		ZipOpenerUtil.closeZipFile(directory);
-		IO.println("FolderOpener: "+(System.currentTimeMillis()-t0)/1000.0+" seconds" +
+		/*IO.println("FolderOpener: "+(System.currentTimeMillis()-t0)/1000.0+" seconds" +
 				(ENABLE_MT.get() ? " (MT"+" maxThreads: " + MAX_THREADS +")" : ""));
-		IO.println("FMA Enabled: " + Boolean.getBoolean("nom.tam.fits.useFMA"));
+		IO.println("FMA Enabled: " + Boolean.getBoolean("nom.tam.fits.useFMA"));*/
 	}
 
 

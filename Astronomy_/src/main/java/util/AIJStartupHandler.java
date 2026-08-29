@@ -5,6 +5,7 @@ import static Astronomy.MultiPlot_.useMacroTitle;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import astroj.FreeformPixelApertureRoi;
 import astroj.IJU;
 import astroj.MeasurementTable;
 import astroj.ShapedApertureRoi;
+import com.sun.management.HotSpotDiagnosticMXBean;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.io.FitsReader;
@@ -292,6 +294,18 @@ public class AIJStartupHandler implements PlugIn {
         ensureConfigFileExists();
         Executors.newSingleThreadExecutor()
                 .execute(() -> IJ.runPlugIn(AstroImageJUpdaterV6.class.getCanonicalName(), "check"));
+        // Automatically enable `nom.tam.fits.useFma` system property if JVM UseFMA is enabled.
+        // The JVM will automatically enable the UseFMA vm option if the cpu supports it.
+        // Not available on openj9
+        try {
+            var hotSpotDiagnostic = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+            var useFMAVMOption = hotSpotDiagnostic.getVMOption("UseFMA");
+            QuantizeOption.useFMA(Boolean.parseBoolean(useFMAVMOption.getValue()));
+            IO.println((QuantizeOption.isUseFMA() ? "Enabled" : "Disabled") + " fma use.");
+        } catch (Throwable _) {
+            // Likely on a different runtime
+            IO.println("Failed to enable fma use.");
+        }
     }
 
     private void ensureConfigFileExists() {

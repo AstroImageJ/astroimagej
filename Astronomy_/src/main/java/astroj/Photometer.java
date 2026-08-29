@@ -2,16 +2,8 @@
 
 package astroj;
 
-import Astronomy.photometer.RecursivePixelProcessor;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.astro.io.prefs.Property;
-import ij.measure.Calibration;
-import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
-import util.AdaptiveSimpson;
-
-import java.awt.*;
+import java.awt.Frame;
+import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.awt.geom.FlatteningPathIterator;
 import java.awt.geom.PathIterator;
@@ -20,6 +12,15 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.DoubleAccumulator;
 import java.util.concurrent.atomic.LongAdder;
+
+import Astronomy.photometer.RecursivePixelProcessor;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.io.prefs.Property;
+import ij.measure.Calibration;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import util.AdaptiveSimpson;
 
 /**
  * Simple aperture photometer using a circular aperture and a background annulus with
@@ -57,6 +58,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class Photometer {
     private static final double FUDGE_CONST = 2 * Math.sqrt(2);
+    private static boolean useFma = false;
     /**
      * Center position of aperture in pixels.
      */
@@ -380,7 +382,7 @@ public class Photometer {
                                 fraction = integrateArea(pixel, false);
                             }
 
-                            source += fraction * d;
+                            source = useFma ? Math.fma(fraction, d, source) : source + fraction * d;
                             dSourceCount += fraction;
 
                             if (fraction > 0.01 && d > peak) {
@@ -412,11 +414,11 @@ public class Photometer {
                                 }
 
                                 if (!removeBackStars && !usePlaneLocal) {
-                                    back += fraction * d;
+                                    back = useFma ? Math.fma(fraction, d, back) : back + fraction * d;
                                     dBackCount += fraction;
                                 } else if (fraction > 0) { // BACKGROUND
                                     back += d;
-                                    back2 += d * d;
+                                    back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                                     backCount++;
                                     if (usePlaneLocal) {
                                         plane.addPoint(i, j, d);
@@ -518,7 +520,7 @@ public class Photometer {
                             if (!Float.isNaN(d)) {
                                 if (backgroundArea.contains(i + 0.5, j + 0.5)) {
                                     back += d;
-                                    back2 += d * d;
+                                    back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                                     backCount++;
                                     if (usePlaneLocal) {
                                         plane.addPoint(i, j, d);
@@ -599,7 +601,7 @@ public class Photometer {
             }
 
             for (int iteration = 0; iteration < 100; iteration++) {
-                backstdev = Math.sqrt(back2Mean - backMean * backMean);
+                backstdev = useFma ? Math.sqrt(Math.fma(-backMean, backMean, back2Mean)) : Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
                 back2 = 0.0;
                 backCount = 0;
@@ -612,13 +614,13 @@ public class Photometer {
                 }
 
                 // REMOVE STARS FROM BACKGROUND
-                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
-                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
+                var backMeanPlus2Stdev = useFma ? Math.fma(2.0, backstdev, backMean) : backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = useFma ? Math.fma(-2.0, backstdev, backMean) : backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
                     var d = pixels[i];
                     if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
                         back += d; // FINAL BACKGROUND
-                        back2 += d * d;
+                        back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                         backCount++;
                         if (usePlaneLocal) {
                             plane.addPoint(is[i], js[i], d);
@@ -716,8 +718,8 @@ public class Photometer {
 
                                 dSourceCount += fraction;
                                 var b = plane.valueAt(i, j);
-                                back += b * fraction;
-                                source += (d - b) * fraction;
+                                back = useFma ? Math.fma(b, fraction, back) : back + b * fraction;
+                                source = useFma ? Math.fma(d - b, fraction, source) : source + (d - b) * fraction;
                             }
                         }
                     }
@@ -797,7 +799,8 @@ public class Photometer {
         srcCnt = (dSourceCount <= 0.0 || dBackCount <= 0) ? 0.0 : dSourceCount;
         bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
 
-        serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
+        serror = useFma ? Math.sqrt(Math.fma(src, gain, sCnt * (1.0 + srcCnt / bckCnt) * (Math.fma(bck, gain, dark) + ron * ron + gain * gain * 0.083521))) / gain :
+                Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
         fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.getXpos(), apertureRoi.getYpos(), radius, back);
 
         // CALIBRATE INTENSITIES IF POSSIBLE
@@ -929,7 +932,7 @@ public class Photometer {
                             dBackCount++;
                         } else if (pixel.isBackground()) { // BACKGROUND
                             back += d;
-                            back2 += d * d;
+                            back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                             backCount++;
                             if (usePlaneLocal) {
                                 plane.addPoint(pixel.x(), pixel.y(), d);
@@ -945,11 +948,11 @@ public class Photometer {
                     var dj = (double) j + Centroid.PIXELCENTER - ypix;        // pixel center
                     for (int i = i1; i <= i2; i++) {
                         var di = (double) i + Centroid.PIXELCENTER - xpix;    // pixel center
-                        var r2 = di * di + dj * dj;                         // radius to pixel center
+                        var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;                         // radius to pixel center
                         d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
                             /*var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
-                            source += fraction * d;
+                            source = useFma ? Math.fma(fraction, d, source) : source + fraction * d;
                             dSourceCount += fraction;
                             if (fraction > 0.01 && d > peak) {
                                 peak = d;
@@ -961,14 +964,14 @@ public class Photometer {
                                 }
                                 if (!removeBackStars && !usePlaneLocal) {
                                     var fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
-                                    back -= fraction * d;
+                                    back = useFma ? Math.fma(-fraction, d, back) : back - fraction * d;
                                     dBackCount -= fraction;
                                     fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
-                                    back += fraction * d;
+                                    back = useFma ? Math.fma(fraction, d, back) : back + fraction * d;
                                     dBackCount += fraction;
                                 } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                                     back += d;
-                                    back2 += d * d;
+                                    back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                                     backCount++;
                                     if (usePlaneLocal) {
                                         plane.addPoint(di, dj, d);
@@ -996,7 +999,7 @@ public class Photometer {
                     }
                     if (hasBack && pixel.isBackground()) { // BACKGROUND
                         back += d;
-                        back2 += d * d;
+                        back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                         backCount++;
                         if (usePlaneLocal) {
                             plane.addPoint(pixel.x(), pixel.y(), d);
@@ -1011,7 +1014,7 @@ public class Photometer {
                     var dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
                     for (int i = i1; i <= i2; i++) {
                         var di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                        var r2 = di * di + dj * dj;
+                        var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;
                         d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
                             /*if (r2 < r2ap) { // SOURCE APERTURE
@@ -1027,7 +1030,7 @@ public class Photometer {
                                     continue;
                                 }
                                 back += d;
-                                back2 += d * d;
+                                back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                                 backCount++;
                                 if (usePlaneLocal) {
                                     plane.addPoint(di, dj, d);
@@ -1074,7 +1077,7 @@ public class Photometer {
                     var dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
                     for (int i = i1; i <= i2; i++) {
                         var di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
-                        var r2 = di * di + dj * dj;
+                        var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;
                         if (r2 >= r2b1 && r2 <= r2b2) {
                             d = ip.getPixelValue(i, j);
                             // Pixel was added to background and overlaps annulus
@@ -1094,7 +1097,7 @@ public class Photometer {
             }
 
             for (int iteration = 0; iteration < 100; iteration++) {
-                backstdev = Math.sqrt(back2Mean - backMean * backMean);
+                backstdev = useFma ? Math.sqrt(Math.fma(-backMean, backMean, back2Mean)) : Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
                 back2 = 0.0;
                 backCount = 0;
@@ -1107,13 +1110,13 @@ public class Photometer {
                 }
 
                 // REMOVE STARS FROM BACKGROUND
-                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
-                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
+                var backMeanPlus2Stdev = useFma ? Math.fma(2.0, backstdev, backMean) : backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = useFma ? Math.fma(-2.0, backstdev, backMean) : backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
                     d = pixels[i];
                     if ((d <= backMeanPlus2Stdev) /*&& (d >= backMeanMinus2Stdev)*/) {
                         back += d; // FINAL BACKGROUND
-                        back2 += d * d;
+                        back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                         backCount++;
                         if (usePlaneLocal) {
                             plane.addPoint(is[i], js[i], d);
@@ -1176,8 +1179,8 @@ public class Photometer {
                                 var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
                                 dSourceCount += fraction;
                                 b = plane.valueAt(di, dj);
-                                back += b * fraction;
-                                source += (d - b) * fraction;
+                                back = useFma ? Math.fma(b, fraction, back) : back + b * fraction;
+                                source = useFma ? Math.fma(d - b, fraction, source) : source + (d - b) * fraction;
                             }
                         }
                     }
@@ -1201,21 +1204,21 @@ public class Photometer {
 
                 if (useBackgroundAnnulus) {
                     for (int j = j1; j <= j2; j++) {
-                    var dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
-                    for (int i = i1; i <= i2; i++) {
-                        var di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                        var r2 = di * di + dj * dj;
-                        if (r2 < radius * radius) { // SOURCE APERTURE
-                            d = ip.getPixelValue(i, j);
-                            if (!Float.isNaN(d)) {
-                                srcCount++;
-                                b = plane.valueAt(di, dj);
-                                back += b;
-                                source += (d - b);
+                        var dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                        for (int i = i1; i <= i2; i++) {
+                            var di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                            var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;
+                            if (r2 < radius * radius) { // SOURCE APERTURE
+                                d = ip.getPixelValue(i, j);
+                                if (!Float.isNaN(d)) {
+                                    srcCount++;
+                                    b = plane.valueAt(di, dj);
+                                    back += b;
+                                    source += (d - b);
+                                }
                             }
                         }
                     }
-                }
                 }
 
                 dSourceCount = srcCount;
@@ -1245,7 +1248,8 @@ public class Photometer {
         srcCnt = (dSourceCount <= 0.0 || dBackCount <= 0) ? 0.0 : dSourceCount;
         bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
 
-        serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
+        serror = useFma ? Math.sqrt(Math.fma(src, gain, sCnt * (1.0 + srcCnt / bckCnt) * (Math.fma(bck, gain, dark) + ron * ron + gain * gain * 0.083521))) / gain :
+                Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
         fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, back);
 
         // CALIBRATE INTENSITIES IF POSSIBLE
@@ -1387,13 +1391,13 @@ public class Photometer {
                     if (hasBack) {
                         var dy = j + Centroid.PIXELCENTER - ypix;
                         var dx = i + Centroid.PIXELCENTER - xpix;
-                        var r2 = dx * dx + dy * dy;
+                        var r2 = useFma ? Math.fma(dx, dx, dy * dy) : dx * dx + dy * dy;
                         if (!removeBackStars && !usePlaneLocal) {
                             fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
                             var b = -(fraction * d);
                             var bc = -fraction;
                             fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
-                            backAdder.setVal(i, j, (fraction * d) + b);
+                            backAdder.setVal(i, j, useFma ? Math.fma(fraction, d, b) : (fraction * d) + b);
                             dBackCountAdder.setVal(i, j, fraction + bc);
                         } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                             backAdder.setVal(i, j, d);
@@ -1426,11 +1430,11 @@ public class Photometer {
                     dj = (double) j + Centroid.PIXELCENTER - ypix;        // pixel center
                     for (int i = i1; i <= i2; i++) {
                         di = (double) i + Centroid.PIXELCENTER - xpix;    // pixel center
-                        var r2 = di * di + dj * dj;                         // radius to pixel center
+                        var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;                         // radius to pixel center
                         var d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
                             var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
-                            source += fraction * d;
+                            source = useFma ? Math.fma(fraction, d, source) : source + fraction * d;
                             dSourceCount += fraction;
                             if (fraction > 0.01 && d > peak) {
                                 peak = d;
@@ -1438,14 +1442,14 @@ public class Photometer {
                             if (hasBack) {
                                 if (!removeBackStars && !usePlaneLocal) {
                                     fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
-                                    back -= fraction * d;
+                                    back = useFma ? Math.fma(-fraction, d, back) : back - fraction * d;
                                     dBackCount -= fraction;
                                     fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
-                                    back += fraction * d;
+                                    back = useFma ? Math.fma(fraction, d, back) : back + fraction * d;
                                     dBackCount += fraction;
                                 } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                                     back += d;
-                                    back2 += d * d;
+                                    back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                                     backCount++;
                                     if (usePlaneLocal) {
                                         plane.addPoint(di, dj, d);
@@ -1471,7 +1475,7 @@ public class Photometer {
                 var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
                     var dy = j + Centroid.PIXELCENTER - ypix;
                     var dx = i + Centroid.PIXELCENTER - xpix;
-                    var r2 = dx * dx + dy * dy;
+                    var r2 = useFma ? Math.fma(dx, dx, dy * dy) : dx * dx + dy * dy;
                     if (r2 < r2ap) { // SOURCE APERTURE
                         sourceAdder.setVal(i, j, d);
                         sourceCountAdder.increment();
@@ -1507,7 +1511,7 @@ public class Photometer {
                     dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
                     for (int i = i1; i <= i2; i++) {
                         di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                        var r2 = di * di + dj * dj;
+                        var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;
                         var d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
                             if (r2 < r2ap) { // SOURCE APERTURE
@@ -1519,7 +1523,7 @@ public class Photometer {
                             }
                             if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                                 back += d;
-                                back2 += d * d;
+                                back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                                 backCount++;
                                 if (usePlaneLocal) {
                                     plane.addPoint(di, dj, d);
@@ -1562,7 +1566,7 @@ public class Photometer {
                 var task = new RecursivePixelProcessor(region, ip, false, (i, j, d) -> {
                     var dy = j + Centroid.PIXELCENTER - ypix;
                     var dx = i + Centroid.PIXELCENTER - xpix;
-                    var r2 = dx * dx + dy * dy;
+                    var r2 = useFma ? Math.fma(dx, dx, dy * dy) : dx * dx + dy * dy;
                     if (r2 >= r2b1 && r2 <= r2b2) {
                         if (!Double.isNaN(d)) {
                             var idx = indexer.getAndIncrement();
@@ -1591,7 +1595,7 @@ public class Photometer {
                     dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
                     for (int i = i1; i <= i2; i++) {
                         di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
-                        var r2 = di * di + dj * dj;
+                        var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;
                         if (r2 >= r2b1 && r2 <= r2b2) {
                             var d = ip.getPixelValue(i, j);
                             if (!Float.isNaN(d)) {
@@ -1607,7 +1611,7 @@ public class Photometer {
             }
 
             for (int iteration = 0; iteration < 100; iteration++) {
-                backstdev = Math.sqrt(back2Mean - backMean * backMean);
+                backstdev = useFma ? Math.sqrt(Math.fma(-backMean, backMean, back2Mean)) : Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
                 back2 = 0.0;
                 backCount = 0;
@@ -1620,13 +1624,13 @@ public class Photometer {
                 }
 
                 // REMOVE STARS FROM BACKGROUND
-                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
-                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
+                var backMeanPlus2Stdev = useFma ? Math.fma(2.0, backstdev, backMean) : backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = useFma ? Math.fma(-2.0, backstdev, backMean) : backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
                     var d = pixels[i];
                     if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
                         back += d; // FINAL BACKGROUND
-                        back2 += d * d;
+                        back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                         backCount++;
                         if (usePlaneLocal) {
                             plane.addPoint(is[i], js[i], d);
@@ -1700,8 +1704,8 @@ public class Photometer {
                                 var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
                                 dSourceCount += fraction;
                                 var b = plane.valueAt(di, dj);
-                                back += b * fraction;
-                                source += (d - b) * fraction;
+                                back = useFma ? Math.fma(b, fraction, back) : back + b * fraction;
+                                source = useFma ? Math.fma(d - b, fraction, source) : source + (d - b) * fraction;
                             }
                         }
                     }
@@ -1717,8 +1721,11 @@ public class Photometer {
                     var backAdder = region.createPixelStorage(ip);
 
                     var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
-                        var r2 = ((double) i + Centroid.PIXELCENTER - xpix) * ((double) i + Centroid.PIXELCENTER - xpix) +
-                                ((double) j + Centroid.PIXELCENTER - ypix) * ((double) j + Centroid.PIXELCENTER - ypix);
+                        var r2 = useFma ?
+                                (Math.fma(((double) i + Centroid.PIXELCENTER - xpix), ((double) i + Centroid.PIXELCENTER - xpix),
+                                ((double) j + Centroid.PIXELCENTER - ypix) * ((double) j + Centroid.PIXELCENTER - ypix))) :
+                                ((double) i + Centroid.PIXELCENTER - xpix) * ((double) i + Centroid.PIXELCENTER - xpix) +
+                                        ((double) j + Centroid.PIXELCENTER - ypix) * ((double) j + Centroid.PIXELCENTER - ypix);
 
                         if (r2 < r2ap) { // SOURCE APERTURE
                             dSourceCountAdder.setVal(i, j, 1);
@@ -1742,7 +1749,7 @@ public class Photometer {
                         dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
                         for (int i = i1; i <= i2; i++) {
                             di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                            var r2 = di * di + dj * dj;
+                            var r2 = useFma ? Math.fma(di, di, dj * dj) : di * di + dj * dj;
                             if (r2 < r2ap) { // SOURCE APERTURE
                                 var d = ip.getPixelValue(i, j);
                                 if (!Float.isNaN(d)) {
@@ -1782,7 +1789,9 @@ public class Photometer {
         srcCnt = (dSourceCount <= 0.0 || dBackCount <= 0) ? 0.0 : dSourceCount;
         bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
 
-        serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
+        serror = useFma ?
+                Math.sqrt(Math.fma(src, gain, sCnt * (1.0 + srcCnt / bckCnt) * (Math.fma(bck, gain, dark) + ron * ron + gain * gain * 0.083521))) / gain :
+                Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
         fwhm = IJU.radialDistributionFWHM(ip, xCenter, yCenter, radius, back);
 
         // CALIBRATE INTENSITIES IF POSSIBLE
@@ -1856,7 +1865,7 @@ public class Photometer {
         } else if (Math.abs(x) >= r) {
             return (arc(x, y0, y1, r));
         } else {
-            yh = Math.sqrt(r * r - x * x);
+            yh = useFma ? Math.sqrt(Math.fma(r, r, -x * x)) : Math.sqrt(r * r - x * x);
             if (y0 <= -yh) {
                 if (y1 <= -yh) {
                     return (arc(x, y0, y1, r));
@@ -1905,7 +1914,9 @@ public class Photometer {
         // simplified using arctan angle difference identity
         // https://en.wikipedia.org/wiki/List_of_trigonometric_identities#Tangents_and_cotangents_of_sums:~:text=Arctangent,pm%20%5Carctan%20y%7D
         // Changed 4/10/24 to improve performance by avoiding second call to atan by ~40%
-        return 0.5 * r * r * Math.atan((x * (y1 - y0)) / (x * x + y1 * y0));
+        return useFma ?
+                0.5 * r * r * Math.atan((x * (y1 - y0)) / (useFma ? Math.fma(x, x, y1 * y0) : x * x + y1 * y0)) :
+                0.5 * r * r * Math.atan((x * (y1 - y0)) / (x * x + y1 * y0));
     }
 
 
@@ -2011,7 +2022,7 @@ public class Photometer {
      * Computes the signed area of a triangle given its vertices.
      */
     private static double triangleArea(double x1, double y1, double x2, double y2) {
-        return 0.5 * (x1 * y2 - y1 * x2);
+        return useFma ? 0.5 * Math.fma(x1, y2, -y1 * x2) : 0.5 * (x1 * y2 - y1 * x2);
     }
 
 
@@ -2126,6 +2137,13 @@ public class Photometer {
         return mean;
     }
 
+    public static boolean isUseFma() {
+        return useFma;
+    }
+
+    public static void setUseFma(boolean useFma) {
+        Photometer.useFma = useFma;
+    }
 
     protected void addPixelRoi(ImagePlus imp, double x, double y) {
         if (bulkPixelRoi == null) {

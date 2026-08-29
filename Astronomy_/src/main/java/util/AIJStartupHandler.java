@@ -23,6 +23,7 @@ import astroj.AstroCanvas;
 import astroj.FreeformPixelApertureRoi;
 import astroj.IJU;
 import astroj.MeasurementTable;
+import astroj.Photometer;
 import astroj.ShapedApertureRoi;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import ij.IJ;
@@ -300,8 +301,10 @@ public class AIJStartupHandler implements PlugIn {
         try {
             var hotSpotDiagnostic = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
             var useFMAVMOption = hotSpotDiagnostic.getVMOption("UseFMA");
-            QuantizeOption.useFMA(Boolean.parseBoolean(useFMAVMOption.getValue()));
-            IO.println((QuantizeOption.isUseFMA() ? "Enabled" : "Disabled") + " fma use.");
+            var useFma = Boolean.parseBoolean(useFMAVMOption.getValue());
+            QuantizeOption.useFMA(useFma);
+            Photometer.setUseFma(useFma);
+            IO.println((useFma ? "Enabled" : "Disabled") + " fma use.");
         } catch (Throwable _) {
             // Likely on a different runtime
             IO.println("Failed to enable fma use.");

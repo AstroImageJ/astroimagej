@@ -1,5 +1,9 @@
 package nom.tam.image.compression.tile;
 
+import static nom.tam.image.compression.tile.TileCompressionType.COMPRESSED;
+import static nom.tam.image.compression.tile.TileCompressionType.GZIP_COMPRESSED;
+import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
+
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.image.tile.operation.ITileOperationInitialisation;
@@ -35,10 +39,6 @@ import nom.tam.image.tile.operation.TileArea;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.image.compression.tile.TileCompressionType.COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.GZIP_COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
 
 final class TileDecompressorInitialisation implements ITileOperationInitialisation<TileCompressionOperation> {
 
@@ -82,6 +82,6 @@ final class TileDecompressorInitialisation implements ITileOperationInitialisati
     @Override
     public void tileCount(int tileCount) throws FitsException {
         imageTilesOperation.compressOptions().getCompressionParameters().initializeColumns(header,
-                imageTilesOperation.getBinaryTable(), tileCount);
+                imageTilesOperation.getBinaryTable(), 0);
     }
 }

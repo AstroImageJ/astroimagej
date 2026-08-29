@@ -31,11 +31,6 @@
 
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BLANKS;
-import static nom.tam.fits.header.Standard.COMMENT;
-import static nom.tam.fits.header.Standard.CONTINUE;
-import static nom.tam.fits.header.Standard.HISTORY;
-
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -56,6 +51,11 @@ import nom.tam.util.CursorValue;
 import nom.tam.util.FitsInputStream;
 import nom.tam.util.FlexFormat;
 import nom.tam.util.InputReader;
+
+import static nom.tam.fits.header.Standard.BLANKS;
+import static nom.tam.fits.header.Standard.COMMENT;
+import static nom.tam.fits.header.Standard.CONTINUE;
+import static nom.tam.fits.header.Standard.HISTORY;
 
 /**
  * An individual entry in the FITS header, such as a key/value pair with an optional comment field, or a comment-style

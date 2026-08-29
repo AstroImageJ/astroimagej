@@ -13,8 +13,8 @@ dependencies {
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
     implementation("org.apache.commons:commons-compress:1.28.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.3")
 
     testImplementation("org.nanohttpd:nanohttpd-webserver:2.3.1")
 

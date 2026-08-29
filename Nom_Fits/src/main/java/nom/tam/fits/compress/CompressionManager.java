@@ -1,7 +1,5 @@
 package nom.tam.fits.compress;
 
-import static nom.tam.util.LoggerHelper.getLogger;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +41,8 @@ import nom.tam.fits.FitsException;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
+
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * (<i>for internal use</i>) Decompression of compressed FITS files of all supported types (<code>.gz</code>,

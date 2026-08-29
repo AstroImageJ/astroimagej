@@ -33,6 +33,7 @@ import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
+import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.

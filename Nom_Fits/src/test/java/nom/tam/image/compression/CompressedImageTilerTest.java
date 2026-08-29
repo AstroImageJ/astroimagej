@@ -83,29 +83,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.FitsUtil;
-import nom.tam.fits.Header;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.compression.algorithm.api.ICompressOption;
-import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
-import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
-import nom.tam.fits.compression.provider.param.api.ICompressParameters;
-import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
-import nom.tam.fits.header.Compression;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.StreamingTileImageData;
-import nom.tam.image.compression.hdu.CompressedImageHDU;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.DefaultMethodsTest;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.type.ElementType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -139,6 +116,30 @@ import org.junit.jupiter.api.Test;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
+
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.FitsUtil;
+import nom.tam.fits.Header;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.compression.algorithm.api.ICompressOption;
+import nom.tam.fits.compression.algorithm.api.ICompressorControl;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
+import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
+import nom.tam.fits.compression.provider.param.api.ICompressParameters;
+import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
+import nom.tam.fits.header.Compression;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.StreamingTileImageData;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.DefaultMethodsTest;
+import nom.tam.util.FitsInputStream;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.type.ElementType;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class CompressedImageTilerTest {

@@ -31,9 +31,6 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.EXTVER;
-
 import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -62,6 +59,9 @@ import nom.tam.util.FitsOutputStream;
 import nom.tam.util.RandomAccess;
 import nom.tam.util.RandomAccessFileIO;
 import nom.tam.util.SafeClose;
+
+import static nom.tam.fits.header.Standard.EXTNAME;
+import static nom.tam.fits.header.Standard.EXTVER;
 
 /**
  * <p>
@@ -153,7 +153,7 @@ import nom.tam.util.SafeClose;
  * 
  * @see     FitsFactory
  *
- * @version 1.22
+ * @version 1.23
  */
 @SuppressWarnings("deprecation")
 public class Fits implements Closeable {

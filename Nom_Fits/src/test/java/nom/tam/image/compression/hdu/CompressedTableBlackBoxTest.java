@@ -1,21 +1,6 @@
 package nom.tam.image.compression.hdu;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
-
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.header.Compression;
-import nom.tam.fits.util.BlackBoxImages;
-import nom.tam.util.Cursor;
-import nom.tam.util.SafeClose;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 /*
  * #%L
@@ -47,6 +32,23 @@ import org.junit.jupiter.api.Test;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import nom.tam.fits.BinaryTableHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.header.Compression;
+import nom.tam.fits.util.BlackBoxImages;
+import nom.tam.util.Cursor;
+import nom.tam.util.SafeClose;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class CompressedTableBlackBoxTest {

@@ -16,10 +16,13 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.MemoryImageSource;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Random;
 
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.astro.util.PixelPatcher;
 import ij.gui.Arrow;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
@@ -138,6 +141,8 @@ public abstract class ImageProcessor implements Cloneable {
 	protected boolean minMaxSet;
 	protected static double seed = Double.NaN;
 	protected static Random rnd;
+	@AstroImageJ(reason = "Display bad pixels")
+	protected Collection<PixelPatcher.Pixel> badPixels;
 
 	protected void showProgress(double percentDone) {
 		if (progressBar!=null)
@@ -1007,6 +1012,17 @@ public abstract class ImageProcessor implements Cloneable {
 		null to disable the progress bar. */
 	public void setProgressBar(ProgressBar pb) {
 		progressBar = pb;
+	}
+
+	public void markBadPixel(int x, int y) {
+        if (badPixels == null) {
+            badPixels = new ArrayList<>();
+        }
+		badPixels.add(new PixelPatcher.Pixel(x, y));
+	}
+
+	public Collection<PixelPatcher.Pixel> getBadPixels() {
+		return badPixels;
 	}
 
 	/** This method has been replaced by setInterpolationMethod(). */

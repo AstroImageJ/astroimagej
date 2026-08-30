@@ -27,7 +27,7 @@ public class PixelPatcherImpl implements PixelPatcher {
             throw new IllegalArgumentException("Mask must have same width and height!");
         }
 
-        var visited = new boolean[ip.getHeight()][ip.getWidth()];//todo can we just modify the mask when we aren't displaying it?
+        var visited = new boolean[ip.getHeight()][ip.getWidth()];
 
         for (int y = 0; y < ip.getHeight(); y++) {
             for (int x = 0; x < ip.getWidth(); x++) {
@@ -42,26 +42,31 @@ public class PixelPatcherImpl implements PixelPatcher {
                 switch (patchType) {
                     //noinspection DataFlowIssue
                     case PatchType.PassThrough() -> {}
-                    case PatchType.ConstantValue(var val) -> ip.setf(x, y, (float) val);
+                    case PatchType.ConstantValue(var val) -> {
+                        ip.setf(x, y, (float) val);
+                        ip.markBadPixel(x, y);
+                    }
                     case PatchType.AverageFill(int xRadius, int yRadius) -> {
                         var average = ArrayUtil.average(collect(ip, mask, x, y, xRadius, yRadius));
 
                         // No unmasked values present
                         if (Double.isNaN(average)) {
-                            continue;//todo log at end how many were skipped, suggest using another mode
+                            continue;
                         }
 
                         ip.setf(x, y, (float) average);
+                        ip.markBadPixel(x, y);
                     }
                     case PatchType.MedianFill(int xRadius, int yRadius) -> {
                         var median = ArrayUtil.median(collect(ip, mask, x, y, xRadius, yRadius));
 
                         // No unmasked values present
                         if (Double.isNaN(median)) {
-                            continue;//todo log at end how many were skipped, suggest using another mode
+                            continue;
                         }
 
                         ip.setf(x, y, (float) median);
+                        ip.markBadPixel(x, y);
                     }
                     case PatchType.FloodFill(boolean useMedian) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
@@ -96,6 +101,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                         var fv = (float) fillValue;
                         for (var rp : region.pixels()) {
                             ip.setf(rp.x, rp.y, fv);
+                            ip.markBadPixel(x, y);
                         }
                     }
                     case PatchType.NearestNeighbor(var mergeType) -> {
@@ -156,6 +162,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             // Fill region
                             var fv = (float) fillValue;
                             ip.setf(badPixel.x, badPixel.y, fv);
+                            ip.markBadPixel(x, y);
                         }
                     }
                     case PatchType.FitPlane() -> {
@@ -181,12 +188,14 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                                 for (Pixel pixel : region.pixels) {
                                     ip.setf(pixel.x, pixel.y, (float) avg);
+                                    ip.markBadPixel(x, y);
                                 }
                                 continue;
                             }
 
                             for (Pixel pixel : region.pixels) {
                                 ip.setf(pixel.x, pixel.y, (float) fitter.valueAt(pixel.x, pixel.y));
+                                ip.markBadPixel(x, y);
                             }
                         } else {
                             var avg = 0D;
@@ -198,6 +207,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                             for (Pixel pixel : region.pixels) {
                                 ip.setf(pixel.x, pixel.y, (float) avg);
+                                ip.markBadPixel(x, y);
                             }
                         }
                     }
@@ -256,6 +266,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         for (Pixel pixel : region.pixels) {
                             ip.setf(pixel.x, pixel.y, (float) f.fittedValue(pixel.x, pixel.y));
+                            ip.markBadPixel(x, y);
                         }
                     }
                     case PatchType.FitMoffat(int minCount, int maxIter, double relErr, double absErr) -> {
@@ -313,6 +324,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         for (Pixel pixel : region.pixels) {
                             ip.setf(pixel.x, pixel.y, (float) f.fittedValue(pixel.x, pixel.y));
+                            ip.markBadPixel(x, y);
                         }
                     }
                 }

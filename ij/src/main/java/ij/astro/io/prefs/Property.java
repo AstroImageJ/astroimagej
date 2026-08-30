@@ -65,6 +65,11 @@ public class Property<T> {
         this(defaultValue, "", "", null, _ -> null, owner);
     }
 
+    public Property(T defaultValue, Object owner, PropertyLoadValidator<T> loadValidator) {
+        this(defaultValue, "", "", null, _ -> null, owner);
+        this.loadValidator = loadValidator;
+    }
+
     public Property(T defaultValue, Function<T, String> serializer, Function<String, T> deserializer, Object owner) {
         this(defaultValue, "", "", serializer, deserializer, owner);
     }

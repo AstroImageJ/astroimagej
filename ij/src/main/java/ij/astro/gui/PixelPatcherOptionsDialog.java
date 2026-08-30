@@ -5,6 +5,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -476,6 +477,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
         nearestNeighborPixelSource.setSelectedItem(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.get());
         nearestNeighborPixelSource.setRenderer(new ToolTipRenderer());
 
-        patchTypeSelector = new JComboBox<>(PixelPatcher.PatchType.Type.values());
+        patchTypeSelector = new JComboBox<>(Arrays.stream(PixelPatcher.PatchType.Type.values())
+                .filter(t -> !t.disabled).toArray(PixelPatcher.PatchType.Type[]::new));
     }
 }

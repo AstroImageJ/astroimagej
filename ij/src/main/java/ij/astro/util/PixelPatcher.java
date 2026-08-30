@@ -2,10 +2,18 @@ package ij.astro.util;
 
 import ij.astro.gui.ToolTipProvider;
 import ij.astro.io.prefs.Property;
+import ij.astro.logging.AIJLogger;
 import ij.process.ImageProcessor;
 
 public interface PixelPatcher {
-    Property<PatchType.Type> TYPE = new Property<>(PatchType.Type.PASS_THROUGH, PixelPatcher.class);
+    Property<PatchType.Type> TYPE = new Property<>(PatchType.Type.PASS_THROUGH, PixelPatcher.class, t -> {
+        if (t.disabled) {
+            AIJLogger.log("Bad Pixel Map set to Pass Through as the previous option is disabled.");
+            return PatchType.Type.PASS_THROUGH;
+        }
+        return t;
+    });
+    Property<Boolean> DISPLAY = new Property<>(true, PixelPatcher.class);
 
     void patch(ImageProcessor ip, ImageProcessor mask, PatchType patchType);
 
@@ -109,9 +117,19 @@ public interface PixelPatcher {
             CONSTANT_VALUE,
             NEAREST_NEIGHBOR,
             PASS_THROUGH,
-            FIT_GAUSSIAN,
-            FIT_MOFFAT,
+            FIT_GAUSSIAN(true),
+            FIT_MOFFAT(true),
             ;
+
+            public final boolean disabled;
+
+            Type() {
+                this(false);
+            }
+
+            Type(boolean disabled) {
+                this.disabled = disabled;
+            }
 
             public PatchType toPatchType() {
                 return switch (this) {
@@ -128,4 +146,6 @@ public interface PixelPatcher {
             }
         }
     }
+
+    record Pixel(int x, int y) {}
 }

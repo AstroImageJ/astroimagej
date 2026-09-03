@@ -1,4 +1,4 @@
-package Astronomy.multiaperture.io;
+package ij.astro.io.aij;
 
 import java.util.Stack;
 

@@ -49,8 +49,6 @@ import javax.swing.SpringLayout;
 import javax.swing.WindowConstants;
 
 import Astronomy.multiaperture.io.AperturesFileCodec;
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformers;
 import astroj.Aperture;
 import astroj.ApertureRoi;
 import astroj.AstroStackWindow;
@@ -63,6 +61,8 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.SwingConstantUtil;
 import ij.astro.util.UIHelper;
@@ -998,9 +998,9 @@ public class FreeformPixelApertureHandler {
 
         var apertures = new ArrayList<FreeformPixelApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
-            var s = AperturesFileCodec.readToSection(setting);
+            var s = AijFileCodec.readToSection(setting);
             for (Section apSec : s.createMapView().get("ap")) {
-                var ap = Transformers.read(Aperture.class, apSec);
+                var ap = AperturesFileCodec.CODEC.read(Aperture.class, apSec);
                 if (ap instanceof FreeformPixelApertureRoi freeformPixelApertureRoi) {
                     apertures.add(freeformPixelApertureRoi);
                 }
@@ -1017,10 +1017,10 @@ public class FreeformPixelApertureHandler {
 
         s.addSubsection(new Section("handlerApertures"));
         for (FreeformPixelApertureRoi aperture : apertures) {
-            s.addSubsection(Transformers.write(Aperture.class, aperture));
+            s.addSubsection(AperturesFileCodec.CODEC.write(Aperture.class, aperture));
         }
 
-        return encoder.encodeToString(AperturesFileCodec.write(s).getBytes());
+        return encoder.encodeToString(AijFileCodec.write(s).getBytes());
     }
 
     private record NumericSlider(Component[] cs, DoubleConsumer setter, DoubleSupplier getter) {}

@@ -1,16 +1,16 @@
-package Astronomy.multiaperture.io;
-
-import ij.astro.types.MultiMap;
+package ij.astro.io.aij;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import ij.astro.types.MultiMap;
+
 public class Section {
     protected final String name;
     private List<String> parameters = new ArrayList<>();
-    private List<Section> subSections = new ArrayList<>();
+    private final List<Section> subSections = new ArrayList<>();
     private final boolean isRoot;
     private Section parent;
 

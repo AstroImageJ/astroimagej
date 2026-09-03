@@ -1,17 +1,22 @@
 package Astronomy.multiaperture.io.transformers;
 
-import Astronomy.multiaperture.CompositeShape;
-import Astronomy.multiaperture.TransformedShape;
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformer;
-import Astronomy.multiaperture.io.Transformers;
-import ij.astro.types.MultiMap;
-
-import java.awt.*;
-import java.awt.geom.*;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.List;
 
-public class ShapeTransformer implements Transformer<Shape, Void> {
+import Astronomy.multiaperture.CompositeShape;
+import Astronomy.multiaperture.TransformedShape;
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
+import ij.astro.io.aij.Transformer;
+import ij.astro.types.MultiMap;
+
+public class ShapeTransformer extends Transformer<Shape, Void> {
     public static final List<String> SHAPE_SECTION_NAMES = List.of("ellipse", "rectangle", "composite", "roundedRectangle", "path");
     private static final Section.Parameter<Double> X_PARAMETER = new Section.Parameter<>("x", 0, Double.class);
     private static final Section.Parameter<Double> Y_PARAMETER = new Section.Parameter<>("y", 1, Double.class);
@@ -25,6 +30,10 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
     private static final Section.Parameter<Double> CUBIC_CTRL2_Y_PARAMETER = new Section.Parameter<>("ctrl2Y", 3, Double.class);
     private static final Section.Parameter<Double> CUBIC_END_X_PARAMETER = new Section.Parameter<>("endX", 4, Double.class);
     private static final Section.Parameter<Double> CUBIC_END_Y_PARAMETER = new Section.Parameter<>("endY", 5, Double.class);
+
+    public ShapeTransformer(AijFileCodec codec) {
+        super(codec);
+    }
 
     @Override
     public Shape load(Void params, Section section) {
@@ -53,7 +62,7 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                 yield new Rectangle2D.Double(centerX - radiusX, centerY - radiusY, 2 * radiusX, 2 * radiusY);
             }
             case "composite" -> {
-                yield Transformers.read(CompositeShape.class, section);
+                yield codec.read(CompositeShape.class, section);
             }
             case "roundedRectangle" -> {
                 var centerSec = getUniqueSection(view, "center");
@@ -123,9 +132,9 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
         var transformerSecs = view.get("transform");
 
         if (!transformerSecs.isEmpty()) {
-            var transform = Transformers.read(AffineTransform.class, transformerSecs.get(0));
+            var transform = codec.read(AffineTransform.class, transformerSecs.get(0));
             for (int i = 1; i < transformerSecs.size(); i++) {
-                transform.concatenate(Transformers.read(AffineTransform.class, transformerSecs.get(i)));
+                transform.concatenate(codec.read(AffineTransform.class, transformerSecs.get(i)));
             }
 
             return new TransformedShape(shape, transform);
@@ -162,16 +171,16 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
             s.addSubsection(Section.createSection("cornerRadii",
                     X_PARAMETER, r.getArcWidth()/2.0, Y_PARAMETER, r.getArcHeight()/2.0));
         } else if (shape instanceof CompositeShape t) {
-            s = Transformers.write(CompositeShape.class, t);
+            s = codec.write(CompositeShape.class, t);
         } else if (shape instanceof TransformedShape t) {
             var o = t.getOriginalShape();
             while (o instanceof TransformedShape transformedShape && transformedShape.getTransform().isIdentity()) {
                 o = transformedShape.getOriginalShape();
             }
-            s = Transformers.write(Shape.class, o);
+            s = codec.write(Shape.class, o);
             // Insert transform section at the top
             if (!t.getTransform().isIdentity()) {
-                s.getSubSections().add(0, Transformers.write(AffineTransform.class, t.getTransform()));
+                s.getSubSections().add(0, codec.write(AffineTransform.class, t.getTransform()));
             }
         } else {
             s = new Section("path");

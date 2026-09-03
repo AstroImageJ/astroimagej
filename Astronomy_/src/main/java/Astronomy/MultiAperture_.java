@@ -71,8 +71,6 @@ import javax.swing.event.ChangeListener;
 
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformers;
 import Astronomy.shapes.WcsShape;
 import astroj.AnnotateRoi;
 import astroj.Aperture;
@@ -98,6 +96,8 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.RadioEnum;
 import ij.astro.gui.ToolTipProvider;
 import ij.astro.gui.nstate.NState;
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
@@ -7109,9 +7109,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         var apertures = new ArrayList<ShapedApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
-            var s = AperturesFileCodec.readToSection(setting);
+            var s = AijFileCodec.readToSection(setting);
             for (Section apSec : s.createMapView().get("ap")) {
-                var ap = Transformers.read(Aperture.class, apSec);
+                var ap = AperturesFileCodec.CODEC.read(Aperture.class, apSec);
                 if (ap instanceof ShapedApertureRoi shapedApertureRoi) {
                     apertures.add(shapedApertureRoi);
                 }
@@ -7129,10 +7129,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         s.addSubsection(new Section("handlerApertures"));
         //s.addSubsection(Transformers.write());
         for (ShapedApertureRoi aperture : apertures) {
-            s.addSubsection(Transformers.write(Aperture.class, aperture));
+            s.addSubsection(AperturesFileCodec.CODEC.write(Aperture.class, aperture));
         }
 
-        return encoder.encodeToString(AperturesFileCodec.write(s).getBytes());
+        return encoder.encodeToString(AijFileCodec.write(s).getBytes());
     }
 
     private static boolean testForFma() {

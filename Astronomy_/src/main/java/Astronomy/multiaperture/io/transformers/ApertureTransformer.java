@@ -1,20 +1,20 @@
 package Astronomy.multiaperture.io.transformers;
 
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.util.List;
+
 import Astronomy.multiaperture.TransformedShape;
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformer;
-import Astronomy.multiaperture.io.Transformers;
 import astroj.Aperture;
 import astroj.Aperture.ApertureShape;
 import astroj.FreeformPixelApertureRoi;
 import astroj.ShapedApertureRoi;
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
+import ij.astro.io.aij.Transformer;
 import ij.astro.types.MultiMap;
 
-import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.util.List;
-
-public class ApertureTransformer implements Transformer<Aperture, Void> {
+public class ApertureTransformer extends Transformer<Aperture, Void> {
     private static final Section.Parameter<ApertureShape> SHAPE_PARAMETER =
             new Section.Parameter<>("aperture shape", 0, ApertureShape.class, ApertureTransformer::deserializeShape, ApertureTransformer::serializeShape);
     private static final Section.Parameter<Boolean> COMP_PARAMETER = new Section.Parameter<>("isComp", 0, Boolean.TYPE);
@@ -32,6 +32,10 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                 default -> throw new IllegalStateException("Unknown px type: " + s);
             }, (p, b) -> b ? "background" : "source");
     private static final Section.Parameter<Double> RADIUS_PARAMETER = new Section.Parameter<>("radius", 0, Double.TYPE);
+
+    public ApertureTransformer(AijFileCodec codec) {
+        super(codec);
+    }
 
     @Override
     public Aperture load(Void params, Section section) {
@@ -71,9 +75,9 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 var transforms = view.get("transform");
                 if (!transforms.isEmpty()) {
-                    var t = Transformers.read(AffineTransform.class, transforms.get(0));
+                    var t = codec.read(AffineTransform.class, transforms.get(0));
                     for (int i = 1; i < transforms.size(); i++) {
-                        t.concatenate(Transformers.read(AffineTransform.class, transforms.get(i)));
+                        t.concatenate(codec.read(AffineTransform.class, transforms.get(i)));
                     }
 
                     ap.setTransform(t);
@@ -85,7 +89,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                     throw new IllegalStateException("apertureShape section must contain one subsection");
                 }
 
-                ap.setApertureShape(Transformers.read(Shape.class, apShapeSec.getSubSections().get(0)));
+                ap.setApertureShape(codec.read(Shape.class, apShapeSec.getSubSections().get(0)));
 
                 var backgroundShapeSec = getUniqueSection(view, "backgroundShape", false);
                 if (backgroundShapeSec != null) {
@@ -99,7 +103,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                         throw new IllegalStateException("backgroundShape section must contain one subsection");
                     }
 
-                    ap.setBackgroundShape(Transformers.read(Shape.class, backgroundShapeSec.getSubSections().get(0)), center);
+                    ap.setBackgroundShape(codec.read(Shape.class, backgroundShapeSec.getSubSections().get(0)), center);
                 }
 
                 yield ap;
@@ -172,12 +176,12 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                 }
 
                 if (!ap.getTransform().isIdentity()) {
-                    s.addSubsection(Transformers.write(AffineTransform.class, ap.getTransform()));
+                    s.addSubsection(codec.write(AffineTransform.class, ap.getTransform()));
                 }
 
                 var apShape = new Section("apertureShape");
 
-                apShape.addSubsection(Transformers.write(Shape.class, ap.getShape()));
+                apShape.addSubsection(codec.write(Shape.class, ap.getShape()));
 
                 s.addSubsection(apShape);
 
@@ -194,7 +198,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                         }
                     }
 
-                    backgroundShape.addSubsection(Transformers.write(Shape.class, bShape));
+                    backgroundShape.addSubsection(codec.write(Shape.class, bShape));
 
                     s.addSubsection(backgroundShape);
                 }

@@ -1,12 +1,17 @@
 package Astronomy.multiaperture.io.transformers;
 
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformer;
-
 import java.util.Objects;
 import java.util.function.IntBinaryOperator;
 
-public class FlatMatrixTransformer implements Transformer<double[], FlatMatrixTransformer.Dimensions> {
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
+import ij.astro.io.aij.Transformer;
+
+public class FlatMatrixTransformer extends Transformer<double[], FlatMatrixTransformer.Dimensions> {
+
+    public FlatMatrixTransformer(AijFileCodec codec) {
+        super(codec);
+    }
 
     @Override
     public double[] load(Dimensions dim, Section section) {

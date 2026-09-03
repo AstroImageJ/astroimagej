@@ -1,13 +1,13 @@
 package Astronomy.multiaperture.io.transformers;
 
-import Astronomy.multiaperture.CenterReferencingTransform;
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformer;
-import Astronomy.multiaperture.io.Transformers;
-
 import java.awt.geom.AffineTransform;
 
-public class AffineTransformTransformer implements Transformer<AffineTransform, Void> {
+import Astronomy.multiaperture.CenterReferencingTransform;
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
+import ij.astro.io.aij.Transformer;
+
+public class AffineTransformTransformer extends Transformer<AffineTransform, Void> {
     private static final Section.Parameter<TransformationType> TYPE_PARAMETER =
             new Section.Parameter<>("transformType", 0, TransformationType.class,
                     AffineTransformTransformer::typeFromString, AffineTransformTransformer::typeToString);
@@ -23,6 +23,10 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 //System.out.println("m%s%s - %s".formatted(row, col, row * (width - 1) + col));
                 return row * (width - 1) + col;
             });
+
+    public AffineTransformTransformer(AijFileCodec codec) {
+        super(codec);
+    }
 
     @Override
     public AffineTransform load(Void params, Section section) {
@@ -54,7 +58,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 yield AffineTransform.getTranslateInstance(dx, dy);
             }
             case GENERAL -> {
-                var m = Transformers.read(double[].class, section, TRANSFORM_MATRIX_DIMENSIONS);
+                var m = codec.read(double[].class, section, TRANSFORM_MATRIX_DIMENSIONS);
 
                 yield new AffineTransform(m);
             }
@@ -92,7 +96,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 var m = new double[6];
                 transform.getMatrix(m);
 
-                s.addSubsection(Transformers.write(double[].class, m, TRANSFORM_MATRIX_DIMENSIONS));
+                s.addSubsection(codec.write(double[].class, m, TRANSFORM_MATRIX_DIMENSIONS));
                 yield s;
             }
         };

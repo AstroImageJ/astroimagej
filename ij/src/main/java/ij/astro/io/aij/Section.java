@@ -2,6 +2,7 @@ package ij.astro.io.aij;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -296,6 +297,15 @@ public class Section {
             } else if (clazz == String.class) {
                 //noinspection unchecked
                 return ((parameter, s) -> (T) s);
+            } else if (clazz.isEnum()) {
+                return ((_, s) -> {
+                    try {
+                        //noinspection unchecked,rawtypes
+                        return (T) Enum.valueOf((Class<Enum>) clazz, s.toUpperCase(Locale.ENGLISH));
+                    } catch (Exception e) {
+                        return null;
+                    }
+                });
             }
 
             throw new IllegalArgumentException("Must specify deserializer for parameter of type: " + clazz);
@@ -318,6 +328,8 @@ public class Section {
                 return ((parameter, t) -> t.toString());
             } else if (clazz == String.class) {
                 return ((parameter, t) -> (String) t);
+            } else if (clazz.isEnum()) {
+                return ((_, t) -> ((Enum<?>)t).name());
             }
 
             throw new IllegalArgumentException("Must specify serializer for parameter of type: " + clazz);

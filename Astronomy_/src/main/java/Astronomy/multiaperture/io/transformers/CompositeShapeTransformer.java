@@ -6,7 +6,6 @@ import static Astronomy.multiaperture.CompositeShape.ShapeCombination.INTERSECT;
 import static Astronomy.multiaperture.CompositeShape.ShapeCombination.SUBTRACT;
 
 import java.awt.Shape;
-import java.util.List;
 
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.CompositeShape.ShapeCombination;
@@ -14,7 +13,6 @@ import ij.astro.io.aij.AijFileCodec;
 import ij.astro.io.aij.Section;
 import ij.astro.io.aij.Section.Parameter;
 import ij.astro.io.aij.Transformer;
-import ij.astro.types.MultiMap;
 
 public class CompositeShapeTransformer extends Transformer<CompositeShape, Void> {
     private static final Parameter<ShapeCombination> COMBINATION_PARAMETER =
@@ -89,28 +87,5 @@ public class CompositeShapeTransformer extends Transformer<CompositeShape, Void>
             default -> throw new IllegalStateException("Unknown shape combination '%s' for parameter '%s'"
                     .formatted(s, parameter.name()));
         };
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name) {
-        return getUniqueSection(view, name, true);
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name, boolean required) {
-        var l = view.get(name);
-        var c = l == null ? 0 : l.size();
-
-        if ((required && c != 1) || (!required && c > 1)) {
-            throw new IllegalStateException("Composite shape has %s %s(s)!".formatted(c, name));
-        }
-
-        return c == 0 ? null : l.get(0);
-    }
-
-    private List<Section> getRequiredSection(MultiMap<String, Section> view, String name) {
-        if (!view.contains(name)) {
-            throw new IllegalStateException("Composite shape missing required section: " + name);
-        }
-
-        return view.get(name);
     }
 }

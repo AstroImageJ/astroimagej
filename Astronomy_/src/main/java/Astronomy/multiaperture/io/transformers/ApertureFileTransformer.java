@@ -10,7 +10,6 @@ import ij.astro.io.aij.AijFileCodec;
 import ij.astro.io.aij.Section;
 import ij.astro.io.aij.Transformer;
 import ij.astro.logging.AIJLogger;
-import ij.astro.types.MultiMap;
 
 public class ApertureFileTransformer extends Transformer<ApFile, Void> {
     public static final int maxSupportedMajor = 2;
@@ -68,28 +67,4 @@ public class ApertureFileTransformer extends Transformer<ApFile, Void> {
 
         return s;
     }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name) {
-        return getUniqueSection(view, name, true);
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name, boolean required) {
-        var l = view.get(name);
-        var c = l == null ? 0 : l.size();
-
-        if ((required && c != 1) || (!required && c > 1)) {
-            throw new IllegalStateException("Aperture File has %s %s(s)!".formatted(c, name));
-        }
-
-        return c == 0 ? null : l.get(0);
-    }
-
-    private List<Section> getRequiredSection(MultiMap<String, Section> view, String name) {
-        if (!view.contains(name)) {
-            throw new IllegalStateException("Aperture File missing required section: " + name);
-        }
-
-        return view.get(name);
-    }
-
 }

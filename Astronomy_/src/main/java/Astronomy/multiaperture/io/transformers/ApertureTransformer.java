@@ -2,7 +2,6 @@ package Astronomy.multiaperture.io.transformers;
 
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.util.List;
 
 import Astronomy.multiaperture.TransformedShape;
 import astroj.Aperture;
@@ -12,7 +11,6 @@ import astroj.ShapedApertureRoi;
 import ij.astro.io.aij.AijFileCodec;
 import ij.astro.io.aij.Section;
 import ij.astro.io.aij.Transformer;
-import ij.astro.types.MultiMap;
 
 public class ApertureTransformer extends Transformer<Aperture, Void> {
     private static final Section.Parameter<ApertureShape> SHAPE_PARAMETER =
@@ -259,28 +257,5 @@ public class ApertureTransformer extends Transformer<Aperture, Void> {
 
     private static boolean deserializeCenterParam(Section.Parameter<Boolean> parameter, String val) {
         return "centeredOnAperture".equals(val) || Boolean.parseBoolean(val);
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name) {
-        return getUniqueSection(view, name, true);
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name, boolean required) {
-        var l = view.get(name);
-        var c = l == null ? 0 : l.size();
-
-        if ((required && c != 1) || (!required && c > 1)) {
-            throw new IllegalStateException("Aperture has %s %s(s)!".formatted(c, name));
-        }
-
-        return c == 0 ? null : l.get(0);
-    }
-
-    private List<Section> getRequiredSection(MultiMap<String, Section> view, String name) {
-        if (!view.contains(name)) {
-            throw new IllegalStateException("Aperture missing required section: " + name);
-        }
-
-        return view.get(name);
     }
 }

@@ -31,13 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.Closeable;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import nom.tam.fits.compress.CompressionManager;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.*;
+
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -46,19 +45,6 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import nom.tam.fits.compress.CompressionManager;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsIO;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.RandomAccessFileIO;
-import nom.tam.util.SafeClose;
 
 import static nom.tam.fits.header.Standard.EXTNAME;
 import static nom.tam.fits.header.Standard.EXTVER;

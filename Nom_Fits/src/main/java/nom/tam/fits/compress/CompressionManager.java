@@ -1,15 +1,13 @@
 package nom.tam.fits.compress;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import nom.tam.fits.FitsException;
+
+import java.io.*;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.fits.FitsException;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /*
  * #%L
@@ -41,8 +39,6 @@ import nom.tam.fits.FitsException;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * (<i>for internal use</i>) Decompression of compressed FITS files of all supported types (<code>.gz</code>,

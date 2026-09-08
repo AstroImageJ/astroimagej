@@ -31,12 +31,11 @@ package nom.tam.util.type;
  * #L%
  */
 
-import java.nio.IntBuffer;
-
+import nom.tam.fits.header.Bitpix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import nom.tam.fits.header.Bitpix;
+import java.nio.IntBuffer;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class DeprecatedTest {

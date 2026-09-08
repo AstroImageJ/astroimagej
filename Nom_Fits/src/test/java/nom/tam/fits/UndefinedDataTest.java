@@ -31,13 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.File;
-
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.Standard;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.Standard;
+import java.io.File;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class UndefinedDataTest {

@@ -1,7 +1,8 @@
 package nom.tam.fits.compression.algorithm.quant;
 
-import java.nio.Buffer;
-import java.nio.BufferOverflowException;
+import nom.tam.fits.compression.algorithm.api.ICompressor;
+
+import java.nio.*;
 
 /*
  * #%L
@@ -33,13 +34,6 @@ import java.nio.BufferOverflowException;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-
-import nom.tam.fits.compression.algorithm.api.ICompressor;
 
 /**
  * (<i>for internal use</i>) Qunatization step processor as part of compression.
@@ -91,11 +85,6 @@ public class QuantizeProcessor {
     public QuantizeProcessor(QuantizeOption quantizeOption, ICompressor<IntBuffer> compressor) {
         this.quantizeOption = quantizeOption;
         this.postCompressor = compressor;
-
-        if (quantizeOption.isDither2()) {
-            quantizeOption.setCenterOnZero(true);
-            quantizeOption.setCheckZero(true);
-        }
         quantize = new Quantize(quantizeOption);
     }
 

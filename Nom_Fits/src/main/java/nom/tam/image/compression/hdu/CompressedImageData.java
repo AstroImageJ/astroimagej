@@ -1,7 +1,5 @@
 package nom.tam.image.compression.hdu;
 
-import java.nio.Buffer;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
@@ -10,6 +8,8 @@ import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.tile.TiledImageCompressionOperation;
 import nom.tam.util.ArrayFuncs;
+
+import java.nio.Buffer;
 
 /*
  * #%L

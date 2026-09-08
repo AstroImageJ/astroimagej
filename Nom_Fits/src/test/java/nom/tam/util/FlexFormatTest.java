@@ -31,12 +31,11 @@ package nom.tam.util;
  * #L%
  */
 
-import java.math.BigInteger;
-
+import nom.tam.fits.LongValueException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import nom.tam.fits.LongValueException;
+import java.math.BigInteger;
 
 @SuppressWarnings("javadoc")
 public class FlexFormatTest {

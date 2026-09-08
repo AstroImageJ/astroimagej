@@ -2,6 +2,8 @@ package nom.tam.fits.compression.algorithm.hcompress;
 
 import java.nio.ByteBuffer;
 
+import static nom.tam.fits.compression.algorithm.hcompress.HCompress.*;
+
 /*
  * #%L
  * nom.tam FITS library
@@ -32,12 +34,6 @@ import java.nio.ByteBuffer;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BITS_OF_1_BYTE;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BITS_OF_1_NYBBLE;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BYTE_MASK;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.NYBBLE_MASK;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.ROUNDING_HALF;
 
 /**
  * (<i>for internal use</i>) A hierarchical data decompression algoritm, e.g. for the Hubble Data Archive and the STScI

@@ -31,13 +31,7 @@ package nom.tam.util.type;
  * #L%
  */
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
+import java.nio.*;
 
 /**
  * @deprecated Use identical static fields of {@link ElementType} instead.

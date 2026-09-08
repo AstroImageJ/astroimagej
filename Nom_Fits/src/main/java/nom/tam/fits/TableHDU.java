@@ -1,15 +1,12 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.TTYPEn;
-
-import java.util.NoSuchElementException;
-
 import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
+
+import java.util.NoSuchElementException;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L
@@ -330,7 +327,7 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
      *                           keyword.
      * 
      * @return               an array of primitives (for scalar columns), or else an <code>Object[]</code> array, or
-     *                           possibly <code>null</code>
+     *                           <code>null</code> if there is no column by that name.
      * 
      * @throws FitsException if the table could not be accessed
      *
@@ -340,7 +337,8 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
      * @see                  #getNCols()
      */
     public Object getColumn(String colName) throws FitsException {
-        return getColumn(findColumn(colName));
+        int col = findColumn(colName);
+        return col < 0 ? null : getColumn(col);
     }
 
     /**

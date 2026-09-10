@@ -1038,6 +1038,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
     };
     private static JRadioButton useMacroTitleButton;
+    private static JRadioButton useMacroSubtitleButton;
     public static final Runnable SET_TO_PROGRAMMABLE_TITLE = () -> {
         if (useMacroTitleButton != null) {
             useMacroTitleButton.setSelected(true);
@@ -1046,6 +1047,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         useMacroTitle.set(true);
         if (titleField != null) {
             titleField.setText(PlotNameResolver.TITLE_MACRO.get());
+        }
+        updatePlot(updateNoFits());
+    };
+    public static final Runnable SET_TO_PROGRAMMABLE_SUBTITLE = () -> {
+        if (useMacroSubtitleButton != null) {
+            useMacroSubtitleButton.setSelected(true);
+        }
+        useSubtitle = true;
+        useMacroSubtitle.set(true);
+        if (subtitleField != null) {
+            subtitleField.setText(PlotNameResolver.SUBTITLE_MACRO.get());
         }
         updatePlot(updateNoFits());
     };
@@ -9032,7 +9044,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         useSubtitleButton.setFont(p11);
         useSubtitleButton.setSelected(useSubtitle && !useMacroSubtitle.get());
         subtitleradiopanelgroup.add(useSubtitleButton);
-        JRadioButton useMacroSubtitleButton = new JRadioButton("Programmable");
+        useMacroSubtitleButton = new JRadioButton("Programmable");
         useMacroSubtitleButton.setFont(p11);
         useMacroSubtitleButton.setSelected(useSubtitle && useMacroSubtitle.get());
         subtitleradiopanelgroup.add(useMacroSubtitleButton);

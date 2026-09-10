@@ -357,6 +357,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private static final Property<Double> IMP_SHAPED_AP_ANGLE = SHAPED_AP_ANGLE.getOrCreateVariant("IMP");
     private static final Property<BorderRegionExclusion> REGION_EXLUSION_MODE = new Property<>(BorderRegionExclusion.COMMON, MultiAperture_.class);
     private static final Property<Boolean> ENABLE_PROGRAMMABLE_TITLE = new Property<>(false, MultiAperture_.class);
+    private static final Property<Boolean> ENABLE_PROGRAMMABLE_SUBTITLE = new Property<>(false, MultiAperture_.class);
 
     public MultiAperture_() {
         freeformPixelApertureHandler.setExitCallback(() -> {
@@ -1405,8 +1406,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 //}
             }
         }
-        if (!Data_Processor.active && ENABLE_PROGRAMMABLE_TITLE.get()) {
-            MultiPlot_.SET_TO_PROGRAMMABLE_TITLE.run();
+        if (!Data_Processor.active) {
+            if (ENABLE_PROGRAMMABLE_TITLE.get()) {
+                MultiPlot_.SET_TO_PROGRAMMABLE_TITLE.run();
+            }
+            if (ENABLE_PROGRAMMABLE_SUBTITLE.get()) {
+                MultiPlot_.SET_TO_PROGRAMMABLE_SUBTITLE.run();
+            }
         }
         cancelled = true;
         processingStack = false;
@@ -6685,9 +6691,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     list2.add(b -> showHelp = b);
                     list2.add(updateImageDisplay::set);
                     list2.add(ENABLE_PROGRAMMABLE_TITLE::set);
-                    var bottomChecks = d.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Show help panel during aperture selection",
-                                    "Update image display while running", "Enable programmable title and subtitle"},
-                            new boolean[]{updatePlot, showHelp, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get()}, list2);
+                    list2.add(ENABLE_PROGRAMMABLE_SUBTITLE::set);
+                    var bottomChecks = d.addCheckboxGroup(2, 3, new String[]{"Update plot while running", "Show help panel during aperture selection",
+                                    "Update image display while running", "Enable programmable title", "Enable programmable subtitle"},
+                            new boolean[]{updatePlot, showHelp, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get(), ENABLE_PROGRAMMABLE_SUBTITLE.get()}, list2);
                     bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                             "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
                     bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
@@ -6699,9 +6706,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     list2.add(b -> updatePlot = b);
                     list2.add(updateImageDisplay::set);
                     list2.add(ENABLE_PROGRAMMABLE_TITLE::set);
-                    var bottomChecks = d.addCheckboxGroup(1, 2, new String[]{"Update plot while running", "Update image display while running",
-                                    "Enable programmable title and subtitle"},
-                            new boolean[]{updatePlot, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get()}, list2);
+                    list2.add(ENABLE_PROGRAMMABLE_SUBTITLE::set);
+                    var bottomChecks = d.addCheckboxGroup(1, 3, new String[]{"Update plot while running", "Update image display while running",
+                                    "Enable programmable title", "Enable programmable subtitle"},
+                            new boolean[]{updatePlot, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get(), ENABLE_PROGRAMMABLE_SUBTITLE.get()}, list2);
                     bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                             "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
                     singleStepListeners.add(bottomChecks.subComponents().get(1));

@@ -1,127 +1,19 @@
 package astroj;
 
-import java.awt.AWTException;
-import java.awt.CheckboxMenuItem;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
-import java.awt.Image;
-import java.awt.Insets;
-import java.awt.LayoutManager;
-import java.awt.Menu;
-import java.awt.MenuBar;
-import java.awt.MenuItem;
-import java.awt.Panel;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.Transparency;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.PixelGrabber;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.function.Consumer;
-import java.util.stream.IntStream;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JSlider;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JToggleButton;
-import javax.swing.SpringLayout;
-import javax.swing.SwingUtilities;
-
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.postprocess.PhotometricDebayer;
-import bislider.com.visutools.nav.bislider.BiSlider;
-import bislider.com.visutools.nav.bislider.BiSliderAdapter;
-import bislider.com.visutools.nav.bislider.BiSliderEvent;
-import bislider.com.visutools.nav.bislider.ContentPainterEvent;
-import bislider.com.visutools.nav.bislider.ContentPainterListener;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.Prefs;
-import ij.WindowManager;
+import bislider.com.visutools.nav.bislider.*;
+import ij.*;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FitsCompressionUtil;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
-import ij.gui.GUI;
-import ij.gui.GenericDialog;
-import ij.gui.Plot;
-import ij.gui.PlotWindow;
-import ij.gui.Roi;
-import ij.gui.StackWindow;
-import ij.gui.Toolbar;
+import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
@@ -136,6 +28,25 @@ import ij.process.StackProcessor;
 import ij.util.Tools;
 import util.PdfRasterWriter;
 import util.prefs.RegionExclusion;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.PixelGrabber;
+import java.io.*;
+import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 
 /**
@@ -2714,6 +2625,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         colorMenu = new Menu("Color"); //splitChannelsMenuItem, imagesToStackMenuItem stackToImagesMenuItem
 
+        photoDebayerMenuItem = new MenuItem("Debayer stack to individual color/luminosity stack(s)");
+        photoDebayerMenuItem.addActionListener(this);
+        colorMenu.add(photoDebayerMenuItem);
+
         RGBComposerMenuItem = new MenuItem("RGB Composer");
         RGBComposerMenuItem.addActionListener(this);
         colorMenu.add(RGBComposerMenuItem);
@@ -2730,14 +2645,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         stackToImagesMenuItem.addActionListener(this);
         colorMenu.add(stackToImagesMenuItem);
 
-        photoDebayerMenuItem = new MenuItem("Debayer to single color/luminosity 1/4 size stack(s)");
-        photoDebayerMenuItem.addActionListener(this);
-        colorMenu.add(photoDebayerMenuItem);
-
-        debayerMenuItem = new MenuItem("Debayer with demosaicing and smoothing options");
-        debayerMenuItem.addActionListener(this);
-        colorMenu.add(debayerMenuItem);
-
         makeCompositeMenuItem = new MenuItem("Make Composite color image");
         makeCompositeMenuItem.addActionListener(this);
         colorMenu.add(makeCompositeMenuItem);
@@ -2746,6 +2653,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         stackToRGBMenuItem.addActionListener(this);
         colorMenu.add(stackToRGBMenuItem);
 
+        debayerMenuItem = new MenuItem("Debayer image to RGB stack (legacy)");
+        debayerMenuItem.addActionListener(this);
+        colorMenu.add(debayerMenuItem);
 
         mainMenuBar.add(colorMenu);
 

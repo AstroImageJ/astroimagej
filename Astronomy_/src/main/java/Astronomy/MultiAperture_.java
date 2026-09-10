@@ -1,95 +1,11 @@
 package Astronomy;// MultiAperture_.java
 
-import static ij.Prefs.KEY_PREFIX;
-import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
-
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.Panel;
-import java.awt.Point;
-import java.awt.Toolkit;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import javax.swing.Box;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SpringLayout;
-import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
-import javax.swing.event.ChangeListener;
-
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformers;
 import Astronomy.shapes.WcsShape;
-import astroj.AnnotateRoi;
-import astroj.Aperture;
-import astroj.ApertureRoi;
-import astroj.AstroCanvas;
-import astroj.AstroStackWindow;
-import astroj.Centroid;
-import astroj.FitsJ;
-import astroj.FreeformPixelApertureRoi;
-import astroj.IJU;
-import astroj.MarkingRoi;
-import astroj.MeasurementTable;
-import astroj.OverlayCanvas;
-import astroj.ShapedApertureRoi;
-import astroj.SpringUtil;
-import astroj.StarFinder;
-import astroj.WCS;
+import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -111,6 +27,28 @@ import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
 import ij.util.Tools;
 import util.prefs.RegionExclusion;
+
+import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
+import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static ij.Prefs.KEY_PREFIX;
+import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
 
 
 /**
@@ -418,6 +356,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private static final Property<Boolean> IMP_SHAPED_VARIATION_LOCKED = SHAPED_VARIATION_LOCKED.getOrCreateVariant("IMP");
     private static final Property<Double> IMP_SHAPED_AP_ANGLE = SHAPED_AP_ANGLE.getOrCreateVariant("IMP");
     private static final Property<BorderRegionExclusion> REGION_EXLUSION_MODE = new Property<>(BorderRegionExclusion.COMMON, MultiAperture_.class);
+    private static final Property<Boolean> ENABLE_PROGRAMMABLE_TITLE = new Property<>(false, MultiAperture_.class);
 
     public MultiAperture_() {
         freeformPixelApertureHandler.setExitCallback(() -> {
@@ -1465,6 +1404,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 //    MultiPlot_.setTable(table, false, slice == initialLastSlice);
                 //}
             }
+        }
+        if (!Data_Processor.active && ENABLE_PROGRAMMABLE_TITLE.get()) {
+            MultiPlot_.SET_TO_PROGRAMMABLE_TITLE.run();
         }
         cancelled = true;
         processingStack = false;
@@ -6742,8 +6684,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     list2.add(b -> updatePlot = b);
                     list2.add(b -> showHelp = b);
                     list2.add(updateImageDisplay::set);
-                    var bottomChecks = d.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Show help panel during aperture selection", "Update image display while running"},
-                            new boolean[]{updatePlot, showHelp, updateImageDisplay.get()}, list2);
+                    list2.add(ENABLE_PROGRAMMABLE_TITLE::set);
+                    var bottomChecks = d.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Show help panel during aperture selection",
+                                    "Update image display while running", "Enable programmable title and subtitle"},
+                            new boolean[]{updatePlot, showHelp, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get()}, list2);
                     bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                             "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
                     bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
@@ -6754,8 +6698,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     final var list2 = new ArrayList<Consumer<Boolean>>();
                     list2.add(b -> updatePlot = b);
                     list2.add(updateImageDisplay::set);
-                    var bottomChecks = d.addCheckboxGroup(1, 2, new String[]{"Update plot while running", "Update image display while running"},
-                            new boolean[]{updatePlot, updateImageDisplay.get()}, list2);
+                    list2.add(ENABLE_PROGRAMMABLE_TITLE::set);
+                    var bottomChecks = d.addCheckboxGroup(1, 2, new String[]{"Update plot while running", "Update image display while running",
+                                    "Enable programmable title and subtitle"},
+                            new boolean[]{updatePlot, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get()}, list2);
                     bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                             "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
                     singleStepListeners.add(bottomChecks.subComponents().get(1));

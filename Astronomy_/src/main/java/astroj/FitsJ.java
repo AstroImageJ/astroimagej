@@ -1256,7 +1256,7 @@ public class FitsJ {
 				12h34m
 		*/
 		if (!s.matches("(?<hours>[+-]?\\d{1,2})[h:°]?\\s*(?<mins>\\d{1,2})(?:[m:'′]?\\s*(?<secs>\\d{1,2}(?:(?:\\.\\d+)?(?:s|''|\"|″)?|(?:s|''|\"|″)\\.\\d+)?)?)?(?:s|''|\"|″)?\\s*$")) {
-			//return Double.NaN;
+			return Double.NaN;
 		}
 
         String[] pieces = s.replaceAll("[\\-][^0-9\\.]{0,}", " \\-").replaceAll("[+][^0-9\\.]{0,}", " +").replaceAll("[^0-9\\.\\-+]{1,}", " ").trim().split("[^0-9\\.\\-+]{1,}");

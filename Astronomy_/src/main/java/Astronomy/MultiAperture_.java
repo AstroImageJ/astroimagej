@@ -6688,13 +6688,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             .setToolTipText("Apparent magntiudes are not needed for standard differential photometry.");
                     final var list2 = new ArrayList<Consumer<Boolean>>();
                     list2.add(b -> updatePlot = b);
-                    list2.add(b -> showHelp = b);
                     list2.add(updateImageDisplay::set);
+                    list2.add(b -> showHelp = b);
                     list2.add(ENABLE_PROGRAMMABLE_TITLE::set);
                     list2.add(ENABLE_PROGRAMMABLE_SUBTITLE::set);
-                    var bottomChecks = d.addCheckboxGroup(2, 3, new String[]{"Update plot while running", "Show help panel during aperture selection",
-                                    "Update image display while running", "Enable programmable title", "Enable programmable subtitle"},
-                            new boolean[]{updatePlot, showHelp, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get(), ENABLE_PROGRAMMABLE_SUBTITLE.get()}, list2);
+                    var bottomChecks = d.addCheckboxGroup(2, 3, new String[]{"Update plot while running", "Update image display while running",
+                                    "Show help panel during aperture selection", "Enable programmable title", "Enable programmable subtitle"},
+                            new boolean[]{updatePlot, updateImageDisplay.get(), showHelp, ENABLE_PROGRAMMABLE_TITLE.get(), ENABLE_PROGRAMMABLE_SUBTITLE.get()}, list2);
                     bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                             "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
                     bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
@@ -6707,7 +6707,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     list2.add(updateImageDisplay::set);
                     list2.add(ENABLE_PROGRAMMABLE_TITLE::set);
                     list2.add(ENABLE_PROGRAMMABLE_SUBTITLE::set);
-                    var bottomChecks = d.addCheckboxGroup(1, 3, new String[]{"Update plot while running", "Update image display while running",
+                    var bottomChecks = d.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Update image display while running",
                                     "Enable programmable title", "Enable programmable subtitle"},
                             new boolean[]{updatePlot, updateImageDisplay.get(), ENABLE_PROGRAMMABLE_TITLE.get(), ENABLE_PROGRAMMABLE_SUBTITLE.get()}, list2);
                     bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +

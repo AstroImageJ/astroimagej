@@ -1,16 +1,27 @@
 package ij.astro.io;
 
-import static ij.plugin.FITS_Reader.filter;
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BSCALE;
-import static nom.tam.fits.header.Standard.BZERO;
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.TELESCOP;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.io.pixel_maps.codecs.BpmFileCodec;
+import ij.astro.logging.AIJLogger;
+import ij.astro.util.*;
+import ij.io.FileInfo;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.measure.ResultsTable;
+import ij.plugin.FITS_Reader;
+import ij.plugin.FolderOpener;
+import ij.process.ImageProcessor;
+import nom.tam.fits.*;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.image.compression.hdu.CompressedTableHDU;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsFile;
 
+import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -21,13 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,41 +40,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
 
-import javax.swing.ProgressMonitor;
-import javax.swing.ProgressMonitorInputStream;
-
-import ij.IJ;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.astro.logging.AIJLogger;
-import ij.astro.util.ImageType;
-import ij.astro.util.LeapSeconds;
-import ij.astro.util.PixelPatcher;
-import ij.astro.util.SkyAlgorithmsTimeUtil;
-import ij.astro.util.ZipOpenerUtil;
-import ij.io.FileInfo;
-import ij.io.OpenDialog;
-import ij.io.Opener;
-import ij.measure.ResultsTable;
-import ij.plugin.FITS_Reader;
-import ij.plugin.FolderOpener;
-import ij.process.ImageProcessor;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsDate;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.TableHDU;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.compression.hdu.CompressedImageHDU;
-import nom.tam.image.compression.hdu.CompressedTableHDU;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsFile;
+import static ij.plugin.FITS_Reader.filter;
+import static nom.tam.fits.header.Standard.*;
 
 public class FitsReader implements AutoCloseable {
     public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
@@ -565,16 +537,37 @@ public class FitsReader implements AutoCloseable {
         return maskIdx;
     }
 
-    private ImageProcessor processBadPixelMask(ImageProcessor ip, int maskIdx) throws IOException {
-        if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH || maskIdx == -1) {
-            return null;
-        }
+    private PixelPatcher.Mask processBadPixelMask(ImageProcessor ip, int maskIdx) throws IOException {
+        return switch (PixelPatcher.BPM_MODE.get()) {
+            case BPM_FILE -> {
+                var bpmFile = BpmFileCodec.readFile(PixelPatcher.BPM_FILE_SOURCE.get());
+                if (bpmFile == null) {
+                    yield null;
+                }
 
-        var maskIp = twoDimensionalImageData2Processor(maskIdx);
+                var mask = new PixelPatcher.Mask.ListMask(bpmFile);
+                PIXEL_PATCHER.patch(ip, mask);
 
-        PIXEL_PATCHER.patch(ip, maskIp, PixelPatcher.TYPE.get().toPatchType());
+                yield mask;
+            }
+            case LCO_FILE -> {
+                if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH || maskIdx == -1) {
+                    yield null;
+                }
 
-        return maskIp;
+                var maskIp = twoDimensionalImageData2Processor(maskIdx);
+
+                if (ip.getWidth() != maskIp.getWidth() || ip.getHeight() != maskIp.getHeight()) {
+                    throw new IllegalArgumentException("Mask must have same width and height!");
+                }
+
+                var mask = new PixelPatcher.Mask.IPMask(maskIp);
+                PIXEL_PATCHER.patch(ip, mask);
+
+                yield mask;
+            }
+            case DISABLED -> null;
+        };
     }
 
     /**

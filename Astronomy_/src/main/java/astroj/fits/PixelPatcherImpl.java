@@ -1,13 +1,5 @@
 package astroj.fits;
 
-import java.awt.Rectangle;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.ToIntFunction;
-
 import astroj.FittedPlane;
 import com.google.auto.service.AutoService;
 import ij.astro.logging.AIJLogger;
@@ -15,23 +7,25 @@ import ij.astro.util.PixelPatcher;
 import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
 
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+import java.util.function.ToIntFunction;
+
 @AutoService(PixelPatcher.class)
 public class PixelPatcherImpl implements PixelPatcher {
     @Override
-    public void patch(ImageProcessor ip, ImageProcessor mask, PatchType patchType) {
-        if (patchType instanceof PatchType.PassThrough) {
+    public void patch(ImageProcessor ip, Mask mask) {
+        if (mask.skip()) {
             return;
-        }
-
-        if (ip.getWidth() != mask.getWidth() || ip.getHeight() != mask.getHeight()) {
-            throw new IllegalArgumentException("Mask must have same width and height!");
         }
 
         var visited = new boolean[ip.getHeight()][ip.getWidth()];
 
         for (int y = 0; y < ip.getHeight(); y++) {
             for (int x = 0; x < ip.getWidth(); x++) {
-                if (!(mask.getf(x, y) > 0)) {
+                var patchType = mask.getPatchType(x, y);
+                if (patchType == null || !(mask.isBadPixel(x, y))) {
                     continue;
                 }
 
@@ -40,7 +34,6 @@ public class PixelPatcherImpl implements PixelPatcher {
                 }
 
                 switch (patchType) {
-                    //noinspection DataFlowIssue
                     case PatchType.PassThrough() -> {}
                     case PatchType.ConstantValue(var val) -> {
                         ip.setf(x, y, (float) val);
@@ -232,7 +225,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             n = 0;
                             for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
                                 for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
-                                    if ((mask.getf(i, j) > 0)) {
+                                    if ((mask.isBadPixel(i, j))) {
                                         continue;
                                     }
                                     n++;
@@ -253,7 +246,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                         var c = 0;
                         for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
                             for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
-                                if ((mask.getf(i, j) > 0)) {
+                                if ((mask.isBadPixel(i, j))) {
                                     continue;
                                 }
                                 xs[c] = i;
@@ -290,7 +283,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             n = 0;
                             for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
                                 for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
-                                    if ((mask.getf(i, j) > 0)) {
+                                    if ((mask.isBadPixel(i, j))) {
                                         continue;
                                     }
                                     n++;
@@ -311,7 +304,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                         var c = 0;
                         for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
                             for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
-                                if ((mask.getf(i, j) > 0)) {
+                                if ((mask.isBadPixel(i, j))) {
                                     continue;
                                 }
                                 xs[c] = i;
@@ -332,7 +325,7 @@ public class PixelPatcherImpl implements PixelPatcher {
         }
     }
 
-    private Region collectContinuousRegion(ImageProcessor ip, ImageProcessor mask, boolean[][] visited, int startX, int startY) {
+    private Region collectContinuousRegion(ImageProcessor ip, Mask mask, boolean[][] visited, int startX, int startY) {
         var stack = new ArrayDeque<Pixel>();
         var region = new Region();
 
@@ -357,7 +350,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                         continue;
                     }
 
-                    if (mask.getf(nx, ny) > 0) {
+                    if (mask.isBadPixel(nx, ny)) {
                         if (!visited[ny][nx]) {
                             visited[ny][nx] = true;
                             stack.push(new Pixel(nx, ny));
@@ -375,13 +368,13 @@ public class PixelPatcherImpl implements PixelPatcher {
     /**
      * Collects good pixel values in the region
      */
-    private double[] collect(ImageProcessor ip, ImageProcessor mask, int xCenter, int yCenter, int xRadius, int yRadius) {
+    private double[] collect(ImageProcessor ip, Mask mask, int xCenter, int yCenter, int xRadius, int yRadius) {
         var pixels = new double[4 * xRadius * yRadius];
         var index = 0;
         for (int j = Math.max(0, yCenter - yRadius); j < Math.min(ip.getHeight(), yCenter + yRadius); j++) {
             for (int i = Math.max(0, xCenter - xRadius); i < Math.min(ip.getWidth(), xCenter + xRadius); i++) {
                 // Filter out bad pixels
-                if (mask.getf(i, j) > 0) {
+                if (mask.isBadPixel(i, j)) {
                     continue;
                 }
 

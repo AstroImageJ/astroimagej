@@ -1,9 +1,13 @@
 package ij.astro.util;
 
 import ij.astro.gui.ToolTipProvider;
+import ij.astro.io.pixel_maps.BpmFile;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.process.ImageProcessor;
+
+import java.util.Collection;
+import java.util.Map;
 
 public interface PixelPatcher {
     Property<PatchType.Type> TYPE = new Property<>(PatchType.Type.PASS_THROUGH, PixelPatcher.class, t -> {
@@ -15,7 +19,7 @@ public interface PixelPatcher {
     });
     Property<Boolean> DISPLAY = new Property<>(true, PixelPatcher.class);
 
-    void patch(ImageProcessor ip, ImageProcessor mask, PatchType patchType);
+    void patch(ImageProcessor ip, Mask mask);
 
     sealed interface PatchType {
         Property.PropertyLoadValidator<Integer> PIXEL_RANGE = (d) -> (d < 0) ? 0 : d;
@@ -145,6 +149,67 @@ public interface PixelPatcher {
                 };
             }
         }
+    }
+
+
+    sealed interface Mask permits Mask.IPMask, Mask.ListMask {
+        record IPMask(ImageProcessor mask) implements Mask {
+            @Override
+            public boolean isBadPixel(int x, int y) {
+                return mask.getf(x, y) > 0;
+            }
+
+            @Override
+            public PatchType getPatchType(int x, int y) {
+                return isBadPixel(x, y) ? TYPE.get().toPatchType() : null;
+            }
+
+            @Override
+            public boolean skip() {
+                return TYPE.get().toPatchType() instanceof PatchType.PassThrough;
+            }
+        }
+
+        record ListMask(Map<PatchType.Type, Collection<Pixel>> masks) implements Mask {
+            public ListMask(BpmFile bpm) {
+                this(bpm.patches());
+            }
+
+            @Override
+            public boolean isBadPixel(int x, int y) {
+                var pixel = new Pixel(x, y);
+                for (var patchEntry : masks.entrySet()) {
+                    if (patchEntry.getValue().contains(pixel)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            @Override
+            public PatchType getPatchType(int x, int y) {
+                var pixel = new Pixel(x, y);
+                for (var patchEntry : masks.entrySet()) {
+                    if (patchEntry.getValue().contains(pixel)) {
+                        return patchEntry.getKey().toPatchType();
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            public boolean skip() {
+                return masks().isEmpty() || masks.keySet().stream().allMatch(t -> t == PatchType.Type.PASS_THROUGH);
+            }
+        }
+
+        boolean isBadPixel(int x, int y);
+
+        PatchType getPatchType(int x, int y);
+
+        boolean skip();
     }
 
     record Pixel(int x, int y) {}

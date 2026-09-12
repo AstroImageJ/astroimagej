@@ -1138,6 +1138,8 @@ public class FolderOpener implements PlugIn, TextListener {
 		var bitDepth = 0;
 		long sizeInBytes = 0;
 		var stackCountPerImage = 1;
+		var original = PixelPatcher.BPM_MODE.get();
+		PixelPatcher.BPM_MODE.set(PixelPatcher.PatchTypeSource.DISABLED);
 		for (String sf : list) {
 			Opener opener = new Opener(Opener.OpenOption.SKIP_UI);
 			opener.setSilentMode(true);
@@ -1158,6 +1160,7 @@ public class FolderOpener implements PlugIn, TextListener {
 				break;
 			}
 		}
+		PixelPatcher.BPM_MODE.set(original);
 
 		var increment = safeParse(((TextField) gd.getNumericFields().get(1)).getText(), 1);
 		var count = Math.min(safeParse(((TextField) gd.getStringFields().get(2)).getText(), list.length), list.length);

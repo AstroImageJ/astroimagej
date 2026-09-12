@@ -1,37 +1,9 @@
 package ij.process;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.font.GlyphVector;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.MemoryImageSource;
-import java.awt.image.SampleModel;
-import java.awt.image.WritableRaster;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Random;
-
 import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.util.PixelPatcher;
-import ij.gui.Arrow;
-import ij.gui.Line;
-import ij.gui.OvalRoi;
-import ij.gui.Overlay;
-import ij.gui.PointRoi;
-import ij.gui.ProgressBar;
-import ij.gui.Roi;
-import ij.gui.ShapeRoi;
-import ij.gui.Toolbar;
+import ij.gui.*;
 import ij.measure.Measurements;
 import ij.plugin.Binner;
 import ij.plugin.Colors;
@@ -39,6 +11,14 @@ import ij.plugin.filter.GaussianBlur;
 import ij.process.AutoThresholder.Method;
 import ij.util.Java2;
 import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.font.GlyphVector;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Random;
 
 /**
 This abstract class is the superclass for classes that process
@@ -1014,13 +994,22 @@ public abstract class ImageProcessor implements Cloneable {
 		progressBar = pb;
 	}
 
+	@AstroImageJ(reason = "Mark bad pixels")
 	public void markBadPixel(int x, int y) {
-        if (badPixels == null) {
-            badPixels = new ArrayList<>();
-        }
-		badPixels.add(new PixelPatcher.Pixel(x, y));
+		if (PixelPatcher.PRESERVE_BPM.get()) {
+			if (badPixels == null) {
+				badPixels = new ArrayList<>();
+			}
+			badPixels.add(new PixelPatcher.Pixel(x, y));
+		}
 	}
 
+	@AstroImageJ(reason = "Mark bad pixels")
+	public void setBadPixels(Collection<PixelPatcher.Pixel> pixels) {
+		badPixels = pixels;
+	}
+
+	@AstroImageJ(reason = "Mark bad pixels")
 	public Collection<PixelPatcher.Pixel> getBadPixels() {
 		return badPixels;
 	}

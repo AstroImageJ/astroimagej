@@ -1,14 +1,14 @@
 package ij;
 
-import java.awt.Rectangle;
-import java.awt.image.ColorModel;
+import ij.astro.AstroImageJ;
+import ij.astro.util.PixelPatcher;
+import ij.process.*;
 
-import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
-import ij.process.IntProcessor;
-import ij.process.ShortProcessor;
+import java.awt.*;
+import java.awt.image.ColorModel;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
 This class represents an expandable array of images.
@@ -21,6 +21,8 @@ public class ImageStack {
 	private int nSlices = 0;
 	private Object[] stack;
 	private String[] label;
+	@AstroImageJ(reason = "Store bad pixels")
+	private List<Collection<PixelPatcher.Pixel>> badPixels;
 	private int width, height;
 	private Rectangle roi;
 	private ColorModel cm;
@@ -40,25 +42,34 @@ public class ImageStack {
 	
 	/** Creates a new, empty image stack with a capacity of 'size'.  All
 	     'size' slices and labels of this image stack are initially null. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public ImageStack(int width, int height, int size) {
 		this.width = width;
 		this.height = height;
 		stack = new Object[size];
 		label = new String[size];
+        if (PixelPatcher.PRESERVE_BPM.get()) {
+            badPixels = new ArrayList<>(size);
+        }
 		nSlices = size;
 	}
 
 	/** Creates a new, empty image stack using the specified color model. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public ImageStack(int width, int height, ColorModel cm) {
 		this.width = width;
 		this.height = height;
 		this.cm = cm;
 		stack = new Object[INITIAL_SIZE];
 		label = new String[INITIAL_SIZE];
+		if (PixelPatcher.PRESERVE_BPM.get()) {
+			badPixels = new ArrayList<>(INITIAL_SIZE);
+		}
 		nSlices = 0;
 	}
 
 	/** Adds an image in the form of a pixel array to the end of the stack. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public void addSlice(String sliceLabel, Object pixels) {
 		if (pixels==null) 
 			throw new IllegalArgumentException("'pixels' is null!");
@@ -76,6 +87,9 @@ public class ImageStack {
 		}
 		stack[nSlices-1] = pixels;
 		this.label[nSlices-1] = sliceLabel;
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			badPixels.add(nSlices-1, null);
+		}
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
 	}
@@ -108,6 +122,7 @@ public class ImageStack {
 
 	/** Adds the image in 'ip' to the end of the stack, setting
 		the string 'sliceLabel' as the slice metadata. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public void addSlice(String sliceLabel, ImageProcessor ip) {
 		ip = convertType(ip);
 		if (ip.getWidth()!=this.width || ip.getHeight()!=this.height) {
@@ -125,6 +140,9 @@ public class ImageStack {
 			max = ip.getMax();
 		}
 		addSlice(sliceLabel, ip.getPixels());
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			badPixels.set(nSlices-1, ip.getBadPixels());
+		}
 	}
 	
 	private void init(int width, int height) {	
@@ -132,6 +150,9 @@ public class ImageStack {
 		this.height = height;
 		stack = new Object[INITIAL_SIZE];
 		label = new String[INITIAL_SIZE];
+		if (PixelPatcher.PRESERVE_BPM.get()) {
+			badPixels = new ArrayList<>(INITIAL_SIZE);
+		}
 	}
 	
 	private ImageProcessor convertType(ImageProcessor ip) {
@@ -151,6 +172,7 @@ public class ImageStack {
 	
 	/** Adds the image in 'ip' to the stack following slice 'n'. Adds
 		the slice to the beginning of the stack if 'n' is zero. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public void addSlice(String sliceLabel, ImageProcessor ip, int n) {
 		if (n<0 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
@@ -164,9 +186,14 @@ public class ImageStack {
 		}
 		stack[n] = tempSlice;
 		label[n] = tempLabel;
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			badPixels.set(n, badPixels.get(nSlices-1));
+			badPixels.set(nSlices-1, null);
+		}
 	}
 	
 	/** Deletes the specified slice, where {@literal 1<=n<=nslices}. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public void deleteSlice(int n) {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
@@ -178,6 +205,9 @@ public class ImageStack {
 		}
 		stack[nSlices-1] = null;
 		label[nSlices-1] = null;
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			badPixels.remove(n);
+		}
 		nSlices--;
 	}
 	
@@ -226,10 +256,14 @@ public class ImageStack {
 	}
 	
 	/** Assigns a pixel array to the specified slice, where {@literal 1<=n<=nslices}. */
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public void setPixels(Object pixels, int n) {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
 		stack[n-1] = pixels;
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			badPixels.set(n-1, null);
+		}
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
 	}
@@ -312,6 +346,7 @@ public class ImageStack {
 	 * where {@literal 1<=n<=nslices}.
  	 * Returns null if the stack is empty.
  	*/
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
  	public ImageProcessor getProcessor(int n) {
 		ImageProcessor ip;
 		if (n<1 || n>nSlices)
@@ -339,12 +374,16 @@ public class ImageStack {
 		if (cTable!=null)
 			ip.setCalibrationTable(cTable);
 		ip.setSliceNumber(n);
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			ip.setBadPixels(badPixels.get(n-1));
+		}
 		return ip;
 	}
 	
 	/** Assigns the pixel array of an ImageProcessor to the specified slice,
 	 * where {@literal 1<=n<=nslices}.
 	*/
+	@AstroImageJ(reason = "Store bad pixels", modified = true)
 	public void setProcessor(ImageProcessor ip, int n) {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
@@ -352,6 +391,9 @@ public class ImageStack {
 		if (ip.getWidth()!=width || ip.getHeight()!=height)
 			throw new IllegalArgumentException("Wrong dimensions for this stack");
 		stack[n-1] = ip.getPixels();
+		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
+			badPixels.set(n-1, ip.getBadPixels());
+		}
 	}
 
 	/** Assigns a new color model to this stack. */

@@ -1,12 +1,13 @@
 package ij.astro.io.pixel_maps.codecs;
 
-import java.util.List;
-import java.util.Objects;
-
 import ij.astro.io.aij.AijFileCodec;
 import ij.astro.io.pixel_maps.BpmFile;
 import ij.astro.io.pixel_maps.BpmHeader;
 import ij.astro.util.PixelPatcher;
+
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public class BpmFileCodec {
     public static final String EXT = "bpm";
@@ -42,7 +43,7 @@ public class BpmFileCodec {
 
     static void main() {
         var test = new BpmFile();
-        var pxs = List.of(new PixelPatcher.Pixel(1, 2), new PixelPatcher.Pixel(3, 4));
+        var pxs = new HashSet<>(Set.of(new PixelPatcher.Pixel(1, 2), new PixelPatcher.Pixel(3, 4)));
         test.patches().put(PixelPatcher.PatchType.Type.AVERAGE_FILL, pxs);
         test.patches().put(PixelPatcher.PatchType.Type.MEDIAN_FILL, pxs);
 

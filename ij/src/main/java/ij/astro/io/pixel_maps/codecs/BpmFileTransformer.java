@@ -1,7 +1,5 @@
 package ij.astro.io.pixel_maps.codecs;
 
-import java.util.ArrayList;
-
 import ij.astro.io.aij.AijFileCodec;
 import ij.astro.io.aij.Section;
 import ij.astro.io.aij.Transformer;
@@ -9,6 +7,8 @@ import ij.astro.io.pixel_maps.BpmFile;
 import ij.astro.io.pixel_maps.BpmHeader;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.PixelPatcher;
+
+import java.util.HashSet;
 
 public class BpmFileTransformer extends Transformer<BpmFile, Void> {
     private static final String PATCH_TYPE_KEY = "patchtype";
@@ -48,7 +48,7 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
                 continue;
             }
             var patchView = patch.createMapView();
-            bpmFile.patches().computeIfAbsent(patchType, _ -> new ArrayList<>());
+            bpmFile.patches().computeIfAbsent(patchType, _ -> new HashSet<>());
             var pixelList = bpmFile.patches().get(patchType);
             var pSecs = patchView.get(PIXEL_KEY);
             for (var pSec : pSecs) {

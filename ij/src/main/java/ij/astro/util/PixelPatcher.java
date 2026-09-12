@@ -18,6 +18,10 @@ public interface PixelPatcher {
         return t;
     });
     Property<Boolean> DISPLAY = new Property<>(true, PixelPatcher.class);
+    /// If the BPM should be preserved for display.
+    Property<Boolean> PRESERVE_BPM = new Property<>(true, PixelPatcher.class);
+    Property<String> BPM_FILE_SOURCE = new Property<>("", PixelPatcher.class);
+    Property<PatchTypeSource> BPM_MODE = new Property<>(PatchTypeSource.DISABLED, PixelPatcher.class);
 
     void patch(ImageProcessor ip, Mask mask);
 
@@ -151,6 +155,12 @@ public interface PixelPatcher {
         }
     }
 
+    enum PatchTypeSource {
+        DISABLED,
+        LCO_FILE,
+        BPM_FILE,
+        ;
+    }
 
     sealed interface Mask permits Mask.IPMask, Mask.ListMask {
         record IPMask(ImageProcessor mask) implements Mask {

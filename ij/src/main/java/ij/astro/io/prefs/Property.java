@@ -3,6 +3,7 @@ package ij.astro.io.prefs;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
@@ -21,6 +22,9 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 
 import ij.IJ;
 import ij.Prefs;
@@ -59,6 +63,11 @@ public class Property<T> {
 
     public Property(T defaultValue, Object owner) {
         this(defaultValue, "", "", null, _ -> null, owner);
+    }
+
+    public Property(T defaultValue, Object owner, PropertyLoadValidator<T> loadValidator) {
+        this(defaultValue, "", "", null, _ -> null, owner);
+        this.loadValidator = loadValidator;
     }
 
     public Property(T defaultValue, Function<T, String> serializer, Function<String, T> deserializer, Object owner) {
@@ -219,11 +228,11 @@ public class Property<T> {
         weakListener.put(owner, listener);
     }
 
-    public void locationSavingWindow(Frame window) {
+    public void locationSavingWindow(Window window) {
         locationSavingWindow(window, IJ.getInstance());
     }
 
-    public void locationSavingWindow(Frame window, Frame reference) {
+    public void locationSavingWindow(Window window, Frame reference) {
         if (type != Point.class) {
             return;
         }
@@ -335,10 +344,24 @@ public class Property<T> {
     }
 
     public ItemListener toItemListener() {
-        if (type != Boolean.TYPE && type != Boolean.class) {
-            throw new IllegalArgumentException("Only boolean properties can be converted to ItemListeners");
+        if (type == Boolean.TYPE || type == Boolean.class) {
+            return (e) -> set((T)(Boolean)(e.getStateChange() == ItemEvent.SELECTED));
         }
-        return (e) -> set((T)(Boolean)(e.getStateChange() == ItemEvent.SELECTED));
+
+        if (type.isEnum()) {
+            return (e) -> set((T)(e.getItem()));
+        }
+
+        throw new IllegalArgumentException("Only boolean or enum properties can be converted to ItemListeners");
+    }
+
+    public void registerChangeListener(JSpinner spinner) {
+        if (spinner.getModel() instanceof SpinnerNumberModel spinnerNumberModel) {
+            if (!type.isInstance(spinnerNumberModel.getNumber())) {
+                throw new IllegalArgumentException("Only number properties can be converted to SpinnerNumberModel");
+            }
+            spinnerNumberModel.addChangeListener(_ -> set((T) spinnerNumberModel.getValue()));
+        }
     }
 
     private String getOrCreatePropertyKey() {

@@ -1,12 +1,16 @@
 package Astronomy.multiaperture.io.transformers;
 
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Transformer;
-
 import java.util.Objects;
 import java.util.Properties;
 
-public class PrefsTransformer implements Transformer<Properties, String> {
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
+import ij.astro.io.aij.Transformer;
+
+public class PrefsTransformer extends Transformer<Properties, String> {
+    public PrefsTransformer(AijFileCodec codec) {
+        super(codec);
+    }
 
     @Override
     public Properties load(String sectionName, Section section) {

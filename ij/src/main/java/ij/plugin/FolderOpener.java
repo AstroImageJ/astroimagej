@@ -1,9 +1,28 @@
 package ij.plugin;
 
-import java.awt.Color;
-import java.awt.GraphicsEnvironment;
-import java.awt.Label;
-import java.awt.TextField;
+import ij.*;
+import ij.astro.AstroImageJ;
+import ij.astro.gui.PixelPatcherOptionsDialog;
+import ij.astro.io.prefs.Property;
+import ij.astro.logging.AIJLogger;
+import ij.astro.types.Pair;
+import ij.astro.util.FitsExtensionUtil;
+import ij.astro.util.PixelPatcher;
+import ij.astro.util.ZipOpenerUtil;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.io.FileInfo;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.measure.Calibration;
+import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
+import ij.util.DicomTools;
+import ij.util.StringSorter;
+import ij.util.Tools;
+
+import java.awt.*;
 import java.awt.event.TextEvent;
 import java.awt.event.TextListener;
 import java.awt.image.ColorModel;
@@ -18,31 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.Macro;
-import ij.Prefs;
-import ij.VirtualStack;
-import ij.astro.AstroImageJ;
-import ij.astro.io.prefs.Property;
-import ij.astro.logging.AIJLogger;
-import ij.astro.types.Pair;
-import ij.astro.util.FitsExtensionUtil;
-import ij.astro.util.ZipOpenerUtil;
-import ij.gui.GenericDialog;
-import ij.gui.Overlay;
-import ij.gui.Roi;
-import ij.io.FileInfo;
-import ij.io.OpenDialog;
-import ij.io.Opener;
-import ij.measure.Calibration;
-import ij.plugin.frame.Recorder;
-import ij.process.ImageProcessor;
-import ij.util.DicomTools;
-import ij.util.StringSorter;
-import ij.util.Tools;
 
 /** Implements the File/Import/Image Sequence command, which
 	opens a folder of images as a stack. */
@@ -796,6 +790,12 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addToSameRow();
 		gd.addStringField("Value 2:", "");
 
+		gd.addEnumChoice("Bad Pixel Replacement", PixelPatcher.BPM_MODE.get());
+		gd.addToSameRow();
+		gd.addButton("Configure Patch Type", _ -> PixelPatcherOptionsDialog.showDialog());
+		gd.addFileField("BPM File", PixelPatcher.BPM_FILE_SOURCE.get());
+		gd.addCheckbox("Mark Bad Pixels", PixelPatcher.PRESERVE_BPM.get());
+
 		gd.addCheckbox("Sort names numerically", sortFileNames);
 		gd.addCheckbox("Generate WCS Common Region", AUTOMATIC_WCS_SHAPE_GENERATION.get());
 		gd.addCheckbox("Use virtual stack", Prefs.get("folderopener.openAsVirtualStack", openAsVirtualStack));
@@ -846,6 +846,11 @@ public class FolderOpener implements PlugIn, TextListener {
 		this.scale = gd.getNextNumber();
 		if (this.scale<5.0) this.scale = 5.0;
 		if (this.scale>100.0) this.scale = 100.0;
+
+		PixelPatcher.BPM_MODE.set(gd.getNextEnumChoice(PixelPatcher.PatchTypeSource.class));
+		PixelPatcher.BPM_FILE_SOURCE.set(gd.getNextString());
+		PixelPatcher.PRESERVE_BPM.set(gd.getNextBoolean());
+
 		sortFileNames = gd.getNextBoolean();
 		if (!sortFileNames)
 			sortByMetaData = false;
@@ -1133,6 +1138,8 @@ public class FolderOpener implements PlugIn, TextListener {
 		var bitDepth = 0;
 		long sizeInBytes = 0;
 		var stackCountPerImage = 1;
+		var original = PixelPatcher.BPM_MODE.get();
+		PixelPatcher.BPM_MODE.set(PixelPatcher.PatchTypeSource.DISABLED);
 		for (String sf : list) {
 			Opener opener = new Opener(Opener.OpenOption.SKIP_UI);
 			opener.setSilentMode(true);
@@ -1153,6 +1160,7 @@ public class FolderOpener implements PlugIn, TextListener {
 				break;
 			}
 		}
+		PixelPatcher.BPM_MODE.set(original);
 
 		var increment = safeParse(((TextField) gd.getNumericFields().get(1)).getText(), 1);
 		var count = Math.min(safeParse(((TextField) gd.getStringFields().get(2)).getText(), list.length), list.length);

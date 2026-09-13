@@ -5,8 +5,16 @@ import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.postprocess.PhotometricDebayer;
-import bislider.com.visutools.nav.bislider.*;
-import ij.*;
+import bislider.com.visutools.nav.bislider.BiSlider;
+import bislider.com.visutools.nav.bislider.BiSliderAdapter;
+import bislider.com.visutools.nav.bislider.BiSliderEvent;
+import bislider.com.visutools.nav.bislider.ContentPainterEvent;
+import bislider.com.visutools.nav.bislider.ContentPainterListener;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.FileAssociationHandler;
@@ -1896,6 +1904,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         // FITS saving
         var fitsMenu = new Menu("Save as FITS...");
         fileMenu.add(fitsMenu);
+
+        var pixelPatcher = new MenuItem("Set Pixel Patcher...");
+        pixelPatcher.addActionListener(_ -> PixelPatcherOptionsDialog.showDialog());
+        fileMenu.add(pixelPatcher);
 
         // Slice saving
         saveFitsMenuItem = new Menu("Save image/slice as FITS...");
@@ -5295,7 +5307,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     @Override
     // Add extraInfo to subtitle
     public String createSubtitle() {
-        return super.createSubtitle() + extraInfo;
+        return super.createSubtitle() + getBpmTitle() + extraInfo;
+    }
+
+    private String getBpmTitle() {
+        var ip = imp.getProcessor();
+        if (ip != null) {
+            return ip.getBadPixels() != null ? " (Bad Pixels Patched)" : "";
+        }
+        return "";
     }
 
     // This method returns a buffered image with the contents of an image

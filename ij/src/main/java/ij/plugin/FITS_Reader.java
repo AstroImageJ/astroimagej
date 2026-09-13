@@ -1,43 +1,5 @@
 package ij.plugin;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.NAXISn;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.IntStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipFile;
-
-import javax.swing.ProgressMonitor;
-import javax.swing.ProgressMonitorInputStream;
-
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -45,12 +7,14 @@ import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.FitsReader;
+import ij.astro.io.pixel_maps.codecs.BpmFileCodec;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.types.Pair;
 import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
+import ij.astro.util.PixelPatcher;
 import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
@@ -60,21 +24,28 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Data;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsDate;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.TableHDU;
+import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.image.compression.hdu.CompressedTableHDU;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsFile;
+
+import javax.swing.*;
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
+import java.util.stream.IntStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipFile;
+
+import static nom.tam.fits.header.Standard.*;
 
 
 /** Opens and displays FITS images. The FITS format is 
@@ -121,6 +92,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
     public static final ScopedValue<Boolean> HEADER_ONLY = ScopedValue.newInstance();
     public static final ScopedValue<ImageProcessor> REF_SLICE = ScopedValue.newInstance();
+	private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
+			.findFirst()
+			.orElseThrow(() -> new RuntimeException("No PixelPatcher implementation found"));
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -495,6 +469,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		} else if (getHeader(hdu, true).getIntValue(NAXIS) == 2) {
 			if (filter != null && !filter.matchesFilter(getHeader(hdu, true))) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
+			processBadPixelMask(imageProcessor, hdus);
 		} else if (getHeader(hdu, true).getIntValue(NAXIS) == 3) {
 			if (FolderOpener.virtualIntended) {
 				AIJLogger.log("Cannot open 3D images as a virtual stack.", false);
@@ -507,6 +482,51 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			imageProcessor = imagePlus.getProcessor();
 			imageProcessor.flipVertical();
 			setProcessor(fileName, imageProcessor);
+		}
+	}
+
+	private void processBadPixelMask(ImageProcessor ip, BasicHDU<?>[] hdus) {
+		switch (PixelPatcher.BPM_MODE.get()) {
+			case BPM_FILE -> {
+				var bpmFile = BpmFileCodec.readFile(PixelPatcher.BPM_FILE_SOURCE.get());
+				if (bpmFile == null) {
+					return;
+				}
+
+				var mask = new PixelPatcher.Mask.ListMask(bpmFile);
+				PIXEL_PATCHER.patch(ip, mask);
+			}
+			case LCO_FILE -> {
+				if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH) {
+					return;
+				}
+
+				BasicHDU<?> maskHdu = null;
+				for (BasicHDU<?> basicHDU : hdus) {
+					if ("BPM".equals(basicHDU.getHeader().getStringValue(EXTNAME))) {
+						maskHdu = basicHDU;
+						break;
+					}
+				}
+
+				if (maskHdu == null) {
+					return;
+				}
+
+				if (maskHdu instanceof CompressedImageHDU compressedImageHDU) {
+					maskHdu = compressedImageHDU.asImageHDU();
+				}
+
+				var maskIp = twoDimensionalImageData2Processor(maskHdu.getKernel(), false);
+
+				if (ip.getWidth() != maskIp.getWidth() || ip.getHeight() != maskIp.getHeight()) {
+					throw new IllegalArgumentException("Mask must have same width and height!");
+				}
+
+				var mask = new PixelPatcher.Mask.IPMask(maskIp);
+				PIXEL_PATCHER.patch(ip, mask);
+			}
+			case DISABLED -> {}
 		}
 	}
 
@@ -1193,19 +1213,33 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	//
 	// Notice that again, the x index is the tighter loop.
 
-	/**
+    /**
+     * Convert 2D image data into an ImageProcessor, scale image data
+     * <p>
+     * Data is transposed to match {@link ImageProcessor} implementations
+     * (see {@link ImageProcessor#getPixelValue(int, int)})
+     *
+     * @param imageData
+     */
+    private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
+        return twoDimensionalImageData2Processor(imageData, true);
+    }
+
+    /**
 	 * Convert 2D image data into an ImageProcessor, scale image data
 	 * <p>
 	 * Data is transposed to match {@link ImageProcessor} implementations
 	 * (see {@link ImageProcessor#getPixelValue(int, int)})
 	 */
-	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
+	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData, boolean updateImp) {
 		ImageProcessor ip;
 		var type = ImageType.getType(imageData, bscale, bzero);
 
 		var imgtmp = type.makeProcessor(wi, he, type.processImageData(imageData, wi, he, bzero, bscale));
 		ip = conditionImageProcessor(imgtmp);
-		this.setProcessor(fileName, ip);
+		if (updateImp) {
+			this.setProcessor(fileName, ip);
+		}
 		return ip;
 	}
 

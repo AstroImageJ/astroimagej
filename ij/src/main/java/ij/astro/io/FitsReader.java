@@ -1,16 +1,27 @@
 package ij.astro.io;
 
-import static ij.plugin.FITS_Reader.filter;
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BSCALE;
-import static nom.tam.fits.header.Standard.BZERO;
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.TELESCOP;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.io.pixel_maps.codecs.BpmFileCodec;
+import ij.astro.logging.AIJLogger;
+import ij.astro.util.*;
+import ij.io.FileInfo;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+import ij.measure.ResultsTable;
+import ij.plugin.FITS_Reader;
+import ij.plugin.FolderOpener;
+import ij.process.ImageProcessor;
+import nom.tam.fits.*;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.image.compression.hdu.CompressedTableHDU;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsFile;
 
+import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -21,12 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -34,45 +40,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
 
-import javax.swing.ProgressMonitor;
-import javax.swing.ProgressMonitorInputStream;
-
-import ij.IJ;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.astro.logging.AIJLogger;
-import ij.astro.util.ImageType;
-import ij.astro.util.LeapSeconds;
-import ij.astro.util.SkyAlgorithmsTimeUtil;
-import ij.astro.util.ZipOpenerUtil;
-import ij.io.FileInfo;
-import ij.io.OpenDialog;
-import ij.io.Opener;
-import ij.measure.ResultsTable;
-import ij.plugin.FITS_Reader;
-import ij.plugin.FolderOpener;
-import ij.process.ImageProcessor;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsDate;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.TableHDU;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.compression.hdu.CompressedImageHDU;
-import nom.tam.image.compression.hdu.CompressedTableHDU;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsFile;
+import static ij.plugin.FITS_Reader.filter;
+import static nom.tam.fits.header.Standard.*;
 
 public class FitsReader implements AutoCloseable {
     public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
     private static final LeapSeconds LEAP_SECONDS = new LeapSeconds();
     private static final int MAX_THREADS = getThreadCount();
+    private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No PixelPatcher implementation found"));
     private final Fits fits;
     private final List<HDUDescriptor> hduDescriptors;
     private final BasicHDU<?>[] hdus;
@@ -319,6 +296,7 @@ public class FitsReader implements AutoCloseable {
             }
 
             var processor = twoDimensionalImageData2Processor(firstImageIndex);
+            processBadPixelMask(processor);
             return new ProcessedFits(List.of(processor), headers);
         }
 
@@ -410,7 +388,14 @@ public class FitsReader implements AutoCloseable {
 
             if (includeProcessors) {
                 assert data != null;
-                processors.add(twoDimensionalImageData2Processor(data[i]));
+                var processor = twoDimensionalImageData2Processor(data[i]);
+                try {
+                    processBadPixelMask(processor);
+                } catch (IOException e) {
+                    AIJLogger.log("Failed to process Bad Pixel Map for image: " + i);
+                    e.printStackTrace();
+                }
+                processors.add(processor);
             }
             outputHeaders.add(header);
             pm.setProgress(i);
@@ -543,6 +528,53 @@ public class FitsReader implements AutoCloseable {
         }
 
         return new ProcessedFits(processors, headers);
+    }
+
+    private int findBadPixelMask() {
+        var maskIdx = -1;
+        for (int i = 0; i < hduDescriptors.size(); i++) {
+            var hdr = hduDescriptors.get(i).original();
+            if ("BPM".equals(hdr.getStringValue(EXTNAME))) {
+                maskIdx = i;
+                break;
+            }
+        }
+
+        return maskIdx;
+    }
+
+    private PixelPatcher.Mask processBadPixelMask(ImageProcessor ip) throws IOException {
+        return switch (PixelPatcher.BPM_MODE.get()) {
+            case BPM_FILE -> {
+                var bpmFile = BpmFileCodec.readFile(PixelPatcher.BPM_FILE_SOURCE.get());
+                if (bpmFile == null) {
+                    yield null;
+                }
+
+                var mask = new PixelPatcher.Mask.ListMask(bpmFile);
+                PIXEL_PATCHER.patch(ip, mask);
+
+                yield mask;
+            }
+            case LCO_FILE -> {
+                var maskIdx = findBadPixelMask();
+                if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH || maskIdx == -1) {
+                    yield null;
+                }
+
+                var maskIp = twoDimensionalImageData2Processor(maskIdx);
+
+                if (ip.getWidth() != maskIp.getWidth() || ip.getHeight() != maskIp.getHeight()) {
+                    throw new IllegalArgumentException("Mask must have same width and height!");
+                }
+
+                var mask = new PixelPatcher.Mask.IPMask(maskIp);
+                PIXEL_PATCHER.patch(ip, mask);
+
+                yield mask;
+            }
+            case DISABLED -> null;
+        };
     }
 
     /**

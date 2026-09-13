@@ -1,21 +1,26 @@
 package Astronomy.multiaperture.io.transformers;
 
+import static Astronomy.multiaperture.CompositeShape.ShapeCombination.ADD;
+import static Astronomy.multiaperture.CompositeShape.ShapeCombination.EXCLUSIVE_OR;
+import static Astronomy.multiaperture.CompositeShape.ShapeCombination.INTERSECT;
+import static Astronomy.multiaperture.CompositeShape.ShapeCombination.SUBTRACT;
+
+import java.awt.Shape;
+
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.CompositeShape.ShapeCombination;
-import Astronomy.multiaperture.io.Section;
-import Astronomy.multiaperture.io.Section.Parameter;
-import Astronomy.multiaperture.io.Transformer;
-import Astronomy.multiaperture.io.Transformers;
-import ij.astro.types.MultiMap;
+import ij.astro.io.aij.AijFileCodec;
+import ij.astro.io.aij.Section;
+import ij.astro.io.aij.Section.Parameter;
+import ij.astro.io.aij.Transformer;
 
-import java.awt.*;
-import java.util.List;
-
-import static Astronomy.multiaperture.CompositeShape.ShapeCombination.*;
-
-public class CompositeShapeTransformer implements Transformer<CompositeShape, Void> {
+public class CompositeShapeTransformer extends Transformer<CompositeShape, Void> {
     private static final Parameter<ShapeCombination> COMBINATION_PARAMETER =
             new Parameter<>("shapeCombination", 0, ShapeCombination.class, CompositeShapeTransformer::combinationFromString, CompositeShapeTransformer::combination);
+
+    public CompositeShapeTransformer(AijFileCodec codec) {
+        super(codec);
+    }
 
     @Override
     public CompositeShape load(Void params, Section section) {
@@ -34,8 +39,8 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
             throw new IllegalStateException("secondary section must contain one subsection, found " + sSec.getSubSections().size());
         }
 
-        Shape pShape = Transformers.read(Shape.class, pSec.getSubSections().get(0));
-        Shape sShape = Transformers.read(Shape.class, sSec.getSubSections().get(0));
+        Shape pShape = codec.read(Shape.class, pSec.getSubSections().get(0));
+        Shape sShape = codec.read(Shape.class, sSec.getSubSections().get(0));
 
         return new CompositeShape(combination, pShape, sShape);
     }
@@ -46,16 +51,16 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
 
         Section s;
         if (tracker.primaryOnly()) {
-            s = Transformers.write(Shape.class, shape.getResult());
+            s = codec.write(Shape.class, shape.getResult());
         } else {
             s = Section.createSection("composite", COMBINATION_PARAMETER, tracker.combination());
 
             var pri = new Section("primary");
             var sec = new Section("secondary");
 
-            pri.addSubsection(Transformers.write(Shape.class, tracker.primary()));
+            pri.addSubsection(codec.write(Shape.class, tracker.primary()));
 
-            sec.addSubsection(Transformers.write(Shape.class, tracker.secondary()));
+            sec.addSubsection(codec.write(Shape.class, tracker.secondary()));
 
             s.addSubsection(pri);
             s.addSubsection(sec);
@@ -82,28 +87,5 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
             default -> throw new IllegalStateException("Unknown shape combination '%s' for parameter '%s'"
                     .formatted(s, parameter.name()));
         };
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name) {
-        return getUniqueSection(view, name, true);
-    }
-
-    private Section getUniqueSection(MultiMap<String, Section> view, String name, boolean required) {
-        var l = view.get(name);
-        var c = l == null ? 0 : l.size();
-
-        if ((required && c != 1) || (!required && c > 1)) {
-            throw new IllegalStateException("Composite shape has %s %s(s)!".formatted(c, name));
-        }
-
-        return c == 0 ? null : l.get(0);
-    }
-
-    private List<Section> getRequiredSection(MultiMap<String, Section> view, String name) {
-        if (!view.contains(name)) {
-            throw new IllegalStateException("Composite shape missing required section: " + name);
-        }
-
-        return view.get(name);
     }
 }

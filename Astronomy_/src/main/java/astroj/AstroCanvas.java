@@ -29,6 +29,7 @@ import Astronomy.shapes.WcsShape;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.util.PixelPatcher;
 import ij.gui.Arrow;
 import ij.gui.ImageWindow;
 import ij.gui.Roi;
@@ -683,6 +684,10 @@ public class AstroCanvas extends OverlayCanvas {
         if (RegionExclusion.DISPLAY_EXCLUDED_REGIONS.get()) {
             drawExcludedRegions((Graphics2D) drawingGraphics);
         }
+
+        if (PixelPatcher.DISPLAY.get()) {
+            drawBadPixels((Graphics2D) drawingGraphics);
+        }
         
         transEnabled = false;
 
@@ -773,6 +778,30 @@ public class AstroCanvas extends OverlayCanvas {
                 a.subtract(stroked);
                 g2.fill(aijTransform.createTransformedShape(a));
             }
+        }
+
+        g2.setComposite(comp);
+        g2.setTransform(canvTrans);
+    }
+
+    private void drawBadPixels(Graphics2D g2) {
+        var badPixels = imp.getProcessor().getBadPixels();
+        if (badPixels == null || badPixels.isEmpty()) {
+            return;
+        }
+
+        g2.setTransform(invCanvTrans);
+
+        g2.setColor(new Color(250, 229, 0));
+        var comp = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.50f));
+
+        for (var badPixel : badPixels) {
+            var x1 = screenX(badPixel.x());
+            var x2 = screenX(badPixel.x() + 1);
+            var y1 = screenY(badPixel.y());
+            var y2 = screenY(badPixel.y() + 1);
+            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.max(1, Math.abs(x2 - x1)), Math.max(1, Math.abs(y2 - y1)));
         }
 
         g2.setComposite(comp);

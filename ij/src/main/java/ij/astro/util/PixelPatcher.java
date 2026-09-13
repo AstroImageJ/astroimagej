@@ -86,8 +86,8 @@ public interface PixelPatcher {
             }
         }
         record AverageFill(int xRadius, int yRadius) implements PatchType {
-            public static final Property<Integer> X_RADIUS = new Property<>(0, AverageFill.class);
-            public static final Property<Integer> Y_RADIUS = new Property<>(0, AverageFill.class);
+            public static final Property<Integer> X_RADIUS = new Property<>(1, AverageFill.class);
+            public static final Property<Integer> Y_RADIUS = new Property<>(1, AverageFill.class);
 
             static {
                 X_RADIUS.setLoadValidator(PIXEL_RANGE);
@@ -101,8 +101,8 @@ public interface PixelPatcher {
             }
         }
         record MedianFill(int xRadius, int yRadius) implements PatchType {
-            public static final Property<Integer> X_RADIUS = new Property<>(0, MedianFill.class);
-            public static final Property<Integer> Y_RADIUS = new Property<>(0, MedianFill.class);
+            public static final Property<Integer> X_RADIUS = new Property<>(1, MedianFill.class);
+            public static final Property<Integer> Y_RADIUS = new Property<>(1, MedianFill.class);
 
             static {
                 X_RADIUS.setLoadValidator(PIXEL_RANGE);

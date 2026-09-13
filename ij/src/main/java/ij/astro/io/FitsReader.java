@@ -296,8 +296,7 @@ public class FitsReader implements AutoCloseable {
             }
 
             var processor = twoDimensionalImageData2Processor(firstImageIndex);
-            var bpmMaskIdx = findBadPixelMask();
-            processBadPixelMask(processor, bpmMaskIdx);
+            processBadPixelMask(processor);
             return new ProcessedFits(List.of(processor), headers);
         }
 
@@ -389,7 +388,14 @@ public class FitsReader implements AutoCloseable {
 
             if (includeProcessors) {
                 assert data != null;
-                processors.add(twoDimensionalImageData2Processor(data[i]));
+                var processor = twoDimensionalImageData2Processor(data[i]);
+                try {
+                    processBadPixelMask(processor);
+                } catch (IOException e) {
+                    AIJLogger.log("Failed to process Bad Pixel Map for image: " + i);
+                    e.printStackTrace();
+                }
+                processors.add(processor);
             }
             outputHeaders.add(header);
             pm.setProgress(i);
@@ -537,7 +543,7 @@ public class FitsReader implements AutoCloseable {
         return maskIdx;
     }
 
-    private PixelPatcher.Mask processBadPixelMask(ImageProcessor ip, int maskIdx) throws IOException {
+    private PixelPatcher.Mask processBadPixelMask(ImageProcessor ip) throws IOException {
         return switch (PixelPatcher.BPM_MODE.get()) {
             case BPM_FILE -> {
                 var bpmFile = BpmFileCodec.readFile(PixelPatcher.BPM_FILE_SOURCE.get());
@@ -551,6 +557,7 @@ public class FitsReader implements AutoCloseable {
                 yield mask;
             }
             case LCO_FILE -> {
+                var maskIdx = findBadPixelMask();
                 if (PixelPatcher.TYPE.get() == PixelPatcher.PatchType.Type.PASS_THROUGH || maskIdx == -1) {
                     yield null;
                 }

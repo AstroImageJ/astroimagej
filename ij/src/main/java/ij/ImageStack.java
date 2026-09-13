@@ -48,9 +48,7 @@ public class ImageStack {
 		this.height = height;
 		stack = new Object[size];
 		label = new String[size];
-        if (PixelPatcher.PRESERVE_BPM.get()) {
-            badPixels = new ArrayList<>(size);
-        }
+		badPixels = new ArrayList<>(size);
 		nSlices = size;
 	}
 
@@ -62,9 +60,7 @@ public class ImageStack {
 		this.cm = cm;
 		stack = new Object[INITIAL_SIZE];
 		label = new String[INITIAL_SIZE];
-		if (PixelPatcher.PRESERVE_BPM.get()) {
-			badPixels = new ArrayList<>(INITIAL_SIZE);
-		}
+		badPixels = new ArrayList<>(INITIAL_SIZE);
 		nSlices = 0;
 	}
 
@@ -87,9 +83,7 @@ public class ImageStack {
 		}
 		stack[nSlices-1] = pixels;
 		this.label[nSlices-1] = sliceLabel;
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			badPixels.add(nSlices-1, null);
-		}
+		badPixels.add(nSlices-1, null);
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
 	}
@@ -140,9 +134,7 @@ public class ImageStack {
 			max = ip.getMax();
 		}
 		addSlice(sliceLabel, ip.getPixels());
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			badPixels.set(nSlices-1, ip.getBadPixels());
-		}
+		badPixels.set(nSlices-1, ip.getBadPixels());
 	}
 	
 	private void init(int width, int height) {	
@@ -150,9 +142,7 @@ public class ImageStack {
 		this.height = height;
 		stack = new Object[INITIAL_SIZE];
 		label = new String[INITIAL_SIZE];
-		if (PixelPatcher.PRESERVE_BPM.get()) {
-			badPixels = new ArrayList<>(INITIAL_SIZE);
-		}
+		badPixels = new ArrayList<>(INITIAL_SIZE);
 	}
 	
 	private ImageProcessor convertType(ImageProcessor ip) {
@@ -186,10 +176,8 @@ public class ImageStack {
 		}
 		stack[n] = tempSlice;
 		label[n] = tempLabel;
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			badPixels.set(n, badPixels.get(nSlices-1));
-			badPixels.set(nSlices-1, null);
-		}
+		badPixels.set(n, badPixels.get(nSlices-1));
+		badPixels.set(nSlices-1, null);
 	}
 	
 	/** Deletes the specified slice, where {@literal 1<=n<=nslices}. */
@@ -205,9 +193,7 @@ public class ImageStack {
 		}
 		stack[nSlices-1] = null;
 		label[nSlices-1] = null;
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			badPixels.remove(n);
-		}
+		badPixels.remove(n);
 		nSlices--;
 	}
 	
@@ -261,9 +247,7 @@ public class ImageStack {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
 		stack[n-1] = pixels;
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			badPixels.set(n-1, null);
-		}
+		badPixels.set(n-1, null);
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
 	}
@@ -374,9 +358,7 @@ public class ImageStack {
 		if (cTable!=null)
 			ip.setCalibrationTable(cTable);
 		ip.setSliceNumber(n);
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			ip.setBadPixels(badPixels.get(n-1));
-		}
+		ip.setBadPixels(badPixels.get(n-1));
 		return ip;
 	}
 	
@@ -391,9 +373,7 @@ public class ImageStack {
 		if (ip.getWidth()!=width || ip.getHeight()!=height)
 			throw new IllegalArgumentException("Wrong dimensions for this stack");
 		stack[n-1] = ip.getPixels();
-		if (PixelPatcher.PRESERVE_BPM.get() && badPixels != null) {
-			badPixels.set(n-1, ip.getBadPixels());
-		}
+		badPixels.set(n-1, ip.getBadPixels());
 	}
 
 	/** Assigns a new color model to this stack. */

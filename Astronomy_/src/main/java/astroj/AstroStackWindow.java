@@ -6755,7 +6755,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                                            }
 //                                        else
 //                                            ac.repaint();
-                    ac.repaint();
+                    ac.render();
                 }
                 xy[0] = imageX;
                 xy[1] = imageY;

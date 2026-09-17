@@ -226,6 +226,7 @@ public interface PixelPatcher {
     sealed interface BpmPixel {
         record Pixel(int x, int y) implements BpmPixel {}
         record SourcePixel(int x, int y) implements BpmPixel {}
+        record UncorrectedPixel(int x, int y) implements BpmPixel {}
 
         int x();
         int y();

@@ -796,6 +796,9 @@ public class AstroCanvas extends OverlayCanvas {
                 case PixelPatcher.BpmPixel.SourcePixel _ -> {
                     g2.setColor(new Color(200, 128, 128));
                 }
+                case PixelPatcher.BpmPixel.UncorrectedPixel _ -> {
+                    g2.setColor(new Color(174, 22, 19));
+                }
             }
 
             g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.max(1, Math.abs(x2 - x1)), Math.max(1, Math.abs(y2 - y1)));

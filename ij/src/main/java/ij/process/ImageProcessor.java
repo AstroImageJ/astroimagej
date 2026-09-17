@@ -1017,6 +1017,17 @@ public abstract class ImageProcessor implements Cloneable {
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")
+	public void markUncorrectedBadPixel(int x, int y) {
+		// If BPM is present, treat the IP as having been modified
+		if (badPixels == null) {
+			badPixels = new ArrayList<>();
+		}
+		if (PixelPatcher.PRESERVE_BPM.get()) {
+			badPixels.add(new PixelPatcher.BpmPixel.UncorrectedPixel(x, y));
+		}
+	}
+
+	@AstroImageJ(reason = "Mark bad pixels")
 	public void setBadPixels(Collection<PixelPatcher.BpmPixel> pixels) {
 		badPixels = pixels;
 	}

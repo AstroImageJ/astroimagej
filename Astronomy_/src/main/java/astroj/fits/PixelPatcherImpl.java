@@ -44,6 +44,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         // No unmasked values present
                         if (Double.isNaN(average)) {
+                            ip.markUncorrectedBadPixel(x, y);
                             continue;
                         }
 
@@ -55,6 +56,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         // No unmasked values present
                         if (Double.isNaN(median)) {
+                            ip.markUncorrectedBadPixel(x, y);
                             continue;
                         }
 
@@ -69,6 +71,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         if (borderValues.length == 0) {
                             //todo throw error no good pixels
+                            ip.markUncorrectedBadPixel(x, y);
                             continue;
                         }
 
@@ -104,6 +107,7 @@ public class PixelPatcherImpl implements PixelPatcher {
 
                         if (borderPixels.isEmpty()) {
                             //todo throw error no good pixels
+                            ip.markUncorrectedBadPixel(x, y);
                             continue;
                         }
 
@@ -336,6 +340,7 @@ public class PixelPatcherImpl implements PixelPatcher {
             var p = stack.pop();
             int px = p.x, py = p.y;
             region.addToRegion(p);
+            ip.markBadPixel(px, py);
 
             // Explore neighbors
             for (int dy = -1; dy <= 1; dy++) {

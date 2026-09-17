@@ -43,9 +43,9 @@ public class BpmFileCodec {
 
     static void main() {
         var test = new BpmFile();
-        var pxs = new HashSet<>(Set.of(new PixelPatcher.Pixel(1, 2), new PixelPatcher.Pixel(3, 4)));
-        test.patches().put(PixelPatcher.PatchType.Type.AVERAGE_FILL, pxs);
-        test.patches().put(PixelPatcher.PatchType.Type.MEDIAN_FILL, pxs);
+        var pxs = new HashSet<>(Set.of(new PixelPatcher.BpmPixel.Pixel(1, 2), new PixelPatcher.BpmPixel.Pixel(3, 4)));
+        //test.patches().put(PixelPatcher.PatchType.Type.AVERAGE_FILL, pxs);
+        //test.patches().put(PixelPatcher.PatchType.Type.MEDIAN_FILL, pxs);
 
         var s = write(test);
 

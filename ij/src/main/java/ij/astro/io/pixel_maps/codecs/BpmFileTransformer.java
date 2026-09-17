@@ -58,7 +58,7 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
             var pixelList = bpmFile.patches().get(patchType);
             var pSecs = patchView.get(PIXEL_KEY);
             for (var pSec : pSecs) {
-                pixelList.add(new PixelPatcher.Pixel(pSec.getParameter(INT_X_PARAMETER), pSec.getParameter(INT_Y_PARAMETER)));
+                pixelList.add(new PixelPatcher.BpmPixel.Pixel(pSec.getParameter(INT_X_PARAMETER), pSec.getParameter(INT_Y_PARAMETER)));
             }
         }
 

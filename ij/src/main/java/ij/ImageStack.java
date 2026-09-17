@@ -22,7 +22,7 @@ public class ImageStack {
 	private Object[] stack;
 	private String[] label;
 	@AstroImageJ(reason = "Store bad pixels")
-	private List<Collection<PixelPatcher.Pixel>> badPixels;
+	private List<Collection<PixelPatcher.BpmPixel>> badPixels;
 	private int width, height;
 	private Rectangle roi;
 	private ColorModel cm;

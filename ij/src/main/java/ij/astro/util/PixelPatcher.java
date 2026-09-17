@@ -20,6 +20,7 @@ public interface PixelPatcher {
     Property<Boolean> DISPLAY = new Property<>(true, PixelPatcher.class);
     /// If the BPM should be preserved for display.
     Property<Boolean> PRESERVE_BPM = new Property<>(true, PixelPatcher.class);
+    Property<Boolean> PRESERVE_BPM_SOURCE_PIXELS = new Property<>(true, PixelPatcher.class);
     Property<String> BPM_FILE_SOURCE = new Property<>("", PixelPatcher.class);
     Property<PatchTypeSource> BPM_MODE = new Property<>(PatchTypeSource.DISABLED, PixelPatcher.class);
 
@@ -180,14 +181,14 @@ public interface PixelPatcher {
             }
         }
 
-        record ListMask(Map<PatchType.Type, Collection<Pixel>> masks) implements Mask {
+        record ListMask(Map<PatchType.Type, Collection<BpmPixel>> masks) implements Mask {
             public ListMask(BpmFile bpm) {
                 this(bpm.patches());
             }
 
             @Override
             public boolean isBadPixel(int x, int y) {
-                var pixel = new Pixel(x, y);
+                var pixel = new BpmPixel.Pixel(x, y);
                 for (var patchEntry : masks.entrySet()) {
                     if (patchEntry.getValue().contains(pixel)) {
                         return true;
@@ -199,7 +200,7 @@ public interface PixelPatcher {
 
             @Override
             public PatchType getPatchType(int x, int y) {
-                var pixel = new Pixel(x, y);
+                var pixel = new BpmPixel.Pixel(x, y);
                 for (var patchEntry : masks.entrySet()) {
                     if (patchEntry.getValue().contains(pixel)) {
                         return patchEntry.getKey().toPatchType();
@@ -222,5 +223,12 @@ public interface PixelPatcher {
         boolean skip();
     }
 
-    record Pixel(int x, int y) {}
+    sealed interface BpmPixel {
+        record Pixel(int x, int y) implements BpmPixel {}
+        record SourcePixel(int x, int y) implements BpmPixel {}
+
+        int x();
+        int y();
+    }
+
 }

@@ -795,6 +795,8 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addButton("Configure Patch Type", _ -> PixelPatcherOptionsDialog.showDialog());
 		gd.addFileField("BPM File", PixelPatcher.BPM_FILE_SOURCE.get());
 		gd.addCheckbox("Mark Bad Pixels", PixelPatcher.PRESERVE_BPM.get());
+		gd.addToSameRow();
+		gd.addCheckbox("Mark Bad Pixel Sources", PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get());
 
 		gd.addCheckbox("Sort names numerically", sortFileNames);
 		gd.addCheckbox("Generate WCS Common Region", AUTOMATIC_WCS_SHAPE_GENERATION.get());
@@ -850,6 +852,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		PixelPatcher.BPM_MODE.set(gd.getNextEnumChoice(PixelPatcher.PatchTypeSource.class));
 		PixelPatcher.BPM_FILE_SOURCE.set(gd.getNextString());
 		PixelPatcher.PRESERVE_BPM.set(gd.getNextBoolean());
+		PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.set(gd.getNextBoolean());
 
 		sortFileNames = gd.getNextBoolean();
 		if (!sortFileNames)

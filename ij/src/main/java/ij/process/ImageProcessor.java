@@ -122,7 +122,7 @@ public abstract class ImageProcessor implements Cloneable {
 	protected static double seed = Double.NaN;
 	protected static Random rnd;
 	@AstroImageJ(reason = "Display bad pixels")
-	protected Collection<PixelPatcher.Pixel> badPixels;
+	protected Collection<PixelPatcher.BpmPixel> badPixels;
 
 	protected void showProgress(double percentDone) {
 		if (progressBar!=null)
@@ -1001,17 +1001,28 @@ public abstract class ImageProcessor implements Cloneable {
 			badPixels = new ArrayList<>();
 		}
 		if (PixelPatcher.PRESERVE_BPM.get()) {
-			badPixels.add(new PixelPatcher.Pixel(x, y));
+			badPixels.add(new PixelPatcher.BpmPixel.Pixel(x, y));
 		}
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")
-	public void setBadPixels(Collection<PixelPatcher.Pixel> pixels) {
+	public void markBadPixelSource(int x, int y) {
+		// If BPM is present, treat the IP as having been modified
+		if (badPixels == null) {
+			badPixels = new ArrayList<>();
+		}
+		if (PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get()) {
+			badPixels.add(new PixelPatcher.BpmPixel.SourcePixel(x, y));
+		}
+	}
+
+	@AstroImageJ(reason = "Mark bad pixels")
+	public void setBadPixels(Collection<PixelPatcher.BpmPixel> pixels) {
 		badPixels = pixels;
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")
-	public Collection<PixelPatcher.Pixel> getBadPixels() {
+	public Collection<PixelPatcher.BpmPixel> getBadPixels() {
 		return badPixels;
 	}
 

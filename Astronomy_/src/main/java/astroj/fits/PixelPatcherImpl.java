@@ -357,6 +357,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                         }
                     } else {
                         region.addBorderPixel(nx, ny);
+                        ip.markBadPixelSource(nx, ny);
                     }
                 }
             }
@@ -379,6 +380,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                 }
 
                 pixels[index++] = ip.getf(i, j);
+                ip.markBadPixelSource(i, j);
             }
         }
 

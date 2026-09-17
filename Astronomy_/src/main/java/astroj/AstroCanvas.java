@@ -1,30 +1,5 @@
 package astroj;
 
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Toolkit;
-import java.awt.event.MouseEvent;
-import java.awt.font.FontRenderContext;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferStrategy;
-import java.awt.image.MemoryImageSource;
-import java.text.DecimalFormat;
-import java.util.Locale;
-
-import javax.swing.SwingUtilities;
-
 import Astronomy.shapes.WcsShape;
 import ij.IJ;
 import ij.ImagePlus;
@@ -36,6 +11,18 @@ import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.plugin.tool.PlugInTool;
 import util.prefs.RegionExclusion;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferStrategy;
+import java.awt.image.MemoryImageSource;
+import java.text.DecimalFormat;
+import java.util.Locale;
 
 public class AstroCanvas extends OverlayCanvas {
 
@@ -801,6 +788,16 @@ public class AstroCanvas extends OverlayCanvas {
             var x2 = screenX(badPixel.x() + 1);
             var y1 = screenY(badPixel.y());
             var y2 = screenY(badPixel.y() + 1);
+
+            switch (badPixel) {
+                case PixelPatcher.BpmPixel.Pixel _ -> {
+                    g2.setColor(new Color(250, 229, 0));
+                }
+                case PixelPatcher.BpmPixel.SourcePixel _ -> {
+                    g2.setColor(new Color(200, 128, 128));
+                }
+            }
+
             g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.max(1, Math.abs(x2 - x1)), Math.max(1, Math.abs(y2 - y1)));
         }
 

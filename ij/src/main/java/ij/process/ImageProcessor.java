@@ -16,8 +16,8 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Random;
 
 /**
@@ -998,7 +998,7 @@ public abstract class ImageProcessor implements Cloneable {
 	public void markBadPixel(int x, int y) {
 		// If BPM is present, treat the IP as having been modified
 		if (badPixels == null) {
-			badPixels = new ArrayList<>();
+			badPixels = new HashSet<>();
 		}
 		if (PixelPatcher.PRESERVE_BPM.get()) {
 			badPixels.add(new PixelPatcher.BpmPixel.Pixel(x, y));
@@ -1009,7 +1009,7 @@ public abstract class ImageProcessor implements Cloneable {
 	public void markBadPixelSource(int x, int y) {
 		// If BPM is present, treat the IP as having been modified
 		if (badPixels == null) {
-			badPixels = new ArrayList<>();
+			badPixels = new HashSet<>();
 		}
 		if (PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get()) {
 			badPixels.add(new PixelPatcher.BpmPixel.SourcePixel(x, y));
@@ -1020,7 +1020,7 @@ public abstract class ImageProcessor implements Cloneable {
 	public void markUncorrectedBadPixel(int x, int y) {
 		// If BPM is present, treat the IP as having been modified
 		if (badPixels == null) {
-			badPixels = new ArrayList<>();
+			badPixels = new HashSet<>();
 		}
 		if (PixelPatcher.PRESERVE_BPM.get()) {
 			badPixels.add(new PixelPatcher.BpmPixel.UncorrectedPixel(x, y));

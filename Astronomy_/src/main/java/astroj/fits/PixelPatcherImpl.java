@@ -375,10 +375,10 @@ public class PixelPatcherImpl implements PixelPatcher {
      * Collects good pixel values in the region
      */
     private double[] collect(ImageProcessor ip, Mask mask, int xCenter, int yCenter, int xRadius, int yRadius) {
-        var pixels = new double[4 * xRadius * yRadius];
+        var pixels = new double[(2 * xRadius + 1) * (2 * yRadius + 1)];
         var index = 0;
-        for (int j = Math.max(0, yCenter - yRadius); j < Math.min(ip.getHeight(), yCenter + yRadius); j++) {
-            for (int i = Math.max(0, xCenter - xRadius); i < Math.min(ip.getWidth(), xCenter + xRadius); i++) {
+        for (int j = Math.max(0, yCenter - yRadius); j < Math.min(ip.getHeight(), yCenter + yRadius + 1); j++) {
+            for (int i = Math.max(0, xCenter - xRadius); i < Math.min(ip.getWidth(), xCenter + xRadius + 1); i++) {
                 // Filter out bad pixels
                 if (mask.isBadPixel(i, j)) {
                     continue;

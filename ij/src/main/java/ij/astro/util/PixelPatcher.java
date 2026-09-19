@@ -118,6 +118,20 @@ public interface PixelPatcher {
         }
         //todo PSF option
 
+        default Type toType() {
+            return switch (this) {
+                case AverageFill averageFill -> Type.AVERAGE_FILL;
+                case ConstantValue constantValue -> Type.CONSTANT_VALUE;
+                case FitGaussian fitGaussian -> Type.FIT_GAUSSIAN;
+                case FitMoffat fitMoffat -> Type.FIT_MOFFAT;
+                case FitPlane fitPlane -> Type.FIT_PLANE;
+                case FloodFill floodFill -> Type.FLOOD_FILL;
+                case MedianFill medianFill -> Type.MEDIAN_FILL;
+                case NearestNeighbor nearestNeighbor -> Type.NEAREST_NEIGHBOR;
+                case PassThrough passThrough -> Type.PASS_THROUGH;
+            };
+        }
+
         enum Type {
             AVERAGE_FILL,
             MEDIAN_FILL,
@@ -181,7 +195,7 @@ public interface PixelPatcher {
             }
         }
 
-        record ListMask(Map<PatchType.Type, Collection<BpmPixel>> masks) implements Mask {
+        record ListMask(Map<PatchType, Collection<BpmPixel>> masks) implements Mask {
             public ListMask(BpmFile bpm) {
                 this(bpm.patches());
             }
@@ -203,7 +217,7 @@ public interface PixelPatcher {
                 var pixel = new BpmPixel.Pixel(x, y);
                 for (var patchEntry : masks.entrySet()) {
                     if (patchEntry.getValue().contains(pixel)) {
-                        return patchEntry.getKey().toPatchType();
+                        return patchEntry.getKey();
                     }
                 }
 
@@ -212,7 +226,7 @@ public interface PixelPatcher {
 
             @Override
             public boolean skip() {
-                return masks().isEmpty() || masks.keySet().stream().allMatch(t -> t == PatchType.Type.PASS_THROUGH);
+                return masks().isEmpty() || masks.keySet().stream().allMatch(t -> t instanceof PatchType.PassThrough);
             }
         }
 

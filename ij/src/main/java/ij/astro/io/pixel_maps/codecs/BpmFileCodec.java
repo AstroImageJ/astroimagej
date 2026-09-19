@@ -43,9 +43,18 @@ public class BpmFileCodec {
 
     static void main() {
         var test = new BpmFile();
-        var pxs = new HashSet<>(Set.of(new PixelPatcher.BpmPixel.Pixel(1, 2), new PixelPatcher.BpmPixel.Pixel(3, 4)));
-        //test.patches().put(PixelPatcher.PatchType.Type.AVERAGE_FILL, pxs);
-        //test.patches().put(PixelPatcher.PatchType.Type.MEDIAN_FILL, pxs);
+        var pxs = new HashSet<PixelPatcher.BpmPixel>(Set.of(new PixelPatcher.BpmPixel.Pixel(1, 2), new PixelPatcher.BpmPixel.Pixel(3, 4)));
+        test.patches().put(new PixelPatcher.PatchType.AverageFill(1, 1), pxs);
+        test.patches().put(new PixelPatcher.PatchType.MedianFill(1, 1), pxs);
+        test.patches().put(new PixelPatcher.PatchType.AverageFill(3, 3), pxs);
+        test.patches().put(new PixelPatcher.PatchType.MedianFill(4, 4), pxs);
+        test.patches().put(new PixelPatcher.PatchType.NearestNeighbor(PixelPatcher.PatchType.NearestNeighbor.MergeType.AVERAGE), pxs);
+        test.patches().put(new PixelPatcher.PatchType.NearestNeighbor(PixelPatcher.PatchType.NearestNeighbor.MergeType.MEDIAN), pxs);
+        test.patches().put(new PixelPatcher.PatchType.FitGaussian(), pxs);
+        test.patches().put(new PixelPatcher.PatchType.FitMoffat(), pxs);
+        test.patches().put(new PixelPatcher.PatchType.FloodFill(), pxs);
+        test.patches().put(new PixelPatcher.PatchType.FitPlane(), pxs);
+        test.patches().put(new PixelPatcher.PatchType.ConstantValue(Double.NaN), pxs);
 
         var s = write(test);
 
@@ -53,7 +62,7 @@ public class BpmFileCodec {
 
         var read = readContents(s);
 
-        //IO.println(read);
+        //IO.println(write(read));
 
         IO.println(Objects.equals(read, test));
     }

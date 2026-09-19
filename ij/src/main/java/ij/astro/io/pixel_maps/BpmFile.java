@@ -3,17 +3,17 @@ package ij.astro.io.pixel_maps;
 import ij.astro.util.PixelPatcher;
 
 import java.util.Collection;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public record BpmFile(BpmHeader header, Map<PixelPatcher.PatchType.Type, Collection<PixelPatcher.BpmPixel>> patches) {
+public record BpmFile(BpmHeader header, Map<PixelPatcher.PatchType, Collection<PixelPatcher.BpmPixel>> patches) {
     public BpmFile() {
         this(new BpmHeader());
     }
 
     public BpmFile(BpmHeader header) {
-        this(header, new EnumMap<>(PixelPatcher.PatchType.Type.class));
+        this(header, new HashMap<>());
     }
 
     public BpmFile {
@@ -24,7 +24,7 @@ public record BpmFile(BpmHeader header, Map<PixelPatcher.PatchType.Type, Collect
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof BpmFile(
-                BpmHeader header1, Map<PixelPatcher.PatchType.Type, Collection<PixelPatcher.BpmPixel>> patches1
+                BpmHeader header1, Map<PixelPatcher.PatchType, Collection<PixelPatcher.BpmPixel>> patches1
         )) {
             return (header == header1 && patches == patches1) || (header.equals(header1) && patches.equals(patches1));
         }

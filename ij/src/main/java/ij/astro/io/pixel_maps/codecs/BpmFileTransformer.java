@@ -45,17 +45,17 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
         }
 
         var bpmFile = new BpmFile(header);
-        for (var patch : view.get(PATCH_TYPE_KEY)) {
-            var patchType = patch.getParameter(PATCH_TYPE_PARAM);
+        for (var patchSection : view.get(PATCH_TYPE_KEY)) {
+            var patchType = patchSection.getParameter(PATCH_TYPE_PARAM);
             if (patchType == null) {
-                AIJLogger.log("Unknown patch type: " + patch.getParameter(PATCH_TYPE_PARAM.index(), PATCH_TYPE_PARAM.name()) +
+                AIJLogger.log("Unknown patch type: " + patchSection.getParameter(PATCH_TYPE_PARAM.index(), PATCH_TYPE_PARAM.name()) +
                         ". Skipping patch.");
                 continue;
             }
-            readPatchTypeOptions(patchType.toPatchType(), patch);
-            var patchView = patch.createMapView();
-            bpmFile.patches().computeIfAbsent(patchType, _ -> new HashSet<>());
-            var pixelList = bpmFile.patches().get(patchType);
+            var patch = readPatchTypeOptions(patchType, patchSection);
+            var patchView = patchSection.createMapView();
+            bpmFile.patches().computeIfAbsent(patch, _ -> new HashSet<>());
+            var pixelList = bpmFile.patches().get(patch);
             var pSecs = patchView.get(PIXEL_KEY);
             for (var pSec : pSecs) {
                 pixelList.add(new PixelPatcher.BpmPixel.Pixel(pSec.getParameter(INT_X_PARAMETER), pSec.getParameter(INT_Y_PARAMETER)));
@@ -72,8 +72,8 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
         s.addSubsection(codec.write(BpmHeader.class, obj.header()));
 
         obj.patches().forEach((patchType, pixelList) -> {
-            var patchSection = Section.createSection(PATCH_TYPE_KEY, PATCH_TYPE_PARAM, patchType);
-            addPatchTypeOptions(patchType.toPatchType(), patchSection);
+            var patchSection = Section.createSection(PATCH_TYPE_KEY, PATCH_TYPE_PARAM, patchType.toType());
+            addPatchTypeOptions(patchType, patchSection);
             for (var pixel : pixelList) {
                 patchSection.addSubsection(Section.createSection(PIXEL_KEY, INT_X_PARAMETER, pixel.x(), INT_Y_PARAMETER, pixel.y()));
             }
@@ -85,62 +85,58 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
 
     private void addPatchTypeOptions(PixelPatcher.PatchType patchType, Section patchSection) {
         switch (patchType) {
-            case PixelPatcher.PatchType.AverageFill _ -> {
+            case PixelPatcher.PatchType.AverageFill(int xRadius, int yRadius) -> {
                 patchSection.addSubsection(
-                        Section.createSection("radius",
-                                INT_X_PARAMETER, PixelPatcher.PatchType.AverageFill.X_RADIUS.get(),
-                                INT_Y_PARAMETER, PixelPatcher.PatchType.AverageFill.Y_RADIUS.get())
+                        Section.createSection("radius", INT_X_PARAMETER, xRadius, INT_Y_PARAMETER, yRadius)
                 );
             }
-            case PixelPatcher.PatchType.ConstantValue _ -> {
+            case PixelPatcher.PatchType.ConstantValue(double value) -> {
                 patchSection.addSubsection(
                         Section.createSection("constant",
-                                DOUBLE_PARAMETER, PixelPatcher.PatchType.ConstantValue.VALUE.get())
+                                DOUBLE_PARAMETER, value)
                 );
             }
-            case PixelPatcher.PatchType.FitGaussian _ -> {
+            case PixelPatcher.PatchType.FitGaussian(int minCount, int maxIter, double relErr, double absErr) -> {
                 patchSection.addSubsection(
-                        Section.createSection("minCount", INTEGER_PARAMETER, PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get())
+                        Section.createSection("minCount", INTEGER_PARAMETER, minCount)
                 );
                 patchSection.addSubsection(
-                        Section.createSection("maxIter", INTEGER_PARAMETER, PixelPatcher.PatchType.FitGaussian.MAX_ITER.get())
+                        Section.createSection("maxIter", INTEGER_PARAMETER, maxIter)
                 );
                 patchSection.addSubsection(
-                        Section.createSection("relErr", DOUBLE_PARAMETER, PixelPatcher.PatchType.FitGaussian.REL_ERR.get())
+                        Section.createSection("relErr", DOUBLE_PARAMETER, relErr)
                 );
                 patchSection.addSubsection(
-                        Section.createSection("absErr", DOUBLE_PARAMETER, PixelPatcher.PatchType.FitGaussian.ABS_ERR.get())
-                );
-            }
-            case PixelPatcher.PatchType.FitMoffat _ -> {
-                patchSection.addSubsection(
-                        Section.createSection("minCount", INTEGER_PARAMETER, PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get())
-                );
-                patchSection.addSubsection(
-                        Section.createSection("maxIter", INTEGER_PARAMETER, PixelPatcher.PatchType.FitMoffat.MAX_ITER.get())
-                );
-                patchSection.addSubsection(
-                        Section.createSection("relErr", DOUBLE_PARAMETER, PixelPatcher.PatchType.FitMoffat.REL_ERR.get())
-                );
-                patchSection.addSubsection(
-                        Section.createSection("absErr", DOUBLE_PARAMETER, PixelPatcher.PatchType.FitMoffat.ABS_ERR.get())
+                        Section.createSection("absErr", DOUBLE_PARAMETER, absErr)
                 );
             }
-            case PixelPatcher.PatchType.FloodFill _ -> {
+            case PixelPatcher.PatchType.FitMoffat(int minCount, int maxIter, double relErr, double absErr) -> {
                 patchSection.addSubsection(
-                        Section.createSection("median", BOOLEAN_PARAMETER, PixelPatcher.PatchType.FloodFill.USE_MEDIAN.get())
+                        Section.createSection("minCount", INTEGER_PARAMETER, minCount)
+                );
+                patchSection.addSubsection(
+                        Section.createSection("maxIter", INTEGER_PARAMETER, maxIter)
+                );
+                patchSection.addSubsection(
+                        Section.createSection("relErr", DOUBLE_PARAMETER, relErr)
+                );
+                patchSection.addSubsection(
+                        Section.createSection("absErr", DOUBLE_PARAMETER, absErr)
                 );
             }
-            case PixelPatcher.PatchType.MedianFill _ -> {
+            case PixelPatcher.PatchType.FloodFill(boolean useMedian) -> {
                 patchSection.addSubsection(
-                        Section.createSection("radius",
-                                INT_X_PARAMETER, PixelPatcher.PatchType.AverageFill.X_RADIUS.get(),
-                                INT_Y_PARAMETER, PixelPatcher.PatchType.AverageFill.Y_RADIUS.get())
+                        Section.createSection("median", BOOLEAN_PARAMETER, useMedian)
                 );
             }
-            case PixelPatcher.PatchType.NearestNeighbor _ -> {
+            case PixelPatcher.PatchType.MedianFill(int xRadius, int yRadius) -> {
                 patchSection.addSubsection(
-                        Section.createSection("mergeType", MERGE_TYPE_PARAMETER, PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.get())
+                        Section.createSection("radius", INT_X_PARAMETER, xRadius, INT_Y_PARAMETER, yRadius)
+                );
+            }
+            case PixelPatcher.PatchType.NearestNeighbor(PixelPatcher.PatchType.NearestNeighbor.MergeType mergeType) -> {
+                patchSection.addSubsection(
+                        Section.createSection("mergeType", MERGE_TYPE_PARAMETER, mergeType)
                 );
             }
             case PixelPatcher.PatchType.FitPlane _ -> {
@@ -150,85 +146,100 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
         }
     }
 
-    private void readPatchTypeOptions(PixelPatcher.PatchType patchType, Section patchSection) {
+    private PixelPatcher.PatchType readPatchTypeOptions(PixelPatcher.PatchType.Type patchType, Section patchSection) {
         var view = patchSection.createMapView();
-        switch (patchType) {
-            case PixelPatcher.PatchType.AverageFill _ -> {
+        return switch (patchType) {
+            case PixelPatcher.PatchType.Type.AVERAGE_FILL -> {
                 var radius = getUniqueSection(view, "radius", false);
                 if (radius != null) {
                     var x = radius.getParameter(INT_X_PARAMETER);
                     var y = radius.getParameter(INT_Y_PARAMETER);
-                    PixelPatcher.PatchType.AverageFill.X_RADIUS.set(x);
-                    PixelPatcher.PatchType.AverageFill.Y_RADIUS.set(y);
+                    yield new PixelPatcher.PatchType.AverageFill(x, y);
                 }
+                yield PixelPatcher.PatchType.Type.AVERAGE_FILL.toPatchType();
             }
-            case PixelPatcher.PatchType.ConstantValue _ -> {
+            case PixelPatcher.PatchType.Type.CONSTANT_VALUE -> {
                 var cons = getUniqueSection(view, "constant", false);
                 if (cons != null) {
-                    PixelPatcher.PatchType.ConstantValue.VALUE.set(cons.getParameter(DOUBLE_PARAMETER));
+                    yield new PixelPatcher.PatchType.ConstantValue(cons.getParameter(DOUBLE_PARAMETER));
                 }
+                yield PixelPatcher.PatchType.Type.CONSTANT_VALUE.toPatchType();
             }
-            case PixelPatcher.PatchType.FitGaussian _ -> {
-                var maxIter = getUniqueSection(view, "maxIter", false);
-                if (maxIter != null) {
-                    PixelPatcher.PatchType.FitGaussian.MAX_ITER.set(maxIter.getParameter(INTEGER_PARAMETER));
+            case PixelPatcher.PatchType.Type.FIT_GAUSSIAN -> {
+                var maxIter = PixelPatcher.PatchType.FitGaussian.MAX_ITER.get();
+                var minCount = PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get();
+                var relErr = PixelPatcher.PatchType.FitGaussian.REL_ERR.get();
+                var absErr = PixelPatcher.PatchType.FitGaussian.ABS_ERR.get();
+
+                var maxIterSec = getUniqueSection(view, "maxIter", false);
+                if (maxIterSec != null) {
+                    maxIter = maxIterSec.getParameter(INTEGER_PARAMETER);
                 }
-                var minCount = getUniqueSection(view, "minCount", false);
-                if (minCount != null) {
-                    PixelPatcher.PatchType.FitGaussian.MIN_COUNT.set(minCount.getParameter(INTEGER_PARAMETER));
+                var minCountSec = getUniqueSection(view, "minCount", false);
+                if (minCountSec != null) {
+                    minCount = minCountSec.getParameter(INTEGER_PARAMETER);
                 }
-                var relErr = getUniqueSection(view, "relErr", false);
-                if (relErr != null) {
-                    PixelPatcher.PatchType.FitGaussian.REL_ERR.set(relErr.getParameter(DOUBLE_PARAMETER));
+                var relErrSec = getUniqueSection(view, "relErr", false);
+                if (relErrSec != null) {
+                    relErr = relErrSec.getParameter(DOUBLE_PARAMETER);
                 }
-                var absErr = getUniqueSection(view, "absErr", false);
-                if (absErr != null) {
-                    PixelPatcher.PatchType.FitGaussian.ABS_ERR.set(absErr.getParameter(DOUBLE_PARAMETER));
+                var absErrSec = getUniqueSection(view, "absErr", false);
+                if (absErrSec != null) {
+                    absErr = absErrSec.getParameter(DOUBLE_PARAMETER);
                 }
+
+                yield new PixelPatcher.PatchType.FitGaussian(minCount, maxIter, relErr, absErr);
             }
-            case PixelPatcher.PatchType.FitMoffat _ -> {
-                var maxIter = getUniqueSection(view, "maxIter", false);
-                if (maxIter != null) {
-                    PixelPatcher.PatchType.FitMoffat.MAX_ITER.set(maxIter.getParameter(INTEGER_PARAMETER));
+            case PixelPatcher.PatchType.Type.FIT_MOFFAT -> {
+                var maxIter = PixelPatcher.PatchType.FitMoffat.MAX_ITER.get();
+                var minCount = PixelPatcher.PatchType.FitMoffat.MIN_COUNT.get();
+                var relErr = PixelPatcher.PatchType.FitMoffat.REL_ERR.get();
+                var absErr = PixelPatcher.PatchType.FitMoffat.ABS_ERR.get();
+
+                var maxIterSec = getUniqueSection(view, "maxIter", false);
+                if (maxIterSec != null) {
+                    maxIter = maxIterSec.getParameter(INTEGER_PARAMETER);
                 }
-                var minCount = getUniqueSection(view, "minCount", false);
-                if (minCount != null) {
-                    PixelPatcher.PatchType.FitMoffat.MIN_COUNT.set(minCount.getParameter(INTEGER_PARAMETER));
+                var minCountSec = getUniqueSection(view, "minCount", false);
+                if (minCountSec != null) {
+                    minCount = minCountSec.getParameter(INTEGER_PARAMETER);
                 }
-                var relErr = getUniqueSection(view, "relErr", false);
-                if (relErr != null) {
-                    PixelPatcher.PatchType.FitMoffat.REL_ERR.set(relErr.getParameter(DOUBLE_PARAMETER));
+                var relErrSec = getUniqueSection(view, "relErr", false);
+                if (relErrSec != null) {
+                    relErr = relErrSec.getParameter(DOUBLE_PARAMETER);
                 }
-                var absErr = getUniqueSection(view, "absErr", false);
-                if (absErr != null) {
-                    PixelPatcher.PatchType.FitMoffat.ABS_ERR.set(absErr.getParameter(DOUBLE_PARAMETER));
+                var absErrSec = getUniqueSection(view, "absErr", false);
+                if (absErrSec != null) {
+                    absErr = absErrSec.getParameter(DOUBLE_PARAMETER);
                 }
+
+                yield new PixelPatcher.PatchType.FitMoffat(minCount, maxIter, relErr, absErr);
             }
-            case PixelPatcher.PatchType.FloodFill _ -> {
+            case PixelPatcher.PatchType.Type.FLOOD_FILL -> {
                 var med = getUniqueSection(view, "median", false);
                 if (med != null) {
-                    PixelPatcher.PatchType.FloodFill.USE_MEDIAN.set(med.getParameter(BOOLEAN_PARAMETER));
+                    yield new PixelPatcher.PatchType.FloodFill(med.getParameter(BOOLEAN_PARAMETER));
                 }
+                yield new PixelPatcher.PatchType.FloodFill();
             }
-            case PixelPatcher.PatchType.MedianFill _ -> {
+            case PixelPatcher.PatchType.Type.MEDIAN_FILL -> {
                 var radius = getUniqueSection(view, "radius", false);
                 if (radius != null) {
                     var x = radius.getParameter(INT_X_PARAMETER);
                     var y = radius.getParameter(INT_Y_PARAMETER);
-                    PixelPatcher.PatchType.MedianFill.X_RADIUS.set(x);
-                    PixelPatcher.PatchType.MedianFill.Y_RADIUS.set(y);
+                    yield new PixelPatcher.PatchType.MedianFill(x, y);
                 }
+                yield new PixelPatcher.PatchType.MedianFill();
             }
-            case PixelPatcher.PatchType.NearestNeighbor _ -> {
+            case PixelPatcher.PatchType.Type.NEAREST_NEIGHBOR -> {
                 var type = getUniqueSection(view, "mergeType", false);
                 if (type != null) {
-                    PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.set(type.getParameter(MERGE_TYPE_PARAMETER));
+                    yield new PixelPatcher.PatchType.NearestNeighbor(type.getParameter(MERGE_TYPE_PARAMETER));
                 }
+                yield new PixelPatcher.PatchType.NearestNeighbor();
             }
-            case PixelPatcher.PatchType.FitPlane _ -> {
-            }
-            case PixelPatcher.PatchType.PassThrough _ -> {
-            }
-        }
+            case PixelPatcher.PatchType.Type.FIT_PLANE -> new PixelPatcher.PatchType.FitPlane();
+            case PixelPatcher.PatchType.Type.PASS_THROUGH -> new PixelPatcher.PatchType.PassThrough();
+        };
     }
 }

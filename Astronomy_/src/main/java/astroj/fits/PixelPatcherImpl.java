@@ -440,10 +440,14 @@ public class PixelPatcherImpl implements PixelPatcher {
                 bounds.height = 1;
                 return;
             }
-            bounds.width = Math.max(bounds.width, p.x - bounds.x);
-            bounds.height = Math.max(bounds.height, p.y - bounds.y);
-            bounds.x = Math.min(bounds.x, p.x);
-            bounds.y = Math.min(bounds.y, p.y);
+            var minX = Math.min(bounds.x, p.x);
+            var minY = Math.min(bounds.y, p.y);
+            var maxX = Math.max(bounds.x + bounds.width - 1, p.x);
+            var maxY = Math.max(bounds.y + bounds.height - 1, p.y);
+            bounds.x = minX;
+            bounds.y = minY;
+            bounds.width = maxX - minX + 1;
+            bounds.height = maxY - minY + 1;
         }
     }
 }

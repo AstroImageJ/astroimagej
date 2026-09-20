@@ -112,6 +112,21 @@ public class PixelPatcherImpl implements PixelPatcher {
                             continue;
                         }
 
+                        var borderCount = borderPixels.size();
+                        var borderX = new int[borderCount];
+                        var borderY = new int[borderCount];
+                        var borderValues = new float[borderCount];
+
+                        var borderIndex = 0;
+                        for (var bp : borderPixels) {
+                            borderX[borderIndex] = bp.x;
+                            borderY[borderIndex] = bp.y;
+                            borderValues[borderIndex] = ip.getf(bp.x, bp.y);
+                            borderIndex++;
+                        }
+
+                        var nearestBorderValues = new double[borderCount];
+
                         for (var badPixel : badPixels) {
                             if (mergeType == PatchType.NearestNeighbor.MergeType.NEAREST_NEIGHBOR) {
                                 borderPixels.stream().min(
@@ -128,22 +143,23 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 continue;
                             }
 
-                            var nearestDistance = Integer.MAX_VALUE;
+                            var px = badPixel.x;
+                            var py = badPixel.y;
 
-                            var nearestBorderValues = new double[borderPixels.size()];
+                            var nearestDistance = Integer.MAX_VALUE;
                             var valueCount = 0;
 
-                            for (var bp : borderPixels) {
-                                var dx = bp.x - badPixel.x;
-                                var dy = bp.y - badPixel.y;
+                            for (int i = 0; i < borderCount; i++) {
+                                var dx = borderX[i] - px;
+                                var dy = borderY[i] - py;
                                 var distance = dx * dx + dy * dy;
 
                                 if (distance < nearestDistance) {
                                     nearestDistance = distance;
-                                    valueCount = 0;
-                                    nearestBorderValues[valueCount++] = ip.getf(bp.x, bp.y);
+                                    valueCount = 1;
+                                    nearestBorderValues[0] = borderValues[i];
                                 } else if (distance == nearestDistance) {
-                                    nearestBorderValues[valueCount++] = ip.getf(bp.x, bp.y);
+                                    nearestBorderValues[valueCount++] = borderValues[i];
                                 }
                             }
 
@@ -151,7 +167,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             if (mergeType == PatchType.NearestNeighbor.MergeType.MEDIAN) {
                                 Arrays.sort(nearestBorderValues, 0, valueCount);
                                 int m = valueCount / 2;
-                                if ((valueCount & 1) == 1) {
+                                if ((valueCount % 2) == 0) {
                                     fillValue = nearestBorderValues[m];
                                 } else {
                                     fillValue = (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
@@ -164,9 +180,8 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 fillValue = sum / valueCount;
                             }
 
-                            // Fill region
-                            ip.setf(badPixel.x, badPixel.y, (float) fillValue);
-                            ip.markBadPixel(badPixel.x, badPixel.y);
+                            ip.setf(px, py, (float) fillValue);
+                            ip.markBadPixel(px, py);
                         }
                     }
                     case PatchType.FitPlane() -> {

@@ -9,26 +9,28 @@ import ij.util.ArrayUtil;
 
 import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 @AutoService(PixelPatcher.class)
 public class PixelPatcherImpl implements PixelPatcher {
     @Override
-    public void patch(ImageProcessor ip, Mask mask) {
-        if (mask.skip()) {
+    public void patch(ImageProcessor ip, Mask inMask) {
+        if (inMask.skip()) {
             return;
         }
 
-        var visited = new boolean[ip.getHeight()][ip.getWidth()];
+        var visited = new BitSet(ip.getHeight() * ip.getWidth());
 
-        for (int y = 0; y < ip.getHeight(); y++) {
-            for (int x = 0; x < ip.getWidth(); x++) {
-                var patchType = mask.getPatchType(x, y);
-                if (patchType == null || !(mask.isBadPixel(x, y))) {
-                    continue;
-                }
+        var mask = inMask.toListMask();
 
-                if (visited[y][x]) {
+        for (Map.Entry<PatchType, Collection<BpmPixel>> patchEntry : mask.masks().entrySet()) {
+            var patchType = patchEntry.getKey();
+            var patchPixels = patchEntry.getValue();
+
+            for (BpmPixel currentBadPixel : patchPixels) {
+                var x = currentBadPixel.x();
+                var y = currentBadPixel.y();
+
+                if (visited.get(toIndex(ip, x, y))) {
                     continue;
                 }
 
@@ -156,8 +158,8 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 }
                             } else {
                                 var sum = 0.0D;
-                                for (double v : nearestBorderValues) {
-                                    sum += v;
+                                for (int i = 0; i < valueCount; i++) {
+                                    sum += nearestBorderValues[i];
                                 }
                                 fillValue = sum / valueCount;
                             }
@@ -334,12 +336,12 @@ public class PixelPatcherImpl implements PixelPatcher {
         }
     }
 
-    private Region collectContinuousRegion(ImageProcessor ip, Mask mask, boolean[][] visited, int startX, int startY) {
+    private Region collectContinuousRegion(ImageProcessor ip, Mask mask, BitSet visited, int startX, int startY) {
         var stack = new ArrayDeque<Pixel>();
         var region = new Region();
 
         stack.push(new Pixel(startX, startY));
-        visited[startY][startX] = true;
+        visited.set(toIndex(ip, startX, startY));
 
         while (!stack.isEmpty()) {
             var p = stack.pop();
@@ -361,8 +363,8 @@ public class PixelPatcherImpl implements PixelPatcher {
                     }
 
                     if (mask.isBadPixel(nx, ny)) {
-                        if (!visited[ny][nx]) {
-                            visited[ny][nx] = true;
+                        if (!visited.get(toIndex(ip, nx, ny))) {
+                            visited.set(toIndex(ip, nx, ny));
                             stack.push(new Pixel(nx, ny));
                         }
                     } else {
@@ -397,11 +399,15 @@ public class PixelPatcherImpl implements PixelPatcher {
         return Arrays.copyOf(pixels, index);
     }
 
+    private int toIndex(ImageProcessor ip, int x, int y) {
+        return y * ip.getWidth() + x;
+    }
+
     private record Pixel(int x, int y) {}
 
-    private record Region(Rectangle bounds, List<Pixel> pixels, List<Pixel> borderPixels) {
+    private record Region(Rectangle bounds, Collection<Pixel> pixels, Collection<Pixel> borderPixels) {
         Region() {
-            this(new Rectangle(), new ArrayList<>(), new ArrayList<>());
+            this(new Rectangle(), new HashSet<>(), new HashSet<>());
             bounds.x = -1;
             bounds.y = -1;
             bounds.width = 0;

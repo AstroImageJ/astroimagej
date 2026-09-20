@@ -8,6 +8,8 @@ import ij.process.ImageProcessor;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public interface PixelPatcher {
     Property<PatchType.Type> TYPE = new Property<>(PatchType.Type.PASS_THROUGH, PixelPatcher.class, t -> {
@@ -193,6 +195,16 @@ public interface PixelPatcher {
             public boolean skip() {
                 return TYPE.get().toPatchType() instanceof PatchType.PassThrough;
             }
+
+            @Override
+            public ListMask toListMask() {
+                Collection<BpmPixel> pxs = IntStream.range(0, mask.getPixelCount())
+                        .parallel()
+                        .filter(i -> mask.getf(i) > 0)
+                        .mapToObj(i -> new BpmPixel.Pixel(i % mask.getWidth(), i / mask.getWidth()))
+                        .collect(Collectors.toSet());
+                return new ListMask(Map.of(TYPE.get().toPatchType(), pxs));
+            }
         }
 
         record ListMask(Map<PatchType, Collection<BpmPixel>> masks) implements Mask {
@@ -228,6 +240,11 @@ public interface PixelPatcher {
             public boolean skip() {
                 return masks().isEmpty() || masks.keySet().stream().allMatch(t -> t instanceof PatchType.PassThrough);
             }
+
+            @Override
+            public ListMask toListMask() {
+                return this;
+            }
         }
 
         boolean isBadPixel(int x, int y);
@@ -235,6 +252,8 @@ public interface PixelPatcher {
         PatchType getPatchType(int x, int y);
 
         boolean skip();
+
+        ListMask toListMask();
     }
 
     sealed interface BpmPixel {

@@ -10,7 +10,6 @@ import ij.util.ArrayUtil;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.function.ToIntFunction;
 
 @AutoService(PixelPatcher.class)
 public class PixelPatcherImpl implements PixelPatcher {
@@ -115,35 +114,42 @@ public class PixelPatcherImpl implements PixelPatcher {
                             if (mergeType == PatchType.NearestNeighbor.MergeType.NEAREST_NEIGHBOR) {
                                 borderPixels.stream().min(
                                         Comparator.comparingDouble(
-                                                bp -> Math.hypot(bp.x - badPixel.x, bp.y - badPixel.y)
+                                                bp -> {
+                                                    var dx = bp.x - badPixel.x;
+                                                    var dy = bp.y - badPixel.y;
+                                                    return dx * dx + dy * dy;
+                                                }
                                         )
                                 ).ifPresent(
                                         bp -> ip.setf(badPixel.x, badPixel.y, ip.getf(bp.x, bp.y))
                                 );
-                                return;
+                                continue;
                             }
 
-                            ToIntFunction<Pixel> distance = (bp) -> {
+                            var nearestDistance = Integer.MAX_VALUE;
+
+                            var nearestBorderValues = new double[borderPixels.size()];
+                            var valueCount = 0;
+
+                            for (var bp : borderPixels) {
                                 var dx = bp.x - badPixel.x;
                                 var dy = bp.y - badPixel.y;
-                                return dx*dx + dy*dy;
-                            };
+                                var distance = dx * dx + dy * dy;
 
-                            var nearestRounded = borderPixels.stream()
-                                    .mapToInt(distance)
-                                    .min()
-                                    .orElseThrow();
-
-                            var nearestBorderValues = borderPixels.stream()
-                                    .filter(bp -> distance.applyAsInt(bp) == nearestRounded)
-                                    .mapToDouble(bp -> ip.getf(bp.x, bp.y))
-                                    .toArray();
+                                if (distance < nearestDistance) {
+                                    nearestDistance = distance;
+                                    valueCount = 0;
+                                    nearestBorderValues[valueCount++] = ip.getf(bp.x, bp.y);
+                                } else if (distance == nearestDistance) {
+                                    nearestBorderValues[valueCount++] = ip.getf(bp.x, bp.y);
+                                }
+                            }
 
                             double fillValue;
                             if (mergeType == PatchType.NearestNeighbor.MergeType.MEDIAN) {
-                                Arrays.sort(nearestBorderValues);
-                                int m = nearestBorderValues.length / 2;
-                                if ((nearestBorderValues.length & 1) == 1) {
+                                Arrays.sort(nearestBorderValues, 0, valueCount);
+                                int m = valueCount / 2;
+                                if ((valueCount & 1) == 1) {
                                     fillValue = nearestBorderValues[m];
                                 } else {
                                     fillValue = (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
@@ -153,13 +159,12 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 for (double v : nearestBorderValues) {
                                     sum += v;
                                 }
-                                fillValue = sum / nearestBorderValues.length;
+                                fillValue = sum / valueCount;
                             }
 
                             // Fill region
-                            var fv = (float) fillValue;
-                            ip.setf(badPixel.x, badPixel.y, fv);
-                            ip.markBadPixel(x, y);
+                            ip.setf(badPixel.x, badPixel.y, (float) fillValue);
+                            ip.markBadPixel(badPixel.x, badPixel.y);
                         }
                     }
                     case PatchType.FitPlane() -> {

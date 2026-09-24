@@ -1898,10 +1898,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         var fitsMenu = new Menu("Save as FITS...");
         fileMenu.add(fitsMenu);
 
-        var pixelPatcher = new MenuItem("Set Pixel Patcher...");
-        pixelPatcher.addActionListener(_ -> PixelPatcherOptionsDialog.showDialog());
-        fileMenu.add(pixelPatcher);
-
         // Slice saving
         saveFitsMenuItem = new Menu("Save image/slice as FITS...");
         saveFitsMenuItem.addActionListener(this);
@@ -2144,6 +2140,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         showRemovedPixelsCB = new CheckboxMenuItem("Mark pixels > 2 sigma from mean in photometer background region", showRemovedPixels);
         showRemovedPixelsCB.addItemListener(this);
         preferencesMenu.add(showRemovedPixelsCB);
+
+        preferencesMenu.addSeparator();
+
+        var pixelPatcher = new MenuItem("Configure Bad Pixel Handling...");
+        pixelPatcher.addActionListener(_ -> PixelPatcherOptionsDialog.showDialog());
+        preferencesMenu.add(pixelPatcher);
 
         preferencesMenu.addSeparator();
 

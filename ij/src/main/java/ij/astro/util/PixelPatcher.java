@@ -23,6 +23,7 @@ public interface PixelPatcher {
     /// If the BPM should be preserved for display.
     Property<Boolean> PRESERVE_BPM = new Property<>(true, PixelPatcher.class);
     Property<Boolean> PRESERVE_BPM_SOURCE_PIXELS = new Property<>(true, PixelPatcher.class);
+    Property<Boolean> IGNORE_BORDERS = new Property<>(false, PixelPatcher.class);
     Property<String> BPM_FILE_SOURCE = new Property<>("", PixelPatcher.class);
     Property<PatchTypeSource> BPM_MODE = new Property<>(PatchTypeSource.DISABLED, PixelPatcher.class);
 

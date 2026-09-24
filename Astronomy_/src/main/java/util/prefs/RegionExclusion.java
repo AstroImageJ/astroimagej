@@ -1,17 +1,5 @@
 package util.prefs;
 
-import java.awt.GridBagConstraints;
-import java.awt.Rectangle;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JSpinner;
-import javax.swing.SwingUtilities;
-
 import Astronomy.shapes.WcsShape;
 import astroj.AstroCanvas;
 import ij.IJ;
@@ -20,6 +8,12 @@ import ij.WindowManager;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.process.ImageProcessor;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class RegionExclusion {
     public static final Property<Boolean> DISPLAY_EXCLUDED_REGIONS = new Property<>(false, RegionExclusion.class);
@@ -166,15 +160,27 @@ public class RegionExclusion {
     }
 
     public static Rectangle restrict(ImagePlus imp) {
-        return restrict(imp.getProcessor());
+        return restrict(imp, EXCLUDE_BORDERS.get());
+    }
+
+    public static Rectangle restrict(ImagePlus imp, boolean restrict) {
+        return restrict(imp.getProcessor(), restrict);
     }
 
     public static Rectangle restrict(ImageProcessor ip) {
-        return restrict(ip.getRoi());
+        return restrict(ip, EXCLUDE_BORDERS.get());
+    }
+
+    public static Rectangle restrict(ImageProcessor ip, boolean restrict) {
+        return restrict(ip.getRoi(), restrict);
     }
 
     public static Rectangle restrict(Rectangle r) {
-        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+        return restrict(r, EXCLUDE_BORDERS.get());
+    }
+
+    public static Rectangle restrict(Rectangle r, boolean restrict) {
+        if (restrict) {
             r.width -= (RegionExclusion.BORDER_EXCLUSION_LEFT.get() + RegionExclusion.BORDER_EXCLUSION_RIGHT.get());
             r.height -= (RegionExclusion.BORDER_EXCLUSION_TOP.get() + RegionExclusion.BORDER_EXCLUSION_BOTTOM.get());
             r.translate(RegionExclusion.BORDER_EXCLUSION_LEFT.get(), RegionExclusion.BORDER_EXCLUSION_TOP.get());

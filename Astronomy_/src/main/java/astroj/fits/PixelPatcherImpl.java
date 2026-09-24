@@ -6,12 +6,15 @@ import ij.astro.logging.AIJLogger;
 import ij.astro.util.PixelPatcher;
 import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
+import util.prefs.RegionExclusion;
 
 import java.awt.*;
 import java.util.*;
 
 @AutoService(PixelPatcher.class)
 public class PixelPatcherImpl implements PixelPatcher {
+    Rectangle searchableRegion;
+
     @Override
     public void patch(ImageProcessor ip, Mask inMask) {
         if (inMask.skip()) {
@@ -21,6 +24,8 @@ public class PixelPatcherImpl implements PixelPatcher {
         var visited = new BitSet(ip.getHeight() * ip.getWidth());
 
         var mask = inMask.toListMask();
+        searchableRegion = PixelPatcher.IGNORE_BORDERS.get() ?
+                RegionExclusion.restrict(ip, true) : new Rectangle(ip.getWidth(), ip.getHeight());
 
         for (Map.Entry<PatchType, Collection<BpmPixel>> patchEntry : mask.masks().entrySet()) {
             var patchType = patchEntry.getKey();
@@ -29,6 +34,12 @@ public class PixelPatcherImpl implements PixelPatcher {
             for (BpmPixel currentBadPixel : patchPixels) {
                 var x = currentBadPixel.x();
                 var y = currentBadPixel.y();
+
+                if (PixelPatcher.IGNORE_BORDERS.get()) {
+                    if (!searchableRegion.contains(x + 0.5, y + 0.5)) {
+                        continue;
+                    }
+                }
 
                 if (visited.get(toIndex(ip, x, y))) {
                     continue;
@@ -377,6 +388,12 @@ public class PixelPatcherImpl implements PixelPatcher {
                         continue;
                     }
 
+                    if (PixelPatcher.IGNORE_BORDERS.get() && searchableRegion != null) {
+                        if (!searchableRegion.contains(nx + 0.5, ny + 0.5)) {
+                            continue;
+                        }
+                    }
+
                     if (mask.isBadPixel(nx, ny)) {
                         if (!visited.get(toIndex(ip, nx, ny))) {
                             visited.set(toIndex(ip, nx, ny));
@@ -404,6 +421,12 @@ public class PixelPatcherImpl implements PixelPatcher {
                 // Filter out bad pixels
                 if (mask.isBadPixel(i, j)) {
                     continue;
+                }
+
+                if (PixelPatcher.IGNORE_BORDERS.get() && searchableRegion != null) {
+                    if (!searchableRegion.contains(i + 0.5, j + 0.5)) {
+                        continue;
+                    }
                 }
 
                 pixels[index++] = ip.getf(i, j);

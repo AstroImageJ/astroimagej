@@ -10,10 +10,7 @@ import ij.*;
 import ij.astro.gui.PixelPatcherOptionsDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
-import ij.astro.util.FileAssociationHandler;
-import ij.astro.util.FitsCompressionUtil;
-import ij.astro.util.FitsExtensionUtil;
-import ij.astro.util.UIHelper;
+import ij.astro.util.*;
 import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
@@ -28,6 +25,7 @@ import ij.process.ImageStatistics;
 import ij.process.StackProcessor;
 import ij.util.Tools;
 import util.PdfRasterWriter;
+import util.PixelPatcherHandler;
 import util.prefs.RegionExclusion;
 
 import javax.swing.*;
@@ -1139,6 +1137,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ImageIcon negativeIconSelected = createImageIcon("images/negativeselected.png", "Negative (selected)");
         ImageIcon regExclusionIcon = createImageIcon("images/regExclusion.png", "Region Exclusion");
         ImageIcon regExclusionIconSelected = createImageIcon("images/regExclusionSelected.png", "Region Exclusion (Selected)");
+        ImageIcon bpmDisplayIcon = createImageIcon("images/bpmDisplayOff.png", "BPM Display");
+        ImageIcon bpmDisplayIconSelected = createImageIcon("images/bpmDisplayOn.png", "BPM Display (Selected)");
         ImageIcon autoscaleIcon = createImageIcon("images/autoscale.png", "Autoscale");
         ImageIcon broomIcon = createImageIcon("images/broom.png", "Clear Aperture Overlay");
         ImageIcon showAllIcon = createImageIcon("images/showallaps.png", "Show All Apertures in Overlay");
@@ -1208,6 +1208,25 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             regExclusion.setSelected(n);
         });
         topPanelA.add(regExclusion);
+
+        var bpmToggle = new JToggleButton(regExclusionIcon, PixelPatcher.DISPLAY.get());
+        bpmToggle.setToolTipText("Display bad pixel map");
+        bpmToggle.setSelectedIcon(regExclusionIconSelected);
+        bpmToggle.setPreferredSize(iconDimension);
+        bpmToggle.setMargin(buttonMargin);
+        bpmToggle.addActionListener(_ -> PixelPatcher.DISPLAY.set(bpmToggle.isSelected()));
+        bpmToggle.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    PixelPatcherOptionsDialog.showDialog();
+                }
+            }
+        });
+        PixelPatcher.DISPLAY.addListener(bpmToggle, (_, n) -> {
+            bpmToggle.setSelected(n);
+        });
+        topPanelA.add(bpmToggle);
 
         buttonShowAnnotations = new JToggleButton(showAnnotationIcon, ac.showAnnotations);
         buttonShowAnnotations.setToolTipText("<html>left-click: toggle display of annotations<br>" +

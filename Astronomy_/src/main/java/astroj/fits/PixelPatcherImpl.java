@@ -139,21 +139,6 @@ public class PixelPatcherImpl implements PixelPatcher {
                         var nearestBorderValues = new double[borderCount];
 
                         for (var badPixel : badPixels) {
-                            if (mergeType == PatchType.NearestNeighbor.MergeType.NEAREST_NEIGHBOR) {
-                                borderPixels.stream().min(
-                                        Comparator.comparingDouble(
-                                                bp -> {
-                                                    var dx = bp.x - badPixel.x;
-                                                    var dy = bp.y - badPixel.y;
-                                                    return dx * dx + dy * dy;
-                                                }
-                                        )
-                                ).ifPresent(
-                                        bp -> ip.setf(badPixel.x, badPixel.y, ip.getf(bp.x, bp.y))
-                                );
-                                continue;
-                            }
-
                             var px = badPixel.x;
                             var py = badPixel.y;
 
@@ -174,22 +159,25 @@ public class PixelPatcherImpl implements PixelPatcher {
                                 }
                             }
 
-                            double fillValue;
-                            if (mergeType == PatchType.NearestNeighbor.MergeType.MEDIAN) {
-                                Arrays.sort(nearestBorderValues, 0, valueCount);
-                                int m = valueCount / 2;
-                                if ((valueCount % 2) == 0) {
-                                    fillValue = nearestBorderValues[m];
-                                } else {
-                                    fillValue = (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
+                            var fillValue = switch (mergeType) {
+                                case NEAREST_NEIGHBOR -> nearestBorderValues[0];
+                                case AVERAGE -> {
+                                    var sum = 0.0D;
+                                    for (int i = 0; i < valueCount; i++) {
+                                        sum += nearestBorderValues[i];
+                                    }
+                                    yield sum / valueCount;
                                 }
-                            } else {
-                                var sum = 0.0D;
-                                for (int i = 0; i < valueCount; i++) {
-                                    sum += nearestBorderValues[i];
+                                case MEDIAN -> {
+                                    Arrays.sort(nearestBorderValues, 0, valueCount);
+                                    int m = valueCount / 2;
+                                    if ((valueCount % 2) == 0) {
+                                        yield nearestBorderValues[m];
+                                    } else {
+                                        yield (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
+                                    }
                                 }
-                                fillValue = sum / valueCount;
-                            }
+                            };
 
                             ip.setf(px, py, (float) fillValue);
                             ip.markBadPixel(px, py);

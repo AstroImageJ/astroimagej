@@ -25,7 +25,6 @@ import ij.process.ImageStatistics;
 import ij.process.StackProcessor;
 import ij.util.Tools;
 import util.PdfRasterWriter;
-import util.PixelPatcherHandler;
 import util.prefs.RegionExclusion;
 
 import javax.swing.*;

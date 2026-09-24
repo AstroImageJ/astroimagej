@@ -35,6 +35,10 @@ public class PixelPatcherImpl implements PixelPatcher {
                 var x = currentBadPixel.x();
                 var y = currentBadPixel.y();
 
+                if (x < 0 || y < 0 || x >= ip.getWidth() || y >= ip.getHeight()) {
+                    continue;
+                }
+
                 if (PixelPatcher.IGNORE_BORDERS.get()) {
                     if (!searchableRegion.contains(x + 0.5, y + 0.5)) {
                         continue;

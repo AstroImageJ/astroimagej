@@ -1208,9 +1208,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         });
         topPanelA.add(regExclusion);
 
-        var bpmToggle = new JToggleButton(regExclusionIcon, PixelPatcher.DISPLAY.get());
+        var bpmToggle = new JToggleButton(bpmDisplayIcon, PixelPatcher.DISPLAY.get());
         bpmToggle.setToolTipText("Display bad pixel map");
-        bpmToggle.setSelectedIcon(regExclusionIconSelected);
+        bpmToggle.setSelectedIcon(bpmDisplayIconSelected);
         bpmToggle.setPreferredSize(iconDimension);
         bpmToggle.setMargin(buttonMargin);
         bpmToggle.addActionListener(_ -> PixelPatcher.DISPLAY.set(bpmToggle.isSelected()));

@@ -160,7 +160,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
 
                             var fillValue = switch (mergeType) {
-                                case NEAREST_NEIGHBOR -> nearestBorderValues[0];
+                                case FIRST_NEAREST_NEIGHBOR -> nearestBorderValues[0];
                                 case AVERAGE -> {
                                     var sum = 0.0D;
                                     for (int i = 0; i < valueCount; i++) {

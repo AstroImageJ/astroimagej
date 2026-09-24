@@ -1,35 +1,19 @@
 package ij.astro.io.prefs;
 
-import java.awt.Dimension;
-import java.awt.Frame;
-import java.awt.Point;
-import java.awt.Window;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.gui.nstate.NState;
 import ij.astro.util.UIHelper;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * {@link Enum} values are stored and loaded based on the value of {@link Enum#name()},
@@ -454,7 +438,12 @@ public class Property<T> {
                     return (T) ((NState<?>) value).fromString(nv);
                 }
             }
-            return (T) Enum.valueOf((Class<? extends Enum>) type, nv);
+            try {
+                return (T) Enum.valueOf((Class<? extends Enum>) type, nv);
+            } catch (IllegalArgumentException _) {
+                IO.println("Failed to parse enum value: " + nv + " for type: " + type);
+                return (T) value;
+            }
         } else if (type == Point.class) {
             var v = Prefs.getLocation(getPropertyKey());
             return v == null ? value : (T) v;

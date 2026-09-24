@@ -56,14 +56,14 @@ public interface PixelPatcher {
             }
         }
         record NearestNeighbor(MergeType mergeType) implements PatchType {
-            public static final Property<MergeType> MERGE_TYPE = new Property<>(MergeType.NEAREST_NEIGHBOR, NearestNeighbor.class);
+            public static final Property<MergeType> MERGE_TYPE = new Property<>(MergeType.FIRST_NEAREST_NEIGHBOR, NearestNeighbor.class);
 
             public NearestNeighbor() {
                 this(MERGE_TYPE.get());
             }
 
             public enum MergeType implements ToolTipProvider {
-                NEAREST_NEIGHBOR,
+                FIRST_NEAREST_NEIGHBOR,
                 MEDIAN,
                 AVERAGE,
                 ;

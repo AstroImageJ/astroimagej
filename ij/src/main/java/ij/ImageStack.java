@@ -193,7 +193,7 @@ public class ImageStack {
 		}
 		stack[nSlices-1] = null;
 		label[nSlices-1] = null;
-		badPixels.remove(n);
+		badPixels.remove(n-1);
 		nSlices--;
 	}
 	

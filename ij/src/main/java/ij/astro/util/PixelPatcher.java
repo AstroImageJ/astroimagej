@@ -136,25 +136,27 @@ public interface PixelPatcher {
         }
 
         enum Type {
-            AVERAGE_FILL,
-            MEDIAN_FILL,
-            FLOOD_FILL,
-            FIT_PLANE,
-            CONSTANT_VALUE,
-            NEAREST_NEIGHBOR,
-            PASS_THROUGH,
-            FIT_GAUSSIAN(true),
-            FIT_MOFFAT(true),
+            AVERAGE_FILL("Average Fill"),
+            MEDIAN_FILL("Median Fill"),
+            FLOOD_FILL("Flood Fill"),
+            FIT_PLANE("Fit Plane"),
+            CONSTANT_VALUE("Constant Value"),
+            NEAREST_NEIGHBOR("Nearest Neighbor"),
+            PASS_THROUGH("Disabled"),
+            FIT_GAUSSIAN(true, "Guassian"),
+            FIT_MOFFAT(true, "Moffat"),
             ;
 
             public final boolean disabled;
+            private final String displayName;
 
-            Type() {
-                this(false);
+            Type(String displayName) {
+                this(false, displayName);
             }
 
-            Type(boolean disabled) {
+            Type(boolean disabled, String displayName) {
                 this.disabled = disabled;
+                this.displayName = displayName;
             }
 
             public PatchType toPatchType() {
@@ -169,6 +171,11 @@ public interface PixelPatcher {
                     case FIT_GAUSSIAN -> new FitGaussian();
                     case FIT_MOFFAT -> new FitMoffat();
                 };
+            }
+
+            @Override
+            public String toString() {
+                return displayName;
             }
         }
     }

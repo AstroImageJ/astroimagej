@@ -1,26 +1,13 @@
 package ij.astro.gui;
 
-import java.awt.CardLayout;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Point;
-import java.util.Arrays;
-
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
-
 import ij.IJ;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.PixelPatcher;
 import ij.astro.util.UIHelper;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.Arrays;
 
 public class PixelPatcherOptionsDialog extends JDialog {
     private JPanel rootPanel;
@@ -203,6 +190,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
         PixelPatcher.PatchType.FitMoffat.MAX_ITER.registerChangeListener(moffatMaxIter);
         PixelPatcher.PatchType.FitMoffat.ABS_ERR.registerChangeListener(moffatAbsErr);
         PixelPatcher.PatchType.FitMoffat.REL_ERR.registerChangeListener(moffatRelErr);
+        PixelPatcher.PatchType.ConstantValue.VALUE.registerChangeListener(constantValueSpinner);
         nearestNeighborPixelSource.addItemListener(PixelPatcher.PatchType.NearestNeighbor.MERGE_TYPE.toItemListener());
     }
 

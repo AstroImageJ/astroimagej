@@ -418,7 +418,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
                 new JSpinner(new SpinnerNumberModel(
                         PixelPatcher.PatchType.MedianFill.Y_RADIUS.get().intValue(),
                         0, Integer.MAX_VALUE, 1));
-        constantValueSpinner = new JSpinner(new SpinnerNumberModel(Double.NaN, null, null, 1));
+        constantValueSpinner = new JSpinner(new SpinnerNumberModel(PixelPatcher.PatchType.ConstantValue.VALUE.get(), null, null, 1));
         gaussianMinCount =
                 new JSpinner(new SpinnerNumberModel(
                         PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get().intValue(),

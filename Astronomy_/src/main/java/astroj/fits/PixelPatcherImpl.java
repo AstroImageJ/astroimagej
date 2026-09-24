@@ -174,7 +174,13 @@ public class PixelPatcherImpl implements PixelPatcher {
                                     if ((valueCount % 2) == 0) {
                                         yield nearestBorderValues[m];
                                     } else {
-                                        yield (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
+                                        if (m == 0 && valueCount > 1) {
+                                            yield (nearestBorderValues[m + 1] + nearestBorderValues[m]) / 2.0;
+                                        } else if (m == 0) {
+                                            yield nearestBorderValues[m];
+                                        } else {
+                                            yield (nearestBorderValues[m - 1] + nearestBorderValues[m]) / 2.0;
+                                        }
                                     }
                                 }
                             };

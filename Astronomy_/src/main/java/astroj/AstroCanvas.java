@@ -132,6 +132,7 @@ public class AstroCanvas extends OverlayCanvas {
         RegionExclusion.BORDER_EXCLUSION_RIGHT.addListener(this, (_, _) -> updateDisplay());
         RegionExclusion.DISPLAY_EXCLUDED_REGIONS.addListener(this, (_, _) -> updateDisplay());
         RegionExclusion.EXCLUDE_UNCOMMON_REGION.addListener(this, (_, _) -> updateDisplay());
+        PixelPatcher.DISPLAY.addListener(this, (_, _) -> updateDisplay());
     }
 
     private void updateDisplay() {

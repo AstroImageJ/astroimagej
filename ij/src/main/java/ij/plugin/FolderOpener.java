@@ -799,6 +799,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addCheckbox("Mark Bad Pixel Sources", PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get());
 		gd.addToSameRow();
 		gd.addCheckbox("Ignore Borders", PixelPatcher.IGNORE_BORDERS.get());
+		gd.addSlider("Region Limit", 0, 1000, PixelPatcher.REGION_LIMIT.get());
 
 		gd.addCheckbox("Sort names numerically", sortFileNames);
 		gd.addCheckbox("Generate WCS Common Region", AUTOMATIC_WCS_SHAPE_GENERATION.get());
@@ -856,6 +857,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		PixelPatcher.PRESERVE_BPM.set(gd.getNextBoolean());
 		PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.set(gd.getNextBoolean());
 		PixelPatcher.IGNORE_BORDERS.set(gd.getNextBoolean());
+		PixelPatcher.REGION_LIMIT.set((int) gd.getNextNumber());
 
 		sortFileNames = gd.getNextBoolean();
 		if (!sortFileNames)

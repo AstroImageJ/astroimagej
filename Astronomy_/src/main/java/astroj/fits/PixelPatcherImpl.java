@@ -81,13 +81,20 @@ public class PixelPatcherImpl implements PixelPatcher {
                     }
                     case PatchType.FloodFill(boolean useMedian) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
+
+                        for (Pixel pixel : region.pixels()) {
+                            ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                        }
+
                         var borderValues = region.borderPixels().stream()
                                 .mapToDouble(p -> ip.getf(p.x, p.y))
                                 .toArray();
 
                         if (borderValues.length == 0) {
                             //todo throw error no good pixels
-                            ip.markUncorrectedBadPixel(x, y);
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
                             continue;
                         }
 
@@ -118,12 +125,22 @@ public class PixelPatcherImpl implements PixelPatcher {
                     }
                     case PatchType.NearestNeighbor(var mergeType) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
+
+                        if (ignoreRegion(region)) {
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
+                            continue;
+                        }
+
                         var borderPixels = region.borderPixels();
                         var badPixels = region.pixels();
 
                         if (borderPixels.isEmpty()) {
                             //todo throw error no good pixels
-                            ip.markUncorrectedBadPixel(x, y);
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
                             continue;
                         }
 
@@ -196,6 +213,13 @@ public class PixelPatcherImpl implements PixelPatcher {
                     case PatchType.FitPlane() -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
 
+                        if (ignoreRegion(region)) {
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
+                            continue;
+                        }
+
                         var bounds = region.bounds();
 
                         var fitter = new FittedPlane(bounds.width * bounds.height);
@@ -241,6 +265,13 @@ public class PixelPatcherImpl implements PixelPatcher {
                     }
                     case PatchType.FitGaussian(int minCount, int maxIter, double relErr, double absErr) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
+
+                        if (ignoreRegion(region)) {
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
+                            continue;
+                        }
 
                         var bounds = (Rectangle) region.bounds().clone();
 
@@ -299,6 +330,13 @@ public class PixelPatcherImpl implements PixelPatcher {
                     }
                     case PatchType.FitMoffat(int minCount, int maxIter, double relErr, double absErr) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
+
+                        if (ignoreRegion(region)) {
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
+                            continue;
+                        }
 
                         var bounds = (Rectangle) region.bounds().clone();
 
@@ -437,6 +475,11 @@ public class PixelPatcherImpl implements PixelPatcher {
 
     private int toIndex(ImageProcessor ip, int x, int y) {
         return y * ip.getWidth() + x;
+    }
+
+    private boolean ignoreRegion(Region region) {
+        return PixelPatcher.BPM_MODE.get() == PatchTypeSource.LCO_FILE &&
+                PixelPatcher.REGION_LIMIT.get() > 0 && region.pixels.size() >= PixelPatcher.REGION_LIMIT.get();
     }
 
     private record Pixel(int x, int y) {}

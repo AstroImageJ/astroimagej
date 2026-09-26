@@ -82,8 +82,11 @@ public class PixelPatcherImpl implements PixelPatcher {
                     case PatchType.FloodFill(boolean useMedian) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
 
-                        for (Pixel pixel : region.pixels()) {
-                            ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                        if (ignoreRegion(region)) {
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
+                            continue;
                         }
 
                         var borderValues = region.borderPixels().stream()

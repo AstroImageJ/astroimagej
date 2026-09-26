@@ -26,7 +26,7 @@ public interface PixelPatcher {
     Property<Boolean> IGNORE_BORDERS = new Property<>(false, PixelPatcher.class);
     Property<String> BPM_FILE_SOURCE = new Property<>("", PixelPatcher.class);
     Property<PatchTypeSource> BPM_MODE = new Property<>(PatchTypeSource.DISABLED, PixelPatcher.class);
-    Property<Integer> REGION_LIMIT = new Property<>(0, PixelPatcher.class);
+    Property<Integer> REGION_LIMIT = new Property<>(10_000, PixelPatcher.class);
 
     void patch(ImageProcessor ip, Mask mask);
 

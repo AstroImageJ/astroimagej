@@ -31,7 +31,6 @@ public class PixelPatcherOptionsDialog extends JDialog {
     private JComboBox<PixelPatcher.PatchType.Type> patchTypeSelector;
     private JPanel fitGuassianCard;
     private JSpinner gaussianMinCount;
-    private JSpinner gaussianMaxIter;
     private JSpinner gaussianRelErr;
     private JSpinner gaussianAbsErr;
     private JPanel fitMoffatCard;
@@ -183,9 +182,6 @@ public class PixelPatcherOptionsDialog extends JDialog {
         PixelPatcher.PatchType.MedianFill.X_RADIUS.registerChangeListener(medianXRadiusSpinner);
         PixelPatcher.PatchType.MedianFill.Y_RADIUS.registerChangeListener(medianYRadiusSpinner);
         PixelPatcher.PatchType.FitGaussian.MIN_COUNT.registerChangeListener(gaussianMinCount);
-        PixelPatcher.PatchType.FitGaussian.MAX_ITER.registerChangeListener(gaussianMaxIter);
-        PixelPatcher.PatchType.FitGaussian.ABS_ERR.registerChangeListener(gaussianAbsErr);
-        PixelPatcher.PatchType.FitGaussian.REL_ERR.registerChangeListener(gaussianRelErr);
         PixelPatcher.PatchType.FitMoffat.MIN_COUNT.registerChangeListener(moffatMinCount);
         PixelPatcher.PatchType.FitMoffat.MAX_ITER.registerChangeListener(moffatMaxIter);
         PixelPatcher.PatchType.FitMoffat.ABS_ERR.registerChangeListener(moffatAbsErr);
@@ -304,94 +300,64 @@ public class PixelPatcherOptionsDialog extends JDialog {
         label9.setToolTipText("Minium amount of good pixels in the region to be fit");
         panel6.add(label9);
         panel6.add(gaussianMinCount);
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        gbc = new GridBagConstraints();
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        fitGuassianCard.add(panel7, gbc);
-        final JLabel label10 = new JLabel();
-        label10.setText("Max. Iter.");
-        panel7.add(label10);
-        panel7.add(gaussianMaxIter);
-        final JPanel panel8 = new JPanel();
-        panel8.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        fitGuassianCard.add(panel8, gbc);
-        final JLabel label11 = new JLabel();
-        label11.setText("Max. Rel. Err.");
-        panel8.add(label11);
-        panel8.add(gaussianRelErr);
-        final JPanel panel9 = new JPanel();
-        panel9.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        gbc = new GridBagConstraints();
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        fitGuassianCard.add(panel9, gbc);
-        final JLabel label12 = new JLabel();
-        label12.setText("Max. Abs. Err.");
-        panel9.add(label12);
-        panel9.add(gaussianAbsErr);
         fitMoffatCard = new JPanel();
         fitMoffatCard.setLayout(new GridBagLayout());
         optionPanel.add(fitMoffatCard, "fitMoffatCard");
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel7, gbc);
+        final JLabel label10 = new JLabel();
+        label10.setText("Min. Count");
+        label10.setToolTipText("Minium amount of good pixels in the region to be fit");
+        panel7.add(label10);
+        panel7.add(moffatMinCount);
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel8, gbc);
+        final JLabel label11 = new JLabel();
+        label11.setText("Max. Iter.");
+        panel8.add(label11);
+        panel8.add(moffatMaxIter);
+        final JPanel panel9 = new JPanel();
+        panel9.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        fitMoffatCard.add(panel9, gbc);
+        final JLabel label12 = new JLabel();
+        label12.setText("Max. Rel. Err.");
+        panel9.add(label12);
+        panel9.add(moffatRelErr);
         final JPanel panel10 = new JPanel();
         panel10.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
+        gbc.gridx = 1;
+        gbc.gridy = 1;
         gbc.fill = GridBagConstraints.BOTH;
         fitMoffatCard.add(panel10, gbc);
         final JLabel label13 = new JLabel();
-        label13.setText("Min. Count");
-        label13.setToolTipText("Minium amount of good pixels in the region to be fit");
+        label13.setText("Max. Abs. Err.");
         panel10.add(label13);
-        panel10.add(moffatMinCount);
+        panel10.add(moffatAbsErr);
         final JPanel panel11 = new JPanel();
-        panel11.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        gbc = new GridBagConstraints();
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.fill = GridBagConstraints.BOTH;
-        fitMoffatCard.add(panel11, gbc);
-        final JLabel label14 = new JLabel();
-        label14.setText("Max. Iter.");
-        panel11.add(label14);
-        panel11.add(moffatMaxIter);
-        final JPanel panel12 = new JPanel();
-        panel12.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.fill = GridBagConstraints.BOTH;
-        fitMoffatCard.add(panel12, gbc);
-        final JLabel label15 = new JLabel();
-        label15.setText("Max. Rel. Err.");
-        panel12.add(label15);
-        panel12.add(moffatRelErr);
-        final JPanel panel13 = new JPanel();
-        panel13.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        gbc = new GridBagConstraints();
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.fill = GridBagConstraints.BOTH;
-        fitMoffatCard.add(panel13, gbc);
-        final JLabel label16 = new JLabel();
-        label16.setText("Max. Abs. Err.");
-        panel13.add(label16);
-        panel13.add(moffatAbsErr);
-        final JPanel panel14 = new JPanel();
-        panel14.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        panel11.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.fill = GridBagConstraints.BOTH;
-        rootPanel.add(panel14, gbc);
+        rootPanel.add(panel11, gbc);
         okButton = new JButton();
         okButton.setText("Ok");
-        panel14.add(okButton);
+        panel11.add(okButton);
     }
 
     /**
@@ -423,22 +389,6 @@ public class PixelPatcherOptionsDialog extends JDialog {
                 new JSpinner(new SpinnerNumberModel(
                         PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get().intValue(),
                         6, Integer.MAX_VALUE, 1));
-        gaussianMaxIter =
-                new JSpinner(new SpinnerNumberModel(
-                        PixelPatcher.PatchType.FitGaussian.MAX_ITER.get().intValue(),
-                        10, Integer.MAX_VALUE, 1));
-        gaussianAbsErr =
-                new JSpinner(new SpinnerNumberModel(
-                        PixelPatcher.PatchType.FitGaussian.ABS_ERR.get().doubleValue(),
-                        1e-200, 1.0, 1e-10));
-        gaussianRelErr =
-                new JSpinner(new SpinnerNumberModel(
-                        PixelPatcher.PatchType.FitGaussian.REL_ERR.get().doubleValue(),
-                        1e-200, 1.0, 1e-10));
-        var ne = new JSpinner.NumberEditor(gaussianRelErr, "0.######E0");
-        gaussianRelErr.setEditor(ne);
-        ne = new JSpinner.NumberEditor(gaussianAbsErr, "0.######E0");
-        gaussianAbsErr.setEditor(ne);
 
         moffatMinCount =
                 new JSpinner(new SpinnerNumberModel(
@@ -456,7 +406,7 @@ public class PixelPatcherOptionsDialog extends JDialog {
                 new JSpinner(new SpinnerNumberModel(
                         PixelPatcher.PatchType.FitMoffat.REL_ERR.get().doubleValue(),
                         1e-200, 1.0, 1e-10));
-        ne = new JSpinner.NumberEditor(moffatRelErr, "0.######E0");
+        var ne = new JSpinner.NumberEditor(moffatRelErr, "0.######E0");
         moffatRelErr.setEditor(ne);
         ne = new JSpinner.NumberEditor(moffatAbsErr, "0.######E0");
         moffatAbsErr.setEditor(ne);

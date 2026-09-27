@@ -1,140 +1,217 @@
 package astroj.fits;
 
+import astroj.fits.PixelPatcherImpl.Pixel;
+import astroj.fits.PixelPatcherImpl.Region;
+import ij.process.ImageProcessor;
+import org.hipparchus.linear.Array2DRowRealMatrix;
+import org.hipparchus.linear.ArrayRealVector;
+import org.hipparchus.linear.QRDecomposition;
+
+import java.awt.*;
 import java.util.Arrays;
+import java.util.BitSet;
 
-import ij.measure.Minimizer;
-import ij.measure.UserFunction;
+public final class Gaussian2DFitter {
+    private final double a;
+    private final double b;
+    private final double c;
+    private final double d;
+    private final double e;
+    private final double f;
 
-public class Gaussian2DFitter {
-    private double[] params;
-    private final double[] xData;
-    private final double[] yData;
-    private final double[] zData;
-    private final int maxIter;
-    private final double relErr;
-    private final double maxErr;
-    private boolean fitSuccessful;
-    private double chiSquared;
+    private final double background;
 
-    public Gaussian2DFitter(double[] xData, double[] yData, double[] zData, int maxIter, double relErr, double maxErr) {
-        this.xData = xData;
-        this.yData = yData;
-        this.zData = zData;
-        this.maxIter = maxIter;
-        this.relErr = relErr;
-        this.maxErr = maxErr;
-        performFit();
+    private final double centerX;
+    private final double centerY;
+    private final double scale;
+
+    private Gaussian2DFitter(double[] coefficients, double background, double centerX, double centerY, double scale) {
+        a = coefficients[0];
+        b = coefficients[1];
+        c = coefficients[2];
+        d = coefficients[3];
+        e = coefficients[4];
+        f = coefficients[5];
+        this.background = background;
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.scale = scale;
     }
 
-    private void performFit() {
-        var xSumStat = Arrays.stream(xData).summaryStatistics();
-        var ySumStat = Arrays.stream(yData).summaryStatistics();
-        var zSumStat = Arrays.stream(zData).summaryStatistics();
-
-        var initialParams = new double[6];
-        initialParams[0] = zSumStat.getMax(); // Amplitude
-        initialParams[1] = (xSumStat.getMax() - xSumStat.getMin()) / 2 + xSumStat.getMin(); // XCenter
-        initialParams[2] = (ySumStat.getMax() - ySumStat.getMin()) / 2 + ySumStat.getMin(); // YCenter
-        initialParams[3] = (xSumStat.getMax() - xSumStat.getMin()) / 2; // SigmaX
-        initialParams[4] = (ySumStat.getMax() - ySumStat.getMin()) / 2; // SigmaY
-        initialParams[5] = zSumStat.getMin(); // Baseline
-
-        var function = new Gaussian2DFunction();
-        var minimizer = new Minimizer();
-        minimizer.setFunction(function, 6);
-        minimizer.setMaxIterations(maxIter);
-
-        var initialParamVariations = new double[6];
-        initialParamVariations[0] = Math.abs(initialParams[1]);
-        initialParamVariations[1] = Math.abs(initialParams[1] - xSumStat.getMin());
-        initialParamVariations[2] = Math.abs(initialParams[2] - ySumStat.getMin());
-        initialParamVariations[3] = Math.abs(initialParams[3]);
-        initialParamVariations[4] = Math.abs(initialParams[4]);
-        initialParamVariations[5] = Math.abs(initialParams[5]);
-
-        minimizer.setMaxError(relErr, maxErr);
-
-        fitSuccessful = minimizer.minimize(initialParams, initialParamVariations) == Minimizer.SUCCESS;
-        params = minimizer.getParams();
-        chiSquared = minimizer.getFunctionValue();
+    static Gaussian2DFitter fit(ImageProcessor ip, Region region) {
+        var background = estimateBackground(ip, region);
+        return fit(ip, region, background);
     }
 
-    public double getAmplitude() {
-        return fitSuccessful ? params[0] : Double.NaN;
-    }
+    static Gaussian2DFitter fit(ImageProcessor ip, Region region, double background) {
+        var bounds = region.bounds();
 
-    public double getXCenter() {
-        return fitSuccessful ? params[1] : Double.NaN;
-    }
-
-    public double getYCenter() {
-        return fitSuccessful ? params[2] : Double.NaN;
-    }
-
-    public double getSigmaX() {
-        return fitSuccessful ? params[3] : Double.NaN;
-    }
-
-    public double getSigmaY() {
-        return fitSuccessful ? params[4] : Double.NaN;
-    }
-
-    public double getBaseline() {
-        return fitSuccessful ? params[5] : Double.NaN;
-    }
-
-    public boolean fitSuccessful() {
-        return fitSuccessful;
-    }
-
-    public double fittedValue(double x, double y) {
-        if (fitSuccessful) {
-            return gaussian(x, y, params);
+        if (bounds.width < 2 || bounds.height < 2) {
+            throw new IllegalArgumentException("Gaussian region is too small");
         }
 
-        return Double.NaN;
-    }
+        var centerX = bounds.getCenterX();
+        var centerY = bounds.getCenterY();
 
-    private static double gaussian(double x, double y, double[] params) {
-        var dx = x - params[1];
-        var dy = y - params[2];
-        var exponent = -(dx * dx) / (2 * params[3] * params[3]) - (dy * dy) / (2 * params[4] * params[4]);
-        return params[0] * Math.exp(exponent) + params[5];
-    }
+        var scale = 0.5 * Math.max(bounds.width, bounds.height);
 
-    public double getChiSquared() {
-        return chiSquared;
-    }
+        var badPixels = createBadPixelMask(region);
 
-    private class Gaussian2DFunction implements UserFunction {
-        private final double dof;
+        var sampleCount = countSamples(ip, bounds, badPixels, background);
 
-        private Gaussian2DFunction() {
-            this.dof = xData.length - 6;
+        if (sampleCount < 6) {
+            throw new IllegalArgumentException("Not enough good pixels for a 2D Gaussian fit");
         }
 
-        @Override
-        public double userFunction(double[] params, double x) {
-            if (params[0] <= 0 || params[3] <= 0 || params[4] <= 0) {
-                return Double.NaN;
+        var design = new double[sampleCount][6];
+        var observations = new double[sampleCount];
+
+        var row = 0;
+        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+            var v = (y - centerY) / scale;
+            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+                var localX = x - bounds.x;
+                var localY = y - bounds.y;
+
+                if (badPixels.get(localY * bounds.width + localX)) {
+                    continue;
+                }
+
+                var value = ip.getf(x, y);
+                var signal = value - background;
+
+                if (!(signal > 0) || !Double.isFinite(signal)) {
+                    continue;
+                }
+
+                var u = (x - centerX) / scale;
+
+                design[row][0] = u * u;
+                design[row][1] = u * v;
+                design[row][2] = v * v;
+                design[row][3] = u;
+                design[row][4] = v;
+                design[row][5] = 1.0;
+
+                observations[row] = Math.log(signal);
+
+                row++;
             }
-
-            /*if (params[1] <= minX || params[2] <= minY || params[1] >= maxX || params[2] >= maxY) {
-                return Double.NaN;
-            }*/
-
-            /*if (params[0] >= maxZ) {
-                return Double.NaN;
-            }*/
-
-            double sumSqResiduals = 0;
-            for (int i = 0; i < xData.length; i++) {
-                var model = gaussian(xData[i], yData[i], params);
-                var residual = zData[i] - model;
-                sumSqResiduals += residual * residual;
-            }
-
-            return sumSqResiduals / dof;
         }
+
+        var matrix = new Array2DRowRealMatrix(design, false);
+        var vector = new ArrayRealVector(observations, false);
+
+        var solver = new QRDecomposition(matrix).getSolver();
+
+        if (!solver.isNonSingular()) {
+            throw new IllegalArgumentException("Gaussian fit is singular or poorly constrained");
+        }
+
+        var coefficients = solver.solve(vector).toArray();
+
+        validateGaussian(coefficients);
+
+        return new Gaussian2DFitter(coefficients, background, centerX, centerY, scale);
+    }
+
+    private static BitSet createBadPixelMask(Region region) {
+        var bounds = region.bounds();
+        var badPixels = new BitSet(bounds.width * bounds.height);
+
+        for (Pixel pixel : region.pixels()) {
+            var x = pixel.x() - bounds.x;
+            var y = pixel.y() - bounds.y;
+
+            if (x >= 0 && x < bounds.width && y >= 0 && y < bounds.height) {
+                badPixels.set(y * bounds.width + x);
+            }
+        }
+
+        return badPixels;
+    }
+
+    private static int countSamples(ImageProcessor ip, Rectangle bounds, BitSet badPixels, double background) {
+        var count = 0;
+        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+            var localY = y - bounds.y;
+            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+                var localX = x - bounds.x;
+                if (badPixels.get(localY * bounds.width + localX)) {
+                    continue;
+                }
+
+                var signal = ip.getf(x, y) - background;
+                if (signal > 0 && Double.isFinite(signal)) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    private static void validateGaussian(double[] coefficients) {
+        var a = coefficients[0];
+        var b = coefficients[1];
+        var c = coefficients[2];
+
+        var determinant = 4.0 * a * c - b * b;
+
+        if (!(a < 0 && c < 0 && determinant > 0)) {
+            throw new IllegalStateException("Fitted surface is not a valid 2D Gaussian");
+        }
+    }
+
+    private static double estimateBackground(ImageProcessor ip, Region region) {
+        var borderPixels = region.borderPixels();//todo estimate from entire region, not just border?
+
+        if (borderPixels.isEmpty()) {
+            throw new IllegalStateException("Cannot estimate Gaussian background: " + "region has no good border pixels");
+        }
+
+        var values = new double[borderPixels.size()];
+
+        var count = 0;
+        for (Pixel pixel : borderPixels) {
+            var value = ip.getf(pixel.x(), pixel.y());
+
+            if (Double.isFinite(value)) {
+                values[count++] = value;
+            }
+        }
+
+        if (count == 0) {
+            throw new IllegalStateException("Cannot estimate Gaussian background");
+        }
+
+        Arrays.sort(values, 0, count);
+
+        if ((count % 2) == 0) {
+            return 0.5 * (values[count / 2 - 1] + values[count / 2]);
+        }
+
+        return values[count / 2];
+    }
+
+    public float valueAt(int x, int y) {
+        var u = (x - centerX) / scale;
+        var v = (y - centerY) / scale;
+        var logSignal = a * u * u + b * u * v + c * v * v + d * u + e * v + f;
+        return (float) (background + Math.exp(logSignal));
+    }
+
+    void apply(ImageProcessor ip, Region region) {
+        for (Pixel pixel : region.pixels()) {
+            ip.setf(pixel.x(), pixel.y(), valueAt(pixel.x(), pixel.y()));
+            ip.markBadPixel(pixel.x(), pixel.y());
+        }
+        for (Pixel borderPixel : region.borderPixels()) {
+            ip.markBadPixelSource(borderPixel.x(), borderPixel.y());
+        }
+    }
+
+    public double background() {
+        return background;
     }
 }

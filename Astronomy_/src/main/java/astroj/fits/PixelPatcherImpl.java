@@ -266,7 +266,7 @@ public class PixelPatcherImpl implements PixelPatcher {
                             }
                         }
                     }
-                    case PatchType.FitGaussian(int minCount, int maxIter, double relErr, double absErr) -> {
+                    case PatchType.FitGaussian(int minCount) -> {
                         var region = collectContinuousRegion(ip, mask, visited, x, y);
 
                         if (ignoreRegion(region)) {
@@ -308,27 +308,24 @@ public class PixelPatcherImpl implements PixelPatcher {
                             continue;
                         }
 
-                        var xs = new double[n];
-                        var ys = new double[n];
-                        var zs = new double[n];
-
-                        var c = 0;
+                        // Create region with enough pixels to fit a Gaussian
+                        var nr = new Region();
                         for (int i = bounds.x; i < bounds.x + bounds.width && i < ip.getWidth(); i++) {
                             for (int j = bounds.y; j < bounds.y + bounds.height && j < ip.getHeight(); j++) {
                                 if ((mask.isBadPixel(i, j))) {
-                                    continue;
+                                    nr.addToRegion(i, j);
+                                } else {
+                                    nr.addBorderPixel(i, j);
                                 }
-                                xs[c] = i;
-                                ys[c] = j;
-                                zs[c++] = ip.getf(i, j);
                             }
                         }
 
-                        var f = new Gaussian2DFitter(xs, ys, zs, maxIter, relErr, absErr);
-
-                        for (Pixel pixel : region.pixels) {
-                            ip.setf(pixel.x, pixel.y, (float) f.fittedValue(pixel.x, pixel.y));
-                            ip.markBadPixel(x, y);
+                        try {
+                            Gaussian2DFitter.fit(ip, nr).apply(ip, region);
+                        } catch (IllegalStateException | IllegalArgumentException e) {
+                            for (Pixel pixel : region.pixels()) {
+                                ip.markUncorrectedBadPixel(pixel.x, pixel.y);
+                            }
                         }
                     }
                     case PatchType.FitMoffat(int minCount, int maxIter, double relErr, double absErr) -> {
@@ -485,9 +482,9 @@ public class PixelPatcherImpl implements PixelPatcher {
                 PixelPatcher.REGION_LIMIT.get() > 0 && region.pixels.size() >= PixelPatcher.REGION_LIMIT.get();
     }
 
-    private record Pixel(int x, int y) {}
+    protected record Pixel(int x, int y) {}
 
-    private record Region(Rectangle bounds, Collection<Pixel> pixels, Collection<Pixel> borderPixels) {
+    protected record Region(Rectangle bounds, Collection<Pixel> pixels, Collection<Pixel> borderPixels) {
         Region() {
             this(new Rectangle(), new HashSet<>(), new HashSet<>());
             bounds.x = -1;

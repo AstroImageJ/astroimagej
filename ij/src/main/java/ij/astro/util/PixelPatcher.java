@@ -36,14 +36,11 @@ public interface PixelPatcher {
 
         record PassThrough() implements PatchType {}
         record FitPlane() implements PatchType {}
-        record FitGaussian(int minCount, int maxIter, double relErr, double absErr) implements PatchType {
+        record FitGaussian(int minCount) implements PatchType {
             public static final Property<Integer> MIN_COUNT = new Property<>(20, FitGaussian.class);
-            public static final Property<Integer> MAX_ITER = new Property<>(3000, FitGaussian.class);
-            public static final Property<Double> REL_ERR = new Property<>(1e-8, FitGaussian.class);
-            public static final Property<Double> ABS_ERR = new Property<>(1e-8, FitGaussian.class);
 
             public FitGaussian() {
-                this(MIN_COUNT.get(), MAX_ITER.get(), REL_ERR.get(), ABS_ERR.get());
+                this(MIN_COUNT.get());
             }
         }
         record FitMoffat(int minCount, int maxIter, double relErr, double absErr) implements PatchType {
@@ -143,9 +140,9 @@ public interface PixelPatcher {
             FIT_PLANE("Fit Plane"),
             CONSTANT_VALUE("Constant Value"),
             NEAREST_NEIGHBOR("Nearest Neighbor"),
-            PASS_THROUGH("Disabled"),
-            FIT_GAUSSIAN(true, "Guassian"),
+            FIT_GAUSSIAN("Guassian"),
             FIT_MOFFAT(true, "Moffat"),
+            PASS_THROUGH("Disabled"),
             ;
 
             public final boolean disabled;

@@ -233,66 +233,6 @@
                   </component>
                 </children>
               </grid>
-              <grid id="b02dd" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-                  <gridbag weightx="0.0" weighty="0.0"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="2f0a6" class="javax.swing.JLabel">
-                    <constraints/>
-                    <properties>
-                      <text value="Max. Iter."/>
-                    </properties>
-                  </component>
-                  <component id="6fc8c" class="javax.swing.JSpinner" binding="gaussianMaxIter" custom-create="true">
-                    <constraints/>
-                    <properties/>
-                  </component>
-                </children>
-              </grid>
-              <grid id="c1560" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-                  <gridbag weightx="0.0" weighty="0.0"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="bbfbb" class="javax.swing.JLabel">
-                    <constraints/>
-                    <properties>
-                      <text value="Max. Rel. Err."/>
-                    </properties>
-                  </component>
-                  <component id="8bc56" class="javax.swing.JSpinner" binding="gaussianRelErr" custom-create="true">
-                    <constraints/>
-                    <properties/>
-                  </component>
-                </children>
-              </grid>
-              <grid id="fd8bc" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-                  <gridbag weightx="0.0" weighty="0.0"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="c15ca" class="javax.swing.JLabel">
-                    <constraints/>
-                    <properties>
-                      <text value="Max. Abs. Err."/>
-                    </properties>
-                  </component>
-                  <component id="5de1" class="javax.swing.JSpinner" binding="gaussianAbsErr" custom-create="true">
-                    <constraints/>
-                    <properties/>
-                  </component>
-                </children>
-              </grid>
             </children>
           </grid>
           <grid id="406ee" binding="fitMoffatCard" layout-manager="GridBagLayout">

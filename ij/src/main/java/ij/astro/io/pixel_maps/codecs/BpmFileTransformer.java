@@ -96,18 +96,9 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
                                 DOUBLE_PARAMETER, value)
                 );
             }
-            case PixelPatcher.PatchType.FitGaussian(int minCount, int maxIter, double relErr, double absErr) -> {
+            case PixelPatcher.PatchType.FitGaussian(int minCount) -> {
                 patchSection.addSubsection(
                         Section.createSection("minCount", INTEGER_PARAMETER, minCount)
-                );
-                patchSection.addSubsection(
-                        Section.createSection("maxIter", INTEGER_PARAMETER, maxIter)
-                );
-                patchSection.addSubsection(
-                        Section.createSection("relErr", DOUBLE_PARAMETER, relErr)
-                );
-                patchSection.addSubsection(
-                        Section.createSection("absErr", DOUBLE_PARAMETER, absErr)
                 );
             }
             case PixelPatcher.PatchType.FitMoffat(int minCount, int maxIter, double relErr, double absErr) -> {
@@ -166,29 +157,14 @@ public class BpmFileTransformer extends Transformer<BpmFile, Void> {
                 yield PixelPatcher.PatchType.Type.CONSTANT_VALUE.toPatchType();
             }
             case PixelPatcher.PatchType.Type.FIT_GAUSSIAN -> {
-                var maxIter = PixelPatcher.PatchType.FitGaussian.MAX_ITER.get();
                 var minCount = PixelPatcher.PatchType.FitGaussian.MIN_COUNT.get();
-                var relErr = PixelPatcher.PatchType.FitGaussian.REL_ERR.get();
-                var absErr = PixelPatcher.PatchType.FitGaussian.ABS_ERR.get();
 
-                var maxIterSec = getUniqueSection(view, "maxIter", false);
-                if (maxIterSec != null) {
-                    maxIter = maxIterSec.getParameter(INTEGER_PARAMETER);
-                }
                 var minCountSec = getUniqueSection(view, "minCount", false);
                 if (minCountSec != null) {
                     minCount = minCountSec.getParameter(INTEGER_PARAMETER);
                 }
-                var relErrSec = getUniqueSection(view, "relErr", false);
-                if (relErrSec != null) {
-                    relErr = relErrSec.getParameter(DOUBLE_PARAMETER);
-                }
-                var absErrSec = getUniqueSection(view, "absErr", false);
-                if (absErrSec != null) {
-                    absErr = absErrSec.getParameter(DOUBLE_PARAMETER);
-                }
 
-                yield new PixelPatcher.PatchType.FitGaussian(minCount, maxIter, relErr, absErr);
+                yield new PixelPatcher.PatchType.FitGaussian(minCount);
             }
             case PixelPatcher.PatchType.Type.FIT_MOFFAT -> {
                 var maxIter = PixelPatcher.PatchType.FitMoffat.MAX_ITER.get();

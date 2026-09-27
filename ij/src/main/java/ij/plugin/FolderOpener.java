@@ -799,7 +799,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addCheckbox("Mark Bad Pixel Sources", PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get());
 		gd.addToSameRow();
 		gd.addCheckbox("Ignore Borders", PixelPatcher.IGNORE_BORDERS.get());
-		gd.addSlider("Region Limit", 0, Integer.MAX_VALUE - 2, PixelPatcher.REGION_LIMIT.get(), 100);
+		gd.addNumericField("Ignore regions larger than", PixelPatcher.REGION_LIMIT.get(), 0, 9, "pixels when patching");
 
 		gd.addCheckbox("Sort names numerically", sortFileNames);
 		gd.addCheckbox("Generate WCS Common Region", AUTOMATIC_WCS_SHAPE_GENERATION.get());

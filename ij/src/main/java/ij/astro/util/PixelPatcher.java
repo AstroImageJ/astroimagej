@@ -6,8 +6,7 @@ import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.process.ImageProcessor;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -185,7 +184,7 @@ public interface PixelPatcher {
         ;
     }
 
-    sealed interface Mask permits Mask.IPMask, Mask.ListMask {
+    sealed interface Mask permits Mask.CompositeMask, Mask.IPMask, Mask.ListMask {
         record IPMask(ImageProcessor mask) implements Mask {
             @Override
             public boolean isBadPixel(int x, int y) {
@@ -250,6 +249,37 @@ public interface PixelPatcher {
             @Override
             public ListMask toListMask() {
                 return this;
+            }
+        }
+        record CompositeMask(Collection<Mask> masks) implements Mask {
+            public CompositeMask(Mask... masks) {
+                this(Arrays.asList(masks));
+            }
+
+            @Override
+            public boolean isBadPixel(int x, int y) {
+                return masks.stream().anyMatch(m -> m.isBadPixel(x, y));
+            }
+
+            @Override
+            public PatchType getPatchType(int x, int y) {
+                return masks.stream().map(m -> m.getPatchType(x, y))
+                        .filter(Objects::nonNull).findFirst().orElse(null);
+            }
+
+            @Override
+            public boolean skip() {
+                return masks.isEmpty() || masks.stream().allMatch(Mask::skip);
+            }
+
+            @Override
+            public ListMask toListMask() {
+                var m = new IdentityHashMap<PatchType, Collection<BpmPixel>>();
+                for (Mask mask : masks) {
+                    var lm = mask.toListMask();
+                    m.putAll(lm.masks());
+                }
+                return new ListMask(m);
             }
         }
 

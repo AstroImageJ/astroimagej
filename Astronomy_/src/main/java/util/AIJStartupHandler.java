@@ -1,42 +1,41 @@
 package util;
 
-import static Astronomy.MultiPlot_.useMacroSubtitle;
-import static Astronomy.MultiPlot_.useMacroTitle;
+import Astronomy.AstroImageJUpdaterV6;
+import Astronomy.MultiAperture_;
+import Astronomy.MultiPlot_;
+import Astronomy.multiaperture.FreeformPixelApertureHandler;
+import Astronomy.multiaperture.io.AperturesFileCodec;
+import astroj.*;
+import com.sun.management.HotSpotDiagnosticMXBean;
+import ij.IJ;
+import ij.Prefs;
+import ij.VirtualStack;
+import ij.astro.io.FitsReader;
+import ij.astro.io.pixel_maps.codecs.BpmFileCodec;
+import ij.astro.io.prefs.Property;
+import ij.astro.util.FileAssociationHandler;
+import ij.astro.util.FileAssociationHandler.AssociationMapper;
+import ij.astro.util.FitsExtensionUtil;
+import ij.astro.util.ObjectShare;
+import ij.astro.util.PixelPatcher;
+import ij.plugin.FITS_Reader;
+import ij.plugin.PlugIn;
+import ij.process.ImageProcessor;
+import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
 
+import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.Executors;
 
-import javax.swing.SwingUtilities;
-
-import Astronomy.AstroImageJUpdaterV6;
-import Astronomy.MultiAperture_;
-import Astronomy.MultiPlot_;
-import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFileCodec;
-import astroj.Aperture;
-import astroj.AstroCanvas;
-import astroj.FreeformPixelApertureRoi;
-import astroj.IJU;
-import astroj.MeasurementTable;
-import astroj.Photometer;
-import astroj.ShapedApertureRoi;
-import com.sun.management.HotSpotDiagnosticMXBean;
-import ij.IJ;
-import ij.Prefs;
-import ij.astro.io.FitsReader;
-import ij.astro.io.prefs.Property;
-import ij.astro.util.FileAssociationHandler;
-import ij.astro.util.FileAssociationHandler.AssociationMapper;
-import ij.astro.util.FitsExtensionUtil;
-import ij.astro.util.ObjectShare;
-import ij.plugin.FITS_Reader;
-import ij.plugin.PlugIn;
-import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
+import static Astronomy.MultiPlot_.useMacroSubtitle;
+import static Astronomy.MultiPlot_.useMacroTitle;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -278,6 +277,48 @@ public class AIJStartupHandler implements PlugIn {
                     }
                 }
             }, true, ".apertures");
+    private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No PixelPatcher implementation found"));
+    private static final AssociationMapper bpmHandler = new AssociationMapper((path, openOptions) -> {
+        var bpm = BpmFileCodec.readFile(path.toString());
+        if (bpm != null) {
+            var asw = IJU.getBestOpenAstroStackWindow();
+            if (asw != null) {
+                if (!SwingUtilities.isEventDispatchThread() && IJ.isMacro()) {
+                    var start = System.currentTimeMillis();
+                    while (!asw.isReady) {
+                        IJ.wait(5);
+                        if (IJ.getInstance() != null && IJ.getInstance().quitting()) return;
+                        if ((System.currentTimeMillis() - start) > 2000) {
+                            break; // 2 second timeout
+                        }
+                    }
+                }
+
+                var imp = asw.getImagePlus();
+                var stack = imp.getStack();
+                var virtual = stack.isVirtual() || stack instanceof VirtualStack;
+                var mask = new PixelPatcher.Mask.ListMask(bpm);
+
+                if (virtual) {
+                    var warn = IJ.showMessageWithCancel("Bad Pixel Correction", """
+                            When using virtual stacks, the loaded BPM is only applied to the current slice, and only until the slice changes.
+                            """);
+                    if (!warn) return;
+                    var slice = stack.getProcessor(imp.getCurrentSlice());
+                    handleBpm(slice, mask);
+                    return;
+                }
+
+                for (int i = 0; i < stack.size(); i++) {
+                    var slice = stack.getProcessor(i+1);
+                    handleBpm(slice, mask);
+                }
+                imp.setStack(stack);
+            }
+        }
+    }, true, ".bpm");
 
     @Override
     public void run(String arg) {
@@ -289,6 +330,7 @@ public class AIJStartupHandler implements PlugIn {
         FileAssociationHandler.registerAssociation(radecHandler);
         FileAssociationHandler.registerAssociation(aperturesHandler);
         FileAssociationHandler.registerAssociation(multiplotPlotCfgHandler);
+        FileAssociationHandler.registerAssociation(bpmHandler);
         ObjectShare.putIfAbsent("multiapertureKeys", MultiAperture_.getApertureKeys());
         ObjectShare.putIfAbsent("multiapertureCircularKeys", MultiAperture_.getCircularApertureKeys());
         ObjectShare.putIfAbsent("customApertureKey", FreeformPixelApertureHandler.APS.getPropertyKey());
@@ -320,5 +362,14 @@ public class AIJStartupHandler implements PlugIn {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void handleBpm(ImageProcessor ip, PixelPatcher.Mask mask) {
+        var existingBpm = ip.getBadPixels();
+        if (existingBpm != null && !existingBpm.isEmpty()) {
+            var existingMask = new PixelPatcher.Mask.ListMask(Map.of(new PixelPatcher.PatchType.PassThrough(), existingBpm));
+            mask = new PixelPatcher.Mask.CompositeMask(existingMask, mask);
+        }
+        PIXEL_PATCHER.patch(ip, mask);
     }
 }

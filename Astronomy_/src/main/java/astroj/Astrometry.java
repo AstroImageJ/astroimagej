@@ -363,7 +363,7 @@ public class Astrometry { //implements KeyListener
                     lineend +
                     sourceLocations +
                     "--" + boundary + "--" + lineend;
-            IJ.log(mime);
+            //IJ.log(mime);
             if (canceled) return CANCELED;
             try {
                 uploadURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/upload");
@@ -603,8 +603,8 @@ public class Astrometry { //implements KeyListener
                     for (int i = 0; i < len; i++) {
                         wcsHeader.cards()[i] = inputLine.substring(i * 80, (i + 1) * 80);
                     }
-                    for (int i=0; i<len; i++)
-                        log(wcsHeader.cards()[i]);
+                    /*for (int i=0; i<len; i++)
+                        log(wcsHeader.cards()[i]);*/
                 } else {
                     log("Failed to retrieve WCS headers for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + "."));
                     if (impOriginal.getStackSize() > 1)

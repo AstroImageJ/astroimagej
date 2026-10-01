@@ -198,7 +198,7 @@ public interface PixelPatcher {
 
             @Override
             public boolean skip() {
-                return TYPE.get().toPatchType() instanceof PatchType.PassThrough;
+                return false;
             }
 
             @Override
@@ -243,7 +243,7 @@ public interface PixelPatcher {
 
             @Override
             public boolean skip() {
-                return masks().isEmpty() || masks.keySet().stream().allMatch(t -> t instanceof PatchType.PassThrough);
+                return masks().isEmpty();
             }
 
             @Override

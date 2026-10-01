@@ -50,7 +50,9 @@ public class PixelPatcherImpl implements PixelPatcher {
                 }
 
                 switch (patchType) {
-                    case PatchType.PassThrough() -> {}
+                    case PatchType.PassThrough() -> {
+                        ip.markUncorrectedBadPixel(x, y);
+                    }
                     case PatchType.ConstantValue(var val) -> {
                         ip.setf(x, y, (float) val);
                         ip.markBadPixel(x, y);

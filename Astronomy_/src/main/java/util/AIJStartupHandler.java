@@ -300,6 +300,9 @@ public class AIJStartupHandler implements PlugIn {
                 var stack = imp.getStack();
                 var virtual = stack.isVirtual() || stack instanceof VirtualStack;
                 var mask = new PixelPatcher.Mask.ListMask(bpm);
+                var combine = IJ.showMessageWithCancel("Bad Pixel Correction", """
+                            Skip processing of existing bad pixels in image?
+                            """);
 
                 if (virtual) {
                     var warn = IJ.showMessageWithCancel("Bad Pixel Correction", """
@@ -307,13 +310,13 @@ public class AIJStartupHandler implements PlugIn {
                             """);
                     if (!warn) return;
                     var slice = stack.getProcessor(imp.getCurrentSlice());
-                    handleBpm(slice, mask);
+                    handleBpm(slice, mask, combine);
                     return;
                 }
 
                 for (int i = 0; i < stack.size(); i++) {
                     var slice = stack.getProcessor(i+1);
-                    handleBpm(slice, mask);
+                    handleBpm(slice, mask, combine);
                 }
                 imp.setStack(stack);
             }
@@ -364,9 +367,9 @@ public class AIJStartupHandler implements PlugIn {
         }
     }
 
-    private static void handleBpm(ImageProcessor ip, PixelPatcher.Mask mask) {
+    private static void handleBpm(ImageProcessor ip, PixelPatcher.Mask mask, boolean combine) {
         var existingBpm = ip.getBadPixels();
-        if (existingBpm != null && !existingBpm.isEmpty()) {
+        if (combine && existingBpm != null && !existingBpm.isEmpty()) {
             var existingMask = new PixelPatcher.Mask.ListMask(Map.of(new PixelPatcher.PatchType.PassThrough(), existingBpm));
             mask = new PixelPatcher.Mask.CompositeMask(existingMask, mask);
         }

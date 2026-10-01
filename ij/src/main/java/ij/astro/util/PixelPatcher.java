@@ -139,7 +139,7 @@ public interface PixelPatcher {
             FIT_PLANE("Fit Plane"),
             CONSTANT_VALUE("Constant Value"),
             NEAREST_NEIGHBOR("Nearest Neighbor"),
-            FIT_GAUSSIAN("Guassian"),
+            FIT_GAUSSIAN(true, "Guassian"),
             FIT_MOFFAT(true, "Moffat"),
             PASS_THROUGH("Disabled"),
             ;

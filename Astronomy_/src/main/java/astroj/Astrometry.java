@@ -1,32 +1,5 @@
 package astroj;
 
-import static astroj.json.simple.JSONValue.toJSONString;
-
-import java.awt.Color;
-import java.awt.Rectangle;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Vector;
-
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import ij.IJ;
@@ -39,6 +12,22 @@ import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import util.prefs.RegionExclusion;
+
+import java.awt.*;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static astroj.json.simple.JSONValue.toJSONString;
 
 
 /**
@@ -259,13 +248,6 @@ public class Astrometry { //implements KeyListener
         if (endSlice > impOriginal.getStackSize()) endSlice = impOriginal.getStackSize();
         if (endSlice < startSlice) endSlice = startSlice;
 
-        var dx = -(RegionExclusion.BORDER_EXCLUSION_RIGHT.get() + RegionExclusion.BORDER_EXCLUSION_LEFT.get());
-        var dy = -(RegionExclusion.BORDER_EXCLUSION_TOP.get() + RegionExclusion.BORDER_EXCLUSION_BOTTOM.get());
-        if (!RegionExclusion.EXCLUDE_BORDERS.get()) {
-            dx = 0;
-            dy = 0;
-        }
-
         int previousSlice = -1;
         for (slice = startSlice; slice <= endSlice; slice++) {
             if (canceled) return CANCELED;
@@ -316,16 +298,18 @@ public class Astrometry { //implements KeyListener
 
             sourceLocations = "";
 
-            var pdx = -RegionExclusion.BORDER_EXCLUSION_LEFT.get();
-            var pdy = -RegionExclusion.BORDER_EXCLUSION_TOP.get();
-            if (!RegionExclusion.EXCLUDE_BORDERS.get()) {
-                pdx = 0;
-                pdy = 0;
-            }
             for (int i = 0; i < npoints; i++) {
-                var x = xdpoints[i] + pdx;
-                var y = ydpoints[i] + pdy;
-                y = (height + dy) - y;
+                var x = xdpoints[i];
+                var y = ydpoints[i];
+
+                if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+                    if (x < RegionExclusion.BORDER_EXCLUSION_LEFT.get() || x > width - RegionExclusion.BORDER_EXCLUSION_RIGHT.get()
+                            || y < RegionExclusion.BORDER_EXCLUSION_TOP.get() || y > height - RegionExclusion.BORDER_EXCLUSION_BOTTOM.get()) {
+                        continue;
+                    }
+                }
+
+                y = (height) - y;
                 sourceLocations += "" + x + " \t " + y + lineend;
             }
             sourceLocations += lineend;
@@ -336,8 +320,8 @@ public class Astrometry { //implements KeyListener
             setupData.put("allow_commercial_use", "d");
             setupData.put("allow_modifications", "d");
             setupData.put("publicly_visible", "n");
-            setupData.put("image_width", width + dx);
-            setupData.put("image_height", height + dy);
+            setupData.put("image_width", width);
+            setupData.put("image_height", height);
             if (useScale) {
                 setupData.put("scale_units", "arcsecperpix");
                 setupData.put("scale_type", "ul"); //"ul" or "ev"
@@ -379,7 +363,7 @@ public class Astrometry { //implements KeyListener
                     lineend +
                     sourceLocations +
                     "--" + boundary + "--" + lineend;
-//            IJ.log(mime);
+            IJ.log(mime);
             if (canceled) return CANCELED;
             try {
                 uploadURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/upload");
@@ -619,21 +603,14 @@ public class Astrometry { //implements KeyListener
                     for (int i = 0; i < len; i++) {
                         wcsHeader.cards()[i] = inputLine.substring(i * 80, (i + 1) * 80);
                     }
-//                    for (int i=0; i<len; i++)
-//                        log(wcsHeader.cards()[i]);
+                    for (int i=0; i<len; i++)
+                        log(wcsHeader.cards()[i]);
                 } else {
                     log("Failed to retrieve WCS headers for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + "."));
                     if (impOriginal.getStackSize() > 1)
                         continue;
                     else
                         return FAILED;
-                }
-
-                if (RegionExclusion.EXCLUDE_BORDERS.get()) {
-                    FitsJ.setCard("CRPIX1", FitsJ.findDoubleValue("CRPIX1", wcsHeader) + dx, "", wcsHeader);
-                    FitsJ.setCard("CRPIX2", FitsJ.findDoubleValue("CRPIX2", wcsHeader) + dy, "", wcsHeader);
-                    FitsJ.setCard("IMAGEW", FitsJ.findIntValue("IMAGEW", wcsHeader) - dx, "", wcsHeader);
-                    FitsJ.setCard("IMAGEH", FitsJ.findIntValue("IMAGEH", wcsHeader) - dy, "", wcsHeader);
                 }
             } catch (IOException ioe) {
                 log("IO Exception during astrometry.net file download for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());

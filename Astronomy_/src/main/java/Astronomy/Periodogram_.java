@@ -216,9 +216,16 @@ public class Periodogram_ implements PlugIn {
                     applyTooltips(gdCol.getCheckboxes(), new String[] {
                             "Skip the automatic sliding-trapezoid T0 fit and use the value entered below."
                     });
+                    DialogRangeValidator blsValidator = lockedT0Rule(transitSearchRules(), 11);
+                    blsValidator.install(gdCol);
 
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
+                    String blsInvalid = blsValidator.check(gdCol);
+                    if (blsInvalid != null) {
+                        IJ.error("BLS Settings", blsInvalid);
+                        return;
+                    }
                     String timeCol = gdCol.getNextChoice();
                     String fluxCol = gdCol.getNextChoice();
                     double minPeriodUser = gdCol.getNextNumber();
@@ -264,12 +271,14 @@ public class Periodogram_ implements PlugIn {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;
                     }
-                    double[] time = table.getDoubleColumn(table.getColumnIndex(timeCol));
-                    double[] flux = table.getDoubleColumn(table.getColumnIndex(fluxCol));
-                    if (time == null || flux == null || time.length != flux.length || time.length < 10) {
-                        IJ.showMessage("Periodogram", "Invalid or insufficient data.");
+                    double[][] rows = finiteRows(table.getDoubleColumn(table.getColumnIndex(timeCol)),
+                            table.getDoubleColumn(table.getColumnIndex(fluxCol)), timeCol, fluxCol);
+                    if (rows == null || rows[0].length < 10) {
+                        IJ.showMessage("Periodogram", "Invalid or insufficient data (at least 10 rows with finite time and flux values are required).");
                         return;
                     }
+                    double[] time = rows[0];
+                    double[] flux = rows[1];
                     // Sort time and flux by time (in case not sorted)
                     int n = time.length;
                     double[] sortedTime = new double[n];
@@ -1246,8 +1255,15 @@ public class Periodogram_ implements PlugIn {
                 gdCol.addNumericField("Max period", MAX_PERIOD.get(), 6, 12, null);
                 gdCol.addNumericField("Steps", STEPS.get(), 0, 6, null);
                 gdCol.addNumericField("Peaks to label", PEAK_COUNT.get(), 0, 6, null);
+                DialogRangeValidator lsValidator = periodRules(0, 1, 2).wholeNumber(3, "Peaks to label", 1, 100);
+                lsValidator.install(gdCol);
                 gdCol.showDialog();
                 if (gdCol.wasCanceled()) return;
+                String lsInvalid = lsValidator.check(gdCol);
+                if (lsInvalid != null) {
+                    IJ.error("Lomb-Scargle Settings", lsInvalid);
+                    return;
+                }
                 String timeCol = gdCol.getNextChoice();
                 String fluxCol = gdCol.getNextChoice();
                 double minPeriodUser = gdCol.getNextNumber();
@@ -1261,12 +1277,14 @@ public class Periodogram_ implements PlugIn {
                 STEPS.set((double) nPeriods);
                 PEAK_COUNT.set((double) userNumPeaks);
 
-                time = table.getDoubleColumn(table.getColumnIndex(timeCol));
-                flux = table.getDoubleColumn(table.getColumnIndex(fluxCol));
-                if (time == null || flux == null || time.length != flux.length || time.length < 2) {
-                    IJ.showMessage("Periodogram", "Invalid or insufficient data.");
+                double[][] rows = finiteRows(table.getDoubleColumn(table.getColumnIndex(timeCol)),
+                        table.getDoubleColumn(table.getColumnIndex(fluxCol)), timeCol, fluxCol);
+                if (rows == null || rows[0].length < 2) {
+                    IJ.showMessage("Periodogram", "Invalid or insufficient data (at least 2 rows with finite time and flux values are required).");
                     return;
                 }
+                time = rows[0];
+                flux = rows[1];
                 // Sort by time
                 int n = time.length;
                 double[] sortedTime = new double[n];
@@ -1664,9 +1682,32 @@ public class Periodogram_ implements PlugIn {
                     applyTooltips(gdCol.getCheckboxes(), new String[] {
                             "Skip the automatic sliding-trapezoid T0 fit and use the value entered below."
                     });
+                    DialogRangeValidator tlsValidator = lockedT0Rule(transitSearchRules()
+                            .range(11, "u1 min", 0, 1)
+                            .range(12, "u1 max", 0, 1)
+                            .rule("u1 min must not exceed u1 max.", (v, c) -> v[11] <= v[12], 11, 12)
+                            .wholeNumber(13, "u1 steps", 1, 100)
+                            .range(14, "u2 min", -1, 1)
+                            .range(15, "u2 max", -1, 1)
+                            .rule("u2 min must not exceed u2 max.", (v, c) -> v[14] <= v[15], 14, 15)
+                            .wholeNumber(16, "u2 steps", 1, 100)
+                            .rule("u1 max + u2 max must not exceed 1.",
+                                    (v, c) -> v[12] + v[15] <= 1 + 1e-9, 12, 15)
+                            .rule("Ingress frac min must be greater than 0 and at most 0.5.",
+                                    (v, c) -> v[17] > 0 && v[17] <= 0.5, 17)
+                            .rule("Ingress frac max must be greater than 0 and at most 0.5.",
+                                    (v, c) -> v[18] > 0 && v[18] <= 0.5, 18)
+                            .rule("Ingress frac min must not exceed Ingress frac max.", (v, c) -> v[17] <= v[18], 17, 18)
+                            .wholeNumber(19, "Ingress frac steps", 1, 100), 20);
+                    tlsValidator.install(gdCol);
 
                     gdCol.showDialog();
                     if (gdCol.wasCanceled()) return;
+                    String tlsInvalid = tlsValidator.check(gdCol);
+                    if (tlsInvalid != null) {
+                        IJ.error("TLS Settings", tlsInvalid);
+                        return;
+                    }
                     String timeCol = gdCol.getNextChoice();
                     String fluxCol = gdCol.getNextChoice();
                     double minPeriod = gdCol.getNextNumber();
@@ -1747,12 +1788,14 @@ public class Periodogram_ implements PlugIn {
                         IJ.showMessage("Periodogram", "Invalid duration scan parameters.");
                         return;
                     }
-                    double[] time = table.getDoubleColumn(table.getColumnIndex(timeCol));
-                    double[] flux = table.getDoubleColumn(table.getColumnIndex(fluxCol));
-                    if (time == null || flux == null || time.length != flux.length || time.length < 10) {
-                        IJ.showMessage("Periodogram", "Invalid or insufficient data.");
+                    double[][] rows = finiteRows(table.getDoubleColumn(table.getColumnIndex(timeCol)),
+                            table.getDoubleColumn(table.getColumnIndex(fluxCol)), timeCol, fluxCol);
+                    if (rows == null || rows[0].length < 10) {
+                        IJ.showMessage("Periodogram", "Invalid or insufficient data (at least 10 rows with finite time and flux values are required).");
                         return;
                     }
+                    double[] time = rows[0];
+                    double[] flux = rows[1];
                     // Sort time and flux by time (in case not sorted)
                     int n = time.length;
                     double[] sortedTime = new double[n];
@@ -2457,6 +2500,67 @@ public class Periodogram_ implements PlugIn {
             g[i] = min + i * span / (steps - 1);
         }
         return g;
+    }
+
+    /** Period-grid rules shared by the BLS, TLS and Lomb-Scargle settings dialogs. */
+    private static DialogRangeValidator periodRules(int minPeriod, int maxPeriod, int steps) {
+        return new DialogRangeValidator()
+                .autoOrPositive(minPeriod, "Min period")
+                .autoOrPositive(maxPeriod, "Max period")
+                .wholeNumber(steps, "Steps", 2, 10_000_000)
+                .rule("Min period must be less than Max period.",
+                        (v, c) -> v[minPeriod] == 0 || v[maxPeriod] == 0 || v[minPeriod] < v[maxPeriod],
+                        minPeriod, maxPeriod);
+    }
+
+    /** Rules for numeric fields 0-10, which the BLS and TLS settings dialogs share. */
+    private static DialogRangeValidator transitSearchRules() {
+        return periodRules(0, 1, 2)
+                .openRange(3, "Min fractional duration", 0, 1)
+                .openRange(4, "Max fractional duration", 0, 1)
+                .rule("Min fractional duration must be less than the max.",
+                        (v, c) -> v[3] < v[4], 3, 4)
+                .wholeNumber(5, "Duration steps", 1, 10_000)
+                .wholeNumber(6, "Phase bins", 50, 2000)
+                .range(7, "Peak width cutoff", 0, 1)
+                .wholeNumber(8, "Number of peaks", 1, 100)
+                .wholeNumber(9, "Number of planets to search", 1, 50)
+                .positive(10, "In-transit masking factor");
+    }
+
+    private static DialogRangeValidator lockedT0Rule(DialogRangeValidator validator, int field) {
+        return validator.rule("Locked T0 value must be a number when Lock T0 is ticked.",
+                (v, c) -> !c[0] || Double.isFinite(v[field]), field);
+    }
+
+    /**
+     * Returns {@code {time, flux}} with every row whose time or flux is NaN or
+     * infinite removed, or {@code null} if either column is missing or the
+     * lengths differ.  A single NaN flux (e.g. from normalizing a column that
+     * contains a zero/NaN sky value) otherwise propagates through every bin sum
+     * and turns the whole periodogram into NaN, producing a blank plot.
+     * The number of skipped rows is reported in the ImageJ log.
+     */
+    static double[][] finiteRows(double[] time, double[] flux, String timeCol, String fluxCol) {
+        if (time == null || flux == null || time.length != flux.length) return null;
+        int n = time.length;
+        int kept = 0;
+        for (int i = 0; i < n; i++) {
+            if (Double.isFinite(time[i]) && Double.isFinite(flux[i])) kept++;
+        }
+        if (kept == n) return new double[][]{time, flux};
+        double[] t = new double[kept];
+        double[] f = new double[kept];
+        for (int i = 0, j = 0; i < n; i++) {
+            if (Double.isFinite(time[i]) && Double.isFinite(flux[i])) {
+                t[j] = time[i];
+                f[j] = flux[i];
+                j++;
+            }
+        }
+        IJ.log(String.format("Periodogram: skipped %d of %d rows with NaN or infinite values in '%s' or '%s'.",
+                n - kept, n, timeCol, fluxCol));
+        return new double[][]{t, f};
     }
 
     // -------------------------------------------------------------------------

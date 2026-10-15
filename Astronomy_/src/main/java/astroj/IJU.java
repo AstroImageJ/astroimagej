@@ -2,77 +2,6 @@
 
 package astroj;
 
-import static astroj.util.SkyMapOptions.FOV_HEIGHT;
-import static astroj.util.SkyMapOptions.FOV_PA;
-import static astroj.util.SkyMapOptions.FOV_WIDTH;
-import static astroj.util.SkyMapOptions.GAIA_DIST_THRESH;
-import static astroj.util.SkyMapOptions.GAIA_MAG_THRESH;
-import static astroj.util.SkyMapOptions.SHOW_BLEND;
-import static astroj.util.SkyMapOptions.SHOW_EBs;
-import static astroj.util.SkyMapOptions.SHOW_FOV;
-import static astroj.util.SkyMapOptions.SHOW_GAIA;
-import static astroj.util.SkyMapOptions.SHOW_MISMATCHES;
-import static astroj.util.SkyMapOptions.SHOW_TIC;
-import static astroj.util.SkyMapOptions.SHOW_VARS;
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.atan;
-import static java.lang.Math.cos;
-import static java.lang.Math.pow;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.tan;
-import static java.util.Map.entry;
-
-import java.awt.Color;
-import java.awt.Frame;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.Window;
-import java.awt.image.BufferedImage;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.zip.GZIPOutputStream;
-
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
 import Astronomy.MultiAperture_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.ApFile;
@@ -92,6 +21,32 @@ import ij.process.ImageProcessor;
 import ij.util.Tools;
 import util.BrowserOpener;
 import util.LinearInterpolator;
+
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.FileImageOutputStream;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.List;
+import java.util.function.Function;
+import java.util.zip.GZIPOutputStream;
+
+import static astroj.util.SkyMapOptions.*;
+import static java.lang.Math.*;
+import static java.util.Map.entry;
 
 /**
  * Various static utilities
@@ -1650,7 +1605,16 @@ public class IJU {
         //           necessary if d is used.        
 
         double[] muo1 = new double[bjd.length];
-//        double[] mu0 = new double[bjd.length];
+
+        double p = abs(p0);
+        double p2 = p * p;
+
+        // Limit to p^2 <= 1e-8 to avoid model error when given a time at impact
+        if (p < 0.0001) {
+            Arrays.fill(muo1, f0);
+            return muo1;
+        }
+
         double tp = tc - P * getTcPhase(e, omega);
 //        IJ.log("tc="+tc);
 //        IJ.log("P="+P);
@@ -1666,8 +1630,6 @@ public class IJU {
         double[] lambdae = new double[nz];
 
         double z;
-        double p = abs(p0);
-        double p2 = p * p;
 
         // tolerance for double precision equalities
         // special case integrations

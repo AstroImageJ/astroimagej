@@ -133,7 +133,8 @@ public class FitsReader implements AutoCloseable {
         for (int i = 0; i < hduDescriptors.size(); i++) {
             var descriptor = hduDescriptors.get(i);
             var header = descriptor.getFormedHeader();
-            if (header.getIntValue(Standard.NAXIS) > 1) {
+            if (header.getIntValue(Standard.NAXIS) > 1 &&
+                    (header.getIntValue(NAXIS1, 0) > 0 && header.getIntValue(NAXIS2, 0) > 0)) {
                 firstImageIndex = i;
                 width = header.getIntValue(Standard.NAXIS1);
                 height = header.getIntValue(Standard.NAXIS2);

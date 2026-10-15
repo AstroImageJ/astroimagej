@@ -1658,6 +1658,14 @@ public class IJU {
             x2 = (p + z) * (p + z);
             x3 = p2 - z2;
 
+            // Limit to avoid model error when given a time at impact
+            if (Math.abs(z - 1) <= 1e-6) {
+                etad[i] = 0.0;
+                lambdae[i] = 0.0;
+                lambdad[i] = 0.0;
+                continue;
+            }
+
             // Case 1 - the star is unocculted or there is no planet (p <= 0)
             if (z >= (1.0 + p) || p <= 0.0) {
                 etad[i] = 0.0;

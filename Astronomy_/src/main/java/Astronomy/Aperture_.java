@@ -14,6 +14,7 @@ import Astronomy.multiplot.table.MeasurementsWindow;
 import astroj.Aperture;
 import astroj.ApertureRoi;
 import astroj.AstroStackWindow;
+import astroj.BackgroundMask;
 import astroj.Centroid;
 import astroj.FitsJ;
 import astroj.FreeformPixelApertureRoi;
@@ -554,10 +555,24 @@ public class Aperture_ implements PlugInFilter {
         localPhotom.setRemoveBackStars(removeBackStars);
         localPhotom.setMarkRemovedPixels(showRemovedPixels);
         localPhotom.setUsePlane(backIsPlane);
+        localPhotom.setBackgroundMask(getBackgroundMask());
 
         localPhotom.measure(imp, exact, x, y, r, r2, r3);
 
+        setBackgroundMask(localPhotom.getBackgroundMask());
+
         return localPhotom;
+    }
+
+    /**
+     * @return the background star removal mask to reuse for the circular aperture currently being measured, or
+     * {@code null} to clip the background of the current image
+     */
+    protected BackgroundMask getBackgroundMask() {
+        return null;
+    }
+
+    protected void setBackgroundMask(BackgroundMask mask) {
     }
 
     protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, Aperture apertureRoi) {

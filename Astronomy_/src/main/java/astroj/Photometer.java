@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.geom.Area;
 import java.awt.geom.FlatteningPathIterator;
 import java.awt.geom.PathIterator;
+import java.util.HashSet;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -129,6 +130,8 @@ public class Photometer {
             new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
                     new PhotometerWorkerThreadFactory(), null, true);
     public static final Property<Boolean> USE_PARALLEL_PIXEL_PROCESS = new Property<>(true, Photometer.class);
+    public static final Property<Boolean> USE_FIXED_BACKGROUND_MASK = new Property<>(true, Photometer.class);
+    protected BackgroundMask backgroundMask = null;
 
     /**
      * Initializes Photometer without the client's Calibration.
@@ -316,6 +319,7 @@ public class Photometer {
                     assert backgroundArea != null;
 
                     var backAdder = backgroundRegion.createPixelStorage(ip);
+                    var back2Adder = backgroundRegion.createPixelStorage(ip);
                     var dBackCountAdder = backgroundRegion.createPixelStorage(ip);
                     var backCountAdder = new LongAdder();
 
@@ -341,6 +345,7 @@ public class Photometer {
                         } else if (fraction > 0) { // BACKGROUND
                             backCount++;
                             backAdder.setVal(i, j, fraction * d);
+                            back2Adder.setVal(i, j, d * d);
                             backCountAdder.increment();
 
                             return usePlaneLocal;
@@ -358,7 +363,7 @@ public class Photometer {
                     }
 
                     back = backAdder.sum();
-                    back2 = back * back;
+                    back2 = back2Adder.sum();
                     dBackCount = dBackCountAdder.sum();
                     backCount = backCountAdder.sum();
                 }
@@ -464,6 +469,7 @@ public class Photometer {
                     assert backgroundArea != null;
 
                     var backAdder = backgroundRegion.createPixelStorage(ip);
+                    var back2Adder = backgroundRegion.createPixelStorage(ip);
                     var backCountAdder = new LongAdder();
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
@@ -473,6 +479,7 @@ public class Photometer {
                         // so must be synchronized or use a new object
                         if (area.contains(i + 0.5, j + 0.5)) {
                             backAdder.setVal(i, j, d);
+                            back2Adder.setVal(i, j, d * d);
                             backCountAdder.increment();
                             return usePlaneLocal;
                         }
@@ -489,7 +496,7 @@ public class Photometer {
                     }
 
                     back = backAdder.sum();
-                    back2 = back * back;
+                    back2 = back2Adder.sum();
                     backCount = backCountAdder.sum();
                 }
             } else {
@@ -1376,6 +1383,7 @@ public class Photometer {
                 var dSourceCountAdder = region.createPixelStorage(ip);
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
                 var backAdder = region.createPixelStorage(ip);
+                var back2Adder = region.createPixelStorage(ip);
                 var dBackCountAdder = region.createPixelStorage(ip);
                 var backCountAdder = new LongAdder();
 
@@ -1401,6 +1409,7 @@ public class Photometer {
                             dBackCountAdder.setVal(i, j, fraction + bc);
                         } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                             backAdder.setVal(i, j, d);
+                            back2Adder.setVal(i, j, d * d);
                             backCountAdder.increment();
 
                             return usePlaneLocal;
@@ -1422,7 +1431,7 @@ public class Photometer {
                 dSourceCount = dSourceCountAdder.sum();
                 peak = (float) peakAccumulator.get();
                 back = backAdder.sum();
-                back2 = back * back;
+                back2 = back2Adder.sum();
                 dBackCount = dBackCountAdder.sum();
                 backCount = backCountAdder.sum();
             } else {
@@ -1469,6 +1478,7 @@ public class Photometer {
                 var sourceAdder = region.createPixelStorage(ip);
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
                 var backAdder = region.createPixelStorage(ip);
+                var back2Adder = region.createPixelStorage(ip);
                 var backCountAdder = new LongAdder();
                 var sourceCountAdder = new LongAdder();
 
@@ -1484,6 +1494,7 @@ public class Photometer {
 
                     if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                         backAdder.setVal(i, j, d);
+                        back2Adder.setVal(i, j, d * d);
                         backCountAdder.increment();
 
                         return usePlaneLocal;
@@ -1503,7 +1514,7 @@ public class Photometer {
                 source = sourceAdder.sum();
                 peak = (float) peakAccumulator.get();
                 back = backAdder.sum();
-                back2 = back * back;
+                back2 = back2Adder.sum();
                 backCount = backCountAdder.sum();
                 sourceCount = sourceCountAdder.sum();
             } else {
@@ -1610,6 +1621,9 @@ public class Photometer {
                 }
             }
 
+            var fixedMask = backgroundMask != null && backgroundMask.matches(rb1, rb2) ? backgroundMask : null;
+            var backMeanPlus2Stdev = Double.POSITIVE_INFINITY;
+            var backMeanMinus2Stdev = Double.NEGATIVE_INFINITY;
             for (int iteration = 0; iteration < 100; iteration++) {
                 backstdev = useFma ? Math.sqrt(Math.fma(-backMean, backMean, back2Mean)) : Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
@@ -1624,11 +1638,12 @@ public class Photometer {
                 }
 
                 // REMOVE STARS FROM BACKGROUND
-                var backMeanPlus2Stdev = useFma ? Math.fma(2.0, backstdev, backMean) : backMean + 2.0 * backstdev;
-                var backMeanMinus2Stdev = useFma ? Math.fma(-2.0, backstdev, backMean) : backMean - 2.0 * backstdev;
+                backMeanPlus2Stdev = useFma ? Math.fma(2.0, backstdev, backMean) : backMean + 2.0 * backstdev;
+                backMeanMinus2Stdev = useFma ? Math.fma(-2.0, backstdev, backMean) : backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
                     var d = pixels[i];
-                    if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
+                    if (fixedMask != null ? !fixedMask.isRejected(is[i], js[i], x, y) :
+                            (d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
                         back += d; // FINAL BACKGROUND
                         back2 = useFma ? Math.fma(d, d, back2) : back2 + d * d;
                         backCount++;
@@ -1646,11 +1661,22 @@ public class Photometer {
                     back2Mean = back2 / backCount;
                 }
                 //IJ.log("remove stars="+removeBackStars+"   background="+back+"    backcount="+backCount+"    backstdev="+backstdev);
-                if (Math.abs(prevBackMean - backMean) < 0.0001) { //was 0.1 which did not work for for low background levels
+                if (fixedMask != null || Math.abs(prevBackMean - backMean) < 0.0001) { //was 0.1 which did not work for for low background levels
                     //IJ.log("iteration="+iteration);
                     break;
                 }
                 prevBackMean = backMean;
+            }
+
+            if (fixedMask == null) {
+                var rejected = new HashSet<Long>();
+                for (int i = 0; i < pCnt; i++) {
+                    var d = pixels[i];
+                    if (!((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev))) {
+                        rejected.add(BackgroundMask.key(is[i], js[i]));
+                    }
+                }
+                backgroundMask = new BackgroundMask(x, y, rb1, rb2, rejected);
             }
 
             dBackCount = (double) backCount;
@@ -2080,6 +2106,21 @@ public class Photometer {
 
     public void setMarkRemovedPixels(boolean markPixels) {
         markRemovedPixels = markPixels;
+    }
+
+    /**
+     * Use the given star removal mask instead of clipping the background of this image. A mask built for different
+     * background radii is ignored and replaced.
+     */
+    public void setBackgroundMask(BackgroundMask mask) {
+        backgroundMask = mask;
+    }
+
+    /**
+     * @return the star removal mask used by, or built from, the last circular aperture measurement
+     */
+    public BackgroundMask getBackgroundMask() {
+        return backgroundMask;
     }
 
     /**

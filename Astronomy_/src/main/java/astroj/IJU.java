@@ -11,6 +11,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.io.prefs.Property;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ObjectShare;
 import ij.gui.ImageWindow;
@@ -95,6 +96,8 @@ public class IJU {
     public static final LinearInterpolator getRStarFromTeff = new LinearInterpolator(tStar, rStar);
     public static final LinearInterpolator getTeffFromRhoStar = new LinearInterpolator(rhoStar, tStar);
     public static final LinearInterpolator getRhoStarFromTeff = new LinearInterpolator(tStar, rhoStar);
+
+    public static final Property<Boolean> USE_TRANSIT_MODEL_V2 = new Property<>(false, IJU.class);
 
     public static final String[] colors = new String[]
             {
@@ -1556,7 +1559,352 @@ public class IJU {
 
     public static double[] transitModel(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
                                         double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode, boolean fitPrimary) {
-        return transitModelV1(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode, fitPrimary);
+        if (USE_TRANSIT_MODEL_V2.get()) {
+            return transitModelV2(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode, fitPrimary);
+        } else {
+            return transitModelV1(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode, fitPrimary);
+        }
+    }
+
+    /**
+     * Based on EXOFASTv2 (exofast_occultquad_cel.pro).
+     */
+    private static double[] transitModelV2(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
+                                           double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode, boolean fitPrimary) {
+        // This routine computes the lightcurve for occultation of a
+        // quadratically limb-darkened source without microlensing.  Please
+        // cite Mandel & Agol (2002) and Eastman et al., (2013) if you make use
+        // of this routine in your research.
+        // 2026/10/16 - Transcoded to Java from IDL
+        // MODIFICATION HISTORY
+        //
+        //  2002 -- Eric Agol 2002
+        //
+        //  2009/04/06 -- Eric Agol (University of Washington) and
+        //                Jason Eastman (Ohio State University)
+        //    fixed bugs for p > 1 (e.g., secondary eclipses)
+        //    used double precision constants throughout
+        //    replaced rj,rc,rf with ellpic_bulirsch
+        //      faster, more robust integration for specialized case of
+        //      elliptic integral of the third kind
+        //    more efficient case handling
+        //    combined ellk and ellec into ellke for speed
+        //    200x speed improvement over previous IDL code in typical case
+        //    allow negative values of p (anti-transit) to avoid Lucy-Sweeney like bias
+        //  2018/12/12 -- Now uses more stable integrations, 25% faster
+        // Limb darkening has the form:
+        //  I(r)=[1-u1*(1-sqrt(1-(r/rs)^2))-u2*(1-sqrt(1-(r/rs)^2))^2]/(1-u1/3-u2/6)/pi
+        //
+        // INPUTS:
+        //
+        //    u1 - linear    limb-darkening coefficient (gamma_1 in paper)
+        //    u2 - quadratic limb-darkening coefficient (gamma_2 in paper)
+        //    p0 - occulting star size in units of rs
+        //
+        // OUTPUTS:
+        //
+        //    muo1 - fraction of flux at each z0 for a limb-darkened source
+
+        double[] muo1 = new double[bjd.length];
+
+        double p = abs(p0);
+        double p2 = p * p;
+
+        double tp = tc - P * getTcPhase(e, omega);
+
+        double[][] bzArray = impactParameter(bjd, inclination, ar, tp, P, e, omega, useLonAscNode, lonAscNode); // impact parameter in units of rs
+
+        int nz = bjd.length;
+
+        double[] lambdad = new double[nz];
+        double[] etad = new double[nz];
+        double[] lambdae = new double[nz];
+
+        double z, z2, kiteArea2, kap1, kap0, q;
+        double onembpr2, onembmr2, fourbr, fourbrinv, k2, kc2;
+
+        var bz0 = bzArray[0];
+        var bz1 = bzArray[1];
+        for (int i = 0; i < nz; i++) {
+            /*if (fitPrimary && bz1[i] <= 0.0 || !fitPrimary && bz1[i] > 0) {
+                // Only consider the part of the orbit where a primary or secondary could occur, depending on which is being modeled.
+                //(When z > 0, the planet is closer to the observer than the star.)
+                // Otherwise, the overall model returned will include identical transits at both the primary and secondary times of transit,
+                // which would cause a problem when fitting full-phase data, such as TESS or Kepler space-based data.
+                // To calculate both a primary and secondary transit model for full phase data, the model must be calculated twice using the different set
+                // of transit and eclipse shape parameters and combined separately from this function.
+                continue;
+            }*/
+            z = bz0[i];
+            z2 = z * z;
+
+            // Case 1 - the star is unocculted or there is no planet (p <= 0)
+            if (z >= (1.0 + p) || p <= 0.0) {
+                etad[i] = 0.0;
+                lambdae[i] = 0.0;
+                lambdad[i] = 0.0;
+                continue;
+            }
+
+            // Case 11 - the source is completely occulted:
+            if (p >= 1.0 && z <= p - 1.0) {
+                etad[i] = 0.5; // corrected typo in paper
+                lambdae[i] = 1.0;
+                lambdad[i] = 0.0;
+                continue;
+            }
+
+            // Case 2, 7, 8 - ingress/egress (uniform disk only)
+            if (z >= abs(1.0 - p) && (z < 1.0 + p)) {
+                kiteArea2 = sqAreaTriangle(z, p);
+                kiteArea2 = sqrt(kiteArea2);
+                kap1 = atan2(kiteArea2, (1.0 - p) * (p + 1.0) + z2);
+                kap0 = atan2(kiteArea2, (p - 1.0) * (p + 1.0) + z2);
+                lambdae[i] = (p2 * kap0 + kap1 - 0.5 * kiteArea2) / PI;
+                // eta_1
+                etad[i] = 1.0 / (2.0 * PI) * (kap1 + p2 * (p2 + 2.0 * z2) * kap0 - 0.25 * (1.0 + 5.0 * p2 + z2) * kiteArea2);
+            }
+
+            // Case 5, 6, 7 - the edge of planet lies at origin of star
+            if (z == p) {
+                if (p < 0.5) {
+                    // Case 5
+                    q = 2.0 * p; //corrected typo in paper (2k -> 2p)
+                    var ell = ellke(q);
+                    var ek = ell[0];  //The elliptic integral of the first kind
+                    var kk = ell[1];  // The elliptic integral of the second kind
+                    // lambda_4
+                    lambdad[i] = 1.0 / 3.0 + 2.0 / 9.0 / PI * (4.0 * (2.0 * p2 - 1.0) * ek + (1.0 - 4.0 * p2) * kk);
+                    // eta_2
+                    etad[i] = 3.0 * p2 * p2 / 2.0;
+                    lambdae[i] = p2;// uniform disk
+                } else if (p > 0.5) {
+                    // Case 7
+                    q = 0.5 / p; //corrected typo in paper (1/2k -> 1/2p)
+                    var ell = ellke(q);
+                    var ek = ell[0];  //The elliptic integral of the first kind
+                    var kk = ell[1];  // The elliptic integral of the second kind
+                    // lambda_3
+                    lambdad[i] = 1.0 / 3.0 + 16.0 * p / 9.0 / PI * (2.0 * p2 - 1.0) * ek - (32.0 * p2 * p2 - 20.0 * p2 + 3.0) / 9.0 / PI / p * kk;
+                    // etad = eta_1 already
+                } else {
+                    // Case 6
+                    lambdad[i] = 1.0 / 3.0 - 4.0 / PI / 9.0;
+                    etad[i] = 3.0 / 32.0;
+                }
+                continue;
+            }
+
+            // Case 3, 4, 9, 10 - planet completely inside star
+            if (p < 1.0 && z <= (1.0 - p)) {
+                // eta_2
+                etad[i] = p2 / 2.0 * (p2 + 2.0 * z2);
+
+                // uniform disk
+                lambdae[i] = p2;
+
+                // Case 4 - edge of planet hits edge of star
+                if (z == 1.0 - p) {
+                    // lambda_5
+                    lambdad[i] = 2.0 / 3.0 / PI * acos(1.0 - 2.0 * p) - 4.0 / 9.0 / PI * sqrt(p * (1.0 - p)) *
+                            (3.0 + 2.0 * p - 8.0 * p2) - 2.0 / 3.0 * (p > 0.5 ? 1 : 0);
+                    continue;
+                }
+
+                // Case 10 - origin of planet hits origin of star
+                if (z == 0) {
+                    // lambda_6
+                    lambdad[i] = -2.0 / 3.0 * pow((1.0 - p2), 1.5);
+                    continue;
+                }
+
+                // Case 3, Case 9 - anywhere in between
+                onembpr2 = (1.0 - z - p) * (1.0 + z + p);
+                onembmr2 = (p - z + 1.0) * (1.0 - p + z);
+                fourbr = 4.0 * z * p;
+                fourbrinv = 1.0 / fourbr;
+                k2 = onembpr2 * fourbrinv + 1.0;
+                var onembmr2inv = 1.0 / onembmr2;
+                var k2inv = 1.0 / k2;
+                kc2 = onembpr2 * onembmr2inv;
+                var kc = sqrt(kc2);
+                var bmrdbpr = (z - p) / (z + p);
+                var mu = 3.0 * bmrdbpr * onembmr2inv;
+                var pBulirsch = bmrdbpr * bmrdbpr * onembpr2 * onembmr2inv;
+                var cel = celBulirschVec(k2inv, kc, pBulirsch, 1.0 + mu, 1.0, 1.0, pBulirsch + mu, kc2, 0.0);
+                var piOfK = cel[0];
+                var eOfK = cel[1];
+                // lambda_2
+                lambdad[i] = 2.0 * sqrt(onembmr2) * (onembpr2 * piOfK - (4.0 - 7.0 * p2 - z2) * eOfK) / (9.0 * PI);
+                continue;
+            }
+
+            // Case 2, Case 8 - ingress/egress (with limb darkening)
+            onembpr2 = (1.0 - z - p) * (1.0 + z + p);
+            onembmr2 = (p - z + 1.0) * (1.0 - p + z);
+            fourbr = 4.0 * z * p;
+            fourbrinv = 1.0 / fourbr;
+            k2 = onembpr2 * fourbrinv + 1.0;
+            kc2 = -onembpr2 * fourbrinv;
+            var kc = sqrt(kc2);
+            var cel = celBulirschVec(k2, kc, (z - p) * (z - p) * kc2, 0.0, 1.0, 1.0, 3.0 * kc2 * (z - p) * (z + p), kc2, 0.0);
+            var piOfK = cel[0];
+            var eOfK = cel[1];
+            var em1mKdm = cel[2];
+            // lambda_1
+            lambdad[i] = onembmr2 * (piOfK + (-3.0 + 6.0 * p2 + 2.0 * z * p) * em1mKdm - fourbr * eOfK) / (9.0 * PI * sqrt(z * p));
+        }
+
+        var omegaLD = 1.0 - u1 / 3.0 - u2 / 6.0;
+
+        for (int i = 0; i < nz; i++) {
+            /*if (fitPrimary && bz1[i] <= 0.0 || !fitPrimary && bz1[i] > 0) {
+                // Only consider the part of the orbit where a primary or secondary could occur, depending on which is being modeled.
+                //(When z > 0, the planet is closer to the observer than the star.)
+                // Otherwise, the overall model returned will include identical transits at both the primary and secondary times of transit,
+                // which would cause a problem when fitting full-phase data, such as TESS or Kepler space-based data.
+                // To calculate both a primary and secondary transit model for full phase data, the model must be calculated twice using the different set
+                // of transit and eclipse shape parameters and combined separately from this function.
+                muo1[i] = f0;
+                continue;
+            }*/
+
+            // avoid Lutz-Kelker bias (negative values of p0 allowed)
+            if (p0 > 0) {
+                // limb darkened flux
+                muo1[i] = (1.0 - ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bz0[i] ? 1 : 0)) + u2 * etad[i]) / omegaLD) * f0;
+                // uniform disk
+                //mu0[i]=1.0-lambdae[i];
+            } else {
+                // limb darkened flux
+                muo1[i] = (1.0 + ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bz0[i] ? 1 : 0)) + u2 * etad[i]) / omegaLD) * f0;
+                // uniform disk
+                //mu0[i]=1.0+lambdae[i];
+            }
+        }
+        return muo1;
+    }
+
+    /**
+     * Computes sixteen times the square of the area of a triangle with sides 1, z0, and p0
+     * using Kahan method (Goldberg 1991).
+     * <p>
+     * Transcoded to Java from EXOFASTv2 sqarea_triangle.pro
+     */
+    private static double sqAreaTriangle(double z0, double p0) {
+        double sqarea = 0.0;
+        // There are six cases to consider (later cases overwrite earlier ones on shared boundaries, as in the IDL)
+        if (p0 <= z0 && z0 <= 1.0)
+            sqarea = (p0 + (z0 + 1.0)) * (1.0 - (p0 - z0)) * (1.0 + (p0 - z0)) * (p0 + (z0 - 1.0));
+        if (z0 <= p0 && p0 <= 1.0)
+            sqarea = (z0 + (p0 + 1.0)) * (1.0 - (z0 - p0)) * (1.0 + (z0 - p0)) * (z0 + (p0 - 1.0));
+        if (p0 <= 1.0 && 1.0 <= z0)
+            sqarea = (p0 + (1.0 + z0)) * (z0 - (p0 - 1.0)) * (z0 + (p0 - 1.0)) * (p0 + (1.0 - z0));
+        if (z0 <= 1.0 && 1.0 <= p0)
+            sqarea = (z0 + (1.0 + p0)) * (p0 - (z0 - 1.0)) * (p0 + (z0 - 1.0)) * (z0 + (1.0 - p0));
+        if (1.0 <= p0 && p0 <= z0)
+            sqarea = (1.0 + (p0 + z0)) * (z0 - (1.0 - p0)) * (z0 + (1.0 - p0)) * (1.0 + (p0 - z0));
+        if (1.0 <= z0 && z0 <= p0)
+            sqarea = (1.0 + (z0 + p0)) * (p0 - (1.0 - z0)) * (p0 + (1.0 - z0)) * (1.0 + (z0 - p0));
+        return sqarea;
+    }
+
+    /**
+     * Scalar version of the "vector" Bulirsch cel() used by EXOFASTv2. Computes three complete
+     * elliptic integrals with a shared k2 and kc, where the first integral uses p and the other
+     * two use p = 1.
+     * <p>
+     * Transcoded to Java from EXOFASTv2 cel_bulirsch_vec.pro
+     *
+     * @return {f1, f2, f3}
+     */
+    private static double[] celBulirschVec(double k2, double kc, double p, double a1, double a2, double a3, double b1, double b2, double b3) {
+        // This assumes first value of a and b uses p, the rest have p=1.
+        double ca = sqrt(k2 * 2.2e-16);
+
+        // Avoid undefined k2=1 case:
+        if (k2 == 1.0 || kc == 0.0) kc = 2.22e-16;
+
+        // Initialize values:
+        double ee = kc;
+        double m = 1.0;
+        double pinv;
+        double f1, f2, f3, g, g1, p1;
+
+        if (p >= 0.0) {
+            p = sqrt(p);
+            pinv = 1.0 / p;
+            b1 *= pinv;
+        } else {
+            double q = k2;
+            g = 1.0 - p;
+            double f = g - k2;
+            q *= (b1 - a1 * p);
+            double ginv = 1.0 / g;
+            p = sqrt(f * ginv);
+            a1 = (a1 - b1) * ginv;
+            pinv = 1.0 / p;
+            b1 = -q * ginv * ginv * pinv + a1 * p;
+        }
+
+        // Compute recursion:
+        f1 = a1;
+        // First compute the first integral with p:
+        a1 += b1 * pinv;
+        g = ee * pinv;
+        b1 += f1 * g;
+        b1 += b1;
+        p += g;
+
+        // Next, compute the remainder with p = 1:
+        p1 = 1.0;
+        g1 = ee;
+        f2 = a2;
+        f3 = a3;
+        a2 += b2;
+        b2 += f2 * g1;
+        b2 += b2;
+        a3 += b3;
+        b3 += f3 * g1;
+        b3 += b3;
+        p1 += g1;
+        g = m;
+        m += kc;
+
+        int iter = 0;
+        int itmax = 50;
+        while (abs(g - kc) > g * ca && iter < itmax) {
+            kc = sqrt(ee);
+            kc += kc;
+            ee = kc * m;
+            f1 = a1;
+            f2 = a2;
+            f3 = a3;
+            pinv = 1.0 / p;
+            double pinv1 = 1.0 / p1;
+            a1 += b1 * pinv;
+            a2 += b2 * pinv1;
+            a3 += b3 * pinv1;
+            g = ee * pinv;
+            g1 = ee * pinv1;
+            b1 += f1 * g;
+            b2 += f2 * g1;
+            b3 += f3 * g1;
+            b1 += b1;
+            b2 += b2;
+            b3 += b3;
+            p += g;
+            p1 += g1;
+            g = m;
+            m += kc;
+            iter++;
+        }
+
+        f1 = 0.5 * PI * (a1 * m + b1) / (m * (m + p));
+        f2 = 0.5 * PI * (a2 * m + b2) / (m * (m + p1));
+        f3 = 0.5 * PI * (a3 * m + b3) / (m * (m + p1));
+
+        return new double[]{f1, f2, f3};
     }
 
     /**

@@ -8342,6 +8342,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         preferencesmenu.add(usedefaultsettingsCB);
 
         preferencesmenu.addSeparator();
+        var transitToggle = new JCheckBoxMenuItem("Use Travsit Model V2", IJU.USE_TRANSIT_MODEL_V2.get());
+        transitToggle.addActionListener(_ -> {
+            IJU.USE_TRANSIT_MODEL_V2.set(transitToggle.getState());
+            updatePlot(updateAllFits());
+        });
+        preferencesmenu.add(transitToggle);
         mainmenubar.add(preferencesmenu);
 
 

@@ -173,7 +173,7 @@ abstract class VerifyLaunchersTask : DefaultTask() {
         return try {
             val perms = Files.getPosixFilePermissions(file.toPath())
             if (PosixFilePermission.OWNER_EXECUTE in perms) null
-            else "missing executable permission (mode ${PosixFilePermission::class.java.simpleName} ${perms})"
+            else "missing executable permission (mode ${PosixFilePermission::class.java.simpleName} ${perms}). Run `git update-index --chmod=+x ${file.path}`"
         } catch (e: UnsupportedOperationException) {
             // POSIX permissions aren't visible on this filesystem (e.g. building on Windows).
             logger.warn("Skipping executable-bit check for ${file.name}: filesystem has no POSIX permissions")

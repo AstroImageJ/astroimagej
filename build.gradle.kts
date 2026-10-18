@@ -976,3 +976,14 @@ tasks.register<ModifyWindowsRegistry>("changeRegistryVersion") {
 tasks.named("classes").configure {
     finalizedBy("copyAppImage")
 }
+
+tasks.register<VerifyLaunchersTask>("verifyLaunchers") {
+    group = "verification"
+    description = "Verifies launcher binaries match their os/arch, Windows exes are signed, and unix exes are executable."
+    launchersDir.set(layout.projectDirectory.dir("packageFiles/assets/launchers"))
+}
+
+// Run as part of `gradle check` when the lifecycle task exists.
+tasks.named("check").configure {
+    dependsOn("verifyLaunchers")
+}

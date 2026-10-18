@@ -1,0 +1,27 @@
+name: Verify launchers
+
+on:
+  push:
+    paths:
+      - 'packageFiles/assets/launchers/**'
+  pull_request:
+    paths:
+      - 'packageFiles/assets/launchers/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      # A Linux checkout preserves git file modes, which the executable-bit check relies on.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '24'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Verify launchers
+        run: ./gradlew verifyLaunchers

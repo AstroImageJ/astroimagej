@@ -8,6 +8,7 @@ import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
 import ij.astro.gui.PixelPatcherOptionsDialog;
+import ij.astro.io.FitsReader;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.*;
@@ -2180,6 +2181,20 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             Prefs.set("aij.skipTessQualCheck", FITS_Reader.skipTessQualCheck);
         });
         preferencesMenu.add(qualCheckTess);
+
+        var skipBiasSub = new CheckboxMenuItem("When opening LCOGT Sinistro raw images, adjust for bias & dark",
+                FITS_Reader.skipTessQualCheck);
+        skipBiasSub.addItemListener(e -> {
+            FitsReader.SKIP_BIAS_SUB.set(e.getStateChange() == ItemEvent.SELECTED);
+        });
+        preferencesMenu.add(skipBiasSub);
+
+        var skipGainSub = new CheckboxMenuItem("When opening LCOGT Sinistro raw images, adjust for gain",
+                FITS_Reader.skipTessQualCheck);
+        skipGainSub.addItemListener(e -> {
+            FitsReader.SKIP_GAIN_ADJUSTMENT.set(e.getStateChange() == ItemEvent.SELECTED);
+        });
+        preferencesMenu.add(skipGainSub);
 
         preferencesMenu.addSeparator();
         var logInNewWindows = new CheckboxMenuItem("When logging, separate logs based on the task logging them",

@@ -4,7 +4,9 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.astro.io.pixel_maps.codecs.BpmFileCodec;
+import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
+import ij.astro.types.Pair;
 import ij.astro.util.*;
 import ij.io.FileInfo;
 import ij.io.OpenDialog;
@@ -12,6 +14,7 @@ import ij.io.Opener;
 import ij.measure.ResultsTable;
 import ij.plugin.FITS_Reader;
 import ij.plugin.FolderOpener;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import nom.tam.fits.*;
 import nom.tam.fits.header.IFitsHeader;
@@ -38,6 +41,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import java.util.zip.ZipFile;
 
 import static ij.plugin.FITS_Reader.filter;
@@ -45,6 +51,9 @@ import static nom.tam.fits.header.Standard.*;
 
 public class FitsReader implements AutoCloseable {
     public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
+    public static final Property<Boolean> SKIP_BIAS_SUB = new Property<>(false, FitsReader.class);
+    public static final Property<Boolean> SKIP_GAIN_ADJUSTMENT = new Property<>(false, FitsReader.class);
+    private static final Pattern DETSIZE_PATTERN = Pattern.compile("\\[(?<R1>(?<x1>[0-9]+):(?<x2>[0-9]+)),(?<R2>(?<y1>[0-9]+):(?<y2>[0-9]+))\\]");
     private static final LeapSeconds LEAP_SECONDS = new LeapSeconds();
     private static final int MAX_THREADS = getThreadCount();
     private static final PixelPatcher PIXEL_PATCHER = ServiceLoader.load(PixelPatcher.class, IJ.getClassLoader())
@@ -278,6 +287,10 @@ public class FitsReader implements AutoCloseable {
             return new ProcessedFits(List.of(), List.of());
         }
 
+        if (isMultiSciLco()) {
+            return processMultiSciImage(includeProcessors);
+        }
+
         if (isBasic3DImage()) {
             return processorsFromManyHdu(includeProcessors);
         }
@@ -427,6 +440,47 @@ public class FitsReader implements AutoCloseable {
         }
 
         return false;
+    }
+
+
+    private ProcessedFits processMultiSciImage(boolean includeProcessors) throws IOException {
+        var originalSize = hduDescriptors.getFirst().getFormedHeader().getStringValue("DETSIZE");
+        var matcher = DETSIZE_PATTERN.matcher(originalSize);
+        if (!matcher.matches()) {
+            return new ProcessedFits(List.of(), List.of());
+        }
+
+        var sciImages = hduDescriptors.stream()
+                .filter(this::isSciExt)
+                .filter(descriptor -> Objects.nonNull(descriptor.getFormedHeader().getStringValue("DETSEC")))
+                .filter(descriptor -> DETSIZE_PATTERN.matcher(descriptor.getFormedHeader().getStringValue("DETSEC")).matches())
+                .toList();
+
+        if (sciImages.isEmpty()) {
+            return new ProcessedFits(List.of(), List.of());
+        }
+
+        var sec = new Section(matcher);
+
+        var processors = new ArrayList<ImageProcessor>();
+        ImageProcessor ip;
+        if (includeProcessors) {
+            ip = new FloatProcessor(sec.width(), sec.height());
+
+            for (var sciImage : sciImages) {
+                var sciIp = twoDimensionalImageData2Processor(hduDescriptors.indexOf(sciImage));
+                var sciSec = new ImageSection(sciIp, sciImage.getFormedHeader().getDoubleValue("GAIN"),
+                        DETSIZE_PATTERN.matcher(sciImage.getFormedHeader().getStringValue("DATASEC")),
+                        DETSIZE_PATTERN.matcher(sciImage.getFormedHeader().getStringValue("DETSEC")),
+                        DETSIZE_PATTERN.matcher(sciImage.getFormedHeader().getStringValue("BIASSEC")));
+
+                sciSec.addSection(ip);
+            }
+
+            processors.add(ip);
+        }
+
+        return new ProcessedFits(processors, List.of(headerToString(hduDescriptors.getFirst().getFormedHeader())));
     }
 
     /**
@@ -876,6 +930,33 @@ public class FitsReader implements AutoCloseable {
     }
 
     /**
+     * Determine if an image is from LCO with multiple science HDUs, that need to have header merging applied to them.
+     */
+    private boolean isMultiSciLco() {
+        if (hduDescriptors.size() <= 1) {
+            return false;
+        }
+        var origin = hduDescriptors.getFirst().getFormedHeader().getStringValue("ORIGIN");
+        var hasMultiSci = hduDescriptors.stream()
+                .filter(this::isSciExt)
+                .filter(d -> d.getFormedHeader().containsKey("DETSEC")
+                        && d.getFormedHeader().containsKey("BIASSEC") && d.getFormedHeader().containsKey("GAIN") &&
+                        d.getFormedHeader().containsKey("DATASEC"))
+                .count() > 1;
+
+        return "LCOGT".equals(origin == null ? null : origin.trim()) && hasMultiSci &&
+                hduDescriptors.getFirst().getFormedHeader().getStringValue("DETSIZE") != null;
+    }
+
+    private boolean isSciExt(HDUDescriptor descriptor) {
+        var ext = descriptor.getStringValue(EXTNAME);
+        if (ext != null) {
+            return "SCI".equals(ext.trim());
+        }
+        return false;
+    }
+
+    /**
      * Determine if a table is a TESS 2-minute postage stamp.
      */
     private boolean isTessSpocPostageStamp() {
@@ -1157,6 +1238,70 @@ public class FitsReader implements AutoCloseable {
             }
 
             return IMAGE;
+        }
+    }
+
+    private record ImageSection(ImageProcessor ip, float gain, Section dataSec, Section detSec, Section biasSec) {
+        public ImageSection(ImageProcessor ip, double gain, Matcher dataSec, Matcher imageSec, Matcher biasSec) {
+            this(ip, SKIP_GAIN_ADJUSTMENT.get() ? 1 : (float) gain, new Section(dataSec), new Section(imageSec), new Section(biasSec));
+        }
+
+        ImageSection {
+            if (dataSec.width() != detSec.width() || dataSec.height() != detSec.height()) {
+                throw new IllegalArgumentException("dataSec and detSec must have the same dimensions");
+            }
+        }
+
+        public void addSection(ImageProcessor bigIp) {
+            float bias;
+            if (!SKIP_BIAS_SUB.get()) {
+                bias = (float) IntStream.range(0, biasSec.width() * biasSec.height())
+                        .mapToDouble(index -> {
+                            var pixelPosition = biasSec.fromIndex(index);
+                            return ip.getf(pixelPosition.first(), ip.getHeight() - 1 - pixelPosition.second());
+                        })
+                        .summaryStatistics().getAverage();
+            } else {
+                bias = 0;
+            }
+            IntStream.range(0, dataSec.width() * dataSec.height())
+                    .forEach(index -> {
+                        var dataP = dataSec.fromIndex(index);
+                        var detP = detSec.fromIndex(index);
+                        bigIp.setf(detP.first(), bigIp.getHeight() - 1 - detP.second(),
+                                (float) ((ip.getf(dataP.first(), ip.getHeight() - 1 - dataP.second())) - bias) * gain);
+                    });
+        }
+    }
+
+    private record Section(int x1, int x2, int y1, int y2) {
+        public Section(Matcher matcher) {
+            if (!matcher.matches()) {
+                throw new IllegalArgumentException("Invalid section format");
+            }
+
+            this(Integer.parseInt(matcher.group("x1")) - 1, Integer.parseInt(matcher.group("x2")) - 1,
+                    Integer.parseInt(matcher.group("y1")) - 1, Integer.parseInt(matcher.group("y2")) - 1);
+        }
+
+        int width() {
+            return Math.abs(x2 - x1) + 1;
+        }
+
+        int height() {
+            return Math.abs(y2 - y1) + 1;
+        }
+
+        public Pair.IntPair fromIndex(int index) {
+            int width = width();
+            int height = height();
+
+            Objects.checkIndex(index, width * height);
+
+            int xStep = Integer.compare(x2, x1);
+            int yStep = Integer.compare(y2, y1);
+
+            return new Pair.IntPair(x1 + (index % width) * xStep, y1 + (index / width) * yStep);
         }
     }
 }

@@ -154,6 +154,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 				IJ.showStatus("");
 			} catch (Exception e) {
+				e.printStackTrace();
 				throw new RuntimeException("Error reading Fits file at " + path, e);
 			}
 

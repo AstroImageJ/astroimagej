@@ -5821,6 +5821,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             }
             lengthLabel.setText("Int Cnts:");
             writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+            updateXYValue(lastImageX, lastImageY, false);
         });
     }
 

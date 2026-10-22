@@ -480,7 +480,17 @@ public class FitsReader implements AutoCloseable {
             processors.add(ip);
         }
 
-        return new ProcessedFits(processors, List.of(headerToString(hduDescriptors.getFirst().getFormedHeader())));
+        var hdr = hduDescriptors.getFirst().getFormedHeader();
+        hdr.deleteKey(NAXIS);
+        hdr.addValue(NAXIS, 2);
+        hdr.deleteKey(NAXIS1);
+        hdr.deleteKey(NAXIS2);
+        hdr.addValue(NAXIS1, sec.width());
+        hdr.addValue(NAXIS2, sec.height());
+        hdr.deleteKey(BITPIX);
+        hdr.addValue(BITPIX, -32);
+
+        return new ProcessedFits(processors, List.of(headerToString(hdr)));
     }
 
     /**

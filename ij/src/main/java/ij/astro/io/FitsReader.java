@@ -489,6 +489,8 @@ public class FitsReader implements AutoCloseable {
         hdr.addValue(NAXIS2, sec.height());
         hdr.deleteKey(BITPIX);
         hdr.addValue(BITPIX, -32);
+        hdr.deleteKey(BZERO);
+        hdr.deleteKey(BSCALE);
 
         return new ProcessedFits(processors, List.of(headerToString(hdr)));
     }

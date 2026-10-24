@@ -218,6 +218,7 @@ public class Set_Aperture implements PlugIn
                                   new boolean[]{reposition,useHowellCentroidMethod,backPlane,removeBackStars,showRemovedPixels});
         gd.addCheckbox ("Use exact partial pixel accounting in source apertures (if deselected, only pixels having centers inside the aperture radius are counted)", exact);
         gd.addCheckbox("Use multiple threads for photometry", Photometer.USE_PARALLEL_PIXEL_PROCESS.get());
+        gd.addCheckbox("Reuse first image's removed background star pixels for the whole stack (circular apertures, Multi-Aperture only)", Photometer.USE_FIXED_BACKGROUND_MASK.get());
         gd.addCheckbox ("Prompt to enter ref star absolute mag (required if target star absolute mag is desired)", getMags);
         gd.addCheckbox ("List the following FITS keyword decimal values in measurements table:", showFits);
 		gd.addStringField ("Keywords (comma separated):",fitsKeywords,80);
@@ -275,6 +276,7 @@ public class Set_Aperture implements PlugIn
         showRemovedPixels = gd.getNextBoolean();
         exact = gd.getNextBoolean();
         Photometer.USE_PARALLEL_PIXEL_PROCESS.set(gd.getNextBoolean());
+        Photometer.USE_FIXED_BACKGROUND_MASK.set(gd.getNextBoolean());
         getMags = gd.getNextBoolean();
         if (oldGetMags != getMags)
             apertureChanged = true;        

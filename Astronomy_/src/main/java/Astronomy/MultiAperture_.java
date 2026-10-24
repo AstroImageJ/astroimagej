@@ -252,6 +252,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     boolean doStack = false;
     boolean mouseDrag = false;
     boolean processingStack = false;
+    private final Map<Integer, BackgroundMask> backgroundMasks = new HashMap<>();
+    private int backgroundMaskAperture = -1;
     boolean apertureClicked = false;
     boolean apertureChanged = false;
     boolean firstClick = true;
@@ -4422,6 +4424,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //		vy = 0.0;
         canvas = imp.getCanvas();
         stackRadii = new ArrayList<>();
+        backgroundMasks.clear();
         ocanvas = null;
 
         long timeStart = System.currentTimeMillis();
@@ -4621,6 +4624,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         };
 
         lastRun = shape + "-" + mode;
+    }
+
+    @Override
+    protected BackgroundMask getBackgroundMask() {
+        if (!processingStack || backgroundMaskAperture < 0 || !Photometer.USE_FIXED_BACKGROUND_MASK.get()) {
+            return null;
+        }
+        return backgroundMasks.get(backgroundMaskAperture);
+    }
+
+    @Override
+    protected void setBackgroundMask(BackgroundMask mask) {
+        if (processingStack && backgroundMaskAperture >= 0 && mask != null) {
+            backgroundMasks.put(backgroundMaskAperture, mask);
+        }
     }
 
     private static double safeMedian(double[] a) {
@@ -5136,7 +5154,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     Prefs.set("aperture.reposition", centroidStar[ap]);
                     setShowAsCentered(centroidStar[ap]);
 
-                    if (!measureAperture(hdr)) {
+                    backgroundMaskAperture = ap;
+                    var measured = measureAperture(hdr);
+                    backgroundMaskAperture = -1;
+                    if (!measured) {
                         if (haltOnError || this instanceof Stack_Aligner) {
                             Prefs.set("aperture.reposition", holdReposition);
                             centerROI();

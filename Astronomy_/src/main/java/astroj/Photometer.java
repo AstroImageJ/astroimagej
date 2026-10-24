@@ -130,7 +130,7 @@ public class Photometer {
             new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
                     new PhotometerWorkerThreadFactory(), null, true);
     public static final Property<Boolean> USE_PARALLEL_PIXEL_PROCESS = new Property<>(true, Photometer.class);
-    public static final Property<Boolean> USE_FIXED_BACKGROUND_MASK = new Property<>(true, Photometer.class);
+    public static final Property<Boolean> USE_FIXED_BACKGROUND_MASK = new Property<>(false, Photometer.class);
     protected BackgroundMask backgroundMask = null;
 
     /**

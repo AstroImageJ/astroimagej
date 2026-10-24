@@ -2,55 +2,22 @@
 
 package astroj;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.text.DecimalFormat;
-import java.util.Locale;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
-import javax.swing.SpinnerListModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SpringLayout;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
-
+import astroj.astrometry.solvers.PlateSolver;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.gui.ToolTipRenderer;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.util.Tools;
 import util.prefs.RegionExclusion;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.text.DecimalFormat;
+import java.util.Locale;
 
 
 public class AstrometrySetup implements ActionListener, ItemListener, ChangeListener, FocusListener, MouseWheelListener {
@@ -337,8 +304,12 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         SpringUtil.makeCompactGrid(astronomyServerPanel, 1, 1, 2, 4, 2, 4);
         astrometrySetupPanel.add(astronomyServerPanel);
 
-        JLabel serverLabel4 = new JLabel("");
-        astrometrySetupPanel.add(serverLabel4);
+        var solverModer = new JComboBox<>(PlateSolver.SolverType.values());
+        solverModer.setToolTipText("<html>" + "Select plate solver type." + "</html>");
+        solverModer.setRenderer(new ToolTipRenderer());
+        solverModer.setSelectedItem(Astrometry.PLATE_SOLVER.get());
+        solverModer.addActionListener(_ -> Astrometry.PLATE_SOLVER.set((PlateSolver.SolverType) solverModer.getSelectedItem()));
+        astrometrySetupPanel.add(solverModer);
 
         JLabel serverLabel5 = new JLabel("");
         astrometrySetupPanel.add(serverLabel5);
@@ -1356,8 +1327,11 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         astrometrySetupPanel.add(distortionOrderPanel);
 
 
-        JLabel distortionOrder4 = new JLabel("");
-        astrometrySetupPanel.add(distortionOrder4);
+        var reuseRadec = new JCheckBox("Reuse previous RA/Dec");
+        reuseRadec.setToolTipText("If checked, the previous RA/Dec will be used as a starting point for the plate solve.  This is useful if the image is a continuation of a previous image.");
+        reuseRadec.setSelected(Astrometry.REUSE_PREVIOUS_RADEC.get());
+        reuseRadec.addActionListener(_ -> Astrometry.REUSE_PREVIOUS_RADEC.set(reuseRadec.isSelected()));
+        astrometrySetupPanel.add(reuseRadec);
 
         JLabel distortionOrder5 = new JLabel("");
         astrometrySetupPanel.add(distortionOrder5);

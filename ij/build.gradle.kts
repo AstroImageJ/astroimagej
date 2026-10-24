@@ -13,6 +13,8 @@ dependencies {
     implementation("ch.randelshofer:fastdoubleparser:2.0.1")
     api("org.hipparchus:hipparchus-stat:3.1")
     api("org.jocl:jocl:2.0.5")
+    api("ai.tegmentum:wasmtime4j:48.0.0-2.0.0")
+    api("ai.tegmentum:wasmtime4j-panama:48.0.0-2.0.0")
 }
 
 artifacts {
@@ -50,17 +52,4 @@ tasks.jar {
 tasks.shadowJar {
     // outputs.upToDateWhen { false }
     archiveFileName.set("ij.jar")
-
-    // Exclude patterns
-    val excludePatterns = listOf(
-            "**/*.jnilib",
-            "**/*.so",
-            "**/*.a"
-    )
-
-    // Set excludes to the task inputs
-    inputs.property("excludes", excludePatterns)
-
-    // Exclude non-Windows binaries
-    exclude(*excludePatterns.toTypedArray())
 }

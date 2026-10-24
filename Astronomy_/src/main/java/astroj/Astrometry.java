@@ -1,7 +1,8 @@
 package astroj;
 
-import astroj.json.simple.JSONObject;
-import astroj.json.simple.parser.JSONParser;
+import astroj.astrometry.solvers.HttpAstrometryNet;
+import astroj.astrometry.solvers.PlateSolver;
+import astroj.astrometry.solvers.WasmAstrometryNet;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -11,29 +12,32 @@ import ij.gui.Roi;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.util.Tools;
 import util.prefs.RegionExclusion;
 
 import java.awt.*;
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static astroj.json.simple.JSONValue.toJSONString;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Vector;
+import java.util.regex.Pattern;
 
 
 /**
  *
  */
 public class Astrometry { //implements KeyListener
+    public static final Property<Integer> ASTRO_NET_POLLING = new Property<>(2, Astrometry.class);
+    public static final Property<Integer> CUSTOM_POLLING = new Property<>(1, Astrometry.class);
+    public static final Property<PlateSolver.SolverType> PLATE_SOLVER = new Property<>(PlateSolver.SolverType.ASTROMETRY_NET_HTTP, Astrometry.class);
+    public static final Property<Boolean> REUSE_PREVIOUS_RADEC = new Property<>(false, Astrometry.class);
     final static int[] DIR_X_OFFSET = new int[]{0, 1, 1, 1, 0, -1, -1, -1};
     final static int[] DIR_Y_OFFSET = new int[]{-1, -1, 0, 1, 1, 1, 0, -1};
     final static byte MAXIMUM = (byte) 1;            // marks local maxima (irrespective of noise tolerance)
@@ -46,11 +50,11 @@ public class Astrometry { //implements KeyListener
     final static int SUCCESS = 1;
     final static int SKIPPED = 2;
     final static int CANCELED = 3;
+    private final Color colorWCS = new Color(255, 190, 0);//(226,105,11);
+    private final Color sourceColor = new Color(33, 120, 181);
     public AstrometrySetup astrometrySetup;
     ImagePlus imp, imp2, impOriginal, impRaw;
     int width, height;
-    String defaultAstrometryUrlBase = "https://nova.astrometry.net";
-    //    String urlBase = "http://supernova.astrometry.net/";
     boolean useAlternateAstrometryServer = false;
     String alternateAstrometryUrlBase = "http://127.0.0.1:8080";
     String slash = "/";
@@ -65,7 +69,6 @@ public class Astrometry { //implements KeyListener
     int startSlice = 1;
     int endSlice = 1;
     int maxRetries = 1; // 1 -> 2 tries
-    int retries = 0;
     String userKey = "";
     boolean autoSave = false;
     boolean DPSaveRawWithWCS = false;
@@ -93,8 +96,6 @@ public class Astrometry { //implements KeyListener
     double raDecRadius = 40.0;  //degrees
     boolean useDistortionOrder = true;
     int distortionOrder = 2;  //number of SIP distortion coefficients requested
-    int minOrder = 2;
-    int maxOrder = 9;
     boolean canceled = false;
     boolean setupCanceled = false;
     boolean setupActive = false;
@@ -102,14 +103,6 @@ public class Astrometry { //implements KeyListener
     double scale_upper = 1.1;
     String defaultAnnotationColor = "orange";
     String[] colors = IJU.colors;
-
-    boolean gotProcessingResponse = false;
-    boolean gotFailedResponse = false;
-
-    Map<String, Object> setupData;
-    String boundary = "================9876543210==";
-    String mime = "";
-
     int npoints, slice;
     boolean saveActive = false;
     boolean notDP = true;
@@ -117,16 +110,8 @@ public class Astrometry { //implements KeyListener
     double[] ydpoints;
     OverlayCanvas ocanvas;
     DecimalFormat uptoTwoPlaces = new DecimalFormat("0.##", IJU.dfs);
-    String lineend = "\r\n";
-    String session_string = "";
-    Object subid_int = 0;
-    String sourceLocations;
     private int[] dirOffset;                        // pixel offsets of neighbor pixels for direct addressing
-    private final Color colorWCS = new Color(255, 190, 0);//(226,105,11);
-    private final Color sourceColor = new Color(33, 120, 181);
     private boolean compress = false, fpack = false;
-    public static final Property<Integer> ASTRO_NET_POLLING = new Property<>(2, Astrometry.class);
-    public static final Property<Integer> CUSTOM_POLLING = new Property<>(1, Astrometry.class);
 
     public Astrometry() {
         Locale.setDefault(IJU.locale);
@@ -137,7 +122,6 @@ public class Astrometry { //implements KeyListener
         notDP = (acc == null);
 
         canceled = false;
-        retries = 0;
         impOriginal = impIn;
         impRaw = impRawIn;
         ocanvas = OverlayCanvas.getOverlayCanvas(impOriginal);
@@ -167,10 +151,12 @@ public class Astrometry { //implements KeyListener
 
         getPrefs();
 
-        if (!useAlternateAstrometryServer && userKey.trim().equals("")) {
-            IJ.showMessage("Login Error", "<html>User Key is empty.<br>" +
-                    "Obtain a user key at nova.astrometry.net and enter it<br>" +
-                    "into the \"User Key:\" box in the Astrometry Settings panel.");
+        if (!useAlternateAstrometryServer && userKey.trim().isEmpty() &&
+                PLATE_SOLVER.get() == PlateSolver.SolverType.ASTROMETRY_NET_HTTP) {
+            IJ.showMessage("Login Error", """
+                    <html>User Key is empty.<br>\
+                    Obtain a user key at nova.astrometry.net and enter it<br>\
+                    into the "User Key:" box in the Astrometry Settings panel.""");
             return FAILED;
         }
 
@@ -187,58 +173,6 @@ public class Astrometry { //implements KeyListener
         scale_lower = scaleEstimate - scaleError;
         scale_upper = scaleEstimate + scaleError;
 
-        String resultText = "";
-        URL apiURL = null;
-        URL loginURL = null;
-        URL uploadURL = null;
-        URL subCheckURL = null;
-        URL jobCheckURL = null;
-        URL getFileURL = null;
-        JSONParser parser = new JSONParser();
-
-        try {
-            apiURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/");
-            loginURL = new URL(apiURL + "login");
-
-            Map<String, String> loginData = new LinkedHashMap<>();
-            loginData.put("apikey", userKey.trim());
-
-            String login = "request-json=" + URLEncoder.encode(toJSONString(loginData), StandardCharsets.UTF_8);
-
-            URLConnection astrometryCon = loginURL.openConnection();
-            astrometryCon.setConnectTimeout(60000);
-            astrometryCon.setReadTimeout(60000);
-            astrometryCon.setDoOutput(true);
-            astrometryCon.setDoInput(true);
-
-            DataOutputStream wr = new DataOutputStream(astrometryCon.getOutputStream());
-            wr.writeBytes(login);
-            wr.close();
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(astrometryCon.getInputStream()));
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                resultText += inputLine;
-            }
-            //log("Login result="+resultText);
-            JSONObject result = (JSONObject) parser.parse(resultText);
-            String stat = (String) result.get("status");
-            if (stat.equals("error")) {
-                log("Astrometry.net login error, exiting.");
-                return FAILED;
-            } else {
-                IJ.showStatus("Login status: " + stat);
-                session_string = (String) result.get("session");
-                IJ.showStatus("Session: " + session_string);
-            }
-        } catch (IOException ioe) {
-            log("IO Exception during astrometry.net login: " + ioe.getLocalizedMessage());
-            return FAILED;
-        } catch (astroj.json.simple.parser.ParseException pe) {
-            log("JSON Parse Exception in astrometry.net login response: " + pe);
-            return FAILED;
-        }
-//        log("Session: "+session_string);
         if (!processStack) {
             startSlice = impOriginal.getCurrentSlice();
             endSlice = impOriginal.getCurrentSlice();
@@ -248,16 +182,29 @@ public class Astrometry { //implements KeyListener
         if (endSlice > impOriginal.getStackSize()) endSlice = impOriginal.getStackSize();
         if (endSlice < startSlice) endSlice = startSlice;
 
-        int previousSlice = -1;
+        try (var solver = getSolver()) {
+            return processStack(solver, rawPath);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FAILED;
+        }
+    }
+
+    private PlateSolver getSolver() {
+        return switch (PLATE_SOLVER.get()) {
+            case ASTROMETRY_NET_HTTP -> new HttpAstrometryNet(annotate, () -> canceled, maxRetries,
+                    notDP ? HttpAstrometryNet.DEFAULT_JOB_MAX_POLLS : 120);
+            case ASTROMETRY_NET_WASM -> new WasmAstrometryNet(annotate, () -> canceled, maxRetries,
+                    notDP ? HttpAstrometryNet.DEFAULT_JOB_MAX_POLLS : 120);
+        };
+    }
+
+    private int processStack(PlateSolver solver, String rawPath) {
+        var lastRa = Double.NaN;
+        var lastDec = Double.NaN;
+        var lastRadius = Double.NaN;
         for (slice = startSlice; slice <= endSlice; slice++) {
             if (canceled) return CANCELED;
-
-            if (previousSlice == slice) {
-                retries++;
-            } else {
-                previousSlice = slice;
-                retries = 0;
-            }
 
             impOriginal.setSlice(slice);
 
@@ -272,7 +219,7 @@ public class Astrometry { //implements KeyListener
                     }
                 }
             }
-//            imp = new ImagePlus(impOriginal.getStack().getSliceLabel(slice), impOriginal.getStack().getProcessor(slice) ); 
+//            imp = new ImagePlus(impOriginal.getStack().getSliceLabel(slice), impOriginal.getStack().getProcessor(slice) );
             imp = new ImagePlus("Working_" + IJU.getSliceFilename(impOriginal, slice), impOriginal.getStack().getProcessor(slice).duplicate());
             imp.setCalibration(impOriginal.getCalibration());
             imp.setFileInfo(impOriginal.getFileInfo());
@@ -282,7 +229,7 @@ public class Astrometry { //implements KeyListener
             impOriginal.updateAndDraw();
 
 //            IJ.runPlugIn(impOriginal, "Clear_Overlay", "");
-//            imp = impOriginal..duplicate();        
+//            imp = impOriginal..duplicate();
 //            IJ.log("starting median");
             if (useMedianFilter) {
                 IJ.showStatus("Median filter image");
@@ -296,8 +243,11 @@ public class Astrometry { //implements KeyListener
 //            if (IJ.escapePressed())return false;
             if (canceled) return CANCELED;
 
-            sourceLocations = "";
+            String imageLabel = impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice;
 
+            double[] xs = new double[npoints];
+            double[] ys = new double[npoints];
+            int nSources = 0;
             for (int i = 0; i < npoints; i++) {
                 var x = xdpoints[i];
                 var y = ydpoints[i];
@@ -309,314 +259,62 @@ public class Astrometry { //implements KeyListener
                     }
                 }
 
-                y = (height) - y;
-                sourceLocations += "" + x + " \t " + y + lineend;
+                xs[nSources] = x;
+                ys[nSources] = y;
+                nSources++;
             }
-            sourceLocations += lineend;
+            xs = Arrays.copyOf(xs, nSources);
+            ys = Arrays.copyOf(ys, nSources);
 
-//            log(sourceLocations);  
-
-            setupData = new LinkedHashMap();
-            setupData.put("allow_commercial_use", "d");
-            setupData.put("allow_modifications", "d");
-            setupData.put("publicly_visible", "n");
-            setupData.put("image_width", width);
-            setupData.put("image_height", height);
-            if (useScale) {
-                setupData.put("scale_units", "arcsecperpix");
-                setupData.put("scale_type", "ul"); //"ul" or "ev"
-                setupData.put("scale_lower", scale_lower);
-                setupData.put("scale_upper", scale_upper);
-            }
-//                setupData.put("scale_est", 0.39);
-//                setupData.put("scale_err", 0.02);
-//                }
-            if (useRaDec) {
-                setupData.put("center_ra", ra * 15.0);
-                setupData.put("center_dec", dec);
-                setupData.put("radius", raDecRadius / 60.0);
-            }
-            setupData.put("downsample_factor", 1);
-            setupData.put("crpix_center", true);
-            if (useDistortionOrder) {
-                if (distortionOrder < minOrder) distortionOrder = minOrder;
-                if (distortionOrder > maxOrder) distortionOrder = maxOrder;
-                setupData.put("tweak_order", distortionOrder);
-            } else {
-                setupData.put("tweak_order", 0);
-            }
-            //        setupData.put("parity", 0);
-            setupData.put("session", session_string);
-
-            boundary = "================9876543210==";
-
-            mime = "--" + boundary + lineend +
-                    "Content-Type: text/plain" + lineend +
-                    "MIME-Version: 1.0" + lineend +
-                    "Content-disposition: form-data;name=\"request-json\"" + lineend +
-                    lineend +
-                    toJSONString(setupData) + lineend +
-                    "--" + boundary + lineend +
-                    "Content-Type: application/octet-stream" + lineend +
-                    "MIME-Version: 1.0" + lineend +
-                    "Content-disposition: form-data;name=\"file\";filename=\"maxima.tbl\"" + lineend +
-                    lineend +
-                    sourceLocations +
-                    "--" + boundary + "--" + lineend;
-            //IJ.log(mime);
             if (canceled) return CANCELED;
-            try {
-                uploadURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/upload");
-                HttpURLConnection uploadCon = (HttpURLConnection) uploadURL.openConnection();
-                uploadCon.setConnectTimeout(60000);
-                uploadCon.setReadTimeout(60000);
-                uploadCon.setUseCaches(false);
 
-                uploadCon.setDoOutput(true);
-                uploadCon.setDoInput(true);
+            var useRaDec = this.useRaDec;
+            if (REUSE_PREVIOUS_RADEC.get() && slice > startSlice &&
+                    Double.isFinite(lastRadius) && Double.isFinite(lastRa) && Double.isFinite(lastDec)) {
+                useRaDec = true;
+                ra = lastRa;
+                dec = lastDec;
+                raDecRadius = lastRadius;
+            }//todo first slice, read from header RA and DEC headers, solver can take hms as string
 
-                //            uploadCon.setRequestMethod("POST");
-                //            uploadCon.setRequestProperty("Connection", "Keep-Alive");
-                uploadCon.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+            // NaN tells the solver that the corresponding hint is not in use.
+            PlateSolver.Result result = solver.solve(xs, ys, width, height,
+                    useScale ? scale_lower : Double.NaN,
+                    useScale ? scale_upper : Double.NaN,
+                    useRaDec ? ra : Double.NaN,
+                    useRaDec ? dec : Double.NaN,
+                    useRaDec ? raDecRadius : Double.NaN,
+                    useDistortionOrder, distortionOrder);
 
-                DataOutputStream wr = new DataOutputStream(uploadCon.getOutputStream());
-                wr.writeBytes(mime);
-                wr.close();
-                if (canceled) return CANCELED;
-                BufferedReader in = new BufferedReader(new InputStreamReader(uploadCon.getInputStream()));
-                String inputLine;
-                resultText = "";
-                while ((inputLine = in.readLine()) != null) {
-                    if (canceled) return CANCELED;
-                    resultText += inputLine;
+            if (result instanceof PlateSolver.Result.Failure(String message, boolean cancelled)) {
+                if (cancelled || canceled) {
+                    canceled = true;
+                    return CANCELED;
                 }
-//                log(resultText);
-
-
-                JSONObject result = (JSONObject) parser.parse(resultText);
-                String stat = (String) result.get("status");
-                if (!stat.equals("success")) {
-                    log("astrometry.net upload status for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + stat);
-                    log("astrometry.net upload error for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ". Aborting.");
+                if (slice >= endSlice) {
+                    log("Astrometry status for " + imageLabel + ": FAILED. " + message);
                     return FAILED;
-                } else {
-                    IJ.showStatus("Upload status: " + stat);
-                    subid_int = result.get("subid");
-                    IJ.showStatus("Submision ID: " + subid_int.toString());
-                    //log("Submision ID: " + subid_int.toString() + " for slice: " + slice);
-//                    log("Astrometry.net submision ID: "+subid_int.toString());
                 }
-            } catch (IOException ioe) {
-                log("IO Exception during astrometry.net upload for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
-                return FAILED;
-            } catch (astroj.json.simple.parser.ParseException pe) {
-                log("JSON Parse Exception in astrometry.net upload response for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + pe);
-                return FAILED;
+                log("Astrometry status for " + imageLabel + ": FAILED. " + message + " Skipping image.");
+                continue;
+            }
+            var success = (PlateSolver.Result.Success) result;
+            if (notDP) log("Astrometry status for " + imageLabel + ": SOLVED");
+
+            FitsJ.Header wcsHeader = parseWcsHeader(success.wcsHeader());
+            if (canceled) return CANCELED;
+
+            if (REUSE_PREVIOUS_RADEC.get()) {
+                lastRa = FitsJ.findDoubleValue("CRVAL1", wcsHeader) * 15;
+                lastDec = FitsJ.findDoubleValue("CRVAL2", wcsHeader);
+                var reg = Pattern.compile("COMMENT Field scale upper: (\\d+\\.\\d+) arcsec/pixel");
+                var m = reg.matcher(success.wcsHeader());
+                if (m.find()) {
+                    lastRadius = Tools.parseDouble(m.group(1), 0) * Math.hypot(width, height) * 2;
+                    lastRadius /= 3600;
+                }
             }
 
-            //        IJ.wait(5000);
-            if (canceled) return CANCELED;
-            //        Check submission status
-            JSONObject result2 = null;
-            Object job_id_list = null;
-            //        Object processing_finished = null;
-            try {
-                subCheckURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/submissions/" + subid_int.toString());
-
-                BufferedReader in = null;
-                boolean still_processing = true;
-                int n_failed_attempts = 0;
-                int maxWaitTime = useAlternateAstrometryServer ? 120 : 900;
-
-                String inputLine = null;
-                while (still_processing && n_failed_attempts < maxWaitTime) {
-                    if (canceled) return CANCELED;
-                    URLConnection subCheckCon = subCheckURL.openConnection();
-                    subCheckCon.setConnectTimeout(60000);
-                    subCheckCon.setReadTimeout(60000);
-                    try {
-                        in = new BufferedReader(new InputStreamReader(subCheckCon.getInputStream()));
-                        inputLine = null;
-                        resultText = "";
-                        while ((inputLine = in.readLine()) != null) {
-                            resultText += inputLine;
-                        }
-//                        log(resultText);
-                        result2 = (JSONObject) parser.parse(resultText);
-                        job_id_list = result2.get("jobs");
-                        //                    processing_finished = result2.get("processing_finished");
-                        //                    log("Job ID List = "+job_id_list.toString());
-                        if (job_id_list.toString().equals("[]") || job_id_list.toString().equals("[null]")) // || processing_finished.toString().equals("None"))
-                        {
-//                            log(job_id_list.toString());
-                            String status = "Astrometry submission " + subid_int.toString() + " processing";
-//                            log("Astrometry status: "+jobStatus);
-                            for (int n = 0; n < n_failed_attempts % 10; n++) {
-                                status += " .";
-                            }
-                            IJ.showStatus(status);
-                            still_processing = true;
-                            n_failed_attempts++;
-                            IJ.wait(getPollingTimeout());
-                        } else {
-//                            IJ.log("job_id_list="+job_id_list.toString());
-                            still_processing = false;
-                        }
-                    } catch (IOException ioe) {
-                        log("Astrometry submission " + subid_int.toString() + " doesn't exist yet for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
-                        n_failed_attempts++;
-                        IJ.wait(getPollingTimeout());
-                    } catch (astroj.json.simple.parser.ParseException pe) {
-                        log("JSON Parse Exception during astrometry check for submission " + subid_int.toString() + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + pe);
-                        n_failed_attempts++;
-                        IJ.wait(getPollingTimeout());
-                    }
-                }
-
-                if (n_failed_attempts >= maxWaitTime) {
-                    IJ.showStatus("The submission " + subid_int.toString() + " has timed out for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ".");
-
-                    if (retries < maxRetries) {
-                        log("Astrometry submission ID " + subid_int.toString() + " timed out for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " Resubmitting.");
-                        slice -= 1;
-                    } else {
-                        log("Astrometry submission " + subid_int.toString() + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " was unsuccessful after " + (maxRetries + 1) + " tries. Skipping Image.");
-//                        log("Astrometry.net job ID "+job_id_list.toString()+" timed out for "+(impOriginal.getStackSize()==1?impOriginal.getTitle()+".":"slice "+slice+".")+" Aborting.");
-                        if (slice >= endSlice) return FAILED;
-                    }
-                    continue;
-                }
-            } catch (IOException ioe) {
-                log("IO Exception during during astrometry check for submission " + subid_int.toString() + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + "."));
-                return FAILED;
-            }
-            if (canceled) return CANCELED;
-            String jobID = job_id_list.toString().replace("[", "").replace("]", "");
-            IJ.showStatus("Job ID: " + jobID);
-//            IJ.showStatus("Processing finished: "+processing_finished); 
-
-            //        Check job status
-            JSONObject result3 = null;
-            String jobStatus = null;
-
-            try {
-                jobCheckURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/jobs/" + jobID);
-
-                BufferedReader in = null;
-                boolean still_processing = true;
-                int n_failed_attempts = 0;
-                int maxWaitTime = notDP ? 600 : 120;
-                gotProcessingResponse = false;
-                gotFailedResponse = false;
-
-                String inputLine = null;
-                while (still_processing && n_failed_attempts < maxWaitTime) {
-                    if (canceled) return CANCELED;
-                    URLConnection jobCheckCon = jobCheckURL.openConnection();
-                    jobCheckCon.setConnectTimeout(60000);
-                    jobCheckCon.setReadTimeout(60000);
-                    try {
-
-                        in = new BufferedReader(new InputStreamReader(jobCheckCon.getInputStream()));
-                        inputLine = null;
-                        resultText = "";
-                        while ((inputLine = in.readLine()) != null) {
-                            resultText += inputLine;
-                        }
-                        //                    log(resultText);
-                        result3 = (JSONObject) parser.parse(resultText);
-                        jobStatus = (String) result3.get("status");
-                        if (jobStatus.equals("success")) {
-                            IJ.showStatus("Astrometry job " + jobID + ": SOLVED");
-                            if (notDP)
-                                log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": SOLVED");
-                            still_processing = false;
-                        } else if (jobStatus.equals("failure") || jobStatus.equals("error")) {
-                            log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Resubmitting.");
-                            gotFailedResponse = true;
-                            break;
-                        } else if (jobStatus.equals("processing")) {
-                            //log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Waiting.");
-                            gotProcessingResponse = true;
-                            n_failed_attempts++;
-                            IJ.wait(getPollingTimeout());
-                        } else {
-                            String status = "Astrometry job " + jobID + " " + jobStatus;
-//                            log("Astrometry status: "+jobStatus);
-                            for (int n = 0; n < n_failed_attempts % 10; n++) {
-                                status += " .";
-                            }
-                            IJ.showStatus(status);
-                            n_failed_attempts++;
-                            IJ.wait(getPollingTimeout());
-                        }
-                    } catch (IOException ioe) {
-                        log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " check error for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
-                        return FAILED;
-                    } catch (astroj.json.simple.parser.ParseException pe) {
-                        log("JSON Parse Exception during astrometry.net submission ID "+subid_int.toString()+" job ID " + jobID + " status check for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + pe);
-                        return FAILED;
-                    }
-                }
-
-                if (gotFailedResponse) {
-                    if (retries < maxRetries) {
-                        slice -= 1;
-                    } else {
-                        log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " was unsuccessful after " + (maxRetries + 1) + " tries. Skipping Image.");
-                        if (slice >= endSlice) return FAILED;
-                    }
-                    continue;
-                }
-
-                if (n_failed_attempts >= maxWaitTime) {
-                    IJ.showStatus("Astrometry job " + jobID + " has timed out for slice " + slice + ".");
-                    log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " has timed out for  " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " Skipping Image.");
-                    if (impOriginal.getStackSize() > 1)
-                        continue;
-                    else
-                        return FAILED;
-                }
-            } catch (IOException ioe) {
-                log("IO Exception during astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " status check for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " : " + ioe.getLocalizedMessage());
-                return FAILED;
-            }
-
-            if (canceled) return CANCELED;
-            int len = 0;
-            FitsJ.Header wcsHeader = null;
-            try {
-                //            getFileURL = new URL("http://nova.astrometry.net/api/jobs/"+jobID+"/annotations");
-                getFileURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/wcs_file/" + jobID);
-                URLConnection fileDownloadCon = getFileURL.openConnection();
-                fileDownloadCon.setConnectTimeout(60000);
-                fileDownloadCon.setReadTimeout(60000);
-                fileDownloadCon.setDoOutput(true);
-                fileDownloadCon.setDoInput(true);
-
-                BufferedReader in = new BufferedReader(new InputStreamReader(fileDownloadCon.getInputStream()));
-                String inputLine = in.readLine();
-
-                len = inputLine.length() / 80;
-                wcsHeader = FitsJ.Header.build(new String[len]);
-                if (inputLine != null && !inputLine.equals("")) {
-                    for (int i = 0; i < len; i++) {
-                        wcsHeader.cards()[i] = inputLine.substring(i * 80, (i + 1) * 80);
-                    }
-                    /*for (int i=0; i<len; i++)
-                        log(wcsHeader.cards()[i]);*/
-                } else {
-                    log("Failed to retrieve WCS headers for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + "."));
-                    if (impOriginal.getStackSize() > 1)
-                        continue;
-                    else
-                        return FAILED;
-                }
-            } catch (IOException ioe) {
-                log("IO Exception during astrometry.net file download for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
-                return FAILED;
-            }
-            if (canceled) return CANCELED;
             impOriginal.setSlice(slice);
             FitsJ.Header header = FitsJ.getHeader(impOriginal);
             if (header == null) {
@@ -815,78 +513,16 @@ public class Astrometry { //implements KeyListener
                 FitsJ.putHeader(impOriginal, FitsJ.removeAstrometryAnnotateCards(FitsJ.getHeader(impOriginal)));
                 if (resaveRaw) FitsJ.putHeader(impRaw, FitsJ.removeAstrometryAnnotateCards(FitsJ.getHeader(impRaw)));
 
-                JSONObject objectsJSON = null;
-                String[] stars = null;
-                try {
-                    getFileURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/api/jobs/" + jobID + "/annotations");
-                    URLConnection fileDownloadCon = getFileURL.openConnection();
-                    fileDownloadCon.setConnectTimeout(60000);
-                    fileDownloadCon.setReadTimeout(60000);
-                    fileDownloadCon.setDoOutput(true);
-                    fileDownloadCon.setDoInput(true);
-
-                    BufferedReader in = new BufferedReader(new InputStreamReader(fileDownloadCon.getInputStream()));
-                    String inputLine = in.readLine();
-                    //            inputLine.replaceAll("\\{\"annotations\"\\: \\[", "");
-//                    log(inputLine);
-
-                    stars = inputLine.split("\\, \\{");
-//                    for (int i=0; i<stars.length; i++)
-//                        {
-//                        log(stars[i]);
-//                        }
-                    int startName = -1;
-                    int startX = -1;
-                    int startY = -1;
-                    int endName = -1;
-                    int endX = -1;
-                    int endY = -1;
-                    String name = "";
-                    String x = "";
-                    String y = "";
-
-                    for (int i = 0; i < stars.length; i++) {
-                        if (canceled) return CANCELED;
-                        startName = stars[i].indexOf("names");
-                        startX = stars[i].indexOf("pixelx");
-                        startY = stars[i].indexOf("pixely");
-                        if (startName != -1) endName = stars[i].indexOf('"', startName + 10);
-                        if (startX != -1) endX = stars[i].indexOf(',', startX + 9);
-                        if (startY != -1) endY = stars[i].indexOf(',', startY + 9);
-                        if (startY != -1 && endY == -1) endY = stars[i].indexOf('}', startY + 9);
-//                        log("startName="+startName+"  endName="+endName+"  startX="+startX+"  endX="+endX+"   startY="+startY+"   endY="+endY);
-                        if (startName != -1 && endName != -1 && startX != -1 && endX != -1 && startY != -1 && endY != -1) {
-                            try {
-                                name = stars[i].substring(startName + 10, endName);
-                                if (name.contains("\\u")) {
-                                    ArrayList<String> pieces = new ArrayList<String>();
-                                    while (name.contains("\\u")) {
-                                        pieces.add(name.substring(0, name.indexOf("\\u")));//add the bit before the /uXXXX
-                                        char c = (char) Integer.parseInt(name.substring(name.indexOf("\\u") + 2, name.indexOf("\\u") + 6), 16);
-                                        name = name.substring(name.indexOf("\\u") + 6);
-                                        pieces.add(c + "");//add the unicode
-                                    }
-                                    String temp = "";
-                                    for (String s : pieces) {
-                                        temp += s;//put humpty dumpty back together again
-                                    }
-                                    name = temp + name;
-                                }
-                                x = stars[i].substring(startX + 9, endX);
-                                y = stars[i].substring(startY + 9, endY);
-//                                log (name);
-//                                log (x);
-//                                log (y);
-                                addAnnotateRoi(impOriginal, true, false, true, false, Double.parseDouble(x) - 0.5, height - (Double.parseDouble(y) - 0.5), annotateRadius, name, IJU.colorOf(defaultAnnotationColor));
-                            } catch (NumberFormatException nfe) {
-                            }
-                        }
-                    }
-                    impOriginal.draw();
-                } catch (IOException ioe) {
-                    log("IO Exception during astrometry.net objects_in_field download for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
-                    return FAILED;
+                var annotationColor = IJU.colorOf(defaultAnnotationColor);
+                for (var obj : success.objectsInField()) {
+                    if (canceled) return CANCELED;
+                    if (obj.names().isEmpty()) continue;
+                    // Astrometry.net reports pixel positions with a bottom-left origin.
+                    addAnnotateRoi(impOriginal, true, false, true, false,
+                            obj.x() - 0.5, height - (obj.y() - 0.5), annotateRadius,
+                            obj.names().iterator().next(), annotationColor);
                 }
+                impOriginal.draw();
             }
             if (notDP && (autoSave || impOriginal.getStack().isVirtual())) {
                 boolean saveSuccess = false;
@@ -897,7 +533,7 @@ public class Astrometry { //implements KeyListener
                 String imageFilename = FitsExtensionUtil.makeFitsSave(IJU.getSliceFilename(impOriginal, slice), fpack, compress);
 
                 if (impOriginal.getStack().isVirtual()) {
-//                    imp2 = new ImagePlus(impOriginal.getStack().getSliceLabel(slice), impOriginal.getStack().getProcessor(slice) ); 
+//                    imp2 = new ImagePlus(impOriginal.getStack().getSliceLabel(slice), impOriginal.getStack().getProcessor(slice) );
                     imp2 = new ImagePlus("WCS_" + imageFilename, impOriginal.getStack().getProcessor(slice).duplicate());
                     imp2.setCalibration(impOriginal.getCalibration());
                     imp2.setFileInfo(impOriginal.getFileInfo());
@@ -942,11 +578,24 @@ public class Astrometry { //implements KeyListener
                 }
             } else if (annotate && (slice != endSlice || !notDP)) {
                 if (canceled) return CANCELED;
-                IJ.wait(getPollingTimeout());
+                if (solver.requiresAwait()) IJ.wait(getPollingTimeout());
             }
         }
 
         return SUCCESS;
+    }
+
+    /**
+     * Converts the header text returned by a {@link PlateSolver} into FITS cards.
+     * Solvers may strip trailing padding, so the final card can be shorter than 80 characters.
+     */
+    private static FitsJ.Header parseWcsHeader(String text) {
+        int count = (text.length() + 79) / 80;
+        String[] cards = new String[count];
+        for (int i = 0; i < count; i++) {
+            cards[i] = String.format("%-80s", text.substring(i * 80, Math.min(text.length(), (i + 1) * 80)));
+        }
+        return FitsJ.Header.build(cards);
     }
 
 
@@ -1094,8 +743,9 @@ public class Astrometry { //implements KeyListener
         int[] pList = new int[width * height];       //here we enter points starting from a maximum
         Vector<int[]> xyVector = new Vector<>();
         Roi roi = null;
-        if (imp != null)
+        if (imp != null) {
             roi = imp.getRoi();
+        }
 
         for (int iMax = nMax - 1; iMax >= 0; iMax--) {    //process all maxima now, starting from the highest
             if (iMax % 100 == 0 && canceled) return;
@@ -1268,8 +918,7 @@ public class Astrometry { //implements KeyListener
         do {
             shift++;
             mult *= 2;
-        }
-        while (mult < width);
+        } while (mult < width);
 //            intEncodeXMask = mult-1;
 //            intEncodeYMask = ~intEncodeXMask;
 //            intEncodeShift = shift;
@@ -1369,7 +1018,7 @@ public class Astrometry { //implements KeyListener
 //    /** Handle the key-released event from the image canvas. */
 //    public void keyReleased(KeyEvent e) {
 //
-//    }    
+//    }
 
     public void getPrefs() {
         userKey = Prefs.get("astrometry.userKey", userKey);
@@ -1382,8 +1031,8 @@ public class Astrometry { //implements KeyListener
         autoSave = Prefs.get("astrometry.autoSave", autoSave);
         DPSaveRawWithWCS = Prefs.get("astrometry.DPSaveRawWithWCS", DPSaveRawWithWCS);
         skipIfHasWCS = Prefs.get("astrometry.skipIfHasWCS", skipIfHasWCS);
-        compress = Prefs.get ("astrometry.gzip", compress);
-        fpack = Prefs.get ("astrometry.fpack", fpack);
+        compress = Prefs.get("astrometry.gzip", compress);
+        fpack = Prefs.get("astrometry.fpack", fpack);
 
         annotate = Prefs.get("astrometry.annotate", annotate);
         annotateRadius = Prefs.get("astrometry.annotateRadius", annotateRadius);

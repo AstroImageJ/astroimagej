@@ -517,6 +517,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
             appVersion = version.toString()
 
             javaOpts("-XX:MaxRAMPercentage=75")
+            javaOpts("--enable-native-access=ALL-UNNAMED")
             javaOpts("-Duser.dir=\$APPDIR")
 
             inputDir = tasks.named<Sync>("commonFiles").map { it.destinationDir }
@@ -570,7 +571,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 "--resource-dir", layout.projectDirectory.dir("packageFiles/assets/${sysInfo.os}").asFile.absolutePath,
                 //"--temp", layout.buildDirectory.dir("temp").map { it.asFile.absolutePath }.get(),
                 //"--verbose",
-                "--java-options", "-XX:MaxRAMPercentage=75"
+                "--java-options", "-XX:MaxRAMPercentage=75", "--enable-native-access=ALL-UNNAMED"
             )
 
             launcher = packagingJdkToolchain

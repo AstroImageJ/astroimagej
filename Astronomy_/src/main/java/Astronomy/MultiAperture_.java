@@ -2815,10 +2815,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var wcsRegion = switch (REGION_EXLUSION_MODE.get()) {
             case NONE, MANUAL -> null;
             case WCS, COMMON -> {
-                var wcsShape = WcsShape.createCommonRegion(imp, firstSlice, lastSlice);
+                // An unsolved current image cannot use a region in sky coordinates.
+                var wcsShape = wcs != null && wcs.hasWCS()
+                        ? WcsShape.createCommonRegion(imp, firstSlice, lastSlice) : null;
                 ac.setWcsShape(wcsShape);
                 ac.repaint();
-                yield wcsShape.getArea(wcs);
+                // No solved slices (or a cancelled calculation) leaves no WCS restriction.
+                yield wcsShape == null ? null : wcsShape.getArea(wcs);
             }
         };
 

@@ -4316,6 +4316,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     }
                 }
             };
+            astrometryThread.setName("Astrometry");
             astrometryThread.start();
         } else {
             IJ.showStatus("Plate solve canceled");

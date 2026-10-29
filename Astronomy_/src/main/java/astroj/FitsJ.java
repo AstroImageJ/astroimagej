@@ -2320,7 +2320,18 @@ public class FitsJ {
             return Header.build(cards);
         }
 
-        static class Holder {
+		@Override
+		public String toString() {
+			if (cards.length == 0)
+				return null;
+			var sb = new StringBuilder(cards[0]);
+			for (int i = 1; i < cards.length; i++) {
+				sb.append("\n").append(cards[i]);
+			}
+			return sb.toString();
+		}
+
+	    static class Holder {
             int i = 0;
             boolean writable = true;
 

@@ -508,6 +508,7 @@ public class FolderOpener implements PlugIn, TextListener {
 					openExecutor.close();
 					IJ.redirectErrorMessages(false);
 				}
+				IJ.resetEscape();
 			}  // open images as stack
 			
 		} catch(OutOfMemoryError e) {

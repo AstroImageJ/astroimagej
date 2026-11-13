@@ -5,7 +5,6 @@ package astroj;
 import astroj.astrometry.solvers.PlateSolver;
 import ij.IJ;
 import ij.Prefs;
-import ij.astro.gui.ToolTipRenderer;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.util.Tools;
@@ -17,28 +16,16 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.function.DoubleConsumer;
 
 
 public class AstrometrySetup implements ActionListener, ItemListener, ChangeListener, FocusListener, MouseWheelListener {
     static int MIN_MAX_STARS = 10;
     public JFrame astrometrySetupFrame;
-    DecimalFormat threeToLeft = new DecimalFormat("000", IJU.dfs);
-    DecimalFormat twoPlaces = new DecimalFormat("0.00", IJU.dfs);
-    DecimalFormat fourPlaces = new DecimalFormat("0.0000", IJU.dfs);
     DecimalFormat sixPlaces = new DecimalFormat("0.000000", IJU.dfs);
-
-//    DecimalFormatSymbols symbols = fourPlaces.getDecimalFormatSymbols();
-//    char decSep = symbols.getDecimalSeparator(); 
-//    char thouSep = symbols.getGroupingSeparator();     
-    DecimalFormat uptoFourPlaces = new DecimalFormat("0.####", IJU.dfs);
-    DecimalFormat upto20Places = new DecimalFormat("0.####################", IJU.dfs);
     Color mainBorderColor = new Color(118, 142, 229);
-    Color red = new Color(255, 160, 160);
-    Color yellow = new Color(255, 255, 200);
-    Color green = new Color(225, 255, 225);
-    Color gray = new Color(240, 240, 240);
-    Color subBorderColor = Color.LIGHT_GRAY;
     String fontName = "Dialog";
     Font p8 = new Font(fontName, Font.PLAIN, 8);
     Font p12 = new Font(fontName, Font.PLAIN, 12);
@@ -48,7 +35,6 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     Font b14 = new Font(fontName, Font.BOLD, 14);
     int frameLocationX = -9999999;
     int frameLocationY = -9999999;
-    int nlines = 0;
     String[] spinnerScaleList = new String[]
             {
                     "      0.0000000001",
@@ -72,19 +58,6 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                     "      10000000.000",
                     "    100000000.000",
                     "1000000000.000",
-            };
-    String[] spinnerIntScaleList = new String[]
-            {
-                    "                    1",
-                    "                  10",
-                    "                100",
-                    "              1000",
-                    "            10000",
-                    "          100000",
-                    "        1000000",
-                    "      10000000",
-                    "    100000000",
-                    "1000000000",
             };
     boolean notDP = false;
     boolean processStack = true;
@@ -135,24 +108,25 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     String alternateAstrometryUrlBase = "http://127.0.0.1:8080";
     JScrollPane scrollPane;
     JPanel astrometrySetupPanel;
+    JTabbedPane solverTabs;
     JTextField keyTF, raTF, decTF, alternateAstrometryUrlBaseTF;
     JButton startButton, cancelButton;
-    JLabel keyLabel3, keyLabel4;
     JCheckBox autoSaveCB, skipIfHasWCSCB, processStackCB, annotateCB, addAnnotationsToHeaderCB, useMedianFilterCB, useMaxPeakFindValueCB,
             centroidCB, scaleCB, raDecCB, showLogCB, useDistortionOrderCB, useAlternateAstrometryServerCB, compressBox, fpackBox;
     SpinnerNumberModel startSliceNumberModel, endSliceNumberModel, medianFilterRadiusNumberModel, distortionOrderNumberModel,
             noiseTolNumberModel, maxPeakFindNumberModel, maxNumStarsNumberModel,
             annotateRadiusNumberModel, apertureRadiusNumberModel, apertureBack1NumberModel, apertureBack2NumberModel,
             scaleEstimateNumberModel, scaleErrorNumberModel, raDecRadiusNumberModel;
-    JSpinner startSliceSpinner, endSliceSpinner, medianFilterRadiusSpinner, noiseTolStepSpinner,
-            noiseTolSpinner, maxPeakFindSpinner, maxPeakFindStepSpinner, maxNumStarsSpinner, annotateRadiusSpinner,
-            annotateRadiusStepSpinner, apertureRadiusSpinner, apertureBack1Spinner, apertureBack2Spinner, apertureStepSpinner,
-            scaleEstimateSpinner, scaleErrorSpinner, scaleStepSpinner, raDecRadiusSpinner, raDecRadiusStepSpinner, distortionOrderSpinner;
-    JPopupMenu annotateRadiusStepPopup, noiseTolStepPopup, maxPeakFindStepPopup, apertureStepPopup, scaleStepPopup, raDecRadiusStepPopup;
+    JSpinner startSliceSpinner, endSliceSpinner, medianFilterRadiusSpinner,
+            noiseTolSpinner, maxPeakFindSpinner, maxNumStarsSpinner, annotateRadiusSpinner,
+            apertureRadiusSpinner, apertureBack1Spinner, apertureBack2Spinner,
+            scaleEstimateSpinner, scaleErrorSpinner, raDecRadiusSpinner, distortionOrderSpinner;
     Rectangle defaultScreenBounds;
     GraphicsDevice defaultScreen;
     private boolean fpack = false, compress = false;
     private JSpinner customPollSpinner;
+    private boolean syncingAperture = false;
+    private String startButtonLabel = "START";
 
 
     public AstrometrySetup() {
@@ -166,6 +140,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         defaultScreen = localGfxEnvironment.getDefaultScreenDevice();
         defaultScreenBounds = defaultScreen.getDefaultConfiguration().getBounds();
 
+        this.startButtonLabel = startButtonLabel;
         useCCRaDec = (astroCC != null);
         notDP = startButtonLabel.equals("START");
         getPrefs();
@@ -191,23 +166,6 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             b14 = new Font(fontName, Font.BOLD, 13);
         }
 
-        Dimension col1Size = new Dimension(140, 35);
-        Dimension col1bSize = new Dimension(140, 20);
-        Dimension col2Size = new Dimension(140, 25);
-        Dimension col2bSize = new Dimension(140, 20);
-        Dimension col3Size = new Dimension(140, 25);
-        Dimension col4Size = new Dimension(140, 25);
-        Dimension col5Size = new Dimension(140, 25);
-
-        Insets fitsMargin = new Insets(2, 2, 2, 2); //top,left,bottom,right
-        Insets labelMargin = new Insets(4, 2, 4, 2); //top,left,bottom,right
-
-        int iconWidth = 40;
-        int iconHeight = 22;
-        Dimension iconSize = new Dimension(iconWidth, iconHeight);
-        Insets buttonMargin = new Insets(0, 0, 0, 0); //top,left,bottom,right
-
-
         ImageIcon astrometrySetupIcon = createImageIcon("images/astrometry.png", "Astrometry Setup Icon");
 
         astrometrySetupFrame = new JFrame((notDP ? "" : "DP ") + "Astrometry Settings");
@@ -221,1175 +179,58 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             }
         });
 
-        astrometrySetupPanel = new JPanel(new SpringLayout());
+        astrometrySetupPanel = new JPanel(new GridBagLayout());
+        astrometrySetupPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        int row = 0;
 
-//-------------------------------------------------------------------
-        nlines++;
-        JLabel keyLabel = new JLabel("User Key:");
-        keyLabel.setPreferredSize(col1Size);
-        keyLabel.setFont(p12);
-        keyLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(keyLabel);
+        solverTabs = buildSolverTabs();
+        addCell(astrometrySetupPanel, solverTabs, row++, 0, 2);
 
-        JPanel keyPanel = new JPanel(new SpringLayout());
-        keyTF = new JTextField(userKey);
-        keyTF.setMargin(fitsMargin);
-        keyTF.setFont(p12);
-        keyTF.setPreferredSize(col2Size);
-        keyTF.setHorizontalAlignment(JTextField.LEFT);
-        keyTF.setToolTipText("<html>" + "Enter User Key for the astrometry.net website." + "<br>" +
-                "Go to <b>nova.astrometry.net</b> to get user key." + "<br>" +
-                "This is only required to be done once." + "</html>");
-        keyTF.getDocument().addDocumentListener(new AstrometrySetup.thisDocumentListener());
-        keyPanel.add(keyTF);
-        SpringUtil.makeCompactGrid(keyPanel, 1, 1, 2, 4, 2, 4);
-        astrometrySetupPanel.add(keyPanel);
-
-        var boxBorder = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Poll Rate (sec):", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        var customBox = Box.createHorizontalBox();
-        customBox.setBorder(boxBorder);
-        customPollSpinner = new JSpinner(new SpinnerNumberModel(useAlternateAstrometryServer ? Astrometry.CUSTOM_POLLING.get().intValue() : Astrometry.ASTRO_NET_POLLING.get().intValue(), 1, 10, 1));
-        customPollSpinner.setFont(p12);
-        //customPollSpinner.setPreferredSize(new Dimension(50, 20));
-        customPollSpinner.setToolTipText("<html>The polling rate (in seconds) for the plate solve server. " +
-                "Increase if the server is responding with code 429 (too many requests)</html>");
-        customPollSpinner.addChangeListener(this);
-        //SpringUtil.makeCompactGrid(customBox, 1, 1, 0, 0, 0, 0);
-
-        customBox.add(customPollSpinner);
-        astrometrySetupPanel.add(customBox);
-
-        keyLabel3 = new JLabel("<html><b>(Get key from: </html>");
-        keyLabel3.setPreferredSize(col3Size);
-        keyLabel3.setHorizontalAlignment(JLabel.RIGHT);
-        astrometrySetupPanel.add(keyLabel3);
-
-        keyLabel4 = new JLabel("<html><b>nova.astrometry.net</b>)</html>");
-        keyLabel4.setPreferredSize(col4Size);
-        astrometrySetupPanel.add(keyLabel4);
-
-        JLabel keyLabel5 = new JLabel("");
-        keyLabel5.setPreferredSize(col5Size);
-        //astrometrySetupPanel.add (keyLabel5);
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel astrometryServerLabel = new JLabel("Use Custom Server:");
-        astrometryServerLabel.setFont(p12);
-        astrometryServerLabel.setPreferredSize(col1Size);
-        astrometryServerLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(astrometryServerLabel);
-
-        useAlternateAstrometryServerCB = new JCheckBox("Enable", useAlternateAstrometryServer);
-        useAlternateAstrometryServerCB.setFont(p12);
-        useAlternateAstrometryServerCB.setToolTipText("<html>Enable the use of a custom/local Astrometry.net server.<br>" +
-                "Windows users may install a free local server from https://adgsoftware.com/ansvr/</html>");
-
-        useAlternateAstrometryServerCB.addItemListener(this);
-        astrometrySetupPanel.add(useAlternateAstrometryServerCB);
-
-        JPanel astronomyServerPanel = new JPanel(new SpringLayout());
-        alternateAstrometryUrlBaseTF = new JTextField(useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase);
-        alternateAstrometryUrlBaseTF.setMargin(fitsMargin);
-        alternateAstrometryUrlBaseTF.setFont(p12);
-        alternateAstrometryUrlBaseTF.setEnabled(useAlternateAstrometryServer);
-        alternateAstrometryUrlBaseTF.setPreferredSize(col2Size);
-        alternateAstrometryUrlBaseTF.setHorizontalAlignment(JTextField.LEFT);
-        alternateAstrometryUrlBaseTF.setToolTipText("<html>" + "Enter custom/local astrometry.net URL base address." + "<br>" +
-                "Example: <b>http://127.0.0.1:8080</b>" + "</html>");
-        alternateAstrometryUrlBaseTF.getDocument().addDocumentListener(new AstrometrySetup.thisDocumentListener());
-        astronomyServerPanel.add(alternateAstrometryUrlBaseTF);
-
-        SpringUtil.makeCompactGrid(astronomyServerPanel, 1, 1, 2, 4, 2, 4);
-        astrometrySetupPanel.add(astronomyServerPanel);
-
-        var solverModer = new JComboBox<>(PlateSolver.SolverType.values());
-        solverModer.setToolTipText("<html>" + "Select plate solver type." + "</html>");
-        solverModer.setRenderer(new ToolTipRenderer());
-        solverModer.setSelectedItem(Astrometry.PLATE_SOLVER.get());
-        solverModer.addActionListener(_ -> Astrometry.PLATE_SOLVER.set((PlateSolver.SolverType) solverModer.getSelectedItem()));
-        astrometrySetupPanel.add(solverModer);
-
-        JLabel serverLabel5 = new JLabel("");
-        astrometrySetupPanel.add(serverLabel5);
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel autoSaveLabel = new JLabel(notDP ? "Auto Save:" : "Re-save Raw Science:");
-//        autoSaveLabel.setPreferredSize(labelSize);
-        autoSaveLabel.setFont(p12);
-        autoSaveLabel.setPreferredSize(col1Size);
-        autoSaveLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(autoSaveLabel);
-
-        autoSaveCB = new JCheckBox("Enable", notDP ? autoSave : DPSaveRawWithWCS);
-        autoSaveCB.setFont(p12);
-        if (notDP) {
-            autoSaveCB.setToolTipText("<html>Automatically saves image(s) with new headers to the original file(s).<br>" +
-                    "WARNING: this option will overwrite the existing image file(s).<br>" +
-                    "WARNING: any previous changes to an image will also be saved over the original image.</html>");
-        } else {
-            autoSaveCB.setToolTipText("<html>Re-saves raw uncalibrated science image with new WCS headers to the original file.<br>" +
-                    "WARNING: this option will re-write the original uncalibrated science image with new WCS headers.<br>" +
-                    "WCS headers will be added to calibrated science image independent of this setting.</html>");
+        // Small groups are laid out two per row; an odd one out spans the full width
+        var small = new ArrayList<JPanel>();
+        small.add(buildOutputPanel());
+        small.add(buildAnnotationPanel());
+        if (lSlice > 1) {
+            small.add(buildStackPanel());
         }
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        autoSaveCB.addItemListener(this);
-        astrometrySetupPanel.add(autoSaveCB);
-
-        var panel = new JPanel();
-        fpackBox = new JCheckBox("FPACK", fpack);
-        fpackBox.setFont(p12);
-        fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
-        fpackBox.addItemListener(this);
-        panel.add(fpackBox);
-
-        compressBox = new JCheckBox("GZIP", compress);
-        compressBox.setFont(p12);
-        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
-        compressBox.addItemListener(this);
-        panel.add(compressBox);
-        astrometrySetupPanel.add(panel);
-
-        JLabel autoSaveLabel3 = new JLabel("<html><b>WARNING: may </b></html>");
-//        autoSaveLabel3.setPreferredSize(fitsDummySize);
-        autoSaveLabel3.setHorizontalAlignment(JLabel.RIGHT);
-        astrometrySetupPanel.add(autoSaveLabel3);
-
-        JLabel autoSaveLabel4 = new JLabel(notDP ? "<html><b>overwrite original image</b></html>" : "<html><b>re-writes raw science file</b></html>");
-//        autoSaveLabel4.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(autoSaveLabel4);
-
-        /*JLabel autoSaveLabel5 = new JLabel (notDP?"":"<html><b>(with WCS headers)</b></html>");
-//        autoSaveLabel4.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add (autoSaveLabel5); */
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel skipLabel = new JLabel("Skip Images With WCS:");
-//        skipLabel.setPreferredSize(labelSize);
-        skipLabel.setFont(p12);
-        skipLabel.setPreferredSize(col1Size);
-        skipLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(skipLabel);
-
-        skipIfHasWCSCB = new JCheckBox("Enable", skipIfHasWCS);
-        skipIfHasWCSCB.setFont(p12);
-        skipIfHasWCSCB.setToolTipText("<html>If enabled, images/slices that already have valid FITS WCS headers will be skipped.<br>" +
-                "A new plate solve will not be performed and the existing WCS headers will be retained.</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        skipIfHasWCSCB.addItemListener(this);
-        astrometrySetupPanel.add(skipIfHasWCSCB);
-
-
-        JLabel skipLabel5 = new JLabel("");
-//        skipLabel5.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(skipLabel5);
-        astrometrySetupPanel.add(new JLabel(""));
-        astrometrySetupPanel.add(new JLabel(""));
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-
-        JPanel annotateLabelPanel = new JPanel(new SpringLayout());
-        JLabel annotateLabel = new JLabel("Annotate:");
-//        autoSaveLabel.setPreferredSize(labelSize);
-        annotateLabel.setToolTipText("<html>Label objects supported by astrometry.net after a successful plate solve</html>");
-        annotateLabel.setFont(p12);
-        annotateLabel.setHorizontalAlignment(JTextField.RIGHT);
-        annotateLabel.setPreferredSize(col1bSize);
-        annotateLabelPanel.add(annotateLabel);
-
-        JLabel annotateHeaderLabel = new JLabel("Add To Header:");
-//        autoSaveLabel.setPreferredSize(labelSize);
-        annotateHeaderLabel.setFont(p12);
-        annotateHeaderLabel.setToolTipText("<html>Add annotations to FITS header</html>");
-        annotateHeaderLabel.setHorizontalAlignment(JTextField.RIGHT);
-        annotateHeaderLabel.setPreferredSize(col1bSize);
-        annotateLabelPanel.add(annotateHeaderLabel);
-
-        SpringUtil.makeCompactGrid(annotateLabelPanel, 2, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(annotateLabelPanel);
-
-        JPanel annotateCBPanel = new JPanel(new SpringLayout());
-        annotateCB = new JCheckBox("Enable", annotate);
-        annotateCB.setFont(p12);
-        annotateCB.setToolTipText("<html>Label objects supported by astrometry.net after a successful plate solve</html>");
-        annotateCB.setPreferredSize(col2bSize);
-        annotateCB.addItemListener(this);
-        annotateCBPanel.add(annotateCB);
-
-        addAnnotationsToHeaderCB = new JCheckBox("Enable", addAnnotationsToHeader);
-        addAnnotationsToHeaderCB.setFont(p12);
-        addAnnotationsToHeaderCB.setToolTipText("<html>Add annotations to FITS header</html>");
-        addAnnotationsToHeaderCB.setPreferredSize(col2bSize);
-        addAnnotationsToHeaderCB.addItemListener(this);
-        annotateCBPanel.add(addAnnotationsToHeaderCB);
-
-        SpringUtil.makeCompactGrid(annotateCBPanel, 2, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(annotateCBPanel);
-
-        annotateRadiusStepPopup = new JPopupMenu();
-        JPanel annotateRadiusStepPanel = new JPanel();
-        SpinnerListModel annotateRadiusStepModel = new SpinnerListModel(spinnerScaleList);
-        annotateRadiusStepSpinner = new JSpinner(annotateRadiusStepModel);
-        annotateRadiusStepSpinner.setValue(convertToText(annotateRadiusStep));
-        annotateRadiusStepSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                double value = IJU.getTextSpinnerDoubleValue(annotateRadiusStepSpinner);
-                if (Double.isNaN(value)) return;
-                annotateRadiusStep = value;
-                annotateRadiusSpinner.setModel(new SpinnerNumberModel(annotateRadius, 1.0, null, annotateRadiusStep));
-//                annotateRadiusSpinner.setEditor(new JSpinner.NumberEditor(annotateRadiusSpinner, "0.00"));
-//                IJU.setSpinnerFormat(annotateRadiusSpinner, "0.00"); 
+        small.add(buildDistortionPanel());
+        for (int i = 0; i < small.size(); i += 2) {
+            if (i + 1 < small.size()) {
+                addCell(astrometrySetupPanel, small.get(i), row, 0, 1);
+                addCell(astrometrySetupPanel, small.get(i + 1), row, 1, 1);
+            } else {
+                addCell(astrometrySetupPanel, small.get(i), row, 0, 2);
             }
-        });
-
-        JLabel annotateRadiusStepLabel = new JLabel("Stepsize:");
-        annotateRadiusStepPanel.add(annotateRadiusStepLabel);
-        annotateRadiusStepPanel.add(annotateRadiusStepSpinner);
-        annotateRadiusStepPopup.add(annotateRadiusStepPanel);
-        annotateRadiusStepPopup.setLightWeightPopupEnabled(false);
-        annotateRadiusStepPopup.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
-                annotateRadiusStepPopup.setVisible(false);
-            }
-
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
-                annotateRadiusStepPopup.setVisible(true);
-            }
-
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
-                annotateRadiusStepPopup.setVisible(false);
-            }
-        });
-
-        JPanel annotateRadiusPanel = new JPanel(new SpringLayout());
-        TitledBorder annotateRadiusTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Radius (pixels)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        annotateRadiusPanel.setBorder(annotateRadiusTitle);
-
-
-        annotateRadiusNumberModel = new SpinnerNumberModel(annotateRadius, 1.0, null, annotateRadiusStep);
-        annotateRadiusSpinner = new JSpinner(annotateRadiusNumberModel);
-        annotateRadiusSpinner.setEditor(new JSpinner.NumberEditor(annotateRadiusSpinner, "0.00"));
-        annotateRadiusSpinner.setEnabled(annotate);
-        annotateRadiusSpinner.setFont(p11);
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        annotateRadiusSpinner.setComponentPopupMenu(annotateRadiusStepPopup);
-        annotateRadiusSpinner.setToolTipText("<html>The radius of the circle used to identify the annotated object.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        annotateRadiusSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                annotateRadius = (Double) annotateRadiusSpinner.getValue();
-            }
-        });
-        annotateRadiusSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (annotate) {
-                    annotateRadius = (Double) annotateRadiusSpinner.getValue() - e.getWheelRotation() * annotateRadiusStep;
-                    if (annotateRadius < 1.0) annotateRadius = 1.0;
-                    annotateRadiusSpinner.setValue(annotateRadius);
-                }
-            }
-        });
-
-        annotateRadiusPanel.add(annotateRadiusSpinner);
-        SpringUtil.makeCompactGrid(annotateRadiusPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(annotateRadiusPanel);
-
-
-        JLabel annotateLabel4 = new JLabel("");
-//        annotateLabel4.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(annotateLabel4);
-
-        JLabel annotateLabel5 = new JLabel("");
-//        annotateLabel4.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(annotateLabel5);
-
-
-//-------------------------------------------------------------------
-        if (lastSlice > 1) {
-            nlines++;
-            JLabel processStackLabel = new JLabel("Process Stack:");
-            //        processStackLabel.setPreferredSize(labelSize);
-            processStackLabel.setFont(p12);
-            processStackLabel.setHorizontalAlignment(JTextField.RIGHT);
-            astrometrySetupPanel.add(processStackLabel);
-
-            processStackCB = new JCheckBox("Enable", processStack);
-            processStackCB.setFont(p12);
-            processStackCB.setToolTipText("<html>Plate solve all images in stack.</html>");
-            //        autoSaveCB.setPreferredSize (checkBoxSize);
-            processStackCB.addItemListener(this);
-            astrometrySetupPanel.add(processStackCB);
-
-            JPanel startSlicePanel = new JPanel(new SpringLayout());
-            TitledBorder startSliceTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Start Slice", TitledBorder.CENTER, TitledBorder.TOP, p11);
-            startSlicePanel.setBorder(startSliceTitle);
-            startSliceNumberModel = new SpinnerNumberModel(fSlice, fSlice, lSlice, 1);
-            startSliceSpinner = new JSpinner(startSliceNumberModel);
-            JSpinner.NumberEditor startSliceNumberEditor = new JSpinner.NumberEditor(startSliceSpinner, "#");
-            startSliceSpinner.setEditor(startSliceNumberEditor);
-            //        startSliceSpinner.setPreferredSize (new Dimension(60,subpanelHeight));
-            startSliceSpinner.setFont(p12);
-            startSliceSpinner.setToolTipText("Set the first slice number to process");
-            startSliceSpinner.setEnabled(processStack);
-            startSliceSpinner.addChangeListener(this);
-            startSliceSpinner.addMouseWheelListener(this);
-            startSlicePanel.add(startSliceSpinner);
-            SpringUtil.makeCompactGrid(startSlicePanel, 1, 1, 0, 0, 0, 0);
-            astrometrySetupPanel.add(startSlicePanel);
-
-            JPanel endSlicePanel = new JPanel(new SpringLayout());
-            TitledBorder endSliceTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "End Slice", TitledBorder.CENTER, TitledBorder.TOP, p11);
-            endSlicePanel.setBorder(endSliceTitle);
-
-            endSliceNumberModel = new SpinnerNumberModel(lSlice, fSlice, lSlice, 1);
-            endSliceSpinner = new JSpinner(endSliceNumberModel);
-            JSpinner.NumberEditor endSliceNumberEditor = new JSpinner.NumberEditor(endSliceSpinner, "#");
-            endSliceSpinner.setEditor(endSliceNumberEditor);
-            //        endSliceSpinner.setPreferredSize (new Dimension(60,subpanelHeight));
-            endSliceSpinner.setFont(p12);
-            endSliceSpinner.setToolTipText("Set the last slice number to process");
-            endSliceSpinner.setEnabled(processStack);
-            endSliceSpinner.addChangeListener(this);
-            endSliceSpinner.addMouseWheelListener(this);
-            endSlicePanel.add(endSliceSpinner);
-            SpringUtil.makeCompactGrid(endSlicePanel, 1, 1, 0, 0, 0, 0);
-            astrometrySetupPanel.add(endSlicePanel);
-
-
-            JLabel sliceLabel5 = new JLabel("");
-            //        annotateLabel4.setPreferredSize(fitsDummySize);
-            astrometrySetupPanel.add(sliceLabel5);
-
+            row++;
         }
 
+        // Wide groups take the full width
+        addCell(astrometrySetupPanel, buildStarDetectionPanel(), row++, 0, 2);
+        addCell(astrometrySetupPanel, buildSearchConstraintsPanel(), row++, 0, 2);
+
+        // Layout
+        var filler = new GridBagConstraints();
+        filler.gridx = 0;
+        filler.gridy = row;
+        filler.gridwidth = 2;
+        filler.weighty = 1.0;
+        astrometrySetupPanel.add(Box.createVerticalGlue(), filler);
 
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel useMedianFilterLabel = new JLabel("Median Filter:");
-//        useMedianFilterLabel.setPreferredSize(labelSize);
-        useMedianFilterLabel.setFont(p12);
-        useMedianFilterLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(useMedianFilterLabel);
-
-        useMedianFilterCB = new JCheckBox("Enable", useMedianFilter);
-        useMedianFilterCB.setFont(p12);
-        useMedianFilterCB.setToolTipText("<html>Median filter image before finding peaks.<br>" +
-                "NOTE: does not change user image.</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        useMedianFilterCB.addItemListener(this);
-        astrometrySetupPanel.add(useMedianFilterCB);
-
-        JPanel medianFilterRadiusPanel = new JPanel(new SpringLayout());
-        TitledBorder medianFilterRadiusTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Filter Radius (pixels)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        medianFilterRadiusPanel.setBorder(medianFilterRadiusTitle);
-        if (medianFilterRadius < 2) medianFilterRadius = 2;
-        medianFilterRadiusNumberModel = new SpinnerNumberModel(medianFilterRadius, 2, null, 1);
-        medianFilterRadiusSpinner = new JSpinner(medianFilterRadiusNumberModel);
-        JSpinner.NumberEditor medianFilterRadiusNumberEditor = new JSpinner.NumberEditor(medianFilterRadiusSpinner, "#");
-        medianFilterRadiusSpinner.setEditor(medianFilterRadiusNumberEditor);
-//        medianFilterRadiusSpinner.setPreferredSize (new Dimension(60,subpanelHeight));
-        medianFilterRadiusSpinner.setFont(p12);
-        medianFilterRadiusSpinner.setToolTipText("<html>Set the radius of the median filter used before finding peaks (if enabled).<br>" +
-                "NOTE: does not change user image.</html>");
-        medianFilterRadiusSpinner.setEnabled(useMedianFilter);
-        medianFilterRadiusSpinner.addChangeListener(this);
-        medianFilterRadiusSpinner.addMouseWheelListener(this);
-        medianFilterRadiusPanel.add(medianFilterRadiusSpinner);
-        SpringUtil.makeCompactGrid(medianFilterRadiusPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(medianFilterRadiusPanel);
-
-
-        JPanel medianFilterRadius4Panel = new JPanel(new SpringLayout());
-        TitledBorder medianFilterRadius4Title = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), " ", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        medianFilterRadius4Panel.setBorder(medianFilterRadius4Title);
-        JLabel medianFilterRadius4 = new JLabel("");
-        medianFilterRadius4.setHorizontalAlignment(JTextField.LEFT);
-        medianFilterRadius4.setFont(p12);
-//        medianFilterRadius4.setPreferredSize(fitsDummySize);
-        medianFilterRadius4Panel.add(medianFilterRadius4);
-        SpringUtil.makeCompactGrid(medianFilterRadius4Panel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(medianFilterRadius4Panel);
-
-        JLabel medianFilterRadius5 = new JLabel("");
-//        medianFilterRadius5.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(medianFilterRadius5);
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel peakFindOptionsLabel = new JLabel("Peak Find Options:");
-//        peakFindOptionsLabel.setPreferredSize(labelSize);
-        peakFindOptionsLabel.setFont(p12);
-        peakFindOptionsLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(peakFindOptionsLabel);
-
-//        useMedianFilterCB = new JCheckBox("Enable",useMedianFilter);
-//        useMedianFilterCB.setFont(p12);
-//        useMedianFilterCB.setToolTipText("<html>Median filter image before finding peaks.<br>"+
-//                                         "NOTE: does not change user image.</html>");
-////        autoSaveCB.setPreferredSize (checkBoxSize);
-//        useMedianFilterCB.addItemListener (this);
-//        astrometrySetupPanel.add(useMedianFilterCB);
-
-        useMaxPeakFindValueCB = new JCheckBox("Limit Max Peaks", useMaxPeakFindValue);
-        useMaxPeakFindValueCB.setFont(p12);
-        useMaxPeakFindValueCB.setToolTipText("<html>When enabled, peaks above the threshold set to the right are ignored</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        useMaxPeakFindValueCB.addItemListener(this);
-        astrometrySetupPanel.add(useMaxPeakFindValueCB);
-
-        maxPeakFindStepPopup = new JPopupMenu();
-        JPanel maxPeakFindStepPanel = new JPanel();
-        SpinnerListModel maxPeakFindStepModel = new SpinnerListModel(spinnerScaleList);
-        maxPeakFindStepSpinner = new JSpinner(maxPeakFindStepModel);
-        maxPeakFindStepSpinner.setValue(convertToText(maxPeakFindStep));
-        maxPeakFindStepSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                double value = IJU.getTextSpinnerDoubleValue(maxPeakFindStepSpinner);
-                if (Double.isNaN(value)) return;
-                maxPeakFindStep = value;
-                maxPeakFindSpinner.setModel(new SpinnerNumberModel(maxPeakFindValue, null, null, maxPeakFindStep));
-                maxPeakFindSpinner.setEditor(new JSpinner.NumberEditor(maxPeakFindSpinner, "0.######"));
-            }
-        });
-
-        JLabel maxPeakFindStepLabel = new JLabel("Stepsize:");
-        maxPeakFindStepPanel.add(maxPeakFindStepLabel);
-        maxPeakFindStepPanel.add(maxPeakFindStepSpinner);
-        maxPeakFindStepPopup.add(maxPeakFindStepPanel);
-        maxPeakFindStepPopup.setLightWeightPopupEnabled(false);
-        maxPeakFindStepPopup.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
-                maxPeakFindStepPopup.setVisible(false);
-            }
-
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
-                maxPeakFindStepPopup.setVisible(true);
-            }
-
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
-                maxPeakFindStepPopup.setVisible(false);
-            }
-        });
-
-        JPanel maxPeakFindPanel = new JPanel(new SpringLayout());
-        TitledBorder maxPeakFindTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Max Peak (ADU)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        maxPeakFindPanel.setBorder(maxPeakFindTitle);
-
-
-        maxPeakFindNumberModel = new SpinnerNumberModel(maxPeakFindValue, null, null, maxPeakFindStep);
-        maxPeakFindSpinner = new JSpinner(maxPeakFindNumberModel);
-        maxPeakFindSpinner.setEnabled(useMaxPeakFindValue);
-        maxPeakFindSpinner.setFont(p11);
-        maxPeakFindSpinner.setEditor(new JSpinner.NumberEditor(maxPeakFindSpinner, "0.######"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        maxPeakFindSpinner.setComponentPopupMenu(maxPeakFindStepPopup);
-        maxPeakFindSpinner.setToolTipText("<html>If enabled, peaks above this ADU level are ignored.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        maxPeakFindSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                maxPeakFindValue = (Double) maxPeakFindSpinner.getValue();
-            }
-        });
-        maxPeakFindSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                double newValue = (Double) maxPeakFindSpinner.getValue() - e.getWheelRotation() * maxPeakFindStep;
-                maxPeakFindSpinner.setValue(newValue);
-            }
-        });
-        maxPeakFindPanel.add(maxPeakFindSpinner);
-        SpringUtil.makeCompactGrid(maxPeakFindPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(maxPeakFindPanel);
-
-        noiseTolStepPopup = new JPopupMenu();
-        JPanel noiseTolStepPanel = new JPanel();
-        SpinnerListModel noiseTolStepModel = new SpinnerListModel(spinnerScaleList);
-        noiseTolStepSpinner = new JSpinner(noiseTolStepModel);
-        noiseTolStepSpinner.setValue(convertToText(noiseTolStep));
-        noiseTolStepSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                double value = IJU.getTextSpinnerDoubleValue(noiseTolStepSpinner);
-                if (Double.isNaN(value)) return;
-                noiseTolStep = value;
-                noiseTolSpinner.setModel(new SpinnerNumberModel(minPeakFindToleranceSTDEV, 0.0, null, noiseTolStep));
-                noiseTolSpinner.setEditor(new JSpinner.NumberEditor(noiseTolSpinner, "0.00######"));
-            }
-        });
-
-        JLabel noisetolsteplabel = new JLabel("Stepsize:");
-        noiseTolStepPanel.add(noisetolsteplabel);
-        noiseTolStepPanel.add(noiseTolStepSpinner);
-        noiseTolStepPopup.add(noiseTolStepPanel);
-        noiseTolStepPopup.setLightWeightPopupEnabled(false);
-        noiseTolStepPopup.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
-                noiseTolStepPopup.setVisible(false);
-            }
-
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
-                noiseTolStepPopup.setVisible(true);
-            }
-
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
-                noiseTolStepPopup.setVisible(false);
-            }
-        });
-
-        JPanel minTolPanel = new JPanel(new SpringLayout());
-        TitledBorder minTolTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Noise Tol (StdDev)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        minTolPanel.setBorder(minTolTitle);
-
-        noiseTolNumberModel = new SpinnerNumberModel(minPeakFindToleranceSTDEV, 0.0, null, noiseTolStep);
-        noiseTolSpinner = new JSpinner(noiseTolNumberModel);
-        noiseTolSpinner.setFont(p11);
-        noiseTolSpinner.setEditor(new JSpinner.NumberEditor(noiseTolSpinner, "0.00#####"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        noiseTolSpinner.setComponentPopupMenu(noiseTolStepPopup);
-        noiseTolSpinner.setToolTipText("<html>Peaks below the image standard deviation times this factor are ignored.<br>" +
-                "Generally a value of 1.0 works well.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        noiseTolSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                minPeakFindToleranceSTDEV = (Double) noiseTolSpinner.getValue();
-            }
-        });
-        noiseTolSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                double newValue = (Double) noiseTolSpinner.getValue() - e.getWheelRotation() * noiseTolStep;
-                if (newValue < 0) newValue = 0;
-                noiseTolSpinner.setValue(newValue);
-            }
-        });
-        minTolPanel.add(noiseTolSpinner);
-        SpringUtil.makeCompactGrid(minTolPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(minTolPanel);
-
-
-        JPanel maxNumStarsPanel = new JPanel(new SpringLayout());
-        TitledBorder maxNumStarsTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Max Num Stars", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        maxNumStarsPanel.setBorder(maxNumStarsTitle);
-        if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
-        maxNumStarsNumberModel = new SpinnerNumberModel(maxNumStars, MIN_MAX_STARS, null, 1);
-        maxNumStarsSpinner = new JSpinner(maxNumStarsNumberModel);
-        JSpinner.NumberEditor maxNumStarsNumberEditor = new JSpinner.NumberEditor(maxNumStarsSpinner, "#");
-        maxNumStarsSpinner.setEditor(maxNumStarsNumberEditor);
-//        medianFilterRadiusSpinner.setPreferredSize (new Dimension(60,subpanelHeight));
-        maxNumStarsSpinner.setFont(p12);
-        maxNumStarsSpinner.setToolTipText("<html>The number of stars used for plate solving is limited to this value.<br>" +
-                "The brightest stars that have peaks less than the max peak threshold (if enabled) are used first.<br>" +
-                "Generally a value of 50 works well.</html>");
-        maxNumStarsSpinner.addChangeListener(this);
-        maxNumStarsSpinner.addMouseWheelListener(this);
-        maxNumStarsPanel.add(maxNumStarsSpinner);
-        SpringUtil.makeCompactGrid(maxNumStarsPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(maxNumStarsPanel);
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        var borderExclusionLabel = new JLabel("Exclude Border Regions:");
-        borderExclusionLabel.setFont(p12);
-        borderExclusionLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(borderExclusionLabel);
-
-        var excludeBorderCb = new JCheckBox("Enable", RegionExclusion.EXCLUDE_BORDERS.get());
-        excludeBorderCb.setFont(p12);
-        excludeBorderCb.setToolTipText("<html>When enabled, allows excluding border regions from plate solving. In IJ Coordinates.</html>");
-        excludeBorderCb.addItemListener(RegionExclusion.EXCLUDE_BORDERS.toItemListener());
-        RegionExclusion.EXCLUDE_BORDERS.addListener((_, n) -> {
-            if (n) {
-                RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
-            }
-        });
-        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
-            RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
-        }
-        astrometrySetupPanel.add(excludeBorderCb);
-
-        var excludeBorderEditButton = new JButton("Edit Regions");
-        excludeBorderEditButton.setFont(p12);
-        excludeBorderEditButton.addActionListener(_ -> RegionExclusion.editSettings());
-        excludeBorderEditButton.setEnabled(RegionExclusion.EXCLUDE_BORDERS.get());
-
-        astrometrySetupPanel.add(excludeBorderEditButton);
-
-        // Spacer
-        astrometrySetupPanel.add(new JLabel(""));
-        astrometrySetupPanel.add(new JLabel(""));
-
-        excludeBorderCb.addItemListener(l -> {
-            excludeBorderEditButton.setEnabled(l.getStateChange() == ItemEvent.SELECTED);
-        });
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel centroidLabel = new JLabel("Centroid Near Peaks:");
-//        peakFindOptionsLabel.setPreferredSize(labelSize);
-        centroidLabel.setFont(p12);
-        centroidLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(centroidLabel);
-
-        centroidCB = new JCheckBox("Enable", useCentroid);
-        centroidCB.setFont(p12);
-        centroidCB.setToolTipText("<html>When enabled, the centroid location nearest each peak<br>" +
-                "will be used in place of the peak location.<br>" +
-                "This feature is useful for defocused images.<br>" +
-                "However, multiple peaks within the centroid radius may merge to the brighter star.<br>" +
-                "Astrometry.net is usually tolerant of a few erroneous star locations.</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        centroidCB.addItemListener(this);
-        astrometrySetupPanel.add(centroidCB);
-
-        apertureStepPopup = new JPopupMenu();
-        JPanel apertureStepPanel = new JPanel();
-        SpinnerListModel apertureStepModel = new SpinnerListModel(spinnerScaleList);
-        apertureStepSpinner = new JSpinner(apertureStepModel);
-        apertureStepSpinner.setValue(convertToText(apertureStep));
-        apertureStepSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                double value = IJU.getTextSpinnerDoubleValue(apertureStepSpinner);
-                if (Double.isNaN(value)) return;
-                apertureStep = value;
-                apertureRadiusSpinner.setModel(new SpinnerNumberModel(apertureRadius, 1.0, null, apertureStep));
-                apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
-                apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                apertureRadiusSpinner.setEditor(new JSpinner.NumberEditor(apertureRadiusSpinner, "0.00"));
-                apertureBack1Spinner.setEditor(new JSpinner.NumberEditor(apertureBack1Spinner, "0.00"));
-                apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-            }
-        });
-
-        JLabel apertureStepLabel = new JLabel("Stepsize:");
-        apertureStepPanel.add(apertureStepLabel);
-        apertureStepPanel.add(apertureStepSpinner);
-        apertureStepPopup.add(apertureStepPanel);
-        apertureStepPopup.setLightWeightPopupEnabled(false);
-        apertureStepPopup.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
-                apertureStepPopup.setVisible(false);
-            }
-
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
-                apertureStepPopup.setVisible(true);
-            }
-
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
-                apertureStepPopup.setVisible(false);
-            }
-        });
-
-        JPanel apertureRadiusPanel = new JPanel(new SpringLayout());
-        TitledBorder apertureRadiusTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Radius (pixels)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        apertureRadiusPanel.setBorder(apertureRadiusTitle);
-
-        apertureRadiusNumberModel = new SpinnerNumberModel(apertureRadius, 1.0, null, apertureStep);
-        apertureRadiusSpinner = new JSpinner(apertureRadiusNumberModel);
-        apertureRadiusSpinner.setEnabled(useCentroid);
-        apertureRadiusSpinner.setFont(p11);
-        apertureRadiusSpinner.setEditor(new JSpinner.NumberEditor(apertureRadiusSpinner, "0.00"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        apertureRadiusSpinner.setComponentPopupMenu(apertureStepPopup);
-        apertureRadiusSpinner.setToolTipText("<html>The radius used to find the centroid nearest the peak location.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        apertureRadiusSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                apertureRadius = (Double) apertureRadiusSpinner.getValue();
-                if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
-                if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-                apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
-                apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                apertureBack1Spinner.setEditor(new JSpinner.NumberEditor(apertureBack1Spinner, "0.00"));
-                apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-            }
-        });
-        apertureRadiusSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (useCentroid) {
-                    apertureRadius = (Double) apertureRadiusSpinner.getValue() - e.getWheelRotation() * apertureStep;
-                    if (apertureRadius < 1.0) apertureRadius = 1.0;
-                    if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
-                    if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-                    apertureRadiusSpinner.setValue(apertureRadius);
-                    apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
-                    apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                    apertureBack1Spinner.setEditor(new JSpinner.NumberEditor(apertureBack1Spinner, "0.00"));
-                    apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-                }
-            }
-        });
-        apertureRadiusPanel.add(apertureRadiusSpinner);
-        SpringUtil.makeCompactGrid(apertureRadiusPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(apertureRadiusPanel);
-
-
-        JPanel apertureBack1Panel = new JPanel(new SpringLayout());
-        TitledBorder apertureBack1Title = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Sky Inner (pixels)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        apertureBack1Panel.setBorder(apertureBack1Title);
-
-        if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
-        apertureBack1NumberModel = new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep);
-        apertureBack1Spinner = new JSpinner(apertureBack1NumberModel);
-        apertureBack1Spinner.setEnabled(useCentroid);
-        apertureBack1Spinner.setFont(p11);
-        apertureBack1Spinner.setEditor(new JSpinner.NumberEditor(apertureBack1Spinner, "0.00"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        apertureBack1Spinner.setComponentPopupMenu(apertureStepPopup);
-        apertureBack1Spinner.setToolTipText("<html>The radius of the inner edge of the sky background annulus<br>" +
-                "used to find the centroid nearest the peak location.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        apertureBack1Spinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                apertureBack1 = (Double) apertureBack1Spinner.getValue();
-                if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
-                if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-                apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
-                apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                apertureBack1Spinner.setEditor(new JSpinner.NumberEditor(apertureBack1Spinner, "0.00"));
-                apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-            }
-        });
-        apertureBack1Spinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (useCentroid) {
-                    apertureBack1 = (Double) apertureBack1Spinner.getValue() - e.getWheelRotation() * apertureStep;
-                    if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
-                    if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-                    apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
-                    apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                    apertureBack1Spinner.setEditor(new JSpinner.NumberEditor(apertureBack1Spinner, "0.00"));
-                    apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-                }
-            }
-        });
-        apertureBack1Panel.add(apertureBack1Spinner);
-        SpringUtil.makeCompactGrid(apertureBack1Panel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(apertureBack1Panel);
-
-
-        JPanel apertureBack2Panel = new JPanel(new SpringLayout());
-        TitledBorder apertureBack2Title = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Sky Outer (pixels)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        apertureBack2Panel.setBorder(apertureBack2Title);
-
-        if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-        apertureBack2NumberModel = new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep);
-        apertureBack2Spinner = new JSpinner(apertureBack2NumberModel);
-        apertureBack2Spinner.setEnabled(useCentroid);
-        apertureBack2Spinner.setFont(p11);
-        apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        apertureBack2Spinner.setComponentPopupMenu(apertureStepPopup);
-        apertureBack2Spinner.setToolTipText("<html>The radius of the outer edge of the sky background annulus<br>" +
-                "used to find the centroid nearest the peak location.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        apertureBack2Spinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                apertureBack2 = (Double) apertureBack2Spinner.getValue();
-                if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-                apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-            }
-        });
-        apertureBack2Spinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (useCentroid) {
-                    apertureBack2 = (Double) apertureBack2Spinner.getValue() - e.getWheelRotation() * apertureStep;
-                    if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
-                    apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
-                    apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));
-                }
-            }
-        });
-        apertureBack2Panel.add(apertureBack2Spinner);
-        SpringUtil.makeCompactGrid(apertureBack2Panel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(apertureBack2Panel);
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel scaleLabel = new JLabel("Constrain Plate Scale:");
-//        peakFindOptionsLabel.setPreferredSize(labelSize);
-        scaleLabel.setFont(p12);
-        scaleLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(scaleLabel);
-
-        scaleCB = new JCheckBox("Enable", useScale);
-        scaleCB.setFont(p12);
-        scaleCB.setToolTipText("<html>When enabled, the astometry.net plate scale search is limited to<br>" +
-                "the plate scale value +/- the plate scale tolerance specified.<br>" +
-                "Specifying a plate scale range can significantly reduce solve time.</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        scaleCB.addItemListener(this);
-        astrometrySetupPanel.add(scaleCB);
-
-        scaleStepPopup = new JPopupMenu();
-        JPanel scaleStepPanel = new JPanel();
-        SpinnerListModel scaleStepModel = new SpinnerListModel(spinnerScaleList);
-        scaleStepSpinner = new JSpinner(scaleStepModel);
-        scaleStepSpinner.setValue(convertToText(scaleStep));
-        scaleStepSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                double value = IJU.getTextSpinnerDoubleValue(scaleStepSpinner);
-                if (Double.isNaN(value)) return;
-                scaleStep = value;
-                scaleEstimateSpinner.setModel(new SpinnerNumberModel(scaleEstimate, 0.0, null, scaleStep));
-            }
-        });
-
-        JLabel scaleStepLabel = new JLabel("Stepsize:");
-        scaleStepPanel.add(scaleStepLabel);
-        scaleStepPanel.add(scaleStepSpinner);
-        scaleStepPopup.add(scaleStepPanel);
-        scaleStepPopup.setLightWeightPopupEnabled(false);
-        scaleStepPopup.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
-                scaleStepPopup.setVisible(false);
-            }
-
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
-                scaleStepPopup.setVisible(true);
-            }
-
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
-                scaleStepPopup.setVisible(false);
-            }
-        });
-
-        JPanel scaleEstimatePanel = new JPanel(new SpringLayout());
-        TitledBorder scaleEstimateTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Plate Scale (arcsec/pix)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        scaleEstimatePanel.setBorder(scaleEstimateTitle);
-
-        scaleEstimateNumberModel = new SpinnerNumberModel(scaleEstimate, 0.0, null, scaleStep);
-        scaleEstimateSpinner = new JSpinner(scaleEstimateNumberModel);
-        scaleEstimateSpinner.setEnabled(useScale);
-        scaleEstimateSpinner.setFont(p11);
-        scaleEstimateSpinner.setEditor(new JSpinner.NumberEditor(scaleEstimateSpinner, "0.000##"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        scaleEstimateSpinner.setComponentPopupMenu(scaleStepPopup);
-        scaleEstimateSpinner.setToolTipText("<html>If enabled, this value is used as the nominal plate scale value by astometry.net.<br>" +
-                "Specifying a plate scale value and tolerance can significantly reduce solve time.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        scaleEstimateSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                scaleEstimate = (Double) scaleEstimateSpinner.getValue();
-            }
-        });
-        scaleEstimateSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (useScale) {
-                    scaleEstimate = (Double) scaleEstimateSpinner.getValue() - e.getWheelRotation() * scaleStep;
-                    if (scaleEstimate < 0.0) scaleEstimate = 0.0;
-                    scaleEstimateSpinner.setValue(scaleEstimate);
-                    //                scaleEstimateSpinner.setModel(new SpinnerNumberModel(Double.valueOf(scaleEstimate), Double.valueOf(0.0), null, Double.valueOf(scaleStep)));
-                }
-            }
-        });
-        scaleEstimatePanel.add(scaleEstimateSpinner);
-        SpringUtil.makeCompactGrid(scaleEstimatePanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(scaleEstimatePanel);
-
-        JPanel scaleErrorPanel = new JPanel(new SpringLayout());
-        TitledBorder scaleErrorTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Tolerance (arcsec/pix)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        scaleErrorPanel.setBorder(scaleErrorTitle);
-
-        scaleErrorNumberModel = new SpinnerNumberModel(scaleError, 0.0, null, scaleStep);
-        scaleErrorSpinner = new JSpinner(scaleErrorNumberModel);
-        scaleErrorSpinner.setEnabled(useScale);
-        scaleErrorSpinner.setFont(p11);
-        scaleErrorSpinner.setEditor(new JSpinner.NumberEditor(scaleErrorSpinner, "0.000##"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        scaleErrorSpinner.setComponentPopupMenu(scaleStepPopup);
-        scaleErrorSpinner.setToolTipText("<html>If enabled, this value is used as the plate scale tolerance by astometry.net.<br>" +
-                "Specifying a plate scale value and tolerance can significantly reduce solve time.<br>" +
-                "Right click to set spinner stepsize.</html>");
-        scaleErrorSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                scaleError = (Double) scaleErrorSpinner.getValue();
-            }
-        });
-        scaleErrorSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (useScale) {
-                    scaleError = (Double) scaleErrorSpinner.getValue() - e.getWheelRotation() * scaleStep;
-                    if (scaleError < 0.0) scaleError = 0.0;
-                    scaleErrorSpinner.setValue(scaleError);
-                    //                scaleErrorSpinner.setModel(new SpinnerNumberModel(Double.valueOf(scaleError), Double.valueOf(0.0), null, Double.valueOf(scaleStep)));
-                }
-            }
-        });
-        scaleErrorPanel.add(scaleErrorSpinner);
-        SpringUtil.makeCompactGrid(scaleErrorPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(scaleErrorPanel);
-
-
-        JLabel scaleLabel5 = new JLabel("");
-//        scaleLabel5.setPreferredSize(col5Size);
-        astrometrySetupPanel.add(scaleLabel5);
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel radecLabel = new JLabel("Constrain Sky Location:");
-//        peakFindOptionsLabel.setPreferredSize(labelSize);
-        radecLabel.setFont(p12);
-        radecLabel.setHorizontalAlignment(JTextField.RIGHT);
-//        radecLabel.setVerticalAlignment(JLabel.BOTTOM);
-        astrometrySetupPanel.add(radecLabel);
-
-        raDecCB = new JCheckBox("Enable", useRaDec);
-        raDecCB.setFont(p12);
-        if (!useCCRaDec) {
-            raDecCB.setToolTipText("<html>When enabled, the astometry.net sky location search is limited to<br>" +
-                    "the RA/Dec location +/- the specified radius.<br>" +
-                    "Constraining the field's location may reduce solve time.</html>");
-        } else {
-            raDecCB.setToolTipText("<html>When enabled, the astometry.net sky location search is limited to<br>" +
-                    "the RA/Dec location +/- the specified radius. When running Data Processor,<br>" +
-                    "RA and Dec are automatically populated from the 'Target Coordinate Source' specifed<br>" +
-                    "to the right. Constraining the field's location on the sky may reduce solve time.</html>");
-        }
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        raDecCB.addItemListener(this);
-        astrometrySetupPanel.add(raDecCB);
-
-
-        JPanel raPanel = new JPanel(new SpringLayout());
-        TitledBorder raTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Center RA (Hours)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        raPanel.setBorder(raTitle);
-
-        raTF = new JTextField(showSexagesimal ? decToSex(ra, 3, 24, false) : sixPlaces.format(ra));
-        raTF.setMargin(fitsMargin);
-        raTF.setFont(p12);
-        raTF.setEnabled(useRaDec && !useCCRaDec);
-//		raTF.setPreferredSize(col2Size);
-        raTF.setHorizontalAlignment(JTextField.LEFT);
-        if (!useCCRaDec) {
-            raTF.setToolTipText("<html>" + "Enter the Right Ascension of the center of the search area and press &lt;Enter&gt;." + "<br>" +
-                    "Both sexegesimal (HH:MM:SS.ss) or decimal (HH.HHHH) hour formats are supported." + "<br>" +
-                    "Both RA and Dec may be pasted into this field together. Dec will be parsed<br>" +
-                    "and placed in the 'Dec' text box.</html>");
-        } else {
-            raTF.setToolTipText("<html>RA and Dec are automatically populated from the 'Target Coordinate Source'<br>" +
-                    "specifed in the Data Processor panel.</html>");
-        }
-        raTF.addActionListener(this);
-        raTF.addFocusListener(this);
-        raPanel.add(raTF);
-        SpringUtil.makeCompactGrid(raPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(raPanel);
-
-        JPanel decPanel = new JPanel(new SpringLayout());
-        TitledBorder decTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Center Dec (Degrees)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        decPanel.setBorder(decTitle);
-
-        decTF = new JTextField(showSexagesimal ? decToSex(dec, 2, 90, true) : sixPlaces.format(dec));
-        decTF.setMargin(fitsMargin);
-        decTF.setFont(p12);
-        decTF.setEnabled(useRaDec && !useCCRaDec);
-//		decTF.setPreferredSize(col2Size);
-        decTF.setHorizontalAlignment(JTextField.LEFT);
-        if (!useCCRaDec) {
-            decTF.setToolTipText("<html>" + "Enter the Declination of the center of the search area and press &lt;Enter&gt;." + "<br>" +
-                    "Both sexegesimal (DD:MM:SS.ss) or decimal (DD.DDDD) degree formats are supported." + "<br>" +
-                    "Both RA and Dec may be pasted into this field together. RA will be parsed<br>" +
-                    "and placed in the 'RA' text box.</html>");
-        } else {
-            decTF.setToolTipText("<html>RA and Dec are automatically populated from the 'Target Coordinate Source'<br>" +
-                    "specifed in the Data Processor panel.</html>");
-        }
-        decTF.addActionListener(this);
-        decTF.addFocusListener(this);
-        decPanel.add(decTF);
-        SpringUtil.makeCompactGrid(decPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(decPanel);
-
-        raDecRadiusStepPopup = new JPopupMenu();
-        JPanel raDecRadiusStepPanel = new JPanel();
-        SpinnerListModel raDecStepModel = new SpinnerListModel(spinnerScaleList);
-        raDecRadiusStepSpinner = new JSpinner(raDecStepModel);
-        raDecRadiusStepSpinner.setValue(convertToText(raDecRadiusStep));
-        raDecRadiusStepSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                double value = IJU.getTextSpinnerDoubleValue(raDecRadiusStepSpinner);
-                if (Double.isNaN(value)) return;
-                raDecRadiusStep = value;
-                raDecRadiusSpinner.setModel(new SpinnerNumberModel(raDecRadius, 0.0, null, raDecRadiusStep));
-            }
-        });
-
-        JLabel raDecRadiusStepLabel = new JLabel("Stepsize:");
-        raDecRadiusStepPanel.add(raDecRadiusStepLabel);
-        raDecRadiusStepPanel.add(raDecRadiusStepSpinner);
-        raDecRadiusStepPopup.add(raDecRadiusStepPanel);
-        raDecRadiusStepPopup.setLightWeightPopupEnabled(false);
-        raDecRadiusStepPopup.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
-                raDecRadiusStepPopup.setVisible(false);
-            }
-
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
-                raDecRadiusStepPopup.setVisible(true);
-            }
-
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
-                raDecRadiusStepPopup.setVisible(false);
-            }
-        });
-
-        JPanel raDecRadiusPanel = new JPanel(new SpringLayout());
-        TitledBorder raDecRadiusTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Radius (arcmin)", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        raDecRadiusPanel.setBorder(raDecRadiusTitle);
-
-        raDecRadiusNumberModel = new SpinnerNumberModel(raDecRadius, 0.0, null, raDecRadiusStep);
-        raDecRadiusSpinner = new JSpinner(raDecRadiusNumberModel);
-        raDecRadiusSpinner.setEnabled(useRaDec);
-        raDecRadiusSpinner.setFont(p11);
-        raDecRadiusSpinner.setEditor(new JSpinner.NumberEditor(raDecRadiusSpinner, "0.0####"));
-//        noisetolspinner.setPreferredSize(new Dimension(100, 25));
-        raDecRadiusSpinner.setComponentPopupMenu(raDecRadiusStepPopup);
-        raDecRadiusSpinner.setToolTipText("<html>If enabled, this value is used as the search radius by astometry.net.<br>" +
-                "The radius (in minutes of arc) is centered on the RA and Dec values specified.<br>" +
-                "Other parts of the sky will not be searched. Constraining the sky location and<br>" +
-                "search radius may reduce solve time, or if specified incorrectly, may result in<br>" +
-                "a plate solve failure.<br>" +
-                "Right click to set spinner stepsize.<br>" +
-                "NOTE: Radius should be at least the size of the largest CCD dimension.</html>");
-        raDecRadiusSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent ev) {
-                raDecRadius = (Double) raDecRadiusSpinner.getValue();
-            }
-        });
-        raDecRadiusSpinner.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (useRaDec) {
-                    raDecRadius = (Double) raDecRadiusSpinner.getValue() - e.getWheelRotation() * raDecRadiusStep;
-                    if (raDecRadius < 0.0) raDecRadius = 0.0;
-                    raDecRadiusSpinner.setValue(raDecRadius);
-                }
-            }
-        });
-        raDecRadiusPanel.add(raDecRadiusSpinner);
-        SpringUtil.makeCompactGrid(raDecRadiusPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(raDecRadiusPanel);
-
-
-//-------------------------------------------------------------------
-
-        nlines++;
-        JLabel setDistortionOrderLabel = new JLabel("SIP Distortion Correction:");
-//        setDistortionCoeffcientsLabel.setPreferredSize(labelSize);
-        setDistortionOrderLabel.setFont(p12);
-        setDistortionOrderLabel.setHorizontalAlignment(JTextField.RIGHT);
-        astrometrySetupPanel.add(setDistortionOrderLabel);
-
-        useDistortionOrderCB = new JCheckBox("Enable", useDistortionOrder);
-        useDistortionOrderCB.setFont(p12);
-        useDistortionOrderCB.setToolTipText("<html>Enable to request SIP distortion correction as part of the plate solve.<br>" +
-                "NOTE: If disabled, astrometry.net will not use distortion correction<br>" +
-                "which may result in a non-optimal plate solve.</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        useDistortionOrderCB.addItemListener(this);
-        astrometrySetupPanel.add(useDistortionOrderCB);
-
-        JPanel distortionOrderPanel = new JPanel(new SpringLayout());
-        TitledBorder distortionOrderTitle = BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "SIP Order", TitledBorder.CENTER, TitledBorder.TOP, p11);
-        distortionOrderPanel.setBorder(distortionOrderTitle);
-        if (distortionOrder < minOrder) distortionOrder = minOrder;
-        if (distortionOrder > maxOrder) distortionOrder = maxOrder;
-        distortionOrderNumberModel = new SpinnerNumberModel(distortionOrder, minOrder, maxOrder, 1);
-        distortionOrderSpinner = new JSpinner(distortionOrderNumberModel);
-        JSpinner.NumberEditor distortionOrderNumberEditor = new JSpinner.NumberEditor(distortionOrderSpinner, "#");
-        distortionOrderSpinner.setEditor(distortionOrderNumberEditor);
-//        distortionOrderSpinner.setPreferredSize (new Dimension(60,subpanelHeight));
-        distortionOrderSpinner.setFont(p12);
-        distortionOrderSpinner.setToolTipText("<html>The SIP distortion correction order requested for the plate solve (if enabled).<br>" +
-                "NOTE: A SIP order of 2 is the default and is recommended for typical telescope images.<br>" +
-                "NOTE: Wide field images may require orders up to 5 for an accurate plate solve.</html>");
-        distortionOrderSpinner.setEnabled(useDistortionOrder);
-        distortionOrderSpinner.addChangeListener(this);
-        distortionOrderSpinner.addMouseWheelListener(this);
-        distortionOrderPanel.add(distortionOrderSpinner);
-        SpringUtil.makeCompactGrid(distortionOrderPanel, 1, 1, 0, 0, 0, 0);
-        astrometrySetupPanel.add(distortionOrderPanel);
-
-
-        var reuseRadec = new JCheckBox("Reuse previous RA/Dec");
-        reuseRadec.setToolTipText("If checked, the previous RA/Dec will be used as a starting point for the plate solve.  This is useful if the image is a continuation of a previous image.");
-        reuseRadec.setSelected(Astrometry.REUSE_PREVIOUS_RADEC.get());
-        reuseRadec.addActionListener(_ -> Astrometry.REUSE_PREVIOUS_RADEC.set(reuseRadec.isSelected()));
-        astrometrySetupPanel.add(reuseRadec);
-
-        JLabel distortionOrder5 = new JLabel("");
-        astrometrySetupPanel.add(distortionOrder5);
-
-
-//------------------------------------------------------------  
-        nlines++;
-
-        JLabel controlLabel1 = new JLabel(notDP ? "Show Results Log:" : "");
-        controlLabel1.setFont(p12);
-        controlLabel1.setHorizontalAlignment(JTextField.RIGHT);
-//        controlLabel1.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(controlLabel1);
-
-
-        showLogCB = new JCheckBox("Enable", showLog);
-        showLogCB.setFont(p12);
-        showLogCB.setToolTipText("<html>Enable to create a log window showing the astrometry.net results.</html>");
-//        autoSaveCB.setPreferredSize (checkBoxSize);
-        showLogCB.addItemListener(this);
-
-        JLabel controlLabel2 = new JLabel("");
-//        controlLabel2.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(notDP ? showLogCB : controlLabel2);
-
-        startButton = new JButton(startButtonLabel);
-        if (notDP) {
-            startButton.setToolTipText("<html>Save new settings and start processing</html>");
-        } else {
-            startButton.setToolTipText("<html>Save new settings and close panel</html>");
-        }
-        startButton.setMargin(new Insets(5, 25, 5, 25));
-        startButton.setPreferredSize(new Dimension(125, 30));
-        startButton.setFont(b12);
-        startButton.addActionListener(this);
-        astrometrySetupPanel.add(startButton);
-
-        cancelButton = new JButton(notDP ? "CANCEL" : "SAVE");
-        if (notDP) {
-            cancelButton.setToolTipText("<html>Close panel and abort plate solve request</html>");
-        } else {
-            cancelButton.setToolTipText("<html>Saving new settings</html>");
-        }
-        cancelButton.setMargin(new Insets(5, 25, 5, 25));
-        cancelButton.setPreferredSize(new Dimension(125, 30));
-        cancelButton.setFont(b12);
-        cancelButton.addActionListener(this);
-        astrometrySetupPanel.add(cancelButton);
-
-        JLabel fitsDummyLabel5 = new JLabel("");
-//        fitsDummyLabel5.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add(fitsDummyLabel5);
-
-        SpringUtil.makeCompactGrid(astrometrySetupPanel, nlines, 5, 2, 2, 2, 2);
         scrollPane = new JScrollPane(astrometrySetupPanel);
-        astrometrySetupFrame.add(scrollPane);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        astrometrySetupFrame.getContentPane().setLayout(new BorderLayout());
+        astrometrySetupFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        astrometrySetupFrame.getContentPane().add(buildButtonBar(), BorderLayout.SOUTH);
+
         GUI.scaleFrame(astrometrySetupFrame);
         astrometrySetupFrame.pack();
+        // keep window within the screen height; the scroll pane handles the rest
+        int maxHeight = (int) (defaultScreenBounds.height * 0.9);
+        if (astrometrySetupFrame.getHeight() > maxHeight) {
+            astrometrySetupFrame.setSize(astrometrySetupFrame.getWidth() + scrollPane.getVerticalScrollBar().getPreferredSize().width, maxHeight);
+        }
         astrometrySetupFrame.setResizable(true);
 
         IJU.setFrameSizeAndLocation(astrometrySetupFrame, frameLocationX, frameLocationY, 0, 0);
@@ -1406,6 +247,758 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             }
         }
         return canceled;
+    }
+
+    private JTabbedPane buildSolverTabs() {
+        var tabs = new JTabbedPane();
+        tabs.setFont(p12);
+
+        var current = Astrometry.PLATE_SOLVER.get();
+        var types = PlateSolver.SolverType.values();
+        for (var type : types) {
+            var comp = switch (type) {
+                case ASTROMETRY_NET_HTTP -> buildWebApiTab();
+                case ASTROMETRY_NET_WASM -> buildBundledTab();
+            };
+            tabs.addTab(type.toString(), null, comp, type.getToolTip());
+            if (type == current) {
+                tabs.setSelectedComponent(comp);
+            }
+        }
+
+        tabs.addChangeListener(_ -> {
+            int idx = tabs.getSelectedIndex();
+            if (idx >= 0 && idx < types.length) Astrometry.PLATE_SOLVER.set(types[idx]);
+        });
+
+        return tabs;
+    }
+
+    private JPanel buildWebApiTab() {
+        var p = new JPanel(new GridBagLayout());
+        p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        var c = new GridBagConstraints();
+        c.insets = new Insets(3, 4, 3, 4);
+        c.anchor = GridBagConstraints.WEST;
+
+        // User key
+        c.gridy = 0;
+        c.gridx = 0;
+        c.weightx = 0;
+        c.fill = GridBagConstraints.NONE;
+        p.add(label("User Key:"), c);
+
+        keyTF = new JTextField(userKey, 28);
+        keyTF.setMargin(new Insets(2, 2, 2, 2));
+        keyTF.setFont(p12);
+        keyTF.setToolTipText("""
+                <html>Enter User Key for the astrometry.net website.<br>\
+                Go to <b>nova.astrometry.net</b> to get user key.<br>\
+                This is only required to be done once.</html>""");
+        keyTF.getDocument().addDocumentListener(new thisDocumentListener());
+        c.gridx = 1;
+        c.weightx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        p.add(keyTF, c);
+
+        var keyHint = new JLabel("<html>(Get key from: <b>nova.astrometry.net</b>)</html>");
+        keyHint.setFont(p11);
+        c.gridx = 2;
+        c.weightx = 0;
+        c.fill = GridBagConstraints.NONE;
+        p.add(keyHint, c);
+
+        // Custom server + poll rate on one row
+        c.gridy = 1;
+        c.gridx = 0;
+        c.fill = GridBagConstraints.NONE;
+        useAlternateAstrometryServerCB = new JCheckBox("Use custom server:", useAlternateAstrometryServer);
+        useAlternateAstrometryServerCB.setFont(p12);
+        useAlternateAstrometryServerCB.setToolTipText("""
+                <html>Enable the use of a custom/local Astrometry.net server.<br>\
+                Windows users may install a free local server from https://adgsoftware.com/ansvr/</html>""");
+        useAlternateAstrometryServerCB.addItemListener(this);
+        p.add(useAlternateAstrometryServerCB, c);
+
+        alternateAstrometryUrlBaseTF = new JTextField(useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase);
+        alternateAstrometryUrlBaseTF.setMargin(new Insets(2, 2, 2, 2));
+        alternateAstrometryUrlBaseTF.setFont(p12);
+        alternateAstrometryUrlBaseTF.setEnabled(useAlternateAstrometryServer);
+        alternateAstrometryUrlBaseTF.setToolTipText("""
+                <html>Enter custom/local astrometry.net URL base address.<br>\
+                Example: <b>http://127.0.0.1:8080</b></html>""");
+        alternateAstrometryUrlBaseTF.getDocument().addDocumentListener(new thisDocumentListener());
+        c.gridx = 1;
+        c.weightx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        p.add(alternateAstrometryUrlBaseTF, c);
+
+        customPollSpinner = new JSpinner(new SpinnerNumberModel(
+                useAlternateAstrometryServer ? Astrometry.CUSTOM_POLLING.get().intValue() : Astrometry.ASTRO_NET_POLLING.get().intValue(), 1, 10, 1));
+        customPollSpinner.setFont(p12);
+        customPollSpinner.setToolTipText("""
+                <html>The polling rate (in seconds) for the plate solve server. \
+                Increase if the server is responding with code 429 (too many requests)</html>""");
+        customPollSpinner.addChangeListener(this);
+        c.gridy = 2;
+        c.gridx = 0;
+        c.weightx = 0;
+        c.fill = GridBagConstraints.NONE;
+        p.add(label("Poll Rate (sec):"), c);
+
+        setWidth(customPollSpinner, 70);
+        c.gridx = 1;
+        p.add(customPollSpinner, c);
+
+        return wrapTop(p);
+    }
+
+    private JPanel buildBundledTab() {
+        var p = new JPanel(new GridBagLayout());
+        p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        var info = new JLabel("""
+                <html>Uses the Astrometry.net solver bundled with AstroImageJ.<br>\
+                No solver-specific options are available yet.</html>""");
+        info.setFont(p12);
+        p.add(info);
+        return wrapTop(p);
+    }
+
+    private JPanel buildOutputPanel() {
+        var g = group("Output");
+
+        var r1 = row();
+        autoSaveCB = new JCheckBox(notDP ? "Auto save" : "Re-save raw science", notDP ? autoSave : DPSaveRawWithWCS);
+        autoSaveCB.setFont(p12);
+        if (notDP) {
+            autoSaveCB.setToolTipText("""
+                    <html>Automatically saves image(s) with new headers to the original file(s).<br>\
+                    WARNING: this option will overwrite the existing image file(s).<br>\
+                    WARNING: any previous changes to an image will also be saved over the original image.</html>""");
+        } else {
+            autoSaveCB.setToolTipText("""
+                    <html>Re-saves raw uncalibrated science image with new WCS headers to the original file.<br>\
+                    WARNING: this option will re-write the original uncalibrated science image with new WCS headers.<br>\
+                    WCS headers will be added to calibrated science image independent of this setting.</html>""");
+        }
+        autoSaveCB.addItemListener(this);
+        r1.add(autoSaveCB);
+
+        fpackBox = new JCheckBox("FPACK", fpack);
+        fpackBox.setFont(p12);
+        fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
+        fpackBox.addItemListener(this);
+        r1.add(fpackBox);
+
+        compressBox = new JCheckBox("GZIP", compress);
+        compressBox.setFont(p12);
+        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
+        compressBox.addItemListener(this);
+        r1.add(compressBox);
+
+        var warn = new JLabel(notDP ? "<html><b>WARNING: may overwrite original image</b></html>"
+                : "<html><b>WARNING: may re-write raw science file</b></html>");
+        warn.setFont(p11);
+        g.add(r1);
+
+        var rw = row();
+        rw.add(warn);
+        g.add(rw);
+
+        var r2 = row();
+        skipIfHasWCSCB = new JCheckBox("Skip images with WCS", skipIfHasWCS);
+        skipIfHasWCSCB.setFont(p12);
+        skipIfHasWCSCB.setToolTipText("<html>If enabled, images/slices that already have valid FITS WCS headers will be skipped.<br>" +
+                "A new plate solve will not be performed and the existing WCS headers will be retained.</html>");
+        skipIfHasWCSCB.addItemListener(this);
+        r2.add(skipIfHasWCSCB);
+
+        if (notDP) {
+            showLogCB = new JCheckBox("Show results log", showLog);
+            showLogCB.setFont(p12);
+            showLogCB.setToolTipText("<html>Enable to create a log window showing the astrometry.net results.</html>");
+            showLogCB.addItemListener(this);
+            r2.add(showLogCB);
+        }
+        g.add(r2);
+        return g;
+    }
+
+    private JPanel buildStackPanel() {
+        var g = group("Stack Processing");
+        var r = row();
+
+        processStackCB = new JCheckBox("Process stack", processStack);
+        processStackCB.setFont(p12);
+        processStackCB.setToolTipText("<html>Plate solve all images in stack.</html>");
+        processStackCB.addItemListener(this);
+        r.add(processStackCB);
+
+        startSliceNumberModel = new SpinnerNumberModel(fSlice, fSlice, lSlice, 1);
+        startSliceSpinner = new JSpinner(startSliceNumberModel);
+        startSliceSpinner.setEditor(new JSpinner.NumberEditor(startSliceSpinner, "#"));
+        startSliceSpinner.setFont(p12);
+        startSliceSpinner.setToolTipText("Set the first slice number to process");
+        startSliceSpinner.setEnabled(processStack);
+        startSliceSpinner.addChangeListener(this);
+        startSliceSpinner.addMouseWheelListener(this);
+        setWidth(startSliceSpinner, 80);
+        r.add(titled("Start Slice", startSliceSpinner));
+
+        endSliceNumberModel = new SpinnerNumberModel(lSlice, fSlice, lSlice, 1);
+        endSliceSpinner = new JSpinner(endSliceNumberModel);
+        endSliceSpinner.setEditor(new JSpinner.NumberEditor(endSliceSpinner, "#"));
+        endSliceSpinner.setFont(p12);
+        endSliceSpinner.setToolTipText("Set the last slice number to process");
+        endSliceSpinner.setEnabled(processStack);
+        endSliceSpinner.addChangeListener(this);
+        endSliceSpinner.addMouseWheelListener(this);
+        setWidth(endSliceSpinner, 80);
+        r.add(titled("End Slice", endSliceSpinner));
+
+        g.add(r);
+        return g;
+    }
+
+    private JPanel buildAnnotationPanel() {
+        var g = group("Annotation");
+        var r = row();
+
+        annotateCB = new JCheckBox("Annotate", annotate);
+        annotateCB.setFont(p12);
+        annotateCB.setToolTipText("<html>Label objects supported by astrometry.net after a successful plate solve</html>");
+        annotateCB.addItemListener(this);
+        r.add(annotateCB);
+
+        addAnnotationsToHeaderCB = new JCheckBox("Add to header", addAnnotationsToHeader);
+        addAnnotationsToHeaderCB.setFont(p12);
+        addAnnotationsToHeaderCB.setToolTipText("<html>Add annotations to FITS header</html>");
+        addAnnotationsToHeaderCB.setEnabled(annotate);
+        addAnnotationsToHeaderCB.addItemListener(this);
+        r.add(addAnnotationsToHeaderCB);
+
+        annotateRadiusNumberModel = new SpinnerNumberModel(annotateRadius, 1.0, null, annotateRadiusStep);
+        annotateRadiusSpinner = new JSpinner(annotateRadiusNumberModel);
+        annotateRadiusSpinner.setEditor(new JSpinner.NumberEditor(annotateRadiusSpinner, "0.00"));
+        annotateRadiusSpinner.setEnabled(annotate);
+        annotateRadiusSpinner.setFont(p11);
+        annotateRadiusSpinner.setToolTipText("<html>The radius of the circle used to identify the annotated object.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        annotateRadiusSpinner.addChangeListener(_ -> annotateRadius = value(annotateRadiusSpinner));
+        installStepPopup(annotateRadiusStep, s -> {
+            annotateRadiusStep = s;
+            annotateRadiusNumberModel.setStepSize(s);
+        }, annotateRadiusSpinner);
+        addWheel(annotateRadiusSpinner, annotateRadiusNumberModel);
+        setWidth(annotateRadiusSpinner, 100);
+        r.add(titled("Radius (pixels)", annotateRadiusSpinner));
+
+        g.add(r);
+        return g;
+    }
+
+    private JPanel buildStarDetectionPanel() {
+        var g = group("Star Detection");
+
+        // Median filter
+        var r1 = row();
+        useMedianFilterCB = new JCheckBox("Median filter", useMedianFilter);
+        useMedianFilterCB.setFont(p12);
+        useMedianFilterCB.setToolTipText("<html>Median filter image before finding peaks.<br>" +
+                "NOTE: does not change user image.</html>");
+        useMedianFilterCB.addItemListener(this);
+        r1.add(useMedianFilterCB);
+
+        if (medianFilterRadius < 2) medianFilterRadius = 2;
+        medianFilterRadiusNumberModel = new SpinnerNumberModel(medianFilterRadius, 2, null, 1);
+        medianFilterRadiusSpinner = new JSpinner(medianFilterRadiusNumberModel);
+        medianFilterRadiusSpinner.setEditor(new JSpinner.NumberEditor(medianFilterRadiusSpinner, "#"));
+        medianFilterRadiusSpinner.setFont(p12);
+        medianFilterRadiusSpinner.setToolTipText("<html>Set the radius of the median filter used before finding peaks (if enabled).<br>" +
+                "NOTE: does not change user image.</html>");
+        medianFilterRadiusSpinner.setEnabled(useMedianFilter);
+        medianFilterRadiusSpinner.addChangeListener(this);
+        medianFilterRadiusSpinner.addMouseWheelListener(this);
+        setWidth(medianFilterRadiusSpinner, 100);
+        r1.add(titled("Filter Radius (pixels)", medianFilterRadiusSpinner));
+        g.add(r1);
+
+        // Noise tolerance
+        var r2 = row();
+        noiseTolNumberModel = new SpinnerNumberModel(minPeakFindToleranceSTDEV, 0.0, null, noiseTolStep);
+        noiseTolSpinner = new JSpinner(noiseTolNumberModel);
+        noiseTolSpinner.setFont(p11);
+        noiseTolSpinner.setEditor(new JSpinner.NumberEditor(noiseTolSpinner, "0.00#####"));
+        noiseTolSpinner.setToolTipText("<html>Peaks below the image standard deviation times this factor are ignored.<br>" +
+                "Generally a value of 1.0 works well.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        noiseTolSpinner.addChangeListener(_ -> minPeakFindToleranceSTDEV = value(noiseTolSpinner));
+        installStepPopup(noiseTolStep, s -> {
+            noiseTolStep = s;
+            noiseTolNumberModel.setStepSize(s);
+        }, noiseTolSpinner);
+        addWheel(noiseTolSpinner, noiseTolNumberModel);
+        setWidth(noiseTolSpinner, 110);
+        r2.add(titled("Noise Tol (StdDev)", noiseTolSpinner));
+        g.add(r2);
+
+        // Max number of stars
+        var r2b = row();
+        if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
+        maxNumStarsNumberModel = new SpinnerNumberModel(maxNumStars, MIN_MAX_STARS, null, 1);
+        maxNumStarsSpinner = new JSpinner(maxNumStarsNumberModel);
+        maxNumStarsSpinner.setEditor(new JSpinner.NumberEditor(maxNumStarsSpinner, "#"));
+        maxNumStarsSpinner.setFont(p12);
+        maxNumStarsSpinner.setToolTipText("<html>The number of stars used for plate solving is limited to this value.<br>" +
+                "The brightest stars that have peaks less than the max peak threshold (if enabled) are used first.<br>" +
+                "Generally a value of 50 works well.</html>");
+        maxNumStarsSpinner.addChangeListener(this);
+        maxNumStarsSpinner.addMouseWheelListener(this);
+        setWidth(maxNumStarsSpinner, 100);
+        r2b.add(titled("Max Num Stars", maxNumStarsSpinner));
+        g.add(r2b);
+
+        // Max peak limit
+        var r3 = row();
+        useMaxPeakFindValueCB = new JCheckBox("Limit max peaks", useMaxPeakFindValue);
+        useMaxPeakFindValueCB.setFont(p12);
+        useMaxPeakFindValueCB.setToolTipText("<html>When enabled, peaks above the threshold set to the right are ignored</html>");
+        useMaxPeakFindValueCB.addItemListener(this);
+        r3.add(useMaxPeakFindValueCB);
+
+        maxPeakFindNumberModel = new SpinnerNumberModel(maxPeakFindValue, null, null, maxPeakFindStep);
+        maxPeakFindSpinner = new JSpinner(maxPeakFindNumberModel);
+        maxPeakFindSpinner.setEnabled(useMaxPeakFindValue);
+        maxPeakFindSpinner.setFont(p11);
+        maxPeakFindSpinner.setEditor(new JSpinner.NumberEditor(maxPeakFindSpinner, "0.######"));
+        maxPeakFindSpinner.setToolTipText("<html>If enabled, peaks above this ADU level are ignored.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        maxPeakFindSpinner.addChangeListener(_ -> maxPeakFindValue = value(maxPeakFindSpinner));
+        installStepPopup(maxPeakFindStep, s -> {
+            maxPeakFindStep = s;
+            maxPeakFindNumberModel.setStepSize(s);
+        }, maxPeakFindSpinner);
+        addWheel(maxPeakFindSpinner, maxPeakFindNumberModel);
+        setWidth(maxPeakFindSpinner, 110);
+        r3.add(titled("Max Peak (ADU)", maxPeakFindSpinner));
+
+        g.add(r3);
+
+        // Border exclusion
+        var r4 = row();
+        var excludeBorderCb = new JCheckBox("Exclude border regions", RegionExclusion.EXCLUDE_BORDERS.get());
+        excludeBorderCb.setFont(p12);
+        excludeBorderCb.setToolTipText("<html>When enabled, allows excluding border regions from plate solving. In IJ Coordinates.</html>");
+        excludeBorderCb.addItemListener(RegionExclusion.EXCLUDE_BORDERS.toItemListener());
+        RegionExclusion.EXCLUDE_BORDERS.addListener((_, n) -> {
+            if (n) {
+                RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
+            }
+        });
+        if (RegionExclusion.EXCLUDE_BORDERS.get()) {
+            RegionExclusion.DISPLAY_EXCLUDED_REGIONS.set(true);
+        }
+        r4.add(excludeBorderCb);
+
+        var excludeBorderEditButton = new JButton("Edit Regions");
+        excludeBorderEditButton.setFont(p12);
+        excludeBorderEditButton.addActionListener(_ -> RegionExclusion.editSettings());
+        excludeBorderEditButton.setEnabled(RegionExclusion.EXCLUDE_BORDERS.get());
+        r4.add(excludeBorderEditButton);
+
+        excludeBorderCb.addItemListener(l ->
+                excludeBorderEditButton.setEnabled(l.getStateChange() == ItemEvent.SELECTED));
+        g.add(r4);
+
+        // Centroiding options live with the star detection settings
+        addCentroidRows(g);
+
+        return g;
+    }
+
+    private void addCentroidRows(JPanel g) {
+        var r = row();
+
+        centroidCB = new JCheckBox("Centroid near peaks", useCentroid);
+        centroidCB.setFont(p12);
+        centroidCB.setToolTipText("<html>When enabled, the centroid location nearest each peak<br>" +
+                "will be used in place of the peak location.<br>" +
+                "This feature is useful for defocused images.<br>" +
+                "However, multiple peaks within the centroid radius may merge to the brighter star.<br>" +
+                "Astrometry.net is usually tolerant of a few erroneous star locations.</html>");
+        centroidCB.addItemListener(this);
+        r.add(centroidCB);
+
+        if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
+        if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
+
+        apertureRadiusNumberModel = new SpinnerNumberModel(apertureRadius, 1.0, null, apertureStep);
+        apertureRadiusSpinner = new JSpinner(apertureRadiusNumberModel);
+        apertureBack1NumberModel = new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep);
+        apertureBack1Spinner = new JSpinner(apertureBack1NumberModel);
+        apertureBack2NumberModel = new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep);
+        apertureBack2Spinner = new JSpinner(apertureBack2NumberModel);
+
+        for (var s : new JSpinner[]{apertureRadiusSpinner, apertureBack1Spinner, apertureBack2Spinner}) {
+            s.setEnabled(useCentroid);
+            s.setFont(p11);
+            s.setEditor(new JSpinner.NumberEditor(s, "0.00"));
+            setWidth(s, 100);
+        }
+
+        apertureRadiusSpinner.setToolTipText("<html>The radius used to find the centroid nearest the peak location.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        apertureBack1Spinner.setToolTipText("<html>The radius of the inner edge of the sky background annulus<br>" +
+                "used to find the centroid nearest the peak location.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        apertureBack2Spinner.setToolTipText("<html>The radius of the outer edge of the sky background annulus<br>" +
+                "used to find the centroid nearest the peak location.<br>" +
+                "Right click to set spinner stepsize.</html>");
+
+        apertureRadiusSpinner.addChangeListener(_ -> {
+            apertureRadius = value(apertureRadiusSpinner);
+            syncApertureModels();
+        });
+        apertureBack1Spinner.addChangeListener(_ -> {
+            apertureBack1 = value(apertureBack1Spinner);
+            syncApertureModels();
+        });
+        apertureBack2Spinner.addChangeListener(_ -> {
+            apertureBack2 = value(apertureBack2Spinner);
+            syncApertureModels();
+        });
+
+        installStepPopup(apertureStep, s -> {
+            apertureStep = s;
+            apertureRadiusNumberModel.setStepSize(s);
+            apertureBack1NumberModel.setStepSize(s);
+            apertureBack2NumberModel.setStepSize(s);
+        }, apertureRadiusSpinner, apertureBack1Spinner, apertureBack2Spinner);
+
+        addWheel(apertureRadiusSpinner, apertureRadiusNumberModel);
+        addWheel(apertureBack1Spinner, apertureBack1NumberModel);
+        addWheel(apertureBack2Spinner, apertureBack2NumberModel);
+
+        r.add(titled("Radius (pixels)", apertureRadiusSpinner));
+        r.add(titled("Sky Inner (pixels)", apertureBack1Spinner));
+        r.add(titled("Sky Outer (pixels)", apertureBack2Spinner));
+
+        g.add(r);
+    }
+
+    private JPanel buildSearchConstraintsPanel() {
+        var g = group("Search Constraints");
+
+        // Plate scale
+        var r1 = row();
+        scaleCB = new JCheckBox("Constrain plate scale", useScale);
+        scaleCB.setFont(p12);
+        scaleCB.setToolTipText("<html>When enabled, the astometry.net plate scale search is limited to<br>" +
+                "the plate scale value +/- the plate scale tolerance specified.<br>" +
+                "Specifying a plate scale range can significantly reduce solve time.</html>");
+        scaleCB.addItemListener(this);
+        r1.add(scaleCB);
+
+        scaleEstimateNumberModel = new SpinnerNumberModel(scaleEstimate, 0.0, null, scaleStep);
+        scaleEstimateSpinner = new JSpinner(scaleEstimateNumberModel);
+        scaleEstimateSpinner.setEnabled(useScale);
+        scaleEstimateSpinner.setFont(p11);
+        scaleEstimateSpinner.setEditor(new JSpinner.NumberEditor(scaleEstimateSpinner, "0.000##"));
+        scaleEstimateSpinner.setToolTipText("<html>If enabled, this value is used as the nominal plate scale value by astometry.net.<br>" +
+                "Specifying a plate scale value and tolerance can significantly reduce solve time.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        scaleEstimateSpinner.addChangeListener(_ -> scaleEstimate = value(scaleEstimateSpinner));
+        setWidth(scaleEstimateSpinner, 110);
+        r1.add(titled("Plate Scale (arcsec/pix)", scaleEstimateSpinner));
+
+        scaleErrorNumberModel = new SpinnerNumberModel(scaleError, 0.0, null, scaleStep);
+        scaleErrorSpinner = new JSpinner(scaleErrorNumberModel);
+        scaleErrorSpinner.setEnabled(useScale);
+        scaleErrorSpinner.setFont(p11);
+        scaleErrorSpinner.setEditor(new JSpinner.NumberEditor(scaleErrorSpinner, "0.000##"));
+        scaleErrorSpinner.setToolTipText("<html>If enabled, this value is used as the plate scale tolerance by astometry.net.<br>" +
+                "Specifying a plate scale value and tolerance can significantly reduce solve time.<br>" +
+                "Right click to set spinner stepsize.</html>");
+        scaleErrorSpinner.addChangeListener(_ -> scaleError = value(scaleErrorSpinner));
+        setWidth(scaleErrorSpinner, 110);
+        r1.add(titled("Tolerance (arcsec/pix)", scaleErrorSpinner));
+
+        installStepPopup(scaleStep, s -> {
+            scaleStep = s;
+            scaleEstimateNumberModel.setStepSize(s);
+            scaleErrorNumberModel.setStepSize(s);
+        }, scaleEstimateSpinner, scaleErrorSpinner);
+        addWheel(scaleEstimateSpinner, scaleEstimateNumberModel);
+        addWheel(scaleErrorSpinner, scaleErrorNumberModel);
+        g.add(r1);
+
+        // Sky location
+        var r2 = row();
+        raDecCB = new JCheckBox("Constrain sky location", useRaDec);
+        raDecCB.setFont(p12);
+        if (!useCCRaDec) {
+            raDecCB.setToolTipText("<html>When enabled, the astometry.net sky location search is limited to<br>" +
+                    "the RA/Dec location +/- the specified radius.<br>" +
+                    "Constraining the field's location may reduce solve time.</html>");
+        } else {
+            raDecCB.setToolTipText("<html>When enabled, the astometry.net sky location search is limited to<br>" +
+                    "the RA/Dec location +/- the specified radius. When running Data Processor,<br>" +
+                    "RA and Dec are automatically populated from the 'Target Coordinate Source' specifed<br>" +
+                    "to the right. Constraining the field's location on the sky may reduce solve time.</html>");
+        }
+        raDecCB.addItemListener(this);
+        r2.add(raDecCB);
+
+        raTF = new JTextField(showSexagesimal ? decToSex(ra, 3, 24, false) : sixPlaces.format(ra), 11);
+        raTF.setMargin(new Insets(2, 2, 2, 2));
+        raTF.setFont(p12);
+        raTF.setEnabled(useRaDec && !useCCRaDec);
+        raTF.setHorizontalAlignment(JTextField.LEFT);
+        if (!useCCRaDec) {
+            raTF.setToolTipText("<html>Enter the Right Ascension of the center of the search area and press &lt;Enter&gt;.<br>" +
+                    "Both sexegesimal (HH:MM:SS.ss) or decimal (HH.HHHH) hour formats are supported.<br>" +
+                    "Both RA and Dec may be pasted into this field together. Dec will be parsed<br>" +
+                    "and placed in the 'Dec' text box.</html>");
+        } else {
+            raTF.setToolTipText("<html>RA and Dec are automatically populated from the 'Target Coordinate Source'<br>" +
+                    "specifed in the Data Processor panel.</html>");
+        }
+        raTF.addActionListener(this);
+        raTF.addFocusListener(this);
+        r2.add(titled("Center RA (Hours)", raTF));
+
+        decTF = new JTextField(showSexagesimal ? decToSex(dec, 2, 90, true) : sixPlaces.format(dec), 11);
+        decTF.setMargin(new Insets(2, 2, 2, 2));
+        decTF.setFont(p12);
+        decTF.setEnabled(useRaDec && !useCCRaDec);
+        decTF.setHorizontalAlignment(JTextField.LEFT);
+        if (!useCCRaDec) {
+            decTF.setToolTipText("<html>Enter the Declination of the center of the search area and press &lt;Enter&gt;.<br>" +
+                    "Both sexegesimal (DD:MM:SS.ss) or decimal (DD.DDDD) degree formats are supported.<br>" +
+                    "Both RA and Dec may be pasted into this field together. RA will be parsed<br>" +
+                    "and placed in the 'RA' text box.</html>");
+        } else {
+            decTF.setToolTipText("<html>RA and Dec are automatically populated from the 'Target Coordinate Source'<br>" +
+                    "specifed in the Data Processor panel.</html>");
+        }
+        decTF.addActionListener(this);
+        decTF.addFocusListener(this);
+        r2.add(titled("Center Dec (Degrees)", decTF));
+
+        raDecRadiusNumberModel = new SpinnerNumberModel(raDecRadius, 0.0, null, raDecRadiusStep);
+        raDecRadiusSpinner = new JSpinner(raDecRadiusNumberModel);
+        raDecRadiusSpinner.setEnabled(useRaDec);
+        raDecRadiusSpinner.setFont(p11);
+        raDecRadiusSpinner.setEditor(new JSpinner.NumberEditor(raDecRadiusSpinner, "0.0####"));
+        raDecRadiusSpinner.setToolTipText("<html>If enabled, this value is used as the search radius by astometry.net.<br>" +
+                "The radius (in minutes of arc) is centered on the RA and Dec values specified.<br>" +
+                "Other parts of the sky will not be searched. Constraining the sky location and<br>" +
+                "search radius may reduce solve time, or if specified incorrectly, may result in<br>" +
+                "a plate solve failure.<br>" +
+                "Right click to set spinner stepsize.<br>" +
+                "NOTE: Radius should be at least the size of the largest CCD dimension.</html>");
+        raDecRadiusSpinner.addChangeListener(_ -> raDecRadius = value(raDecRadiusSpinner));
+        installStepPopup(raDecRadiusStep, s -> {
+            raDecRadiusStep = s;
+            raDecRadiusNumberModel.setStepSize(s);
+        }, raDecRadiusSpinner);
+        addWheel(raDecRadiusSpinner, raDecRadiusNumberModel);
+        setWidth(raDecRadiusSpinner, 100);
+        r2.add(titled("Radius (arcmin)", raDecRadiusSpinner));
+
+        // Reuse previous
+        var r3 = row();
+        var reuseRadec = new JCheckBox("Reuse previous RA/Dec");
+        reuseRadec.setFont(p12);
+        reuseRadec.setToolTipText("If checked, the previous RA/Dec will be used as a starting point for the plate solve.  This is useful if the image is a continuation of a previous image.");
+        reuseRadec.setSelected(Astrometry.REUSE_PREVIOUS_RADEC.get());
+        reuseRadec.addActionListener(_ -> Astrometry.REUSE_PREVIOUS_RADEC.set(reuseRadec.isSelected()));
+        r3.add(reuseRadec);
+        g.add(r2);
+        g.add(r3);
+
+        return g;
+    }
+
+    private JPanel buildDistortionPanel() {
+        var g = group("Distortion Correction");
+        var r = row();
+
+        useDistortionOrderCB = new JCheckBox("SIP distortion correction", useDistortionOrder);
+        useDistortionOrderCB.setFont(p12);
+        useDistortionOrderCB.setToolTipText("""
+                <html>Enable to request SIP distortion correction as part of the plate solve.<br>\
+                NOTE: If disabled, astrometry.net will not use distortion correction<br>\
+                which may result in a non-optimal plate solve.</html>""");
+        useDistortionOrderCB.addItemListener(this);
+        r.add(useDistortionOrderCB);
+
+        if (distortionOrder < minOrder) distortionOrder = minOrder;
+        if (distortionOrder > maxOrder) distortionOrder = maxOrder;
+        distortionOrderNumberModel = new SpinnerNumberModel(distortionOrder, minOrder, maxOrder, 1);
+        distortionOrderSpinner = new JSpinner(distortionOrderNumberModel);
+        distortionOrderSpinner.setEditor(new JSpinner.NumberEditor(distortionOrderSpinner, "#"));
+        distortionOrderSpinner.setFont(p12);
+        distortionOrderSpinner.setToolTipText("""
+                <html>The SIP distortion correction order requested for the plate solve (if enabled).<br>\
+                NOTE: A SIP order of 2 is the default and is recommended for typical telescope images.<br>\
+                NOTE: Wide field images may require orders up to 5 for an accurate plate solve.</html>""");
+        distortionOrderSpinner.setEnabled(useDistortionOrder);
+        distortionOrderSpinner.addChangeListener(this);
+        distortionOrderSpinner.addMouseWheelListener(this);
+        setWidth(distortionOrderSpinner, 80);
+        r.add(titled("SIP Order", distortionOrderSpinner));
+
+        g.add(r);
+        return g;
+    }
+
+    private JPanel buildButtonBar() {
+        var bar = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 8));
+
+        startButton = new JButton(startButtonLabel);
+        startButton.setToolTipText(notDP ? "<html>Save new settings and start processing</html>"
+                : "<html>Save new settings and close panel</html>");
+        startButton.setMargin(new Insets(5, 25, 5, 25));
+        startButton.setPreferredSize(new Dimension(125, 30));
+        startButton.setFont(b12);
+        startButton.addActionListener(this);
+        bar.add(startButton);
+
+        cancelButton = new JButton(notDP ? "CANCEL" : "SAVE");
+        cancelButton.setToolTipText(notDP ? "<html>Close panel and abort plate solve request</html>"
+                : "<html>Saving new settings</html>");
+        cancelButton.setMargin(new Insets(5, 25, 5, 25));
+        cancelButton.setPreferredSize(new Dimension(125, 30));
+        cancelButton.setFont(b12);
+        cancelButton.addActionListener(this);
+        bar.add(cancelButton);
+
+        return bar;
+    }
+
+    private JPanel group(String title) {
+        var g = new JPanel();
+        g.setLayout(new BoxLayout(g, BoxLayout.Y_AXIS));
+        TitledBorder tb = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor), title,
+                TitledBorder.LEFT, TitledBorder.TOP, b12);
+        g.setBorder(BorderFactory.createCompoundBorder(tb, BorderFactory.createEmptyBorder(0, 4, 2, 4)));
+        return g;
+    }
+
+    private JPanel row() {
+        var r = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
+        r.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return r;
+    }
+
+    private JPanel titled(String title, JComponent c) {
+        var p = new JPanel(new BorderLayout()) {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                Dimension b = ((TitledBorder) getBorder()).getMinimumSize(this);
+                return new Dimension(Math.max(d.width, b.width + 16), d.height);
+            }
+        };
+        p.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), title, TitledBorder.CENTER, TitledBorder.TOP, p11));
+        p.add(c, BorderLayout.CENTER);
+        return p;
+    }
+
+    private JLabel label(String text) {
+        var l = new JLabel(text);
+        l.setFont(p12);
+        return l;
+    }
+
+    private void setWidth(JComponent c, int width) {
+        var d = c.getPreferredSize();
+        c.setPreferredSize(new Dimension(width, Math.max(d.height, 22)));
+    }
+
+    private void addCell(JPanel parent, JComponent c, int row, int col, int span) {
+        var gbc = new GridBagConstraints();
+        gbc.gridx = col;
+        gbc.gridy = row;
+        gbc.gridwidth = span;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.insets = new Insets(0, 0, 6, (col == 0 && span == 1) ? 6 : 0);
+        parent.add(c, gbc);
+    }
+
+    private JPanel wrapTop(JPanel inner) {
+        var outer = new JPanel(new BorderLayout());
+        outer.add(inner, BorderLayout.NORTH);
+        return outer;
+    }
+
+    private double value(JSpinner s) {
+        return ((Number) s.getValue()).doubleValue();
+    }
+
+    private void addWheel(JSpinner spinner, SpinnerNumberModel model) {
+        spinner.addMouseWheelListener(e -> {
+            if (!spinner.isEnabled()) {
+                return;
+            }
+            var v = value(spinner) - e.getWheelRotation() * model.getStepSize().doubleValue();
+            if (model.getMinimum() instanceof Number min && v < min.doubleValue()) {
+                v = min.doubleValue();
+            }
+            spinner.setValue(v);
+        });
+    }
+
+    private void installStepPopup(double initialStep, DoubleConsumer onStepChange, JSpinner... targets) {
+        var popup = new JPopupMenu();
+        var panel = new JPanel();
+        var stepSpinner = new JSpinner(new SpinnerListModel(spinnerScaleList));
+        stepSpinner.setValue(convertToText(initialStep));
+        stepSpinner.addChangeListener(_ -> {
+            double v = IJU.getTextSpinnerDoubleValue(stepSpinner);
+            if (Double.isNaN(v)) {
+                return;
+            }
+            onStepChange.accept(v);
+        });
+        panel.add(new JLabel("Stepsize:"));
+        panel.add(stepSpinner);
+        popup.add(panel);
+        popup.setLightWeightPopupEnabled(false);
+        popup.addPopupMenuListener(new PopupMenuListener() {
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                popup.setVisible(false);
+            }
+
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                popup.setVisible(true);
+            }
+
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                popup.setVisible(false);
+            }
+        });
+        for (var t : targets) {
+            t.setComponentPopupMenu(popup);
+        }
+    }
+
+    private void syncApertureModels() {
+        if (syncingAperture) return;
+        syncingAperture = true;
+        try {
+            if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
+            if (apertureBack2 < apertureBack1 + 1) apertureBack2 = apertureBack1 + 1;
+            apertureBack1NumberModel.setMinimum(apertureRadius);
+            apertureBack2NumberModel.setMinimum(apertureBack1 + 1);
+            apertureBack1NumberModel.setValue(apertureBack1);
+            apertureBack2NumberModel.setValue(apertureBack2);
+        } finally {
+            syncingAperture = false;
+        }
     }
 
     public void getFields() {
@@ -1621,27 +1214,8 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     }
 
 
-//    void toggleAstrometrySetupDisplay()
-//        {
-//        Dimension mainScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
-//        if (!Prefs.isLocationOnScreen(new Point(frameLocationX, frameLocationY)))
-//            {
-//            frameLocationX = mainScreenSize.width/2 - astrometrySetupFrame.getWidth()/2;
-//            frameLocationY = mainScreenSize.height/2 - astrometrySetupFrame.getHeight()/2;
-//            }
-//        astrometrySetupFrame.setLocation(frameLocationX, frameLocationY); 
-//		astrometrySetupFrame.setVisible (astrometrySetupDisplayed);
-//        }   
-
-
     public void exit() {
-        if (true)//!canceled)
-        {
-            savePrefs();
-        } else {
-            Prefs.set("astrometry.frameLocationX", astrometrySetupFrame.getLocation().x);
-            Prefs.set("astrometry.frameLocationY", astrometrySetupFrame.getLocation().y);
-        }
+        savePrefs();
         astrometrySetupFrame.dispose();
     }
 
@@ -1655,10 +1229,6 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         boolean YNegative = false;
         String text = AIsSource ? textFieldA.getText().trim() : textFieldB.getText().trim();
         String[] pieces = text.replaceAll("[\\-][^0-9\\.]{0,}", " \\-").replaceAll("[+][^0-9\\.]{0,}", " +").replaceAll("[^0-9\\.\\-+]{1,}", " ").trim().split("[^0-9\\.\\-+]{1,}");
-//        for (int i=0; i<pieces.length; i++)
-//            {
-//            IJ.log(""+pieces[i]);
-//            }
 
         if (pieces.length > 0) {
             X = Tools.parseDouble(pieces[0]);
@@ -1765,7 +1335,6 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         boolean ampm = false;
         boolean pm = false;
         if (base == 1224) {
-//            base = 12;
             ampm = true;
             if (d >= 12.0) {
                 d -= 12.0;
@@ -1774,7 +1343,6 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         }
 
         double dd = Math.abs(d);
-//        dd += 0.0000001;
 
         int h = (int) dd;
         int m = (int) (60.0 * (dd - (double) h));

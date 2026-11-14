@@ -6,6 +6,7 @@ import ai.tegmentum.wasmtime4j.exception.I32ExitException;
 import ai.tegmentum.wasmtime4j.factory.WasmRuntimeFactory;
 import ai.tegmentum.wasmtime4j.wasi.WasiLinker;
 import ai.tegmentum.wasmtime4j.wasi.WasiStdioConfig;
+import ij.IJ;
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.Fits;
 import nom.tam.util.FitsOutputStream;
@@ -165,6 +166,7 @@ public class AnSolveWasi implements AutoCloseable {
         if (session != null && !session.key.equals(key)) closeEngine();
         if (session != null) return session;
 
+        IJ.showStatus("Creating engine config...");
         EngineSession es = new EngineSession();
         es.key = key;
         es.work = Files.createTempDirectory("an-wasi");
@@ -184,6 +186,7 @@ public class AnSolveWasi implements AutoCloseable {
         es.jobFile = es.work.resolve("next-job.txt");
         Files.writeString(es.jobFile, "\n"); // must exist when engine_setup() opens it for -f
 
+        IJ.showStatus("Starting engine...");
         Engine eng = useHostMemory ? hostWasmEngine : wasmEngine;
         HostMmap.Creator hm = useHostMemory ? creator : null;
         try {
@@ -222,6 +225,7 @@ public class AnSolveWasi implements AutoCloseable {
             closeEngine();
             throw t;
         }
+        IJ.showStatus("Created engine.");
         session = es;
         return es;
     }
@@ -262,6 +266,7 @@ public class AnSolveWasi implements AutoCloseable {
         Path work = es.work.resolve("j" + n); // host path of the same folder
         Files.createDirectory(work);
         try {
+            IJ.showStatus("Creating job...");
             Files.write(work.resolve("job.xy"), fitsXylist(xy));
 
             // the same arguments nova's dojob() builds for a source list (process_submissions.py:274-335)
@@ -286,6 +291,7 @@ public class AnSolveWasi implements AutoCloseable {
             if (useHostMemory) {
                 creator.resetStats();
             }
+            IJ.showStatus("Running job...");
             int rc;
             try {
                 rc = callInt(es.inst, "an_engine_run");

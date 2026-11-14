@@ -1,11 +1,10 @@
 package astroj.astrometry.solvers;
 
+import astroj.AstrometrySetup;
 import astroj.astrometry.AnSolveWasi;
 import ij.IJ;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
@@ -38,6 +37,8 @@ public final class WasmAstrometryNet implements PlateSolver {
         if (xs.length != ys.length)
             throw new IllegalArgumentException("xs and ys must be the same length");
 
+        var indexes = AstrometrySetup.ASTROMETRY_NET_INDEX_MANAGER.enabledIndexDirectories();
+
         var points = IntStream.range(0, xs.length)
                         .mapToObj(i -> new double[]{xs[i], imageHeight - ys[i]})
                         .toList();
@@ -56,12 +57,12 @@ public final class WasmAstrometryNet implements PlateSolver {
         }
         try {
             var wcsString = solver.solve(points, imageWidth, imageHeight, scaleLower, scaleUpper, initialRa, initialDec, searchRadius,
-                    true, useDistortionOrder ? Math.clamp((int) distortionOrder, 2, 9) : 0, List.of(INDEXES), null);
+                    true, useDistortionOrder ? Math.clamp((int) distortionOrder, 2, 9) : 0, indexes, null);
             if (wcsString == null) {
                 if (passedRa && maxRetries > 0) {
                     IJ.log("Failed to solve with initial ra/dec, blind solving...");
                     wcsString = solver.solve(points, imageWidth, imageHeight, scaleLower, scaleUpper, 0, 0, 0,
-                            true, useDistortionOrder ? Math.clamp((int) distortionOrder, 2, 9) : 0, List.of(INDEXES), null);
+                            true, useDistortionOrder ? Math.clamp((int) distortionOrder, 2, 9) : 0, indexes, null);
                     if (wcsString != null) {
                         return new Result.Success(wcsString);
                     }

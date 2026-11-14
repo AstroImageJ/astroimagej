@@ -160,7 +160,7 @@ public class AnSolveWasi implements AutoCloseable {
 
     /// Opens the engine if it is not open.  The index folders / config are read by engine_setup(), so a call with
     /// different ones closes the engine and opens a new one.
-    private synchronized EngineSession ensureEngine(List<Path> indexDirs, Path hostConfig) throws Exception {
+    private synchronized EngineSession ensureEngine(Collection<Path> indexDirs, Path hostConfig) throws Exception {
         Object key = List.of(String.valueOf(indexDirs), String.valueOf(hostConfig));
         if (session != null && !session.key.equals(key)) closeEngine();
         if (session != null) return session;
@@ -255,7 +255,7 @@ public class AnSolveWasi implements AutoCloseable {
     /// @return the WCS FITS header text (what nova stores as wcs.fits), or null if not solved
     public synchronized String solve(List<double[]> xy, int width, int height, double scaleLo, double scaleHi,
                                      double ra, double dec, double radius, boolean crpixCenter, int tweakOrder,
-                                     List<Path> indexDirs, Path hostConfig) throws Exception {
+                                     Collection<Path> indexDirs, Path hostConfig) throws Exception {
         EngineSession es = ensureEngine(indexDirs, hostConfig);
         int n = ++es.jobs;
         String g = "/work/j" + n; // guest path of this solve's folder

@@ -2,6 +2,8 @@
 
 package astroj;
 
+import astroj.astrometry.index.AstrometryNetIndexManager;
+import astroj.astrometry.index.gui.IndexManagerPanel;
 import astroj.astrometry.solvers.PlateSolver;
 import ij.IJ;
 import ij.Prefs;
@@ -24,6 +26,7 @@ import java.util.function.DoubleConsumer;
 public class AstrometrySetup implements ActionListener, ItemListener, ChangeListener, FocusListener, MouseWheelListener {
     static int MIN_MAX_STARS = 10;
     public JFrame astrometrySetupFrame;
+    public static final AstrometryNetIndexManager ASTROMETRY_NET_INDEX_MANAGER = new AstrometryNetIndexManager();
     DecimalFormat sixPlaces = new DecimalFormat("0.000000", IJU.dfs);
     Color mainBorderColor = new Color(118, 142, 229);
     String fontName = "Dialog";
@@ -146,6 +149,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         getPrefs();
 
         if (useCCRaDec) {
+            assert astroCC != null;
             ra = astroCC.getRAJ2000();
             dec = astroCC.getDecJ2000();
         }
@@ -240,6 +244,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         while (!done) {
             IJ.wait(500);
             if (useCCRaDec) {
+                assert astroCC != null;
                 ra = astroCC.getRAJ2000();
                 raTF.setText(showSexagesimal ? decToSex(ra, 3, 24, false) : sixPlaces.format(ra));
                 dec = astroCC.getDecJ2000();
@@ -356,11 +361,16 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     private JPanel buildBundledTab() {
         var p = new JPanel(new GridBagLayout());
         p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        var info = new JLabel("""
-                <html>Uses the Astrometry.net solver bundled with AstroImageJ.<br>\
-                No solver-specific options are available yet.</html>""");
-        info.setFont(p12);
-        p.add(info);
+        var b = new JButton("Manage Indexes...");
+        b.addActionListener(_ -> {
+            var frame = new JFrame("Index Manager");
+            frame.setIconImage(createImageIcon("images/astrometry.png", "Astrometry Setup Icon").getImage());
+            frame.add(new IndexManagerPanel(ASTROMETRY_NET_INDEX_MANAGER));
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.pack();
+            frame.setVisible(true);
+        });
+        p.add(b);
         return wrapTop(p);
     }
 

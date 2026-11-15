@@ -820,7 +820,10 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var r3 = row();
         var reuseRadec = new JCheckBox("Reuse previous RA/Dec");
         reuseRadec.setFont(p12);
-        reuseRadec.setToolTipText("If checked, the previous RA/Dec will be used as a starting point for the plate solve.  This is useful if the image is a continuation of a previous image.");
+        reuseRadec.setToolTipText("""
+                If checked, the previous RA/Dec will be used as a starting point for the plate solve.
+                This is useful if the image is a continuation of a previous image.
+                Overrides "Constrain sky location" for subsequent images""");
         reuseRadec.setSelected(Astrometry.REUSE_PREVIOUS_RADEC.get());
         reuseRadec.addActionListener(_ -> Astrometry.REUSE_PREVIOUS_RADEC.set(reuseRadec.isSelected()));
         r3.add(reuseRadec);

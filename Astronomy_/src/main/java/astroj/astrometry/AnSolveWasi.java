@@ -144,8 +144,16 @@ public class AnSolveWasi implements AutoCloseable {
                 linker.configureStdin(WasiStdioConfig.nulled());
             }
             linker.setArguments(argv);
-            for (Map.Entry<Path, String> e : preopens.entrySet())
-                linker.allowDirectoryAccess(e.getKey(), e.getValue()); // host folder -> guest path
+            for (Map.Entry<Path, String> e : preopens.entrySet()) {
+                if (Files.notExists(e.getKey())) {
+                    Files.createDirectories(e.getKey());
+                }
+                if (Files.isDirectory(e.getKey())) {
+                    linker.allowDirectoryAccess(e.getKey(), e.getValue());
+                } else  {
+                    IO.println("%s is not a directory!".formatted(e.getKey()));
+                }
+            }
             Instance inst = linker.instantiate(store, m);
             int rc = 0;
             try {
@@ -205,8 +213,16 @@ public class AnSolveWasi implements AutoCloseable {
             //if (log != null) engineArgs.add("-v");
             engineArgs.addAll(List.of("-f", "/work/next-job.txt"));
             es.linker.setArguments(engineArgs);
-            for (Map.Entry<Path, String> e : es.mounts.dirs.entrySet())
-                es.linker.allowDirectoryAccess(e.getKey(), e.getValue());
+            for (Map.Entry<Path, String> e : es.mounts.dirs.entrySet()) {
+                if (Files.notExists(e.getKey())) {
+                    Files.createDirectories(e.getKey());
+                }
+                if (Files.isDirectory(e.getKey())) {
+                    es.linker.allowDirectoryAccess(e.getKey(), e.getValue());
+                } else  {
+                    IO.println("%s is not a directory!".formatted(e.getKey()));
+                }
+            }
             es.inst = es.linker.instantiate(es.store, astrometryEngineModule);
             if (!es.inst.hasExport("an_engine_open"))
                 throw new IllegalStateException("astrometry-engine is not built in reactor mode");

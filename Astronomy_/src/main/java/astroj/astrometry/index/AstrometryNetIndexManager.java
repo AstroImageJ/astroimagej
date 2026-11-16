@@ -58,8 +58,12 @@ public class AstrometryNetIndexManager {
     private AstrometryNetIndexManager(Path optionsFile) {
         this.optionsFile = optionsFile;
         this.options = IndexOptions.load(optionsFile, getDefaultIndexesDirectory());
+    }
 
-        submit(() -> {
+    /// Scans the download folder and fetches the remote listing in the background.
+    /// Use [#enabledIndexDirectories()] when only the folders are needed.
+    public CompletableFuture<Void> loadForGui() {
+        return submit(() -> {
             // Local scan first so installed indexes are visible
             rebuild();
             fetchRemoteQuietly();
@@ -280,41 +284,39 @@ public class AstrometryNetIndexManager {
     /// enabled custom locations (its `.fits` files, not inspected further).
     public List<Path> enabledIndexFiles() {
         var found = new LinkedHashSet<Path>();
-        for (var s : series()) {
-            if (!options.isSeriesEnabled(s.id())) {
-                continue;
-            }
-
-            for (var family : s.families()) {
-                for (var file : family.files()) {
-                    locate(s, file).ifPresent(found::add);
-                }
-            }
-        }
-
-        for (CustomLocation custom : options.customLocations()) {
-            if (options.isSeriesEnabled(custom.id()) && Files.isDirectory(custom.path())) {
-                try (var files = Files.list(custom.path())) {
-                    files.filter(Files::isRegularFile)
-                            .filter(p -> p.getFileName().toString().endsWith(".fits"))
-                            .sorted()
-                            .forEach(found::add);
-                } catch (IOException ignored) {
-                    // Treat an unreadable folder as empty
-                }
+        for (var dir : enabledIndexDirectories()) {
+            try (var files = Files.list(dir)) {
+                files.filter(Files::isRegularFile)
+                        .filter(p -> p.getFileName().toString().endsWith(".fits"))
+                        .sorted()
+                        .forEach(found::add);
+            } catch (IOException ignored) {
+                // Treat an unreadable folder as empty
             }
         }
 
         return new ArrayList<>(found);
     }
 
-    /// The folders containing enabled index files.
+    /// The existing folders containing enabled index files. This only lists the subfolders of the
+    /// index root and checks them against the options.
     public Set<Path> enabledIndexDirectories() {
         var dirs = new LinkedHashSet<Path>();
 
-        for (var s : series()) {
-            if (options.isSeriesEnabled(s.id()) && !s.id().equals(CATALOG_DIRECTORY)) {
-                dirs.add(seriesDirectory(s).toAbsolutePath());
+        var root = options.indexRoot();
+        if (Files.isDirectory(root)) {
+            try (var subDirs = Files.list(root)) {
+                subDirs.filter(Files::isDirectory)
+                        .sorted()
+                        .forEach(d -> {
+                            var id = d.getFileName().toString();
+                            if (!id.equals(CATALOG_DIRECTORY) &&
+                                    !options.hasCustomLocation(id) && options.isSeriesEnabled(id)) {
+                                dirs.add(d.toAbsolutePath());
+                            }
+                        });
+            } catch (IOException ignored) {
+                // Unreadable folder, treat as empty
             }
         }
 

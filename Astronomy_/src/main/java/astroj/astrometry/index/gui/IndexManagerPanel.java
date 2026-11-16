@@ -56,7 +56,17 @@ public class IndexManagerPanel extends JPanel {
         add(center, BorderLayout.CENTER);
         add(buildButtons(), BorderLayout.SOUTH);
 
-        refresh();
+        indexRootField.setText(manager.options().indexRoot().toString());
+        statusLabel.setText("Loading indexes...");
+        // The manager does no scanning or fetching until the GUI asks, refresh once it finishes
+        manager.loadForGui().whenComplete((_, _) -> SwingUtilities.invokeLater(() -> {
+            refresh();
+            if (manager.lastFetchError() != null) {
+                statusLabel.setText("Could not fetch remote index list");
+            } else {
+                statusLabel.setText(" ");
+            }
+        }));
     }
 
     static void main() {

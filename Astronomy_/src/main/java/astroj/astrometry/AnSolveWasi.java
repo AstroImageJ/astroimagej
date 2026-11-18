@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -29,6 +31,10 @@ public class AnSolveWasi implements AutoCloseable {
     private static final boolean MIRROR_LOG = true;
     /// Guest path of the folder holding the config and one sub-folder per job; also the value of AN_HOST_JOBS
     private static final String GUEST_WORK = "/work";
+    /// Name (inside the work folder) of the file whose appearance makes the engine cancel the running job
+    private static final String CANCEL_FILE = "cancel";
+    /// How often solve() checks the canceled supplier while the engine is working
+    private static final long CANCEL_POLL_MS = 100;
     /// Status in {@link EngineSession#results}
     private static final int DONE = 0, FAILED = 1, ENDED = 2;
     private static final Collection<Path> CLEANUP = new HashSet<>();
@@ -36,6 +42,7 @@ public class AnSolveWasi implements AutoCloseable {
     private final Engine wasmEngine;
     private final Module augmentModule, astrometryEngineModule;
     private final boolean useHostMemory;
+    private final BooleanSupplier cancelled;
     private Engine hostWasmEngine;
     private HostMmap.Creator creator;
     private EngineSession session;
@@ -51,11 +58,12 @@ public class AnSolveWasi implements AutoCloseable {
         }));
     }
 
-    public AnSolveWasi(Path augmentWasm, Path engineWasm, boolean useHostMemory) throws Exception {
-        this(Files.readAllBytes(augmentWasm), Files.readAllBytes(engineWasm), useHostMemory);
+    public AnSolveWasi(Path augmentWasm, Path engineWasm, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
+        this(Files.readAllBytes(augmentWasm), Files.readAllBytes(engineWasm), useHostMemory, cancelled);
     }
 
-    public AnSolveWasi(byte[] augmentWasm, byte[] engineWasm, boolean useHostMemory) throws Exception {
+    public AnSolveWasi(byte[] augmentWasm, byte[] engineWasm, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
+        this.cancelled = cancelled;
         // Disable wasmtime logging as it runs every time the engine is created
         Logger.getLogger("ai.tegmentum.wasmtime4j.factory.WasmRuntimeFactory").setLevel(Level.OFF);
         this.useHostMemory = useHostMemory;
@@ -255,7 +263,10 @@ public class AnSolveWasi implements AutoCloseable {
         Files.writeString(es.work.resolve("astrometry.cfg"), cfg);
 
         IJ.showStatus("Starting engine...");
-        List<String> engineArgs = List.of("astrometry-engine", "-c", GUEST_WORK + "/astrometry.cfg");
+        List<String> engineArgs = List.of("astrometry-engine",
+                "-c", GUEST_WORK + "/astrometry.cfg", // The engine configuration (which lists indexes)
+                "-C", GUEST_WORK + "/" + CANCEL_FILE // The engine stops solving when this file exists
+        );
         es.thread = new Thread(() -> engineMain(es, engineArgs), "astrometry-engine");
         es.thread.setDaemon(true);
         es.thread.start();
@@ -287,11 +298,16 @@ public class AnSolveWasi implements AutoCloseable {
     public synchronized String solve(List<double[]> xy, int width, int height, double scaleLo, double scaleHi,
                                      double ra, double dec, double radius, boolean crpixCenter, int tweakOrder,
                                      Collection<Path> indexDirs, Path hostConfig) throws Exception {
+        if (isCancelled()) {
+            return null;
+        }
         EngineSession es = ensureEngine(indexDirs, hostConfig);
         int n = ++es.jobs;
         String g = GUEST_WORK + "/j" + n; // guest path of this solve's folder
         Path work = es.work.resolve("j" + n); // host path of the same folder
+        Path cancelFile = es.work.resolve(CANCEL_FILE);
         Files.createDirectory(work);
+        Files.deleteIfExists(cancelFile); // Remove any existing cancel file
         try {
             IJ.showStatus("Creating job...");
             Files.write(work.resolve("job.xy"), fitsXylist(xy));
@@ -310,6 +326,9 @@ public class AnSolveWasi implements AutoCloseable {
 
             int rc1 = runWasi("augment-xylist", augmentModule, a, es.mounts.dirs);
             if (rc1 != 0) throw new IllegalStateException("augment-xylist exited with " + rc1);
+            if (isCancelled()) {
+                return null;
+            }
 
             // Hand the job to the running engine: it reads $AN_HOST_JOBS/j<n>/job.axy
             if (useHostMemory) {
@@ -317,10 +336,15 @@ public class AnSolveWasi implements AutoCloseable {
             }
             IJ.showStatus("Running job...");
             es.jobQueue.add(n);
-            int[] r;
-            do { // skip results left over from an earlier, interrupted solve
-                r = es.results.take();
-            } while (r[0] != n && r[1] != ENDED);
+            int[] r = null;
+            var cancelSent = false;
+            while (r == null || (r[0] != n && r[1] != ENDED)) { // skip results left over from an earlier, interrupted solve
+                r = es.results.poll(CANCEL_POLL_MS, TimeUnit.MILLISECONDS);
+                if (r == null && !cancelSent && cancelled != null && cancelled.getAsBoolean()) {
+                    Files.writeString(cancelFile, "cancel\n"); // the engine ends the job, then reports it done as usual
+                    cancelSent = true;
+                }
+            }
             if (r[1] == ENDED) {
                 var failure = es.failure;
                 closeEngine();
@@ -330,8 +354,16 @@ public class AnSolveWasi implements AutoCloseable {
             Path wcs = work.resolve("job.wcs");
             return Files.exists(wcs) ? Files.readString(wcs, StandardCharsets.US_ASCII) : null;
         } finally {
+            try {
+                Files.deleteIfExists(cancelFile);
+            } catch (IOException _) {
+            }
             deleteTree(work);
         }
+    }
+
+    private boolean isCancelled() {
+        return cancelled != null && cancelled.getAsBoolean();
     }
 
     @Override

@@ -12,11 +12,13 @@ import java.util.stream.IntStream;
 public final class WasmAstrometryNet implements PlateSolver {
     private final AnSolveWasi solver;
     private final int maxRetries;
+    private final BooleanSupplier cancelled;
 
-    public WasmAstrometryNet(int maxRetries) {
+    private WasmAstrometryNet(int maxRetries, BooleanSupplier cancelled) {
+        this.cancelled = cancelled != null ? cancelled : () -> false;
         try {
             solver = new AnSolveWasi(readLib("/astroj/wasm/augment-xylist.wasm"),
-                    readLib("/astroj/wasm/astrometry-engine-hostmmap.wasm"), true);
+                    readLib("/astroj/wasm/astrometry-engine-hostmmap.wasm"), true, cancelled);
         } catch (Exception e) {
             IJ.error("PlateSolver", "Failed to initialize WasmAstrometryNet");
             throw new RuntimeException(e);
@@ -26,7 +28,7 @@ public final class WasmAstrometryNet implements PlateSolver {
 
     //todo implement
     public WasmAstrometryNet(boolean annotate, BooleanSupplier cancelled, int maxRetries, int maxPolls) {
-        this(maxRetries);
+        this(maxRetries, cancelled);
     }
 
     @Override
@@ -59,12 +61,18 @@ public final class WasmAstrometryNet implements PlateSolver {
             var wcsString = solver.solve(points, imageWidth, imageHeight, scaleLower, scaleUpper, initialRa, initialDec, searchRadius,
                     true, useDistortionOrder ? Math.clamp((int) distortionOrder, 2, 9) : 0, indexes, null);
             if (wcsString == null) {
+                if (cancelled.getAsBoolean()) {
+                    return new Result.Failure("Cancelled");
+                }
                 if (passedRa && maxRetries > 0) {
                     IJ.log("Failed to solve with initial ra/dec, blind solving...");
                     wcsString = solver.solve(points, imageWidth, imageHeight, scaleLower, scaleUpper, 0, 0, 0,
                             true, useDistortionOrder ? Math.clamp((int) distortionOrder, 2, 9) : 0, indexes, null);
                     if (wcsString != null) {
                         return new Result.Success(wcsString);
+                    }
+                    if (cancelled.getAsBoolean()) {
+                        return new Result.Failure("Cancelled");
                     }
                 }
                 return new Result.Failure("Not solved");

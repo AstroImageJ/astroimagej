@@ -1,5 +1,6 @@
 package astroj;
 
+import astroj.astrometry.GpuMaxima;
 import astroj.astrometry.solvers.HttpAstrometryNet;
 import astroj.astrometry.solvers.PlateSolver;
 import astroj.astrometry.solvers.WasmAstrometryNet;
@@ -15,9 +16,11 @@ import ij.process.ImageProcessor;
 import ij.util.Tools;
 import util.prefs.RegionExclusion;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -38,9 +41,11 @@ public class Astrometry { //implements KeyListener
     public static final Property<Integer> CUSTOM_POLLING = new Property<>(1, Astrometry.class);
     public static final Property<PlateSolver.SolverType> PLATE_SOLVER = new Property<>(PlateSolver.SolverType.ASTROMETRY_NET_WASM, Astrometry.class);
     public static final Property<Boolean> REUSE_PREVIOUS_RADEC = new Property<>(true, Astrometry.class);
+    public static final Property<Boolean> USE_GPU_ACCELERATION = new Property<>(true, Astrometry.class);
+    public static final Property<Boolean> SKIP_IMAGE_UPDATE = new Property<>(false, Astrometry.class);
     final static int[] DIR_X_OFFSET = new int[]{0, 1, 1, 1, 0, -1, -1, -1};
     final static int[] DIR_Y_OFFSET = new int[]{-1, -1, 0, 1, 1, 1, 0, -1};
-    final static byte MAXIMUM = (byte) 1;            // marks local maxima (irrespective of noise tolerance)
+    final static byte MAXIMUM = GpuMaxima.MAXIMUM;   // marks local maxima (irrespective of noise tolerance); set by the GPU/CPU kernel
     final static byte LISTED = (byte) 2;             // marks points currently in the list
     final static byte PROCESSED = (byte) 4;          // marks points processed previously
     final static byte MAX_AREA = (byte) 8;           // marks areas near a maximum, within the tolerance
@@ -182,11 +187,43 @@ public class Astrometry { //implements KeyListener
         if (endSlice > impOriginal.getStackSize()) endSlice = impOriginal.getStackSize();
         if (endSlice < startSlice) endSlice = startSlice;
 
+
+        AnnotateRoi warning = null;
+        if (SKIP_IMAGE_UPDATE.get()) {
+            warning = new AnnotateRoi(false, false, true, false,
+                    impOriginal.getWidth() / 2f, impOriginal.getHeight() / 2f, 2,
+                    "Plate Solving...", Color.GREEN);
+            warning.setImage(impOriginal);
+
+            if (OverlayCanvas.getOverlayCanvas(impOriginal) instanceof OverlayCanvas o) {
+                o.add(warning);
+                o.repaintOverlay();
+            }
+            // Wait for the warning to show
+            try {
+                SwingUtilities.invokeAndWait(() -> {});
+            } catch (InterruptedException | InvocationTargetException _) {
+            }
+
+            impOriginal.lockSilently();
+            if (impOriginal.getCanvas() instanceof AstroCanvas a) {
+                a.setPerformDraw(false);
+            }
+        }
         try (var solver = getSolver()) {
             return processStack(solver, rawPath);
         } catch (Exception e) {
             e.printStackTrace();
             return FAILED;
+        } finally {
+            if (impOriginal.getCanvas() instanceof AstroCanvas a) {
+                a.setPerformDraw(true);
+            }
+            if (OverlayCanvas.getOverlayCanvas(impOriginal) instanceof OverlayCanvas o && warning != null) {
+                o.removeRoi(warning);
+            }
+            impOriginal.updateAndDraw();
+            impOriginal.unlock();
         }
     }
 
@@ -206,7 +243,11 @@ public class Astrometry { //implements KeyListener
         for (slice = startSlice; slice <= endSlice; slice++) {
             if (canceled) return CANCELED;
 
-            impOriginal.setSlice(slice);
+            if (SKIP_IMAGE_UPDATE.get()) {
+                impOriginal.setSliceWithoutUpdate(slice);
+            } else {
+                impOriginal.setSlice(slice);
+            }
 
             if (skipIfHasWCS) {
                 WCS wcs = new WCS(impOriginal);
@@ -220,24 +261,19 @@ public class Astrometry { //implements KeyListener
                 }
             }
 //            imp = new ImagePlus(impOriginal.getStack().getSliceLabel(slice), impOriginal.getStack().getProcessor(slice) );
-            imp = new ImagePlus("Working_" + IJU.getSliceFilename(impOriginal, slice), impOriginal.getStack().getProcessor(slice).duplicate());
-            imp.setCalibration(impOriginal.getCalibration());
-            imp.setFileInfo(impOriginal.getFileInfo());
+            imp = null; // only created when a later stage needs an ImagePlus (centroiding), see findMaxima
 
 //            ocanvas.removeAnnotateRois();
             ocanvas.removeAstrometryAnnotateRois();
-            impOriginal.updateAndDraw();
+            if (!SKIP_IMAGE_UPDATE.get()) {
+                impOriginal.updateAndDraw();
+            }
 
 //            IJ.runPlugIn(impOriginal, "Clear_Overlay", "");
 //            imp = impOriginal..duplicate();
 //            IJ.log("starting median");
-            if (useMedianFilter) {
-                IJ.showStatus("Median filter image");
-                IJ.run(imp, "Median...", "radius=" + medianFilterRadius);
-            }
 //            IJ.log("finished median");
 //            IJ.run(imp,"Remove Outliers...","radius=2 threshold=50 which=Bright stack");
-            IJ.showStatus("Finding sources");
             if (canceled) return CANCELED;
             findMaxima(minPeakFindToleranceSTDEV);
 //            if (IJ.escapePressed())return false;
@@ -275,7 +311,7 @@ public class Astrometry { //implements KeyListener
                 ra = lastRa;
                 dec = lastDec;
                 raDecRadius = lastRadius;
-            }//todo first slice, read from header RA and DEC headers, solver can take hms as string
+            }
 
             // NaN tells the solver that the corresponding hint is not in use.
             PlateSolver.Result result = solver.solve(xs, ys, width, height,
@@ -496,7 +532,7 @@ public class Astrometry { //implements KeyListener
             if (resaveRaw) FitsJ.putHeader(impRaw, headerRaw);
             saveActive = false;
 
-            if (impOriginal.getCanvas() instanceof AstroCanvas) {
+            if (!SKIP_IMAGE_UPDATE.get() && impOriginal.getCanvas() instanceof AstroCanvas) {
                 ((AstroStackWindow) impOriginal.getWindow()).setAstroProcessor(true);
                 impOriginal.getWindow().repaint();
             }
@@ -504,7 +540,9 @@ public class Astrometry { //implements KeyListener
 
             ocanvas.removeAstrometryAnnotateRois();
 //            ocanvas.clearRois();
-            impOriginal.updateAndDraw();
+            if (!SKIP_IMAGE_UPDATE.get()) {
+                impOriginal.updateAndDraw();
+            }
 
 //            IJ.runPlugIn(impOriginal, "Clear_Overlay", "");
 //            IJ.runPlugIn(impOriginal, "Clear_Overlay", "");
@@ -522,7 +560,9 @@ public class Astrometry { //implements KeyListener
                             obj.x() - 0.5, height - (obj.y() - 0.5), getRadius(obj),
                             obj.names().iterator().next(), annotationColor);
                 }
-                impOriginal.draw();
+                if (!SKIP_IMAGE_UPDATE.get()) {
+                    impOriginal.draw();
+                }
             }
             if (notDP && (autoSave || impOriginal.getStack().isVirtual())) {
                 boolean saveSuccess = false;
@@ -616,18 +656,33 @@ public class Astrometry { //implements KeyListener
     }
 
     public void findMaxima(double tolerance) {
-        ImageProcessor ip = imp.getProcessor();
-        if (dirOffset == null) makeDirectionOffsets(ip);
-        Rectangle roi = ip.getRoi();
+        ImageProcessor oIp = impOriginal.getProcessor();
+        float[] src = (float[]) (oIp instanceof FloatProcessor ? oIp : oIp.convertToFloat()).getPixels();
+        Rectangle roi = new Rectangle(0, 0, width, height);
         if (RegionExclusion.EXCLUDE_BORDERS.get()) {
             roi.width -= (RegionExclusion.BORDER_EXCLUSION_LEFT.get() + RegionExclusion.BORDER_EXCLUSION_RIGHT.get());
             roi.height -= (RegionExclusion.BORDER_EXCLUSION_TOP.get() + RegionExclusion.BORDER_EXCLUSION_BOTTOM.get());
             roi.translate(RegionExclusion.BORDER_EXCLUSION_LEFT.get(), RegionExclusion.BORDER_EXCLUSION_TOP.get());
         }
+        if (roi.width <= 0 || roi.height <= 0) {
+            npoints = 0;
+            return;
+        }
+        if (canceled) return;
+
+        // The median (when enabled) and the marking of the local maxima run on the GPU, with a CPU fallback.
+        var found = GpuMaxima.find(src, width, height, roi, useMedianFilter && medianFilterRadius > 0 ? medianFilterRadius : 0);
+        if (canceled) return;
+        var ip = new FloatProcessor(width, height, found.image());
         ip.setRoi(roi);
-        byte[] mask = ip.getMaskArray();
-        ByteProcessor typeP = new ByteProcessor(width, height);     //will be a notepad for pixel types
-        byte[] types = (byte[]) typeP.getPixels();
+        var typeP = new ByteProcessor(width, height, found.types(), null); // already holds the MAXIMUM marks
+        if (dirOffset == null) {
+            makeDirectionOffsets(ip);
+        }
+        if (useCentroid) {
+            imp = new ImagePlus("Working_" + IJU.getSliceFilename(impOriginal, slice), ip);
+            imp.setCalibration(impOriginal.getCalibration());
+        }
         float globalMin = Float.MAX_VALUE;
         float globalMax = -Float.MAX_VALUE;
         for (int y = roi.y; y < roi.y + roi.height; y++) {         //find local minimum/maximum now
@@ -640,7 +695,7 @@ public class Astrometry { //implements KeyListener
 
         if (canceled) return;
         IJ.showStatus("Getting sorted maxima...");
-        long[] maxPoints = getSortedMaxPoints(ip, typeP, true, false, globalMin, globalMax, ImageProcessor.NO_THRESHOLD);
+        long[] maxPoints = getSortedMaxPoints(ip, typeP, globalMin, globalMax);
         if (canceled) return;
         IJ.showStatus("Analyzing  maxima...");
         float maxSortingError = 0;
@@ -654,54 +709,30 @@ public class Astrometry { //implements KeyListener
      * Find all local maxima (irrespective whether they finally qualify as maxima or not)
      *
      * @param ip              The image to be analyzed
-     * @param typeP           A byte image, same size as ip, where the maximum points are marked as MAXIMUM
-     *                        (do not use it as output: for rois, the points are shifted w.r.t. the input image)
-     * @param excludeEdgesNow Whether to exclude edge pixels
-     * @param isEDM           Whether ip is a float Euclidian distance map
+     * @param typeP           A byte image, same size as ip, where the maximum points are already marked as MAXIMUM
+     *                        (StarKernels.markMaxima, run by GpuMaxima on the GPU or the CPU: edge pixels and pixels
+     *                        outside the roi are excluded there). The marks at globalMin are cleared here.
      * @param globalMin       The minimum value of the image or roi
-     * @param threshold       The threshold (calibrated) below which no pixels are processed. Ignored if ImageProcessor.NO_THRESHOLD
      * @return Maxima sorted by value. In each array element (long, i.e., 64-bit integer), the value
      * is encoded in the upper 32 bits and the pixel offset in the lower 32 bit
      * Note: Do not use the positions of the points marked as MAXIMUM in typeP, they are invalid for images with a roi.
      */
-    long[] getSortedMaxPoints(ImageProcessor ip, ByteProcessor typeP, boolean excludeEdgesNow,
-                              boolean isEDM, float globalMin, float globalMax, double threshold) {
+    long[] getSortedMaxPoints(ImageProcessor ip, ByteProcessor typeP, float globalMin, float globalMax) {
         Rectangle roi = ip.getRoi();
         byte[] types = (byte[]) typeP.getPixels();
         int nMax = 0;  //counts local maxima
-        boolean checkThreshold = threshold != ImageProcessor.NO_THRESHOLD;
-        //long t0 = System.currentTimeMillis();
-        for (int y = roi.y; y < roi.y + roi.height; y++) {         // find local maxima now
+        for (int y = roi.y; y < roi.y + roi.height; y++) {         // count the marked maxima (and drop those at globalMin: it was not known when they were marked)
             if (y % 50 == 0 && canceled) return null;
-            for (int x = roi.x, i = x + y * width; x < roi.x + roi.width; x++, i++) {      // for better performance with rois, restrict search to roi
-                float v = ip.getPixelValue(x, y);
-                float vTrue = v;
-                if (v == globalMin) continue;
-                if (excludeEdgesNow && (x == 0 || x == width - 1 || y == 0 || y == height - 1)) continue;
-                if (checkThreshold && v < threshold) continue;
-                boolean isMax = true;
-                    /* check wheter we have a local maximum.
-                    Note: For an EDM, we need all maxima: those of the EDM-corrected values
-                    (needed by findMaxima) and those of the raw values (needed by cleanupMaxima) */
-                boolean isInner = (y != 0 && y != height - 1) && (x != 0 && x != width - 1); //not necessary, but faster than isWithin
-                for (int d = 0; d < 8; d++) {                         // compare with the 8 neighbor pixels
-                    if (isInner || isWithin(x, y, d)) {
-                        float vNeighbor = ip.getPixelValue(x + DIR_X_OFFSET[d], y + DIR_Y_OFFSET[d]);
-                        float vNeighborTrue = vNeighbor;
-                        if (vNeighbor > v && vNeighborTrue > vTrue) {
-                            isMax = false;
-                            break;
-                        }
-                    }
-                }
-                if (isMax) {
-                    types[i] = MAXIMUM;
+            for (int x = roi.x, i = x + y * width; x < roi.x + roi.width; x++, i++) {
+                if (types[i] != MAXIMUM) continue;
+                if (ip.getPixelValue(x, y) == globalMin) {
+                    types[i] = 0;
+                } else {
                     nMax++;
                 }
             } // for x
         } // for y
         if (canceled) return null;
-        //long t1 = System.currentTimeMillis();IJ.log("markMax:"+(t1-t0));
 
         float vFactor = (float) (2e9 / (globalMax - globalMin)); //for converting float values into a 32-bit int
         long[] maxPoints = new long[nMax];                  //value (int) is in the upper 32 bit, pixel offset in the lower
@@ -715,7 +746,7 @@ public class Astrometry { //implements KeyListener
                 }
         //long t2 = System.currentTimeMillis();IJ.log("makeArray:"+(t2-t1));
         if (canceled) return null;
-        Arrays.sort(maxPoints);                                 //sort the maxima by value
+        Arrays.parallelSort(maxPoints);                         //sort the maxima by value
         //long t3 = System.currentTimeMillis();IJ.log("sort:"+(t3-t2));
         return maxPoints;
     } //getSortedMaxPoints
@@ -736,17 +767,19 @@ public class Astrometry { //implements KeyListener
      *                        precision loss when sorting ints instead of floats, or because sorting does not
      *                        take the height correction in 'trueEdmHeight' into account
      */
-    void analyzeAndMarkMaxima(ImageProcessor ip, ByteProcessor typeP, long[] maxPoints, boolean excludeEdgesNow,
+    void analyzeAndMarkMaxima(FloatProcessor ip, ByteProcessor typeP, long[] maxPoints, boolean excludeEdgesNow,
                               boolean isEDM, float globalMin, double tolerance, float maxSortingError) {
         byte[] types = (byte[]) typeP.getPixels();
         int nMax = maxPoints.length;
-        int[] pList = new int[width * height];       //here we enter points starting from a maximum
+        float[] pixels = (float[]) ip.getPixels();   // ip is always a FloatProcessor here: skip getPixelValue's checks
+        int[] pList = new int[1 << 12];              //here we enter points starting from a maximum; grows on demand (a region is tiny compared to the image)
         Vector<int[]> xyVector = new Vector<>();
         Roi roi = null;
         if (imp != null) {
             roi = imp.getRoi();
         }
 
+        maxima:
         for (int iMax = nMax - 1; iMax >= 0; iMax--) {    //process all maxima now, starting from the highest
             if (iMax % 100 == 0 && canceled) return;
             int offset0 = (int) maxPoints[iMax];     //type cast gets 32 lower bits, where pixel index is encoded
@@ -756,7 +789,7 @@ public class Astrometry { //implements KeyListener
             //we create a list of connected points and start the list at the current maximum
             int x0 = offset0 % width;
             int y0 = offset0 / width;
-            float v0 = ip.getPixelValue(x0, y0);
+            float v0 = pixels[offset0];
             boolean sortingError;
             do {                                    //repeat if we have encountered a sortingError
                 if (canceled) return;
@@ -786,7 +819,7 @@ public class Astrometry { //implements KeyListener
                             }
                             int x2 = x + DIR_X_OFFSET[d];
                             int y2 = y + DIR_Y_OFFSET[d];
-                            float v2 = ip.getPixelValue(x2, y2);
+                            float v2 = pixels[offset2];
                             if (v2 > v0 + maxSortingError) {
                                 maxPossible = false;    //we have reached a higher point, thus it is no maximum
                                 //if(x0<25&&y0<20)IJ.write("x0,y0="+x0+","+y0+":stop at higher neighbor from x,y="+x+","+y+", dir="+d+",value,value2,v2-v="+v0+","+v2+","+(v2-v0));
@@ -799,6 +832,9 @@ public class Astrometry { //implements KeyListener
                                     x0 = x2;
                                     y0 = y2;
 
+                                }
+                                if (listLen == pList.length) {
+                                    pList = Arrays.copyOf(pList, Math.min(listLen * 2, width * height));
                                 }
                                 pList[listLen] = offset2;
                                 listLen++;              //we have found a new point within the tolerance
@@ -854,8 +890,16 @@ public class Astrometry { //implements KeyListener
                         if (!isEdgeMaximum) {
                             int x = offset % width;
                             int y = offset / width;
-                            if ((roi == null || roi.contains(x, y)) && (!useMaxPeakFindValue || ip.getPixelValue(x, y) < maxPeakFindValue))
+                            if ((roi == null || roi.contains(x, y)) && (!useMaxPeakFindValue || pixels[offset] < maxPeakFindValue)) {
                                 xyVector.addElement(new int[]{x, y});
+                                // The maxima are already sorted, so we've found all the star we're going to
+                                // The original maxima sort is quantized, so two maxima whose intensities
+                                // differ by ~(globalMax-globalMin)/2e9 or less will be sorted by their position
+                                // Both the original IJ and AIJ code never reset the collected points,
+                                // nor sort it further. Since we only take the first n maxima anyways,
+                                // this early stop is acceptable
+                                if (xyVector.size() >= maxNumStars) break maxima;
+                            }
                         }
                     }
                 } //if !sortingError
@@ -895,7 +939,9 @@ public class Astrometry { //implements KeyListener
                     for (int i = 0; i < npoints; i++) {
                         addAnnotateRoi(impOriginal, true, useCentroid, false, true, xdpoints[i], ydpoints[i], useCentroid ? apertureRadius : annotateRadius, "", sourceColor);
                     }
-                    impOriginal.draw();
+                    if (!SKIP_IMAGE_UPDATE.get()) {
+                        impOriginal.draw();
+                    }
                 }
             }
         }

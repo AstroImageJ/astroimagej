@@ -15,6 +15,9 @@ dependencies {
     api("org.jocl:jocl:2.0.5")
     api("ai.tegmentum:wasmtime4j:48.0.0-2.0.0")
     api("ai.tegmentum:wasmtime4j-panama:48.0.0-2.0.0")
+    api("io.github.beehive-lab:tornado-runtime:8.1.0-jdk22plus")
+    api("io.github.beehive-lab:tornado-drivers-opencl:8.1.0-jdk22plus")
+    api("io.github.beehive-lab:tornado-drivers-metal:8.1.0-jdk22plus")
 }
 
 artifacts {

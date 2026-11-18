@@ -365,10 +365,17 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
     private JPanel buildBundledTab() {
         var p = new JPanel(new GridBagLayout());
+        var c = new GridBagConstraints();
         p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         var b = new JButton("Manage Indexes...");
         b.addActionListener(_ -> openIndexManager());
-        p.add(b);
+        p.add(b,c);
+
+        c.gridy = 2;
+        var skipUpdate = new JCheckBox("Skip image updates", Astrometry.SKIP_IMAGE_UPDATE.get());
+        skipUpdate.addActionListener(_ -> Astrometry.SKIP_IMAGE_UPDATE.set(skipUpdate.isSelected()));
+        p.add(skipUpdate, c);
+
         return wrapTop(p);
     }
 
@@ -586,6 +593,12 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         medianFilterRadiusSpinner.addMouseWheelListener(this);
         setWidth(medianFilterRadiusSpinner, 100);
         r1.add(titled("Filter Radius (pixels)", medianFilterRadiusSpinner));
+
+        var gpu = new JCheckBox("Use GPU acceleration", Astrometry.USE_GPU_ACCELERATION.get());
+        gpu.setFont(p12);
+        gpu.addActionListener(_ -> Astrometry.USE_GPU_ACCELERATION.set(gpu.isSelected()));
+        r1.add(gpu);
+
         g.add(r1);
 
         // Noise tolerance

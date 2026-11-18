@@ -137,6 +137,14 @@ Licensed under [Apache 2.0](https://github.com/fangyidong/json-simple?tab=Apache
 ### [Interactive 3D Plot](https://github.com/fiji/Interactive_3D_Surface_Plot)
 Licensed under [GPL 3.0](https://github.com/fiji/Interactive_3D_Surface_Plot/blob/master/LICENSE.txt)
 
+### [Wasmtime4j](https://github.com/tegmentum/wasmtime4j)
+Licensed under [Apache 2.0](https://github.com/tegmentum/wasmtime4j/blob/master/LICENSE)
+
+### [Astrometry.net](https://github.com/dstndstn/astrometry.net)
+Astrometry.net has had some minor tweaks to compile it to WebAssembly and to interact with it in Java. 
+You can find the modified version [here](https://github.com/AstroImageJ/astrometry.net/tree/astroimagej-wasm)  
+Licensed under [GPL 3.0](https://github.com/dstndstn/astrometry.net/blob/main/LICENSE)
+
 ## Sponsors
 <table>
  <tbody>

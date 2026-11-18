@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -266,6 +267,7 @@ public final class HostMmap {
         public final AtomicLong mapped = new AtomicLong();
         public final AtomicLong unmapped = new AtomicLong();
         public final AtomicLong mapNanos = new AtomicLong();
+        private final Set<Path> mappedFiles = ConcurrentHashMap.newKeySet();
 
         /// guest address -> {host path, file offset, length}; only used for tracing/verification
         private final Map<Long, Object[]> rec = new HashMap<>();
@@ -277,6 +279,12 @@ public final class HostMmap {
             mapped.set(0);
             unmapped.set(0);
             mapNanos.set(0);
+            mappedFiles.clear();
+        }
+
+        /// The amount of unique files that have been mapped
+        public int mappedFileCount() {
+            return mappedFiles.size();
         }
 
         @Override
@@ -350,6 +358,7 @@ public final class HostMmap {
                 }
                 rec.put(guestAddr, new Object[]{host, off, len});
                 mapped.incrementAndGet();
+                mappedFiles.add(host);
                 mapNanos.addAndGet(System.nanoTime() - t0);
                 if (VERIFY) verify(m.base + guestAddr, len, host, off);
                 if (TRACE) System.err.println("[map] " + host.getFileName() + " off=" + off + " len=" + len + " at " + guestAddr);

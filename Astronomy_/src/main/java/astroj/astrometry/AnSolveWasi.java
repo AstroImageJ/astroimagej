@@ -19,9 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -175,6 +173,7 @@ public class AnSolveWasi implements AutoCloseable {
         var none = new WasmValueType[0];
         linker.defineHostFunction("an", "next_job", new FunctionType(none, new WasmValueType[]{i32}),
                 (HostFunction) _ -> {
+                    es.ready = true;
                     // Must not block: wasmtime4j counts a running callback as "in flight" in one static counter shared
                     // by all linkers, and closing any linker waits for that counter to reach 0.
                     var id = es.jobQueue.poll();
@@ -271,7 +270,18 @@ public class AnSolveWasi implements AutoCloseable {
         es.thread.setDaemon(true);
         es.thread.start();
         session = es; // startup errors surface through es.dead / es.failure in solve()
-        IJ.showStatus("Created engine.");
+
+        // Loading many indexes can take a while and happens on the engine thread, so a ticker thread keeps the
+        // status line / progress bar alive until the engine first asks for a job (es.ready) or dies.
+        es.ticker = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "an-engine-startup-progress");
+            t.setDaemon(true);
+            return t;
+        });
+        es.ticker.scheduleWithFixedDelay(
+                new Ticker(hostConfig == null ? countIndexFiles(indexDirs) : 0,
+                        session, useHostMemory ? creator : null, System.nanoTime()
+                ), 0, 500, TimeUnit.MILLISECONDS);
         return es;
     }
 
@@ -280,6 +290,9 @@ public class AnSolveWasi implements AutoCloseable {
         EngineSession es = session;
         if (es == null) return;
         session = null;
+        if (es.ticker != null) {
+            es.ticker.shutdownNow();
+        }
         es.jobQueue.add(0); // an.next_job returns 0: main() frees the engine and returns
         try {
             es.thread.join(10_000);
@@ -334,7 +347,9 @@ public class AnSolveWasi implements AutoCloseable {
             if (useHostMemory) {
                 creator.resetStats();
             }
-            IJ.showStatus("Running job...");
+            if (es.ready) {
+                IJ.showStatus("Running job...");
+            }
             es.jobQueue.add(n);
             int[] r = null;
             var cancelSent = false;
@@ -374,6 +389,24 @@ public class AnSolveWasi implements AutoCloseable {
         wasmRuntime.close();
     }
 
+    /// Number of index-*.fits files in the given folders (0 if unknown).
+    private static int countIndexFiles(Collection<Path> dirs) {
+        if (dirs == null) {
+            return 0;
+        }
+        int n = 0;
+        for (var d : dirs) {
+            try (var s = Files.list(d)) {
+                n += (int) s.filter(p -> {
+                    var f = p.getFileName().toString().toLowerCase();
+                    return f.startsWith("index-") && f.endsWith(".fits");
+                }).count();
+            } catch (IOException _) {
+            }
+        }
+        return n;
+    }
+
     private static final class EngineSession {
         /// host folder mounted at /work: config and one sub-folder per solve
         Path work;
@@ -387,6 +420,10 @@ public class AnSolveWasi implements AutoCloseable {
         final BlockingQueue<Integer> jobQueue = new LinkedBlockingQueue<>();
         /// {job number, DONE | FAILED | ENDED} from the callbacks; ENDED (job 0) when the engine thread ends
         final BlockingQueue<int[]> results = new LinkedBlockingQueue<>();
+        /// the engine finished setup and has asked for a job at least once
+        volatile boolean ready;
+        /// reports startup progress until the engine is ready or dead
+        volatile ScheduledExecutorService ticker;
         /// the engine thread has ended
         volatile boolean dead;
         volatile Throwable failure;
@@ -417,6 +454,42 @@ public class AnSolveWasi implements AutoCloseable {
                 out.append(t).append('\n');
             }
             return out.toString();
+        }
+    }
+
+    private record Ticker(int totalIndexes, EngineSession es, HostMmap.Creator hm, long startNanos) implements Runnable {
+        Ticker {
+            if (hm != null) {
+                hm.resetStats();
+            }
+        }
+
+        @Override
+        public void run() {
+            if (es.ready || es.dead) {
+                IJ.showStatus(es.ready ? "Created engine." : "");
+                IJ.showProgress(1.0);
+                IJ.showProgress(-1.0);
+                es.ticker.shutdown();
+                return;
+            }
+            var secs = (System.nanoTime() - startNanos) / 1_000_000_000L;
+            var mappedNow = hm != null ? hm.mappedFileCount() : 0;
+            var msg = "Starting engine (" + secs + " s";
+            if (totalIndexes > 0) {
+                msg += ", " + totalIndexes + " index files";
+            }
+            if (mappedNow > 0) {
+                msg += ", " + mappedNow + " loaded";
+            }
+            IJ.showStatus(msg + ")...");
+            if (totalIndexes > 0 && mappedNow > 0) {
+                IJ.showProgress(-1.0); // We have progress now
+                IJ.showProgress(Math.min(0.99, (double) mappedNow / totalIndexes));
+            } else {
+                // unknown fraction: sweep the bar so it is visibly alive
+                IJ.showProgress(-1.0 * ((secs % 10) + 1) / 10.0);
+            }
         }
     }
 }

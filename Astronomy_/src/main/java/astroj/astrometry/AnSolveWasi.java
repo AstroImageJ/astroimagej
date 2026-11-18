@@ -15,9 +15,13 @@ import nom.tam.util.FitsOutputStream;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
@@ -35,7 +39,6 @@ public class AnSolveWasi implements AutoCloseable {
     private static final long CANCEL_POLL_MS = 100;
     /// Status in {@link EngineSession#results}
     private static final int DONE = 0, FAILED = 1, ENDED = 2;
-    private static final Collection<Path> CLEANUP = new HashSet<>();
     private final WasmRuntime wasmRuntime;
     private final Engine wasmEngine;
     private final Module augmentModule, astrometryEngineModule;
@@ -44,17 +47,7 @@ public class AnSolveWasi implements AutoCloseable {
     private Engine hostWasmEngine;
     private HostMmap.Creator creator;
     private EngineSession session;
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            for (Path path : CLEANUP) {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException _) {
-                }
-            }
-        }));
-    }
+    private WorkDir workDir;
 
     public AnSolveWasi(Path augmentWasm, Path engineWasm, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
         this(Files.readAllBytes(augmentWasm), Files.readAllBytes(engineWasm), useHostMemory, cancelled);
@@ -120,7 +113,14 @@ public class AnSolveWasi implements AutoCloseable {
             s.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
         } catch (IOException _) {
         }
-        CLEANUP.add(dir);
+    }
+
+    /// Deletes everything inside dir except the lock file, keeping the folder itself.
+    private static void clearDir(Path dir) {
+        try (Stream<Path> s = Files.list(dir)) {
+            s.filter(p -> !p.getFileName().toString().equals(WorkDir.LOCK)).forEach(AnSolveWasi::deleteTree);
+        } catch (IOException _) {
+        }
     }
 
     private Module compile(String name, byte[] wasm) throws Exception {
@@ -246,7 +246,10 @@ public class AnSolveWasi implements AutoCloseable {
         IJ.showStatus("Creating engine config...");
         EngineSession es = new EngineSession();
         es.key = key;
-        es.work = Files.createTempDirectory("an-wasi");
+        if (workDir == null) {
+            workDir = WorkDir.acquire();
+        }
+        es.work = workDir.path;
         es.mounts = new Mounts();
         es.mounts.dirs.put(es.work.toAbsolutePath().normalize(), GUEST_WORK);
         String cfg;
@@ -299,7 +302,7 @@ public class AnSolveWasi implements AutoCloseable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        deleteTree(es.work);
+        clearDir(es.work); // not deleted: the next engine reuses the folder
     }
 
     /// @param indexDirs  folders holding index-*.fits (host paths), used if hostConfig is null
@@ -387,6 +390,10 @@ public class AnSolveWasi implements AutoCloseable {
         if (hostWasmEngine != null) hostWasmEngine.close();
         wasmEngine.close();
         wasmRuntime.close();
+        if (workDir != null) {
+            workDir.close();
+            workDir = null;
+        }
     }
 
     /// Number of index-*.fits files in the given folders (0 if unknown).
@@ -454,6 +461,39 @@ public class AnSolveWasi implements AutoCloseable {
                 out.append(t).append('\n');
             }
             return out.toString();
+        }
+    }
+
+    /// wasmtime4j does not release the root temp directory, preventing us from deleting it.
+    /// This reuses an existing folder, if available, to avoid creating many empty directories
+    private record WorkDir(Path path, FileChannel channel, FileLock lock) implements AutoCloseable {
+        private static final String LOCK = "lock";
+        private static final String PREFIX = "astroimagej-astrometry-net-";
+
+        static synchronized WorkDir acquire() throws IOException {
+            var tmp = Path.of(System.getProperty("java.io.tmpdir"));
+            for (int i = 0; ; i++) {
+                var dir = tmp.resolve(PREFIX + i);
+                Files.createDirectories(dir);
+                var ch = FileChannel.open(dir.resolve(LOCK), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock l = null;
+                try {
+                    l = ch.tryLock(); // null: another AIJ instance owns it
+                } catch (OverlappingFileLockException _) { // another thread in this instance owns it
+                }
+                if (l == null) {
+                    ch.close();
+                    continue;
+                }
+                clearDir(dir); // Cleanup previous run
+                return new WorkDir(dir, ch, l);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            lock.release();
+            channel.close();
         }
     }
 

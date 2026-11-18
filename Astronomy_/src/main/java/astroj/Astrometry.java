@@ -37,7 +37,7 @@ public class Astrometry { //implements KeyListener
     public static final Property<Integer> ASTRO_NET_POLLING = new Property<>(2, Astrometry.class);
     public static final Property<Integer> CUSTOM_POLLING = new Property<>(1, Astrometry.class);
     public static final Property<PlateSolver.SolverType> PLATE_SOLVER = new Property<>(PlateSolver.SolverType.ASTROMETRY_NET_HTTP, Astrometry.class);
-    public static final Property<Boolean> REUSE_PREVIOUS_RADEC = new Property<>(false, Astrometry.class);
+    public static final Property<Boolean> REUSE_PREVIOUS_RADEC = new Property<>(true, Astrometry.class);
     final static int[] DIR_X_OFFSET = new int[]{0, 1, 1, 1, 0, -1, -1, -1};
     final static int[] DIR_Y_OFFSET = new int[]{-1, -1, 0, 1, 1, 1, 0, -1};
     final static byte MAXIMUM = (byte) 1;            // marks local maxima (irrespective of noise tolerance)

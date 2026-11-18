@@ -4,6 +4,8 @@ import ai.tegmentum.wasmtime4j.*;
 import ai.tegmentum.wasmtime4j.Module;
 import ai.tegmentum.wasmtime4j.exception.I32ExitException;
 import ai.tegmentum.wasmtime4j.factory.WasmRuntimeFactory;
+import ai.tegmentum.wasmtime4j.func.HostFunction;
+import ai.tegmentum.wasmtime4j.type.FunctionType;
 import ai.tegmentum.wasmtime4j.wasi.WasiLinker;
 import ai.tegmentum.wasmtime4j.wasi.WasiStdioConfig;
 import ij.IJ;
@@ -17,12 +19,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 public class AnSolveWasi implements AutoCloseable {
     private static final boolean MIRROR_LOG = true;
+    /// Guest path of the folder holding the config and one sub-folder per job; also the value of AN_HOST_JOBS
+    private static final String GUEST_WORK = "/work";
+    /// Status in {@link EngineSession#results}
+    private static final int DONE = 0, FAILED = 1, ENDED = 2;
     private static final Collection<Path> CLEANUP = new HashSet<>();
     private final WasmRuntime wasmRuntime;
     private final Engine wasmEngine;
@@ -99,12 +107,6 @@ public class AnSolveWasi implements AutoCloseable {
         return null;
     }
 
-    /// Calls an exported function that takes no arguments and returns an int.
-    private static int callInt(Instance inst, String function) throws Exception {
-        WasmValue[] r = inst.callFunction(function);
-        return r != null && r.length > 0 ? r[0].asInt() : 0;
-    }
-
     private static void deleteTree(Path dir) {
         if (dir == null || !Files.exists(dir)) return;
         try (Stream<Path> s = Files.walk(dir)) {
@@ -126,21 +128,13 @@ public class AnSolveWasi implements AutoCloseable {
     /// Runs a WASI command module via calling its main method with argv and preopened folders.
     /// @return the program's exit code
     private int runWasi(String name, Module m, List<String> argv, Map<Path, String> preopens) throws Exception {
-        return runWasi(name, m, argv, preopens, wasmEngine, null);
-    }
-
-    private int runWasi(String name, Module m, List<String> argv, Map<Path, String> preopens, Engine eng, HostMmap.Creator hm) throws Exception {
-        try (WasiLinker linker = WasiLinker.create(eng);
-             Store store = eng.createStore()) {
-            if (hm != null) {
-                hm.resolver = HostMmap.resolver(preopens);
-                hm.install(linker.getLinker());
-            }
+        try (WasiLinker linker = WasiLinker.create(wasmEngine);
+             Store store = wasmEngine.createStore()) {
             if (MIRROR_LOG) {
                 //todo have option to mirror to log
                 linker.configureStdout(WasiStdioConfig.nulled());
                 linker.configureStderr(WasiStdioConfig.nulled());
-                // Verbose log goes into stdin
+                // Verbose log seems to goes into stdin?
                 linker.configureStdin(WasiStdioConfig.nulled());
             }
             linker.setArguments(argv);
@@ -150,7 +144,7 @@ public class AnSolveWasi implements AutoCloseable {
                 }
                 if (Files.isDirectory(e.getKey())) {
                     linker.allowDirectoryAccess(e.getKey(), e.getValue());
-                } else  {
+                } else {
                     IO.println("%s is not a directory!".formatted(e.getKey()));
                 }
             }
@@ -167,11 +161,79 @@ public class AnSolveWasi implements AutoCloseable {
         }
     }
 
-    /// Opens the engine if it is not open.  The index folders / config are read by engine_setup(), so a call with
-    /// different ones closes the engine and opens a new one.
+    /// Registers the an.next_job / an.job_done / an.job_failed imports that engine-main.c uses in host-driven mode.
+    private static void registerEngineCallbacks(Linker<?> linker, EngineSession es) throws Exception {
+        var i32 = WasmValueType.I32;
+        var none = new WasmValueType[0];
+        linker.defineHostFunction("an", "next_job", new FunctionType(none, new WasmValueType[]{i32}),
+                (HostFunction) _ -> {
+                    // Must not block: wasmtime4j counts a running callback as "in flight" in one static counter shared
+                    // by all linkers, and closing any linker waits for that counter to reach 0.
+                    var id = es.jobQueue.poll();
+                    return new WasmValue[]{WasmValue.i32(id == null ? -1 : id)}; // -1 = none yet, 0 = stop
+                });
+        linker.defineHostFunction("an", "job_done", new FunctionType(new WasmValueType[]{i32}, none),
+                (HostFunction) p -> {
+                    es.results.add(new int[]{p[0].asInt(), DONE});
+                    return new WasmValue[0];
+                });
+        linker.defineHostFunction("an", "job_failed", new FunctionType(new WasmValueType[]{i32}, none),
+                (HostFunction) p -> {
+                    es.results.add(new int[]{p[0].asInt(), FAILED});
+                    return new WasmValue[0];
+                });
+    }
+
+    /// Body of the engine thread: runs the engine's main(), which keeps calling an.next_job until told to stop.
+    private void engineMain(EngineSession es, List<String> args) {
+        Engine eng = useHostMemory ? hostWasmEngine : wasmEngine;
+        HostMmap.Creator hm = useHostMemory ? creator : null;
+        try (WasiLinker linker = WasiLinker.create(eng); Store store = eng.createStore()) {
+            if (hm != null) {
+                hm.resolver = HostMmap.resolver(es.mounts.dirs);
+                hm.install(linker.getLinker());
+            }
+            registerEngineCallbacks(linker.getLinker(), es);
+            if (MIRROR_LOG) {
+                linker.configureStdout(WasiStdioConfig.nulled());
+                linker.configureStderr(WasiStdioConfig.nulled());
+                linker.configureStdin(WasiStdioConfig.nulled());
+            }
+            linker.setArguments(args);
+            // Turns on host-driven jobs in engine-main.c;
+            // the value is where the job folders are, as the guest sees them.
+            linker.setEnvironmentVariable("AN_HOST_JOBS", GUEST_WORK);
+            for (Map.Entry<Path, String> e : es.mounts.dirs.entrySet()) {
+                if (Files.notExists(e.getKey())) {
+                    Files.createDirectories(e.getKey());
+                }
+                if (Files.isDirectory(e.getKey())) {
+                    linker.allowDirectoryAccess(e.getKey(), e.getValue());
+                } else {
+                    IO.println("%s is not a directory!".formatted(e.getKey()));
+                }
+            }
+            Instance inst = linker.instantiate(store, astrometryEngineModule);
+            try {
+                inst.callFunction("_start");
+            } catch (Exception ex) {
+                Integer code = exitCode(ex);
+                if (code == null) throw ex;
+                if (code != 0) throw new IllegalStateException("astrometry-engine exited with " + code);
+            }
+        } catch (Throwable t) {
+            es.failure = t;
+        } finally {
+            es.dead = true;
+            es.results.add(new int[]{0, ENDED}); // wakes a solve() that is waiting on a dead engine
+        }
+    }
+
+    /// Starts the engine thread if it is not running.  The index folders / config are read once, when the engine
+    /// starts, so a call with different ones stops the engine and starts a new one.
     private synchronized EngineSession ensureEngine(Collection<Path> indexDirs, Path hostConfig) throws Exception {
         Object key = List.of(String.valueOf(indexDirs), String.valueOf(hostConfig));
-        if (session != null && !session.key.equals(key)) closeEngine();
+        if (session != null && (!session.key.equals(key) || session.dead)) closeEngine();
         if (session != null) return session;
 
         IJ.showStatus("Creating engine config...");
@@ -179,7 +241,7 @@ public class AnSolveWasi implements AutoCloseable {
         es.key = key;
         es.work = Files.createTempDirectory("an-wasi");
         es.mounts = new Mounts();
-        es.mounts.dirs.put(es.work.toAbsolutePath().normalize(), "/work");
+        es.mounts.dirs.put(es.work.toAbsolutePath().normalize(), GUEST_WORK);
         String cfg;
         if (hostConfig != null) {
             cfg = es.mounts.rewriteConfig(Files.readString(hostConfig));
@@ -191,78 +253,27 @@ public class AnSolveWasi implements AutoCloseable {
             cfg = sb.append("autoindex\n").toString();
         }
         Files.writeString(es.work.resolve("astrometry.cfg"), cfg);
-        es.jobFile = es.work.resolve("next-job.txt");
-        Files.writeString(es.jobFile, "\n"); // must exist when engine_setup() opens it for -f
 
         IJ.showStatus("Starting engine...");
-        Engine eng = useHostMemory ? hostWasmEngine : wasmEngine;
-        HostMmap.Creator hm = useHostMemory ? creator : null;
-        try {
-            es.linker = WasiLinker.create(eng);
-            es.store = eng.createStore();
-            if (hm != null) {
-                hm.resolver = HostMmap.resolver(es.mounts.dirs);
-                hm.install(es.linker.getLinker());
-            }
-            if (MIRROR_LOG) {
-                es.linker.configureStdout(WasiStdioConfig.nulled());
-                es.linker.configureStderr(WasiStdioConfig.nulled());
-                es.linker.configureStdin(WasiStdioConfig.nulled());
-            }
-            List<String> engineArgs = new ArrayList<>(List.of("astrometry-engine", "-c", "/work/astrometry.cfg"));
-            //if (log != null) engineArgs.add("-v");
-            engineArgs.addAll(List.of("-f", "/work/next-job.txt"));
-            es.linker.setArguments(engineArgs);
-            for (Map.Entry<Path, String> e : es.mounts.dirs.entrySet()) {
-                if (Files.notExists(e.getKey())) {
-                    Files.createDirectories(e.getKey());
-                }
-                if (Files.isDirectory(e.getKey())) {
-                    es.linker.allowDirectoryAccess(e.getKey(), e.getValue());
-                } else  {
-                    IO.println("%s is not a directory!".formatted(e.getKey()));
-                }
-            }
-            es.inst = es.linker.instantiate(es.store, astrometryEngineModule);
-            if (!es.inst.hasExport("an_engine_open"))
-                throw new IllegalStateException("astrometry-engine is not built in reactor mode");
-            if (es.inst.hasExport("_initialize"))
-                es.inst.callFunction("_initialize");
-            int rc;
-            try {
-                rc = callInt(es.inst, "an_engine_open");
-            } catch (Exception ex) {
-                var code = exitCode(ex);
-                throw code == null ? ex : new IllegalStateException("astrometry-engine exited with " + code + " while starting");
-            }
-            if (rc != 0) throw new IllegalStateException("astrometry-engine setup failed (" + rc + ")");
-        } catch (Throwable t) {
-            session = es;
-            closeEngine();
-            throw t;
-        }
+        List<String> engineArgs = List.of("astrometry-engine", "-c", GUEST_WORK + "/astrometry.cfg");
+        es.thread = new Thread(() -> engineMain(es, engineArgs), "astrometry-engine");
+        es.thread.setDaemon(true);
+        es.thread.start();
+        session = es; // startup errors surface through es.dead / es.failure in solve()
         IJ.showStatus("Created engine.");
-        session = es;
         return es;
     }
 
+    /// Asks the engine to leave its job loop (after the running job, if any) and waits for its thread to end.
     private synchronized void closeEngine() {
         EngineSession es = session;
         if (es == null) return;
         session = null;
-        if (es.inst != null) {
-            try {
-                es.inst.callFunction("an_engine_close");
-            } catch (Throwable _) {
-            }
-        }
+        es.jobQueue.add(0); // an.next_job returns 0: main() frees the engine and returns
         try {
-            if (es.store != null) es.store.close();
-        } catch (Throwable _) {
-        }
-        try {
-            if (es.linker != null) es.linker.close();
-        } catch (Throwable _) {
+            es.thread.join(10_000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         deleteTree(es.work);
     }
@@ -278,7 +289,7 @@ public class AnSolveWasi implements AutoCloseable {
                                      Collection<Path> indexDirs, Path hostConfig) throws Exception {
         EngineSession es = ensureEngine(indexDirs, hostConfig);
         int n = ++es.jobs;
-        String g = "/work/j" + n; // guest path of this solve's folder
+        String g = GUEST_WORK + "/j" + n; // guest path of this solve's folder
         Path work = es.work.resolve("j" + n); // host path of the same folder
         Files.createDirectory(work);
         try {
@@ -300,24 +311,22 @@ public class AnSolveWasi implements AutoCloseable {
             int rc1 = runWasi("augment-xylist", augmentModule, a, es.mounts.dirs);
             if (rc1 != 0) throw new IllegalStateException("augment-xylist exited with " + rc1);
 
-            // Hand the job to the open engine: its name goes in the job-name file, then engine_process() runs it
-            // The engine always reads from the start of the file in reactor mode -
-            // a workaround for wasmtime4j not keeping stdin open
-            Files.writeString(es.jobFile, g + "/job.axy\n");
+            // Hand the job to the running engine: it reads $AN_HOST_JOBS/j<n>/job.axy
             if (useHostMemory) {
                 creator.resetStats();
             }
             IJ.showStatus("Running job...");
-            int rc;
-            try {
-                rc = callInt(es.inst, "an_engine_run");
-            } catch (Exception ex) {
-                Integer code = exitCode(ex);
-                if (code == null) throw ex;
+            es.jobQueue.add(n);
+            int[] r;
+            do { // skip results left over from an earlier, interrupted solve
+                r = es.results.take();
+            } while (r[0] != n && r[1] != ENDED);
+            if (r[1] == ENDED) {
+                var failure = es.failure;
                 closeEngine();
-                throw new IllegalStateException("astrometry-engine exited with " + code);
+                throw new IllegalStateException("astrometry-engine stopped", failure);
             }
-            if (rc < -1) throw new IllegalStateException("astrometry-engine could not run the job (" + rc + ")");
+            if (r[1] == FAILED) throw new IllegalStateException("astrometry-engine could not read the job file");
             Path wcs = work.resolve("job.wcs");
             return Files.exists(wcs) ? Files.readString(wcs, StandardCharsets.US_ASCII) : null;
         } finally {
@@ -334,17 +343,21 @@ public class AnSolveWasi implements AutoCloseable {
     }
 
     private static final class EngineSession {
-        /// host folder mounted at /work: config, job-name file, one sub-folder per solve
+        /// host folder mounted at /work: config and one sub-folder per solve
         Path work;
         Mounts mounts;
-        /// /work/next-job.txt: the engine reads the next job's name from its first line
-        Path jobFile;
-        WasiLinker linker;
-        Store store;
-        Instance inst;
         /// what the engine was set up with (index folders / config)
         Object key;
+        /// runs the engine's main()
+        Thread thread;
         int jobs;
+        /// job numbers for an.next_job to hand out; 0 = shut down
+        final BlockingQueue<Integer> jobQueue = new LinkedBlockingQueue<>();
+        /// {job number, DONE | FAILED | ENDED} from the callbacks; ENDED (job 0) when the engine thread ends
+        final BlockingQueue<int[]> results = new LinkedBlockingQueue<>();
+        /// the engine thread has ended
+        volatile boolean dead;
+        volatile Throwable failure;
     }
 
     /// Host folder -> guest folder mapping.

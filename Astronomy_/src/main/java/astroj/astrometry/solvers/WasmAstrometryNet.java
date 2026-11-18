@@ -16,7 +16,7 @@ public final class WasmAstrometryNet implements PlateSolver {
     public WasmAstrometryNet(int maxRetries) {
         try {
             solver = new AnSolveWasi(readLib("/astroj/wasm/augment-xylist.wasm"),
-                    readLib("/astroj/wasm/astrometry-engine-reactor-hostmmap.wasm"), true);
+                    readLib("/astroj/wasm/astrometry-engine-hostmmap.wasm"), true);
         } catch (Exception e) {
             IJ.error("PlateSolver", "Failed to initialize WasmAstrometryNet");
             throw new RuntimeException(e);

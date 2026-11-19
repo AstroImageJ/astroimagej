@@ -257,6 +257,11 @@ public class IndexManagerPanel extends JPanel {
         } else if (node.getUserObject() instanceof CustomData(CustomLocation location)) {
             options.setSeriesEnabled(location.id(), !options.isSeriesEnabled(location.id()));
             treeModel.nodeChanged(node);
+        } else if (node.getUserObject() instanceof CatalogData(var indexCatalog)) {
+            if (!manager.isInstalled(indexCatalog)) {
+                tree.addSelectionPath(new TreePath(node.getPath()));
+                downloadSelected(null);
+            }
         }
     }
 
@@ -408,6 +413,7 @@ public class IndexManagerPanel extends JPanel {
             if (queuedDownloads.add(fd.key())) {
                 var files = downloadableFiles(fd.family().files());
                 downloadQueue.add(new DownloadJob(fd, null, files));
+                inProgressDownloads.addAll(fd.family().files());
                 queuedFiles.addAndGet(files);
                 added = true;
             }
@@ -417,6 +423,7 @@ public class IndexManagerPanel extends JPanel {
             if (queuedDownloads.add(catalog)) {
                 var files = downloadableFiles(catalog.files());
                 downloadQueue.add(new DownloadJob(null, catalog, files));
+                inProgressDownloads.addAll(catalog.files());
                 queuedFiles.addAndGet(files);
                 added = true;
             }
@@ -425,6 +432,8 @@ public class IndexManagerPanel extends JPanel {
         if (!added) {
             return; // Already queued or downloading
         }
+
+        tree.repaint(); // Show the queued entries as in progress right away
 
         if (trigger != null) {
             trigger.setEnabled(false);
@@ -518,6 +527,7 @@ public class IndexManagerPanel extends JPanel {
 
                 downloading = false;
                 queuedDownloads.clear();
+                inProgressDownloads.clear();
                 queuedFiles.set(0);
                 finishedFiles.set(0);
                 if (downloadTrigger != null) {
@@ -708,8 +718,16 @@ public class IndexManagerPanel extends JPanel {
             } else if (node.getUserObject() instanceof CatalogData(IndexCatalog catalog)) {
                 box.setVisible(false);
                 var installed = manager.isInstalled(catalog);
+                icon.setVisible(true);
+                if (installed) {
+                    icon.setIcon(DOWNLOAD_DONE);
+                } else if (catalog.files().stream().anyMatch(inProgressDownloads::contains)) {
+                    icon.setIcon(DOWNLOAD_IN_PROGRESS);
+                } else {
+                    icon.setIcon(DOWNLOAD);
+                }
                 var size = formatBytes(catalog.totalSize());
-                text = catalog.name() + "  (" + size + ")" + (installed ? "  [downloaded]" : "  [not downloaded]");
+                text = catalog.name() + "  (" + size + ")";
                 tip = catalog.description();
             } else if (node.getUserObject() instanceof CustomData(CustomLocation location)) {
                 box.setSelected(options.isSeriesEnabled(location.id()));

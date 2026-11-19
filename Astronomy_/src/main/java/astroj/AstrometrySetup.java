@@ -17,6 +17,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -367,6 +368,23 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             frame.setIconImage(createImageIcon("images/astrometry.png", "Astrometry Setup Icon").getImage());
             frame.add(new IndexManagerPanel(ASTROMETRY_NET_INDEX_MANAGER));
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    try {
+                        ASTROMETRY_NET_INDEX_MANAGER.saveOptions();
+                    } catch (IOException _) {
+                    }
+                }
+
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    try {
+                        ASTROMETRY_NET_INDEX_MANAGER.saveOptions();
+                    } catch (IOException _) {
+                    }
+                }
+            });
             frame.pack();
             frame.setVisible(true);
         });

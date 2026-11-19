@@ -107,20 +107,10 @@ public class IndexManagerPanel extends JPanel {
         removeCustom.addActionListener(_ -> removeSelectedCustom());
         var download = new JButton("Download selected");
         download.addActionListener(_ -> downloadSelected(download));
-        var save = new JButton("Save");
-        save.addActionListener(_ -> {
-            try {
-                manager.saveOptions();
-                statusLabel.setText("Saved");
-            } catch (IOException ex) {
-                statusLabel.setText("Save failed: " + ex.getMessage());
-            }
-        });
 
         buttons.add(addCustom);
         buttons.add(removeCustom);
         buttons.add(download);
-        buttons.add(save);
         fileProgress.setStringPainted(true);
         overallProgress.setStringPainted(true);
         progressPanel.add(fileProgress);

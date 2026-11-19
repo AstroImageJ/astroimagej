@@ -7,6 +7,7 @@ import astroj.astrometry.index.gui.IndexManagerPanel;
 import astroj.astrometry.solvers.PlateSolver;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.util.Tools;
@@ -25,6 +26,7 @@ import java.util.function.DoubleConsumer;
 
 
 public class AstrometrySetup implements ActionListener, ItemListener, ChangeListener, FocusListener, MouseWheelListener {
+    public static final Property<Point> INDEX_MANAGER_PANEL_LOC = new Property<>(new Point(), AstrometrySetup.class);
     static int MIN_MAX_STARS = 10;
     public JFrame astrometrySetupFrame;
     public static final AstrometryNetIndexManager ASTROMETRY_NET_INDEX_MANAGER = new AstrometryNetIndexManager();
@@ -386,6 +388,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 }
             });
             frame.pack();
+            INDEX_MANAGER_PANEL_LOC.locationSavingWindow(frame);
             frame.setVisible(true);
         });
         p.add(b);

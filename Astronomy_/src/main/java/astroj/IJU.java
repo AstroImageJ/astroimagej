@@ -97,7 +97,7 @@ public class IJU {
     public static final LinearInterpolator getTeffFromRhoStar = new LinearInterpolator(rhoStar, tStar);
     public static final LinearInterpolator getRhoStarFromTeff = new LinearInterpolator(tStar, rhoStar);
 
-    public static final Property<Boolean> USE_TRANSIT_MODEL_V2 = new Property<>(false, IJU.class);
+    public static final Property<Boolean> USE_TRANSIT_MODEL_V2 = new Property<>(true, IJU.class);
 
     public static final String[] colors = new String[]
             {

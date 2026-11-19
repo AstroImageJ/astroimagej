@@ -842,7 +842,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
         // Reuse previous
         var r3 = row();
-        var reuseRadec = new JCheckBox("Reuse previous RA/Dec");
+        var reuseRadec = new JCheckBox("Use previous slice's solution as starting point");
         reuseRadec.setFont(p12);
         reuseRadec.setToolTipText("""
                 If checked, the previous RA/Dec will be used as a starting point for the plate solve.

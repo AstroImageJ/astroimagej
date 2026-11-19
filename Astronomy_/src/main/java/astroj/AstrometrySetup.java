@@ -29,6 +29,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     public static final Property<Point> INDEX_MANAGER_PANEL_LOC = new Property<>(new Point(), AstrometrySetup.class);
     static int MIN_MAX_STARS = 10;
     public JFrame astrometrySetupFrame;
+    private JFrame indexManagerFrame;
     public static final AstrometryNetIndexManager ASTROMETRY_NET_INDEX_MANAGER = new AstrometryNetIndexManager();
     DecimalFormat sixPlaces = new DecimalFormat("0.000000", IJU.dfs);
     Color mainBorderColor = new Color(118, 142, 229);
@@ -365,34 +366,52 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         var p = new JPanel(new GridBagLayout());
         p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         var b = new JButton("Manage Indexes...");
-        b.addActionListener(_ -> {
-            var frame = new JFrame("Index Manager");
-            frame.setIconImage(createImageIcon("images/astrometry.png", "Astrometry Setup Icon").getImage());
-            frame.add(new IndexManagerPanel(ASTROMETRY_NET_INDEX_MANAGER));
-            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            frame.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosed(WindowEvent e) {
-                    try {
-                        ASTROMETRY_NET_INDEX_MANAGER.saveOptions();
-                    } catch (IOException _) {
-                    }
-                }
-
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    try {
-                        ASTROMETRY_NET_INDEX_MANAGER.saveOptions();
-                    } catch (IOException _) {
-                    }
-                }
-            });
-            frame.pack();
-            INDEX_MANAGER_PANEL_LOC.locationSavingWindow(frame);
-            frame.setVisible(true);
-        });
+        b.addActionListener(_ -> openIndexManager());
         p.add(b);
         return wrapTop(p);
+    }
+
+    private void openIndexManager() {
+        if (indexManagerFrame != null && indexManagerFrame.isDisplayable()) {
+            indexManagerFrame.toFront();
+            return;
+        }
+        var frame = new JFrame("Index Manager");
+        indexManagerFrame = frame;
+        frame.setIconImage(createImageIcon("images/astrometry.png", "Astrometry Setup Icon").getImage());
+        frame.add(new IndexManagerPanel(ASTROMETRY_NET_INDEX_MANAGER));
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                try {
+                    ASTROMETRY_NET_INDEX_MANAGER.saveOptions();
+                } catch (IOException _) {
+                }
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    ASTROMETRY_NET_INDEX_MANAGER.saveOptions();
+                } catch (IOException _) {
+                }
+            }
+        });
+        frame.pack();
+        INDEX_MANAGER_PANEL_LOC.locationSavingWindow(frame);
+        frame.setVisible(true);
+    }
+
+    /**
+     * True when the bundled solver is selected but no indexes are enabled.
+     */
+    private boolean bundledSolverMissingIndexes() {
+        if (Astrometry.PLATE_SOLVER.get() != PlateSolver.SolverType.ASTROMETRY_NET_WASM) {
+            return false;
+        }
+        var indexes = ASTROMETRY_NET_INDEX_MANAGER.enabledIndexDirectories();
+        return indexes == null || indexes.isEmpty();
     }
 
     private JPanel buildOutputPanel() {
@@ -1110,6 +1129,13 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     public void actionPerformed(ActionEvent ae) {
         Object source = ae.getSource();
         if (source == startButton) {
+            if (bundledSolverMissingIndexes()) {
+                JOptionPane.showMessageDialog(astrometrySetupFrame,
+                        "The bundled solver has no indexes enabled.\nEnable or download at least one index to continue.",
+                        "No Indexes", JOptionPane.WARNING_MESSAGE);
+                openIndexManager();
+                return;
+            }
             if (useRaDec && !useCCRaDec) {
                 double[] coords = processCoordinatePair(raTF, 3, 24, false, decTF, 2, 90, true, true, true);
                 if (!Double.isNaN(coords[0])) {

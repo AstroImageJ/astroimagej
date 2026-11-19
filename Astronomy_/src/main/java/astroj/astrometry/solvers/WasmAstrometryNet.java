@@ -5,7 +5,9 @@ import astroj.astrometry.AnSolveWasi;
 import ij.IJ;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
 
@@ -13,6 +15,7 @@ public final class WasmAstrometryNet implements PlateSolver {
     private final AnSolveWasi solver;
     private final int maxRetries;
     private final BooleanSupplier cancelled;
+    private final Set<Path> indexes;
 
     private WasmAstrometryNet(int maxRetries, BooleanSupplier cancelled) {
         this.cancelled = cancelled != null ? cancelled : () -> false;
@@ -24,6 +27,13 @@ public final class WasmAstrometryNet implements PlateSolver {
             throw new RuntimeException(e);
         }
         this.maxRetries = maxRetries;
+        indexes = AstrometrySetup.ASTROMETRY_NET_INDEX_MANAGER.enabledIndexDirectories();
+        if (indexes == null || indexes.isEmpty()) {
+            var msg = "No astrometry.net indexes are enabled. Open Astrometry Settings > Manage Indexes... to download/enable at least one.";
+            IJ.log("Plate solve aborted due to missing indexes");
+            IJ.error("PlateSolver", msg);
+            throw new IllegalStateException(msg);
+        }
     }
 
     //todo implement
@@ -38,8 +48,6 @@ public final class WasmAstrometryNet implements PlateSolver {
                         boolean useDistortionOrder, double distortionOrder) {
         if (xs.length != ys.length)
             throw new IllegalArgumentException("xs and ys must be the same length");
-
-        var indexes = AstrometrySetup.ASTROMETRY_NET_INDEX_MANAGER.enabledIndexDirectories();
 
         var points = IntStream.range(0, xs.length)
                         .mapToObj(i -> new double[]{xs[i], imageHeight - ys[i]})

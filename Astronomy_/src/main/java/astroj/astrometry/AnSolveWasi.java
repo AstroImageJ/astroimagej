@@ -350,13 +350,13 @@ public class AnSolveWasi implements AutoCloseable {
             if (useHostMemory) {
                 creator.resetStats();
             }
-            if (es.ready) {
-                IJ.showStatus("Running job...");
-            }
             es.jobQueue.add(n);
             int[] r = null;
             var cancelSent = false;
             while (r == null || (r[0] != n && r[1] != ENDED)) { // skip results left over from an earlier, interrupted solve
+                if (es.ready) {
+                    IJ.showStatus("Running job...");
+                }
                 r = es.results.poll(CANCEL_POLL_MS, TimeUnit.MILLISECONDS);
                 if (r == null && !cancelSent && cancelled != null && cancelled.getAsBoolean()) {
                     Files.writeString(cancelFile, "cancel\n"); // the engine ends the job, then reports it done as usual

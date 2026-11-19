@@ -316,7 +316,7 @@ tasks.register<JavaExec>("aijRun") {
     // Force it to use the toolchain java version
     javaLauncher.set(javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(shippingJava))
-        vendor.set(JvmVendorSpec.ORACLE)
+        vendor.set(JvmVendorSpec.AZUL)
     })
 
     enableAssertions = true
@@ -353,7 +353,7 @@ fun readConfigFile(): List<String> {
 // Use toolchain for packaging
 val packagingJdkToolchain = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(shippingJava))
-    vendor.set(JvmVendorSpec.ADOPTIUM)
+    vendor.set(JvmVendorSpec.AZUL)
 }
 
 val crossBuildAppImage = providers.gradleProperty("crossBuildAppImage")

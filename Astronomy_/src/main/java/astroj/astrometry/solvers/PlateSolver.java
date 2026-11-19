@@ -38,11 +38,18 @@ public sealed interface PlateSolver extends AutoCloseable permits HttpAstrometry
     record AstrometryObject(double radius, String type, Collection<String> names, double x, double y) {}
 
     enum SolverType implements ToolTipProvider {
-        ASTROMETRY_NET_HTTP("Astrometry.net web api", """
-                
-                """),
         ASTROMETRY_NET_WASM("Bundled Astrometry.net", """
-                
+                <html>
+                Select this tab to plate-solve using the astrometry.net version built into AIJ.<br>
+                We recommend using this tab since the solving should run much faster than the web version.
+                </html>
+                """),
+        ASTROMETRY_NET_HTTP("Astrometry.net Web Api", """
+                <html>
+                Select this tab to use the legacy web interface into nova.astrometry.net website,<br>
+                or local installations such as ANSVR on Windows. The astrometry.net website can be very slow compared \
+                to the built in version.
+                </html>
                 """),
         ;
 

@@ -6,22 +6,33 @@ import com.astroimagej.meta.jdk.RuntimeType
 import kotlinx.serialization.Serializable
 import org.apache.tools.ant.taskdefs.condition.Os
 
+/**
+ * A system to package AIJ for, and the Java runtime that will be bundled with it.
+ *
+ * Inputs: [ext], [arch], [os], [vendor], [javaVersion], [pgpKeyId], and optionally [type].
+ * Everything else is resolved from the foojay Disco API and stored in the cache.
+ */
 @Serializable
 data class JavaRuntimeSystem(
     val ext: String,
     val arch: Architecture,
     val os: OperatingSystem,
+    /** foojay distribution id (`zulu`, `temurin`, `corretto`, ...). Saved in the cache. */
+    val vendor: String = DEFAULT_VENDOR,
+    /** Java major version for this system, uses the project's `javaShippingVersion` when null. */
+    val javaVersion: Int? = null,
+    /** Fingerprint of the key the vendor signs with. Signatures are only verified when this is set. */
+    val pgpKeyId: String? = null,
     var version: Int? = null,
+    var fullVersion: String? = null,
     var name: String? = null,
     var sha256: String? = null,
     var type: RuntimeType? = null,
     var url: String? = null,
     var sigUrl: String? = null,
-    var jmodName: String? = null,
-    var jmodUrl: String? = null,
-    var jmodSha256: String? = null,
-    var jmodSigUrl: String? = null,
 ) {
+    /** True once the runtime has been resolved. */
+    fun isResolved(): Boolean = version != null && name != null && sha256 != null && url != null
 
     fun matchesCurrentSystem(): Boolean {
         return when (os) {
@@ -29,5 +40,9 @@ data class JavaRuntimeSystem(
             OperatingSystem.LINUX -> Os.isFamily(Os.FAMILY_UNIX) && !Os.isFamily(Os.FAMILY_MAC)
             OperatingSystem.WINDOWS -> Os.isFamily(Os.FAMILY_WINDOWS)
         } && Architecture.getCurrentArch() == arch
+    }
+
+    companion object {
+        const val DEFAULT_VENDOR = "zulu"
     }
 }

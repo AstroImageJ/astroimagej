@@ -92,7 +92,9 @@ abstract class CreateJavaRuntimeTask
                 // Unpack JDK
                 unpack(unpackedDir)
 
-                unpackJmods(unpackedJmodDir)
+                if (bundledJmods.isPresent) {
+                    unpackJmods(unpackedJmodDir)
+                }
 
                 // Clean out existing destination
                 val destDir = outputDir.get().asFile

@@ -11,7 +11,6 @@ import de.undercouch.gradle.tasks.download.Verify
 import kotlinx.serialization.json.Json
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
-import java.net.URI
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -114,9 +113,13 @@ tasks.test {
 
 /**
  * The set of Java runtimes to download and package AIJ for.
- * Terms in the map are based on the query parameters.
- * To add a distribution, simply give it a unique name and fill out its map with the proper values.
- * See https://api.adoptium.net/q/swagger-ui/#/Assets/getLatestAssets
+ *
+ * Runtimes are discovered through the foojay Disco API, see https://api.foojay.io/swagger-ui
+ * Each system can use its own vendor and Java version:
+ *  - `vendor`: defaults to zulu
+ *  - `javaVersion`: major Java version, defaults to the `javaShippingVersion` property
+ *  - `pgpKeyId`: fingerprint of the key the vendor signs releases with. Signature verification is only done
+ *    when it is set and foojay lists a signature for the package.
  *
  * The file's name (name), major Java version (version), and SHA256 hash (sha256) are also added to this map. Those entries
  * are excluded from the definition for brevity.
@@ -124,9 +127,9 @@ tasks.test {
 val javaRuntimeSystems = mapOf(
     "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
     "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
-    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX),
-    "armLinux" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = LINUX),
-    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS),
+    "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX, type = RuntimeType.JDK),
+    "armLinux" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = LINUX, type = RuntimeType.JDK),
+    "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS, type = RuntimeType.JDK),
 )
 
 val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, JavaRuntimeSystem::class.java)
@@ -134,12 +137,16 @@ val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java,
 // Wrap the logic in a lazy property that caches the result
 javaRuntimeSystemsProperty.convention(providers.provider {
     val hasher = MessageDigest.getInstance("MD5")
+    hasher.update(shippingJava.toString().toByteArray())
 
     javaRuntimeSystems.forEach { (k, v) ->
         hasher.update(k.toByteArray())
         hasher.update(v.ext.toByteArray())
         hasher.update(v.arch.toString().toByteArray())
         hasher.update(v.os.toString().toByteArray())
+        hasher.update(v.vendor.toByteArray())
+        hasher.update((v.javaVersion ?: shippingJava).toString().toByteArray())
+        hasher.update((v.pgpKeyId ?: "").toByteArray())
         hasher.update(JavaRuntimeSystem::class.declaredMemberProperties.toString().toByteArray())
         if (v.type != null) {
             hasher.update(v.type.toString().toByteArray())
@@ -148,7 +155,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
 
     val hash = HexFormat.of().formatHex(hasher.digest())
 
-    val fileName = "javaRuntimeSystems-${shippingJava}-$hash.json"
+    val fileName = "javaRuntimeSystems-$hash.json"
     val jsonFile = layout.projectDirectory.file("jres/$fileName").asFile
 
     // If the JSON file exists and is recent, load the cached data
@@ -162,96 +169,68 @@ javaRuntimeSystemsProperty.convention(providers.provider {
             )
 
         if (daysSinceLastModified <= 30) {
-            logger.lifecycle("Loading cached Java Runtime Systems data from JSON for Java version $shippingJava (last modified $daysSinceLastModified days ago)")
-            val cacheData = Json.decodeFromString<Map<String, JavaRuntimeSystem>>(jsonFile.readText())
-            if (cacheData.values.all { it.version != null }) {
+            logger.lifecycle("Loading cached Java Runtime Systems data from JSON (last modified $daysSinceLastModified days ago)")
+            val cacheData = Json { ignoreUnknownKeys = true }
+                .decodeFromString<Map<String, JavaRuntimeSystem>>(jsonFile.readText())
+            val matchesRequest = cacheData.keys == javaRuntimeSystems.keys &&
+                    cacheData.all { (k, cached) -> cached.vendor == javaRuntimeSystems.getValue(k).vendor }
+            if (matchesRequest && cacheData.values.all { it.isResolved() }) {
+                cacheData.forEach { (k, cached) ->
+                    logger.lifecycle("  $k: ${cached.vendor} ${cached.fullVersion ?: cached.version}")
+                }
                 return@provider cacheData
             } else {
-                logger.lifecycle("Cached data for Java version $shippingJava seems to be missing some data, fetching...")
+                logger.lifecycle("Cached Java Runtime Systems data seems to be missing some data, fetching...")
             }
         } else {
-            logger.lifecycle("Cached data for Java version $shippingJava is older than 30 days, refetching...")
+            logger.lifecycle("Cached Java Runtime Systems data is older than 30 days, refetching...")
         }
     }
 
-    // Otherwise, simulate a network query to populate the data
-    logger.lifecycle("Fetching Java Runtime Systems data from network")
-    javaRuntimeSystems.mapValues { (_, sysInfo) ->
-        val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
-                "architecture=${sysInfo.arch}&" +
-                "image_type=${sysInfo.type ?: "jre"}&" +
-                "os=${sysInfo.os}&" +
-                "vendor=eclipse"
+    // Otherwise, query foojay to populate the data
+    logger.lifecycle("Fetching Java Runtime Systems data from foojay")
+    javaRuntimeSystems.forEach { (key, sysInfo) ->
+        val major = sysInfo.javaVersion ?: shippingJava
+        val desc = "$key (vendor = ${sysInfo.vendor}, java = $major, ${sysInfo.os}, ${sysInfo.arch}, ${sysInfo.ext})"
 
-        // Find latest JDK
-        val meta = try {
-            JavaInfo.parseJdkInfoFromUrl(URI(url).toURL())
+        try {
+            // Find the latest runtime
+            val runtime = JavaInfo.findPackage(
+                vendor = sysInfo.vendor,
+                majorVersion = major,
+                type = sysInfo.type,
+                os = sysInfo.os,
+                arch = sysInfo.arch,
+                ext = sysInfo.ext,
+            ) ?: run {
+                logger.error("Found no runtime downloads for $desc")
+                return@forEach
+            }
+
+            // Update the maps with the metadata
+            sysInfo.apply {
+                version = runtime.version
+                fullVersion = runtime.fullVersion
+                name = runtime.name
+                sha256 = runtime.sha256
+                type = runtime.type
+                this.url = runtime.url
+                sigUrl = runtime.sigUrl
+            }
         } catch (e: Exception) {
             logger.error(e.toString())
-            logger.warn(
-                "A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
-                sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type
-            )
-            return@mapValues
-        }
-
-        if (meta.isEmpty()) {
-            logger.error("Found no JDK downloads for (sys = {}, {}, {}, {})", sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
-            return@mapValues
-        }
-
-        val jdkMeta = meta.first()
-
-        // Update the maps with the metadata
-        sysInfo.apply {
-            version = jdkMeta.version
-            name = jdkMeta.name
-            sha256 = jdkMeta.sha256
-            type = jdkMeta.type
-            this.url = jdkMeta.url
-            sigUrl = jdkMeta.sigUrl
+            logger.warn("A runtime ({}) failed to return from foojay!", desc)
         }
     }
 
-    // Pull JMods
-    javaRuntimeSystems.mapValues { (_, sysInfo) ->
-        val url = "https://api.adoptium.net/v3/assets/latest/${shippingJava}/hotspot?" +
-                "architecture=${sysInfo.arch}&" +
-                "image_type=jmods&" +
-                "os=${sysInfo.os}&" +
-                "vendor=eclipse"
-
-        // Find latest JDK
-        val meta = try {
-            JavaInfo.parseJdkInfoFromUrl(URI(url).toURL())
-        } catch (e: Exception) {
-            logger.error(e.toString())
-            logger.warn(
-                "A runtime (sys = {}, {}, {}, {}) failed to return from Adoptium!",
-                sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type
-            )
-            return@mapValues
-        }
-
-        if (meta.isEmpty()) {
-            logger.error("Found no JMOD downloads for (sys = {}, {}, {}, {})", sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
-            return@mapValues
-        }
-
-        val jdkMeta = meta.first()
-
-        // Update the maps with the metadata
-        sysInfo.apply {
-            jmodName = jdkMeta.name
-            jmodSha256 = jdkMeta.sha256
-            this.jmodUrl = jdkMeta.url
-            jmodSigUrl = jdkMeta.sigUrl
-        }
+    // Only cache complete data, so a partial failure is retried next time
+    if (javaRuntimeSystems.values.all { it.isResolved() }) {
+        jsonFile.parentFile.mkdirs() // Ensure the directory exists
+        // encodeDefaults so the vendor is always written to the cache, even when it is the default
+        jsonFile.writeText(Json { prettyPrint = true; encodeDefaults = true }.encodeToString(javaRuntimeSystems))
+    } else {
+        logger.warn("Not all Java runtimes could be resolved, the result will not be cached")
     }
-
-    // Save the fetched data to the JSON file
-    jsonFile.parentFile.mkdirs() // Ensure the directory exists
-    jsonFile.writeText(Json { prettyPrint = true }.encodeToString(javaRuntimeSystems))
     javaRuntimeSystems
 })
 
@@ -382,111 +361,90 @@ val crossBuildAppImage = providers.gradleProperty("crossBuildAppImage")
     .orElse(true)
 
 javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
+    if (!sysInfo.isResolved()) {
+        logger.warn("Skipping packaging tasks for ${sysInfo.os} ${sysInfo.arch}, its Java runtime was not resolved")
+        return@forEach
+    }
+
     val sysId = "${sysInfo.os.toString().uppercaseFirstChar()}_${sysInfo.arch}"
     val packageTaskName = "packageAijFor${sysId}"
     val createAppImageTaskName = "createAppImageFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
+    val downloadSigTaskName = "downloadSigFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
     val verifySigTaskName = "verifySigFor${sysId}"
-    val verifyJmodTaskName = "verifyJavaJmodFor${sysId}"
-    val verifyJmodSigTaskName = "verifyJmodSigFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
     val notaryTaskName = "notarizeFor${sysId}"
     val installerTaskName = "installerFor${sysId}"
     val getRuntimeTaskName = "getRuntimeFor${sysId}"
 
-    val downloadTask = tasks.register<Download>(downloadTaskName) {
-        finalizedBy(cleanTaskName, verifyTaskName, verifySigTaskName, verifyJmodSigTaskName, verifyJmodTaskName)
+    // Each system can use its own vendor and Java version
+    val pgpKeyId = sysInfo.pgpKeyId
+
+    val jresDir = layout.projectDirectory.dir("jres").dir(sysId)
+    val runtimeFileName = "$sysId-${sysInfo.name}"
+    val runtimeSigFileName = "$runtimeFileName.sig"
+
+    fun registerDownload(taskName: String, url: String, fileName: String) = tasks.register<Download>(taskName) {
         mkdir(file("${projectDir}/jres"))
 
-        src(listOf(sysInfo.url, sysInfo.sigUrl, sysInfo.jmodUrl, sysInfo.jmodSigUrl))
+        src(url)
         overwrite(false)
         onlyIfModified(true)
-        dest(layout.projectDirectory.dir("jres").dir(sysId))
-        eachFile {
-            val type = if (sourceURL.toString().contains("jmod")) "-jmod" else ""
-            name = if (!sourceURL.toString().endsWith(".sig")) {
-                "$sysId-${sysInfo.name}${type}"
-            } else {
-                "$sysId-${sysInfo.name}${type}.sig"
-            }
-        }
+        dest(jresDir.file(fileName).asFile)
     }
 
-    val isSig = { file: File ->
-        file.name.endsWith(".sig")
+    val downloadTask = registerDownload(downloadTaskName, sysInfo.url!!, runtimeFileName)
+
+    val downloadSigTask = sysInfo.sigUrl?.takeIf { pgpKeyId != null }
+        ?.let { registerDownload(downloadSigTaskName, it, runtimeSigFileName) }
+
+    if (pgpKeyId == null) {
+        logger.lifecycle("No PGP key known for vendor ${sysInfo.vendor}, only checksums will be verified for $sysId")
+    } else if (sysInfo.sigUrl == null) {
+        logger.warn("Vendor ${sysInfo.vendor} publishes no signature for $sysId, only the checksum will be verified")
     }
 
-    val isRuntime = { file: File ->
-        !file.name.contains("jmod") && !isSig(file)
+    val bundledRuntimeFile = layout.file(downloadTask.map { it.outputFiles.single() })
+    downloadTask {
+        finalizedBy(cleanTaskName, verifyTaskName)
     }
-
-    val isRuntimeSig = { file: File ->
-        !file.name.contains("jmod") && isSig(file)
+    downloadSigTask?.configure {
+        finalizedBy(verifySigTaskName)
     }
-
-    val isJmod = { file: File ->
-        file.name.contains("jmod") && !isSig(file)
-    }
-
-    val isJmodSig = { file: File ->
-        file.name.contains("jmod") && isSig(file)
-    }
-
     tasks.register<Delete>(cleanTaskName) {
         val directory = layout.projectDirectory.dir("jres").dir(sysId)
 
         delete(directory.asFileTree.matching {
             include("$sysId*")
-            exclude("$sysId-${sysInfo.name}")
-            exclude("$sysId-${sysInfo.name}.sig")
-            exclude("$sysId-${sysInfo.name}-jmod")
-            exclude("$sysId-${sysInfo.name}-jmod.sig")
+            exclude(runtimeFileName)
+            exclude(runtimeSigFileName)
         })
     }
 
     tasks.register<Verify>(verifyTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntime(f) } })
-
-        inputs.file(bundledRuntime)
-        src(bundledRuntime)
+        inputs.file(bundledRuntimeFile)
+        src(bundledRuntimeFile)
         algorithm("SHA256")
         checksum(sysInfo.sha256)
     }
 
-    tasks.register<PGPVerify>(verifySigTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntime(f) } })
-        val signatureFile = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntimeSig(f) } })
+    if (downloadSigTask != null) {
+        tasks.register<PGPVerify>(verifySigTaskName) {
+            val signatureFile = layout.file(downloadSigTask.map { it.outputFiles.single() })
 
-        file = bundledRuntime
-        signature = signatureFile
-        keyId = "3B04D753C9050D9A5D343F39843C48A565F8F04B"
-    }
-
-    tasks.register<Verify>(verifyJmodTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmod(f) } })
-
-        inputs.file(bundledRuntime)
-        src(bundledRuntime)
-        algorithm("SHA256")
-        checksum(sysInfo.jmodSha256)
-    }
-
-    tasks.register<PGPVerify>(verifyJmodSigTaskName) {
-        val bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmod(f) } })
-        val signatureFile = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmodSig(f) } })
-
-        file = bundledRuntime
-        signature = signatureFile
-        keyId = "3B04D753C9050D9A5D343F39843C48A565F8F04B"
+            file = bundledRuntimeFile
+            signature = signatureFile
+            keyId = pgpKeyId!!
+        }
     }
 
     val getRuntimeTask = tasks.register<CreateJavaRuntimeTask>(getRuntimeTaskName) {
         launcher = packagingJdkToolchain
         fromRuntimeInfo(sysInfo)
 
-        bundledRuntime = layout.file(downloadTask.map { it.outputFiles.single { f -> isRuntime(f) } })
-        bundledJmods = layout.file(downloadTask.map { it.outputFiles.single { f -> isJmod(f) } })
+        bundledRuntime = bundledRuntimeFile
+        //bundledJmods = unpackedJmodDir // Disabled
 
         outputDir = layout.projectDirectory.dir("jres/$sysId/runtime")
     }

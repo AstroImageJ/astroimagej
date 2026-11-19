@@ -406,6 +406,9 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         compressBox.addItemListener(this);
         r1.add(compressBox);
 
+        fpackBox.setEnabled(notDP ? autoSave : DPSaveRawWithWCS);
+        compressBox.setEnabled(notDP ? autoSave : DPSaveRawWithWCS);
+
         var warn = new JLabel(notDP ? "<html><b>WARNING: may overwrite original image</b></html>"
                 : "<html><b>WARNING: may re-write raw science file</b></html>");
         warn.setFont(p11);
@@ -1029,6 +1032,8 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             } else {
                 DPSaveRawWithWCS = selected;
             }
+            fpackBox.setEnabled(selected);
+            compressBox.setEnabled(selected);
         } else if (source.equals(useAlternateAstrometryServerCB)) {
             useAlternateAstrometryServer = selected;
             alternateAstrometryUrlBaseTF.setText(useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase);

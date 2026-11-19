@@ -27,6 +27,7 @@ public class IndexManagerPanel extends JPanel {
     private final JProgressBar fileProgress = new JProgressBar(0, 100);
     private final JProgressBar overallProgress = new JProgressBar(0, 100);
     private final JPanel progressPanel = new JPanel(new GridLayout(2, 1, 0, 4));
+    private final Set<IndexSeries.IndexFamily.IndexFile> inProgressDownloads = new HashSet<>();
 
     public IndexManagerPanel(AstrometryNetIndexManager manager) {
         super(new BorderLayout(8, 8));
@@ -194,6 +195,10 @@ public class IndexManagerPanel extends JPanel {
                 statusLabel.setText("Downloaded families follow their series, disable the series instead");
                 return;
             }
+            if (!manager.isInstalled(series1, family)) {
+                tree.addSelectionPath(new TreePath(node.getPath()));
+                downloadSelected(null);
+            }
 
             treeModel.nodeChanged(node);
         } else if (node.getUserObject() instanceof SeriesData(IndexSeries series)) {
@@ -355,7 +360,9 @@ public class IndexManagerPanel extends JPanel {
         var totalFiles = selected.stream().mapToInt(fd -> downloadableFiles(fd.family().files())).sum() +
                 selectedCatalogs.stream().mapToInt(c -> downloadableFiles(c.files())).sum();
 
-        trigger.setEnabled(false);
+        if (trigger != null) {
+            trigger.setEnabled(false);
+        }
         resetProgress(totalFiles);
         progressPanel.setVisible(true);
         new SwingWorker<Void, DownloadProgress>() {
@@ -366,18 +373,18 @@ public class IndexManagerPanel extends JPanel {
                 var listener = new AstrometryNetIndexManager.DownloadListener() {
                     @Override
                     public void fileStarted(IndexSeries.IndexFamily.IndexFile file) {
-                        publish(new DownloadProgress(file.name(), 0, -1, filesDone, totalFiles));
+                        publish(new DownloadProgress(file, file.name(), 0, -1, filesDone, totalFiles));
                     }
 
                     @Override
                     public void fileProgress(IndexSeries.IndexFamily.IndexFile file, long bytesRead, long total) {
-                        publish(new DownloadProgress(file.name(), bytesRead, total, filesDone, totalFiles));
+                        publish(new DownloadProgress(file, file.name(), bytesRead, total, filesDone, totalFiles));
                     }
 
                     @Override
                     public void fileFinished(IndexSeries.IndexFamily.IndexFile file) {
                         filesDone++;
-                        publish(new DownloadProgress(file.name(), 1, 1, filesDone, totalFiles));
+                        publish(new DownloadProgress(file, file.name(), 1, 1, filesDone, totalFiles));
                     }
                 };
 
@@ -399,7 +406,9 @@ public class IndexManagerPanel extends JPanel {
 
             @Override
             protected void done() {
-                trigger.setEnabled(true);
+                if (trigger != null) {
+                    trigger.setEnabled(true);
+                }
                 progressPanel.setVisible(false);
                 try {
                     get();
@@ -433,10 +442,13 @@ public class IndexManagerPanel extends JPanel {
             fileProgress.setIndeterminate(false);
             fileProgress.setValue((int) Math.min(100, 100 * p.bytesRead() / p.total()));
             fileProgress.setString(p.fileName() + "  " + formatBytes(p.bytesRead()) + " / " + formatBytes(p.total()));
+            inProgressDownloads.add(p.file);
         } else {
             fileProgress.setIndeterminate(true);
+            inProgressDownloads.add(p.file);
             fileProgress.setString("Checking existing " + p.fileName() + "...");
         }
+        tree.repaint();
 
         overallProgress.setValue(p.filesDone());
         overallProgress.setString(p.filesDone() + " / " + p.fileCount() + " files");
@@ -516,18 +528,26 @@ public class IndexManagerPanel extends JPanel {
     private record FamilyKey(String seriesId, int familyId) {
     }
 
-    private record DownloadProgress(String fileName, long bytesRead, long total, int filesDone, int fileCount) {
+    private record DownloadProgress(IndexSeries.IndexFamily.IndexFile file, String fileName, long bytesRead, long total, int filesDone, int fileCount) {
     }
 
     private class CheckRenderer implements TreeCellRenderer {
         private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         private final JCheckBox box = new JCheckBox();
+        private final JLabel icon = new JLabel();
         private final DefaultTreeCellRenderer label = new DefaultTreeCellRenderer();
+        private static final Icon DOWNLOAD_IN_PROGRESS =
+                UIHelper.createImageIcon("Astronomy/images/icons/downloads/downloading.png", "download in progress");
+        private static final Icon DOWNLOAD_DONE =
+                UIHelper.createImageIcon("Astronomy/images/icons/downloads/download_done.png", "download in progress");
+        private static final Icon DOWNLOAD =
+                UIHelper.createImageIcon("Astronomy/images/icons/downloads/download.png", "download in progress");
 
         CheckRenderer() {
             panel.setOpaque(false);
             box.setOpaque(false);
             panel.add(box);
+            panel.add(icon);
             panel.add(label);
         }
 
@@ -540,6 +560,7 @@ public class IndexManagerPanel extends JPanel {
             var dimmed = false;
             box.setEnabled(true);
             box.setVisible(true);
+            icon.setVisible(false);
 
             if (node.getUserObject() instanceof FamilyData(IndexSeries series, IndexSeries.IndexFamily family)) {
                 var installed = manager.isInstalled(series, family);
@@ -548,10 +569,18 @@ public class IndexManagerPanel extends JPanel {
                 box.setEnabled(!installed);
                 // Don't show box for families as they are not always included
                 box.setVisible(false);
+                icon.setVisible(true);
+                if (installed) {
+                    icon.setIcon(DOWNLOAD_DONE);
+                } else if (family.files().stream().anyMatch(inProgressDownloads::contains)) {
+                    icon.setIcon(DOWNLOAD_IN_PROGRESS);
+                } else {
+                    icon.setIcon(DOWNLOAD);
+                }
                 dimmed = !options.isSeriesEnabled(series.id());
                 var size = formatBytes(family.totalSize());
-                text += "  (" + size + ")" + (installed ? "  [downloaded]" : "  [not downloaded]");
-                tip = family.files().size() + " file(s), " + size + (installed ? ". Follows its series." : " to download.");
+                text += "  (" + size + ")";
+                tip = family.files().size() + " file(s), " + size;
             } else if (node.getUserObject() instanceof SeriesData(IndexSeries series)) {
                 box.setSelected(options.isSeriesEnabled(series.id()));
                 //tip = series.description();

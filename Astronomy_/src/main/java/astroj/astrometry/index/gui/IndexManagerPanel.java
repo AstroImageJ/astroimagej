@@ -16,7 +16,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IndexManagerPanel extends JPanel {
     private final AstrometryNetIndexManager manager;
@@ -33,6 +36,13 @@ public class IndexManagerPanel extends JPanel {
     private final JPanel treeHolder = new JPanel(treeCards);
     private int activeScans = 0;
     private boolean downloading = false;
+    private final Queue<DownloadJob> downloadQueue = new ConcurrentLinkedQueue<>();
+    /// Families and catalogs queued in the current batch, only touched on the EDT.
+    private final Set<Object> queuedDownloads = new HashSet<>();
+    private final AtomicInteger queuedFiles = new AtomicInteger();
+    private final AtomicInteger finishedFiles = new AtomicInteger();
+    private JButton downloadTrigger;
+    private String downloadError;
 
     public IndexManagerPanel(AstrometryNetIndexManager manager) {
         super(new BorderLayout(8, 8));
@@ -386,54 +396,99 @@ public class IndexManagerPanel extends JPanel {
     }
 
     private void downloadSelected(JButton trigger) {
-        var selected = selectedFamilies().stream().filter(fd -> !manager.isInstalled(fd.series(), fd.family())).toList();
-        var selectedCatalogs = selectedCatalogs().stream().filter(c -> !manager.isInstalled(c)).toList();
-        if (selected.isEmpty() && selectedCatalogs.isEmpty()) {
+        var families = selectedFamilies().stream().filter(fd -> !manager.isInstalled(fd.series(), fd.family())).toList();
+        var catalogs = selectedCatalogs().stream().filter(c -> !manager.isInstalled(c)).toList();
+        if (families.isEmpty() && catalogs.isEmpty()) {
             IJ.error("Select one or more families or catalogs that are not downloaded");
             return;
         }
 
-        var totalFiles = selected.stream().mapToInt(fd -> downloadableFiles(fd.family().files())).sum() +
-                selectedCatalogs.stream().mapToInt(c -> downloadableFiles(c.files())).sum();
+        var added = false;
+        for (var fd : families) {
+            if (queuedDownloads.add(fd.key())) {
+                var files = downloadableFiles(fd.family().files());
+                downloadQueue.add(new DownloadJob(fd, null, files));
+                queuedFiles.addAndGet(files);
+                added = true;
+            }
+        }
+
+        for (var catalog : catalogs) {
+            if (queuedDownloads.add(catalog)) {
+                var files = downloadableFiles(catalog.files());
+                downloadQueue.add(new DownloadJob(null, catalog, files));
+                queuedFiles.addAndGet(files);
+                added = true;
+            }
+        }
+
+        if (!added) {
+            return; // Already queued or downloading
+        }
 
         if (trigger != null) {
             trigger.setEnabled(false);
+            downloadTrigger = trigger;
         }
-        downloading = true;
-        resetProgress(totalFiles);
-        progressPanel.setVisible(true);
-        new SwingWorker<Void, DownloadProgress>() {
-            private int filesDone = 0;
+
+        if (downloading) {
+            // Fold the new work into the running batch
+            overallProgress.setMaximum(Math.max(queuedFiles.get(), 1));
+            overallProgress.setString(finishedFiles.get() + " / " + queuedFiles.get() + " files");
+        } else {
+            downloading = true;
+            resetProgress(queuedFiles.get());
+            progressPanel.setVisible(true);
+            startDownloadWorker();
+        }
+    }
+
+    private void startDownloadWorker() {
+        new SwingWorker<String, DownloadProgress>() {
+            private int jobFinished = 0;
 
             @Override
-            protected Void doInBackground() throws IOException {
+            protected String doInBackground() {
                 var listener = new AstrometryNetIndexManager.DownloadListener() {
                     @Override
                     public void fileStarted(IndexSeries.IndexFamily.IndexFile file) {
-                        publish(new DownloadProgress(file, file.name(), 0, -1, filesDone, totalFiles));
+                        publish(new DownloadProgress(file, file.name(), 0, -1, finishedFiles.get(), queuedFiles.get()));
                     }
 
                     @Override
                     public void fileProgress(IndexSeries.IndexFamily.IndexFile file, long bytesRead, long total) {
-                        publish(new DownloadProgress(file, file.name(), bytesRead, total, filesDone, totalFiles));
+                        publish(new DownloadProgress(file, file.name(), bytesRead, total, finishedFiles.get(), queuedFiles.get()));
                     }
 
                     @Override
                     public void fileFinished(IndexSeries.IndexFamily.IndexFile file) {
-                        filesDone++;
-                        publish(new DownloadProgress(file, file.name(), 1, 1, filesDone, totalFiles));
+                        jobFinished++;
+                        publish(new DownloadProgress(file, file.name(), 1, 1, finishedFiles.incrementAndGet(), queuedFiles.get()));
                     }
                 };
 
-                for (var fd : selected) {
-                    manager.download(fd.series(), fd.family(), listener);
+                String error = null;
+                DownloadJob job;
+                while ((job = downloadQueue.poll()) != null) {
+                    jobFinished = 0;
+                    try {
+                        if (job.family() != null) {
+                            manager.download(job.family().series(), job.family().family(), listener);
+                        } else {
+                            manager.downloadCatalog(job.catalog(), listener);
+                        }
+                    } catch (IOException ex) {
+                        if (error == null) {
+                            error = ex.getMessage();
+                        }
+                    }
+
+                    if (jobFinished < job.files()) {
+                        finishedFiles.addAndGet(job.files() - jobFinished);
+                    }
                 }
 
-                for (var catalog : selectedCatalogs) {
-                    manager.downloadCatalog(catalog, listener);
-                }
-
-                return null;
+                return error;
             }
 
             @Override
@@ -443,21 +498,38 @@ public class IndexManagerPanel extends JPanel {
 
             @Override
             protected void done() {
-                if (trigger != null) {
-                    trigger.setEnabled(true);
+                try {
+                    var error = get();
+                    if (error != null && downloadError == null) {
+                        downloadError = error;
+                    }
+                } catch (Exception ex) {
+                    var cause = ex.getCause() == null ? ex : ex.getCause();
+                    if (downloadError == null) {
+                        downloadError = cause.getMessage();
+                    }
                 }
+
+                if (!downloadQueue.isEmpty()) {
+                    // More was queued while finishing, keep the same batch and bars
+                    startDownloadWorker();
+                    return;
+                }
+
                 downloading = false;
+                queuedDownloads.clear();
+                queuedFiles.set(0);
+                finishedFiles.set(0);
+                if (downloadTrigger != null) {
+                    downloadTrigger.setEnabled(true);
+                    downloadTrigger = null;
+                }
                 if (activeScans == 0) {
                     progressPanel.setVisible(false);
                 }
-                try {
-                    get();
-                    statusLabel.setText("Download complete");
-                } catch (Exception ex) {
-                    var cause = ex.getCause() == null ? ex : ex.getCause();
-                    statusLabel.setText("Download failed: " + cause.getMessage());
-                }
 
+                statusLabel.setText(downloadError == null ? "Download complete" : "Download failed: " + downloadError);
+                downloadError = null;
                 refresh();
             }
         }.execute();
@@ -490,6 +562,7 @@ public class IndexManagerPanel extends JPanel {
         }
         tree.repaint();
 
+        overallProgress.setMaximum(Math.max(p.fileCount(), 1));
         overallProgress.setValue(p.filesDone());
         overallProgress.setString(p.filesDone() + " / " + p.fileCount() + " files");
         statusLabel.setText("Downloading " + p.fileName());
@@ -566,6 +639,9 @@ public class IndexManagerPanel extends JPanel {
     }
 
     private record FamilyKey(String seriesId, int familyId) {
+    }
+
+    private record DownloadJob(FamilyData family, IndexCatalog catalog, int files) {
     }
 
     private record DownloadProgress(IndexSeries.IndexFamily.IndexFile file, String fileName, long bytesRead, long total, int filesDone, int fileCount) {

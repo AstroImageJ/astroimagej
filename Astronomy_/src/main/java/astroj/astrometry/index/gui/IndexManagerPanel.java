@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class IndexManagerPanel extends JPanel {
     private final AstrometryNetIndexManager manager;
@@ -28,6 +29,10 @@ public class IndexManagerPanel extends JPanel {
     private final JProgressBar overallProgress = new JProgressBar(0, 100);
     private final JPanel progressPanel = new JPanel(new GridLayout(2, 1, 0, 4));
     private final Set<IndexSeries.IndexFamily.IndexFile> inProgressDownloads = new HashSet<>();
+    private final CardLayout treeCards = new CardLayout();
+    private final JPanel treeHolder = new JPanel(treeCards);
+    private int activeScans = 0;
+    private boolean downloading = false;
 
     public IndexManagerPanel(AstrometryNetIndexManager manager) {
         super(new BorderLayout(8, 8));
@@ -51,23 +56,56 @@ public class IndexManagerPanel extends JPanel {
 
         var center = new JPanel(new BorderLayout(4, 4));
         center.add(buildRootRow(), BorderLayout.NORTH);
-        center.add(new JScrollPane(tree), BorderLayout.CENTER);
+        var scanningLabel = new JLabel("Scanning indexes...", SwingConstants.CENTER);
+        scanningLabel.setFont(scanningLabel.getFont().deriveFont(Font.BOLD, scanningLabel.getFont().getSize2D() + 2f));
+        treeHolder.add(new JScrollPane(tree), "tree");
+        treeHolder.add(scanningLabel, "scan");
+        center.add(treeHolder, BorderLayout.CENTER);
         center.add(rangeLabel, BorderLayout.SOUTH);
 
         add(center, BorderLayout.CENTER);
         add(buildButtons(), BorderLayout.SOUTH);
 
         indexRootField.setText(manager.options().indexRoot().toString());
-        statusLabel.setText("Loading indexes...");
         // The manager does no scanning or fetching until the GUI asks, refresh once it finishes
-        manager.loadForGui().whenComplete((_, _) -> SwingUtilities.invokeLater(() -> {
+        scan(manager.loadForGui());
+    }
+
+    /// Shows the scanning placeholder and indeterminate progress bars until the future completes,
+    /// then refreshes the tree.
+    private void scan(CompletableFuture<Void> task) {
+        beginScan();
+        task.whenComplete((_, _) -> SwingUtilities.invokeLater(() -> {
+            endScan();
             refresh();
-            if (manager.lastFetchError() != null) {
-                statusLabel.setText("Could not fetch remote index list");
-            } else {
-                statusLabel.setText(" ");
-            }
+            statusLabel.setText(manager.lastFetchError() != null ? "Could not fetch remote index list" : " ");
         }));
+    }
+
+    private void beginScan() {
+        activeScans++;
+        treeCards.show(treeHolder, "scan");
+        statusLabel.setText("Scanning indexes...");
+        if (!downloading) {
+            fileProgress.setIndeterminate(true);
+            fileProgress.setString("Scanning local index folders...");
+            overallProgress.setIndeterminate(true);
+            overallProgress.setString("Fetching remote index list...");
+            progressPanel.setVisible(true);
+        }
+    }
+
+    private void endScan() {
+        if (--activeScans > 0) {
+            return;
+        }
+
+        treeCards.show(treeHolder, "tree");
+        if (!downloading) {
+            fileProgress.setIndeterminate(false);
+            overallProgress.setIndeterminate(false);
+            progressPanel.setVisible(false);
+        }
     }
 
     static void main() {
@@ -90,8 +128,7 @@ public class IndexManagerPanel extends JPanel {
         var browse = new JButton("Browse...");
         browse.addActionListener(_ -> chooseDirectory(indexRootField.getText()).ifPresent(p -> {
             manager.options().setIndexRoot(p);
-            manager.refreshLocal();
-            refresh();
+            scan(manager.refreshLocal());
         }));
         rootRow.add(browse, BorderLayout.EAST);
         return rootRow;
@@ -258,8 +295,7 @@ public class IndexManagerPanel extends JPanel {
 
         ids.forEach(manager.options()::removeCustomLocation);
         if (!ids.isEmpty()) {
-            manager.refreshLocal();
-            refresh();
+            scan(manager.refreshLocal());
         }
     }
 
@@ -363,6 +399,7 @@ public class IndexManagerPanel extends JPanel {
         if (trigger != null) {
             trigger.setEnabled(false);
         }
+        downloading = true;
         resetProgress(totalFiles);
         progressPanel.setVisible(true);
         new SwingWorker<Void, DownloadProgress>() {
@@ -409,7 +446,10 @@ public class IndexManagerPanel extends JPanel {
                 if (trigger != null) {
                     trigger.setEnabled(true);
                 }
-                progressPanel.setVisible(false);
+                downloading = false;
+                if (activeScans == 0) {
+                    progressPanel.setVisible(false);
+                }
                 try {
                     get();
                     statusLabel.setText("Download complete");

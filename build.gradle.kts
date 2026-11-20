@@ -84,7 +84,7 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.27.7")
     testImplementation("org.assertj:assertj-swing-junit:3.17.1")
     constraints {
-        implementation("junit:junit:4.12.0.rhlw-00002") {
+        implementation("junit:junit:4.13.1") {
             because("of security vulnerability")
         }
     }

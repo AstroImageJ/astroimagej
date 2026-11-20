@@ -81,8 +81,13 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
     testImplementation("org.awaitility:awaitility:4.2.1")
-    testImplementation("org.assertj:assertj-core:3.26.3")
+    testImplementation("org.assertj:assertj-core:3.27.7")
     testImplementation("org.assertj:assertj-swing-junit:3.17.1")
+    constraints {
+        implementation("junit:junit:4.12.0.rhlw-00002") {
+            because("of security vulnerability")
+        }
+    }
 }
 
 tasks.test {

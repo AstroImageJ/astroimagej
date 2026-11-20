@@ -401,6 +401,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         });
         frame.pack();
         INDEX_MANAGER_PANEL_LOC.locationSavingWindow(frame);
+        INDEX_MANAGER_PANEL_LOC.sizeSavingWindow(frame);
         frame.setVisible(true);
     }
 

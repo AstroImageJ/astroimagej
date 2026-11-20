@@ -44,16 +44,19 @@ public class AnSolveWasi implements AutoCloseable {
     private final Module augmentModule, astrometryEngineModule;
     private final boolean useHostMemory;
     private final BooleanSupplier cancelled;
+    private final Module kdTreeModule;
+    /// Open kd-trees
+    private final Map<String, KdSession> kdSessions = new HashMap<>();
     private Engine hostWasmEngine;
     private HostMmap.Creator creator;
     private EngineSession session;
     private WorkDir workDir;
 
-    public AnSolveWasi(Path augmentWasm, Path engineWasm, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
-        this(Files.readAllBytes(augmentWasm), Files.readAllBytes(engineWasm), useHostMemory, cancelled);
+    public AnSolveWasi(Path augmentWasm, Path engineWasm, Path kdTree, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
+        this(Files.readAllBytes(augmentWasm), Files.readAllBytes(engineWasm), Files.readAllBytes(kdTree), useHostMemory, cancelled);
     }
 
-    public AnSolveWasi(byte[] augmentWasm, byte[] engineWasm, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
+    public AnSolveWasi(byte[] augmentWasm, byte[] engineWasm, byte[] kdTree, boolean useHostMemory, BooleanSupplier cancelled) throws Exception {
         this.cancelled = cancelled;
         // Disable wasmtime logging as it runs every time the engine is created
         Logger.getLogger("ai.tegmentum.wasmtime4j.factory.WasmRuntimeFactory").setLevel(Level.OFF);
@@ -81,6 +84,7 @@ public class AnSolveWasi implements AutoCloseable {
             astrometryEngineLocal = compile("astrometry-engine", engineWasm);
         }
         astrometryEngineModule = astrometryEngineLocal;
+        kdTreeModule = compile("kdtree", kdTree);
     }
 
     private static byte[] fitsXylist(List<double[]> xy) throws IOException {
@@ -105,6 +109,21 @@ public class AnSolveWasi implements AutoCloseable {
             if (t instanceof I32ExitException x) return x.getExitCode();
         }
         return null;
+    }
+
+    /// Calls an exported function that takes no arguments and returns an int.
+    private static int callInt(Instance inst, String function) throws Exception {
+        var r = inst.callFunction(function);
+        return r != null && r.length > 0 ? r[0].asInt() : 0;
+    }
+
+    private static int callInt(Instance inst, String function, WasmValue... args) throws Exception {
+        var r = inst.callFunction(function, args);
+        return r != null && r.length > 0 ? r[0].asInt() : 0;
+    }
+
+    private static double callDouble(Instance inst, String function, WasmValue... args) throws Exception {
+        return inst.callFunction(function, args)[0].asDouble();
     }
 
     private static void deleteTree(Path dir) {
@@ -399,12 +418,84 @@ public class AnSolveWasi implements AutoCloseable {
         }
     }
 
+    /// Cone search of a libkd star kd-tree
+    ///
+    /// @param raDeg      right ascension in degrees
+    /// @param tagColumns tag-along columns to read for each hit (matched case-insensitively); returned in `tags`
+    public synchronized List<CatalogHit> catalog(Path treeFile, double raDeg, double decDeg, double radiusDeg,
+                                                 String... tagColumns) throws Exception {
+        Path file = treeFile.toAbsolutePath().normalize();
+        String key = file + "|" + String.join(",", tagColumns);
+        KdSession ks = kdSessions.get(key);
+        if (ks == null) {
+            ks = openKd(file, tagColumns);
+            kdSessions.put(key, ks);
+        }
+
+        int n = callInt(ks.inst, "kd_cone", WasmValue.f64(raDeg), WasmValue.f64(decDeg), WasmValue.f64(radiusDeg));
+        if (n < 0) throw new IllegalStateException("kd_cone failed for " + file.getFileName() + " (" + n + ")");
+
+        List<CatalogHit> hits = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            double[] tags = new double[ks.tags];
+            for (int k = 0; k < tags.length; k++) {
+                tags[k] = callDouble(ks.inst, "kd_tag", WasmValue.i32(i), WasmValue.i32(k));
+            }
+            hits.add(new CatalogHit(callInt(ks.inst, "kd_index", WasmValue.i32(i)),
+                    callDouble(ks.inst, "kd_ra", WasmValue.i32(i)),
+                    callDouble(ks.inst, "kd_dec", WasmValue.i32(i)), tags));
+        }
+        return hits;
+    }
+
+    private KdSession openKd(Path file, String[] tagColumns) throws Exception {
+        KdSession ks = new KdSession();
+        ks.tags = tagColumns.length;
+        try {
+            ks.linker = WasiLinker.create(wasmEngine);
+            ks.store = wasmEngine.createStore();
+            ks.linker.configureStdout(WasiStdioConfig.nulled());
+            ks.linker.configureStderr(WasiStdioConfig.nulled());
+            ks.linker.configureStdin(WasiStdioConfig.nulled());
+
+            var args = new ArrayList<>(List.of("kd-cone", "/catalogs/" + file.getFileName()));
+            args.addAll(List.of(tagColumns));
+            ks.linker.setArguments(args);
+            ks.linker.allowDirectoryAccess(file.getParent(), "/catalogs");
+
+            ks.inst = ks.linker.instantiate(ks.store, kdTreeModule);
+            if (ks.inst.hasExport("_initialize")) {
+                ks.inst.callFunction("_initialize");
+            }
+            int rc = callInt(ks.inst, "kd_open");
+            if (rc != 0) {
+                var msg = switch (rc) {
+                    case 1 -> "cannot open the file";
+                    case 2 -> "not a double 3-D kd-tree";
+                    case 3 -> "no tag-along data (or too many columns requested)";
+                    default -> "tag-along column #" + (rc - 4) + " not found";
+                };
+                throw new IllegalStateException("kd_open failed for " + file.getFileName() + ": " + msg);
+            }
+        } catch (Throwable t) {
+            closeKd(ks);
+            throw t;
+        }
+        return ks;
+    }
+
     private boolean isCancelled() {
         return cancelled != null && cancelled.getAsBoolean();
     }
 
     @Override
     public void close() throws Exception {
+        synchronized (this) {
+            for (KdSession ks : kdSessions.values()) {
+                closeKd(ks);
+            }
+            kdSessions.clear();
+        }
         closeEngine();
         if (hostWasmEngine != null) {
             hostWasmEngine.close();
@@ -414,6 +505,21 @@ public class AnSolveWasi implements AutoCloseable {
         if (workDir != null) {
             workDir.close();
             workDir = null;
+        }
+    }
+
+    private static void closeKd(KdSession ks) {
+        try {
+            if (ks.store != null) {
+                ks.store.close();
+            }
+        } catch (Throwable _) {
+        }
+        try {
+            if (ks.linker != null) {
+                ks.linker.close();
+            }
+        } catch (Throwable _) {
         }
     }
 
@@ -433,6 +539,18 @@ public class AnSolveWasi implements AutoCloseable {
             }
         }
         return n;
+    }
+
+    /// One hit from a kd-tree cone search. `index` is the position in the original catalog,
+    /// `tags` holds the requested tag-along columns, in the order they were requested.
+    public record CatalogHit(int index, double raDeg, double decDeg, double[] tags) {
+    }
+
+    private static final class KdSession {
+        WasiLinker linker;
+        Store store;
+        Instance inst;
+        int tags;
     }
 
     private static final class EngineSession {

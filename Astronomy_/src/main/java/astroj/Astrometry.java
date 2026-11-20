@@ -519,7 +519,7 @@ public class Astrometry { //implements KeyListener
                     if (obj.names().isEmpty()) continue;
                     // Astrometry.net reports pixel positions with a bottom-left origin.
                     addAnnotateRoi(impOriginal, true, false, true, false,
-                            obj.x() - 0.5, height - (obj.y() - 0.5), annotateRadius,
+                            obj.x() - 0.5, height - (obj.y() - 0.5), getRadius(obj),
                             obj.names().iterator().next(), annotationColor);
                 }
                 impOriginal.draw();
@@ -1019,6 +1019,13 @@ public class Astrometry { //implements KeyListener
 //    public void keyReleased(KeyEvent e) {
 //
 //    }
+
+    private double getRadius(PlateSolver.AstrometryObject object) {
+        if (AstrometrySetup.USE_OBJ_RADIUS.get() && object.radius() > 0) {
+            return object.radius();
+        }
+        return annotateRadius;
+    }
 
     public void getPrefs() {
         userKey = Prefs.get("astrometry.userKey", userKey);

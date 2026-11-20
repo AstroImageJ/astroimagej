@@ -1649,7 +1649,39 @@ public class WCS
 ////        IJ.log("rot = "+rot);
 //        return rot;
 //        }
-    
+
+	private boolean hasImageSize() {
+		return NAXES != null && NAXES.length >= 2 && NAXES[0] > 0 && NAXES[1] > 0;
+	}
+
+	/** Geometric-mean pixel scale in arcsec/pixel, sqrt(|det CD|). */
+	public double getPixelScaleArcSec() {
+		if (!enoughInfo) return Double.NaN;
+		return Math.sqrt(Math.abs(CD[0][0]*CD[1][1] - CD[0][1]*CD[1][0])) * 3600.0;
+	}
+
+	/**
+	 * RA/Dec in degrees to an IJ pixel position, or null if the WCS is unusable or the point is on the far side of
+	 * the tangent plane. wcs2pixels() has no such check: past 90 degrees from the reference point it mirrors the point
+	 * back across the image, which would produce false positions for catalogs that cover the whole sky.
+	 */
+	public double[] radecToPixels(double raDeg, double decDeg) {
+		if (!enoughInfo || !hasRADEC || CDinv == null) return null;
+		double d0 = CRVAL[1]*D2R, dd = decDeg*D2R, da = (raDeg - CRVAL[0])*D2R;
+		double cosc = Math.sin(d0)*Math.sin(dd) + Math.cos(d0)*Math.cos(dd)*Math.cos(da);
+		if (cosc <= 1e-9) return null;
+		return wcs2pixels(new double[]{raDeg, decDeg});
+	}
+
+	public double getRadius() {
+		if (!enoughInfo || !hasRADEC || !hasImageSize()) return Double.NaN;
+		return getPixelScaleArcSec() * (Math.hypot(NAXES[0], NAXES[1]) / 2D) / 3600D;
+	}
+
+	public double[] getCenterRadec() {
+		if (!enoughInfo || !hasRADEC || !hasImageSize()) return null;
+		return pixels2wcs(new double[]{NAXES[0] / 2D, NAXES[1] / 2D});
+	}
 
 	public boolean hasRaDec ()
 		{

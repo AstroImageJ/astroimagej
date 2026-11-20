@@ -31,6 +31,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     public JFrame astrometrySetupFrame;
     private JFrame indexManagerFrame;
     public static final AstrometryNetIndexManager ASTROMETRY_NET_INDEX_MANAGER = new AstrometryNetIndexManager();
+    public static final Property<Boolean> USE_OBJ_RADIUS = new Property<>(false, AstrometrySetup.class);
     DecimalFormat sixPlaces = new DecimalFormat("0.000000", IJU.dfs);
     Color mainBorderColor = new Color(118, 142, 229);
     String fontName = "Dialog";
@@ -546,7 +547,17 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         setWidth(annotateRadiusSpinner, 100);
         r.add(titled("Radius (pixels)", annotateRadiusSpinner));
 
+        var r2 = row();
+        var b = new JCheckBox("Use obj. radius", USE_OBJ_RADIUS.get());
+        b.addActionListener(_ -> USE_OBJ_RADIUS.set(b.isSelected()));
+        b.setToolTipText("""
+                If enabled, and object radius is provided by the solver,
+                use for the annotation instead of the specified radius.
+                """);
+        r2.add(b);
+
         g.add(r);
+        g.add(r2);
         return g;
     }
 

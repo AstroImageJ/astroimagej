@@ -6820,18 +6820,6 @@
       "file": "hip.fits"
     },
     {
-      "url": "https://data.astrometry.net/tycho2-cut.fits",
-      "size": 81846720,
-      "hash": "df742a9136b0b55a55753e1184e96fb4f100ab9665feee1a88ca824eded15ff0",
-      "file": "tycho2-cut.fits"
-    },
-    {
-      "url": "https://data.astrometry.net/tycho2-mag4.fits",
-      "size": 23040,
-      "hash": "7ffe3f241dc28ba8677a3ba2d1aadc2fe6693d307ca3a1ce5f0f7d956d87f4ff",
-      "file": "tycho2-mag4.fits"
-    },
-    {
       "url": "https://data.astrometry.net/tycho2.kd",
       "size": 110652480,
       "hash": "8b198c46c8b7e8af78f2e28b5ce0227a0050af22857074af9e647a452c8a1dca",

@@ -396,7 +396,7 @@ public class AnSolveWasi implements AutoCloseable {
                     IJ.showStatus("Running job...");
                 }
                 r = es.results.poll(CANCEL_POLL_MS, TimeUnit.MILLISECONDS);
-                if (r == null && !cancelSent && cancelled != null && cancelled.getAsBoolean()) {
+                if ((r == null && !cancelSent && cancelled != null && cancelled.getAsBoolean()) || Thread.currentThread().isInterrupted()) {
                     Files.writeString(cancelFile, "cancel\n"); // the engine ends the job, then reports it done as usual
                     cancelSent = true;
                 }

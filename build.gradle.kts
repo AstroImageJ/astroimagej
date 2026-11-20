@@ -115,11 +115,13 @@ tasks.test {
  * The set of Java runtimes to download and package AIJ for.
  *
  * Runtimes are discovered through the foojay Disco API, see https://api.foojay.io/swagger-ui
+ * foojay can be slow to list new releases. Pass `-PjavaRuntimeSource=azul` to look up Zulu runtimes using
+ * Azul's own metadata API (https://api.azul.com/metadata/v1/docs/swagger) instead.
  * Each system can use its own vendor and Java version:
  *  - `vendor`: defaults to zulu
  *  - `javaVersion`: major Java version, defaults to the `javaShippingVersion` property
  *  - `pgpKeyId`: fingerprint of the key the vendor signs releases with. Signature verification is only done
- *    when it is set and foojay lists a signature for the package.
+ *    when it is set and the provider lists a signature for the package.
  *
  * The file's name (name), major Java version (version), and SHA256 hash (sha256) are also added to this map. Those entries
  * are excluded from the definition for brevity.
@@ -132,12 +134,18 @@ val javaRuntimeSystems = mapOf(
     "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS, type = RuntimeType.JDK),
 )
 
+// Where runtimes are looked up, defaults to foojay
+val javaRuntimeSource: JavaInfo.Source = providers.gradleProperty("javaRuntimeSource")
+    .map { JavaInfo.Source.parse(it) }
+    .getOrElse(JavaInfo.Source.FOOJAY)
+
 val javaRuntimeSystemsProperty = project.objects.mapProperty(String::class.java, JavaRuntimeSystem::class.java)
 
 // Wrap the logic in a lazy property that caches the result
 javaRuntimeSystemsProperty.convention(providers.provider {
     val hasher = MessageDigest.getInstance("MD5")
     hasher.update(shippingJava.toString().toByteArray())
+    hasher.update(javaRuntimeSource.name.toByteArray())
 
     javaRuntimeSystems.forEach { (k, v) ->
         hasher.update(k.toByteArray())
@@ -176,7 +184,10 @@ javaRuntimeSystemsProperty.convention(providers.provider {
                     cacheData.all { (k, cached) -> cached.vendor == javaRuntimeSystems.getValue(k).vendor }
             if (matchesRequest && cacheData.values.all { it.isResolved() }) {
                 cacheData.forEach { (k, cached) ->
-                    logger.lifecycle("  $k: ${cached.vendor} ${cached.fullVersion ?: cached.version}")
+                    logger.lifecycle(
+                        "  $k: ${cached.vendor} ${cached.distributionVersion?.takeIf { it.isNotBlank() }?.plus(" / ") ?: ""}" +
+                                "${cached.fullVersion ?: cached.version} (${cached.source ?: "unknown source"})"
+                    )
                 }
                 return@provider cacheData
             } else {
@@ -188,7 +199,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
     }
 
     // Otherwise, query foojay to populate the data
-    logger.lifecycle("Fetching Java Runtime Systems data from foojay")
+    logger.lifecycle("Fetching Java Runtime Systems data from $javaRuntimeSource")
     javaRuntimeSystems.forEach { (key, sysInfo) ->
         val major = sysInfo.javaVersion ?: shippingJava
         val desc = "$key (vendor = ${sysInfo.vendor}, java = $major, ${sysInfo.os}, ${sysInfo.arch}, ${sysInfo.ext})"
@@ -196,6 +207,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         try {
             // Find the latest runtime
             val runtime = JavaInfo.findPackage(
+                source = javaRuntimeSource,
                 vendor = sysInfo.vendor,
                 majorVersion = major,
                 type = sysInfo.type,
@@ -211,15 +223,23 @@ javaRuntimeSystemsProperty.convention(providers.provider {
             sysInfo.apply {
                 version = runtime.version
                 fullVersion = runtime.fullVersion
+                distributionVersion = runtime.distributionVersion
+                // Azul's API only knows Zulu, everything else is always found through foojay
+                source = if (javaRuntimeSource == JavaInfo.Source.AZUL && sysInfo.vendor == "zulu") {
+                    JavaInfo.Source.AZUL.name.lowercase()
+                } else {
+                    JavaInfo.Source.FOOJAY.name.lowercase()
+                }
                 name = runtime.name
                 sha256 = runtime.sha256
                 type = runtime.type
                 this.url = runtime.url
                 sigUrl = runtime.sigUrl
+                sigKeyId = runtime.sigKeyId
             }
         } catch (e: Exception) {
             logger.error(e.toString())
-            logger.warn("A runtime ({}) failed to return from foojay!", desc)
+            logger.warn("A runtime ({}) failed to resolve from {}!", desc, javaRuntimeSource)
         }
     }
 
@@ -400,7 +420,10 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         ?.let { registerDownload(downloadSigTaskName, it, runtimeSigFileName) }
 
     if (pgpKeyId == null) {
-        logger.lifecycle("No PGP key known for vendor ${sysInfo.vendor}, only checksums will be verified for $sysId")
+        logger.lifecycle(
+            "No PGP key set for $sysId, only the checksum will be verified" +
+                    (sysInfo.sigKeyId?.let { " (the package is signed with key $it, set pgpKeyId to verify it)" } ?: "")
+        )
     } else if (sysInfo.sigUrl == null) {
         logger.warn("Vendor ${sysInfo.vendor} publishes no signature for $sysId, only the checksum will be verified")
     }

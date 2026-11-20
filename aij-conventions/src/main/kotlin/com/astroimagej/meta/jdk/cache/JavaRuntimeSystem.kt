@@ -10,7 +10,8 @@ import org.apache.tools.ant.taskdefs.condition.Os
  * A system to package AIJ for, and the Java runtime that will be bundled with it.
  *
  * Inputs: [ext], [arch], [os], [vendor], [javaVersion], [pgpKeyId], and optionally [type].
- * Everything else is resolved from the foojay Disco API and stored in the cache.
+ * Everything else is resolved from the foojay Disco API (or Azul's metadata API, see `javaRuntimeSource`)
+ * and stored in the cache.
  */
 @Serializable
 data class JavaRuntimeSystem(
@@ -24,12 +25,19 @@ data class JavaRuntimeSystem(
     /** Fingerprint of the key the vendor signs with. Signatures are only verified when this is set. */
     val pgpKeyId: String? = null,
     var version: Int? = null,
+    /** Java version of the resolved build, e.g. 27.0.1+9 */
     var fullVersion: String? = null,
+    /** The vendor's own version of the resolved build, e.g. Zulu's 27.30.201 */
+    var distributionVersion: String? = null,
+    /** Which API the build was found with (`foojay` or `azul`). Saved in the cache. */
+    var source: String? = null,
     var name: String? = null,
     var sha256: String? = null,
     var type: RuntimeType? = null,
     var url: String? = null,
     var sigUrl: String? = null,
+    /** Id of the key the signature was made with, as reported by the API (informational, see [pgpKeyId]) */
+    var sigKeyId: String? = null,
 ) {
     /** True once the runtime has been resolved. */
     fun isResolved(): Boolean = version != null && name != null && sha256 != null && url != null

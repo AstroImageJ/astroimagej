@@ -83,7 +83,7 @@ public class AnSolveWasi implements AutoCloseable {
         astrometryEngineModule = astrometryEngineLocal;
     }
 
-    static byte[] fitsXylist(List<double[]> xy) throws IOException {
+    private static byte[] fitsXylist(List<double[]> xy) throws IOException {
         try (var fits = new Fits(); var byteOut = new ByteArrayOutputStream(); var out = new FitsOutputStream(byteOut)) {
             var table = new BinaryTable();
             table.addColumn(BinaryTable.ColumnDesc.createForScalars(double.class).name("X"));
@@ -101,13 +101,16 @@ public class AnSolveWasi implements AutoCloseable {
 
     /// Get the exit code if available
     private static Integer exitCode(Throwable ex) {
-        for (Throwable t = ex; t != null; t = t.getCause())
+        for (Throwable t = ex; t != null; t = t.getCause()) {
             if (t instanceof I32ExitException x) return x.getExitCode();
+        }
         return null;
     }
 
     private static void deleteTree(Path dir) {
-        if (dir == null || !Files.exists(dir)) return;
+        if (dir == null || !Files.exists(dir)) {
+            return;
+        }
         try (Stream<Path> s = Files.walk(dir)) {
             //noinspection ResultOfMethodCallIgnored
             s.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
@@ -240,8 +243,12 @@ public class AnSolveWasi implements AutoCloseable {
     /// starts, so a call with different ones stops the engine and starts a new one.
     private synchronized EngineSession ensureEngine(Collection<Path> indexDirs, Path hostConfig) throws Exception {
         Object key = List.of(String.valueOf(indexDirs), String.valueOf(hostConfig));
-        if (session != null && (!session.key.equals(key) || session.dead)) closeEngine();
-        if (session != null) return session;
+        if (session != null && (!session.key.equals(key) || session.dead)) {
+            closeEngine();
+        }
+        if (session != null) {
+            return session;
+        }
 
         IJ.showStatus("Creating engine config...");
         EngineSession es = new EngineSession();
@@ -258,7 +265,9 @@ public class AnSolveWasi implements AutoCloseable {
         } else {
             StringBuilder sb = new StringBuilder();
             if (indexDirs != null) {
-                for (Path d : indexDirs) sb.append("add_path ").append(es.mounts.guest(d, true)).append('\n');
+                for (Path d : indexDirs) {
+                    sb.append("add_path ").append(es.mounts.guest(d, true)).append('\n');
+                }
             }
             cfg = sb.append("autoindex\n").toString();
         }
@@ -291,7 +300,9 @@ public class AnSolveWasi implements AutoCloseable {
     /// Asks the engine to leave its job loop (after the running job, if any) and waits for its thread to end.
     private synchronized void closeEngine() {
         EngineSession es = session;
-        if (es == null) return;
+        if (es == null) {
+            return;
+        }
         session = null;
         if (es.ticker != null) {
             es.ticker.shutdownNow();
@@ -308,7 +319,7 @@ public class AnSolveWasi implements AutoCloseable {
     /// @param indexDirs  folders holding index-*.fits (host paths), used if hostConfig is null
     /// @param hostConfig optional astrometry.cfg as written for the host; its paths are translated
     /// @param scaleLo/Hi arcsec/pixel bounds: 0 -> none
-    /// @param radius ra/dec/radius degrees: radius = 0 -> none
+    /// @param radius     ra/dec/radius degrees: radius = 0 -> none
     /// @param tweakOrder 0 -> no tweak
     /// @return the WCS FITS header text (what nova stores as wcs.fits), or null if not solved
     public synchronized String solve(List<double[]> xy, int width, int height, double scaleLo, double scaleHi,
@@ -331,12 +342,20 @@ public class AnSolveWasi implements AutoCloseable {
             // the same arguments nova's dojob() builds for a source list (process_submissions.py:274-335)
             List<String> a = new ArrayList<>(List.of("augment-xylist", "--xylist", g + "/job.xy", "--out", g + "/job.axy",
                     "--width", "" + width, "--height", "" + height, "--objs", "1000", "--tag-all", "--wcs", g + "/job.wcs"));
-            if (scaleLo > 0 || scaleHi > 0)
+            if (scaleLo > 0 || scaleHi > 0) {
                 a.addAll(List.of("--scale-units", "arcsecperpix", "--scale-low", "" + scaleLo, "--scale-high", "" + scaleHi));
-            if (radius > 0) a.addAll(List.of("--ra", "" + ra, "--dec", "" + dec, "--radius", "" + radius));
-            if (tweakOrder == 0) a.add("--no-tweak");
-            else a.addAll(List.of("--tweak-order", "" + tweakOrder));
-            if (crpixCenter) a.add("--crpix-center");
+            }
+            if (radius > 0) {
+                a.addAll(List.of("--ra", "" + ra, "--dec", "" + dec, "--radius", "" + radius));
+            }
+            if (tweakOrder == 0) {
+                a.add("--no-tweak");
+            } else {
+                a.addAll(List.of("--tweak-order", "" + tweakOrder));
+            }
+            if (crpixCenter) {
+                a.add("--crpix-center");
+            }
             // Remove lines and uniformize require python code that has not been ported
             a.addAll(List.of("--no-remove-lines", "--uniformize", "0", "--temp-dir", g));
 
@@ -387,7 +406,9 @@ public class AnSolveWasi implements AutoCloseable {
     @Override
     public void close() throws Exception {
         closeEngine();
-        if (hostWasmEngine != null) hostWasmEngine.close();
+        if (hostWasmEngine != null) {
+            hostWasmEngine.close();
+        }
         wasmEngine.close();
         wasmRuntime.close();
         if (workDir != null) {

@@ -101,6 +101,7 @@ public final class GpuMaxima {
                 plan = null;
                 return;
             }
+            IJ.showStatus("Creating GPU kernel...");
             pixels = new float[n];
             rows = median ? StarKernels.medianRows(k.medianRadius()) : null;
 

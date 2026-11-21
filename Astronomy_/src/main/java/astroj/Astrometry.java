@@ -188,6 +188,8 @@ public class Astrometry { //implements KeyListener
         if (endSlice < startSlice) endSlice = startSlice;
 
 
+        IJ.showStatus("Starting Solver...");
+
         AnnotateRoi warning = null;
         if (SKIP_IMAGE_UPDATE.get()) {
             warning = new AnnotateRoi(false, false, true, false,

@@ -1,31 +1,6 @@
 package nom.tam.fits.test;
 
-import static nom.tam.fits.header.Standard.AUTHOR;
-import static nom.tam.fits.header.Standard.DATAMAX;
-import static nom.tam.fits.header.Standard.DATAMIN;
-import static nom.tam.fits.header.Standard.DATE;
-import static nom.tam.fits.header.Standard.DATE_OBS;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.OBSERVER;
-import static nom.tam.fits.header.Standard.ORIGIN;
-import static nom.tam.fits.header.Standard.REFERENC;
-import static nom.tam.fits.header.Standard.TELESCOP;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.TimeZone;
-
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.header.NonStandard;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayFuncs;
@@ -34,6 +9,15 @@ import nom.tam.util.SafeClose;
 import nom.tam.util.TestArrayFuncs;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.TimeZone;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

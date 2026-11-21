@@ -31,6 +31,13 @@ package nom.tam.fits;
  * #L%
  */
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.NonStandard;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.*;
+import nom.tam.util.type.ElementType;
+
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
@@ -42,25 +49,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.NonStandard;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.ColumnTable;
-import nom.tam.util.ComplexValue;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsEncoder;
-import nom.tam.util.FitsIO;
-import nom.tam.util.Quantizer;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.ReadWriteAccess;
-import nom.tam.util.TableException;
-import nom.tam.util.type.ElementType;
 
 /**
  * Table data for binary table HDUs. It has been thoroughly re-written for 1.18 to improve consistency, increase
@@ -1581,7 +1569,9 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     @Override
     protected BinaryTable clone() {
         try {
-            return (BinaryTable) super.clone();
+            BinaryTable clone = (BinaryTable) super.clone();
+            clone.lock = new Object();
+            return clone;
         } catch (CloneNotSupportedException e) {
             return null;
         }
@@ -2550,6 +2540,11 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         }
     }
 
+    @Override
+    protected long getProjectedReadSize() {
+        return super.getProjectedReadSize() + getHeapSize();
+    }
+
     /**
      * @return the size of the heap -- including the offset from the end of the table data, and reserved space after.
      */
@@ -2610,7 +2605,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      */
     private void readTableElement(Object o, ColumnDesc c, int row) throws IOException, FitsException {
         synchronized (lock) {
-            @SuppressWarnings("resource")
             RandomAccess in = getRandomAccessInput();
 
             in.position(getFileOffset() + row * (long) rowLen + c.offset);
@@ -3542,12 +3536,11 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         }
     }
 
-    @SuppressWarnings("resource")
     @Override
     public void write(ArrayDataOutput os) throws FitsException {
         synchronized (lock) {
             try {
-                if (isDeferred() && os == getRandomAccessInput()) {
+                if (isDeferred() && os instanceof RandomAccess) {
                     // It it's a deferred mode re-write, then data were edited in place if at all,
                     // so we can skip the main table.
                     ((RandomAccess) os).skipAllBytes(getRegularTableSize());
@@ -4386,7 +4379,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
             }
 
             FitsHeap hp = getHeap();
-            long oldSize = hp.size();
+            long oldSize = hp.getSize();
             FitsHeap compact = new FitsHeap(0);
 
             for (int i = 0; i < nRow; i++) {

@@ -1,10 +1,10 @@
 package nom.tam.fits.header.hierarch;
 
-import static nom.tam.fits.header.NonStandard.HIERARCH;
+import nom.tam.fits.utilities.FitsLineAppender;
 
 import java.util.Locale;
 
-import nom.tam.fits.utilities.FitsLineAppender;
+import static nom.tam.fits.header.NonStandard.HIERARCH;
 
 /*
  * #%L

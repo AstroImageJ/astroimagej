@@ -31,12 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 import nom.tam.fits.header.Bitpix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 @SuppressWarnings("javadoc")
 public class BitpixTest {

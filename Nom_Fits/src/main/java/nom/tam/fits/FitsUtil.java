@@ -31,6 +31,9 @@ package nom.tam.fits;
  * #L%
  */
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.util.*;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,14 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.FitsDecoder;
-import nom.tam.util.FitsEncoder;
-import nom.tam.util.FitsIO;
-import nom.tam.util.RandomAccess;
 
 /**
  * Static utility functions used throughout the FITS classes.

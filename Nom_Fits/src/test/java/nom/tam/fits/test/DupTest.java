@@ -31,6 +31,12 @@ package nom.tam.fits.test;
  * #L%
  */
 
+import nom.tam.fits.Fits;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.util.List;
@@ -39,12 +45,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import nom.tam.fits.Fits;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 /**
  * Test adding a little junk after a valid image. We wish to test three scenarios: Junk at the beginning (should
@@ -108,6 +108,17 @@ public class DupTest {
             Assertions.assertTrue(hdr.rewriteable());
             Assertions.assertFalse(hdr.hadDuplicates());
             Assertions.assertTrue(hdr.getDuplicates() == null);
+        }
+    }
+
+    @Test
+    public void testGetDetached() throws Exception {
+        try (Fits f = new Fits("src/test/resources/nom/tam/fits/test/test_dup.fits")) {
+            Header hdr = f.readHDU().getHeader();
+            Header detached = hdr.getDetachedCopy();
+
+            Assertions.assertEquals(hdr.getDuplicates().size(), detached.getDuplicates().size());
+            Assertions.assertEquals(hdr.getDuplicateKeySet().size(), detached.getDuplicateKeySet().size());
         }
     }
 

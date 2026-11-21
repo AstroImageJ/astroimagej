@@ -1,5 +1,8 @@
 package nom.tam.util;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
@@ -36,9 +39,6 @@ import java.nio.file.Path;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("javadoc")
 public class RandomAccessFileChannelTest {

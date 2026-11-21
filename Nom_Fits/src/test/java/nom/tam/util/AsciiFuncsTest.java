@@ -31,10 +31,10 @@ package nom.tam.util;
  * #L%
  */
 
-import java.text.ParsePosition;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.text.ParsePosition;
 
 @SuppressWarnings("javadoc")
 public class AsciiFuncsTest {

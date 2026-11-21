@@ -31,12 +31,12 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.io.FileInputStream;
-
 import nom.tam.util.FitsFile;
 import nom.tam.util.FitsInputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
 
 @SuppressWarnings("javadoc")
 public class BigFileTest {

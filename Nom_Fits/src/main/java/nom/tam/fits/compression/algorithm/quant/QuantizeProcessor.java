@@ -175,9 +175,11 @@ public class QuantizeProcessor {
      * @since                          1.23
      */
     protected void quantize(final FloatBuffer fdata, final IntBuffer intData) throws BufferOverflowException {
-        quantizeOption.initDither();
-        while (fdata.hasRemaining()) {
-            intData.put(quantizeOption.toInt(fdata.get()));
+        synchronized (quantizeOption) {
+            quantizeOption.initDither();
+            while (fdata.hasRemaining()) {
+                intData.put(quantizeOption.toInt(fdata.get()));
+            }
         }
     }
 
@@ -192,9 +194,11 @@ public class QuantizeProcessor {
      * @since                          1.23
      */
     protected void unquantize(final IntBuffer intData, final DoubleBuffer fdata) throws BufferOverflowException {
-        quantizeOption.initDither();
-        while (fdata.hasRemaining()) {
-            fdata.put((float) quantizeOption.toDouble(intData.get()));
+        synchronized (quantizeOption) {
+            quantizeOption.initDither();
+            while (fdata.hasRemaining()) {
+                fdata.put(quantizeOption.toDouble(intData.get()));
+            }
         }
     }
 
@@ -209,9 +213,11 @@ public class QuantizeProcessor {
      * @since                          1.23
      */
     protected void quantize(final DoubleBuffer fdata, final IntBuffer intData) throws BufferOverflowException {
-        quantizeOption.initDither();
-        while (fdata.hasRemaining()) {
-            intData.put(quantizeOption.toInt(fdata.get()));
+        synchronized (quantizeOption) {
+            quantizeOption.initDither();
+            while (fdata.hasRemaining()) {
+                intData.put(quantizeOption.toInt(fdata.get()));
+            }
         }
     }
 
@@ -226,9 +232,11 @@ public class QuantizeProcessor {
      * @since                          1.23
      */
     protected void unquantize(final IntBuffer intData, final FloatBuffer fdata) throws BufferOverflowException {
-        quantizeOption.initDither();
-        while (fdata.hasRemaining()) {
-            fdata.put((float) quantizeOption.toDouble(intData.get()));
+        synchronized (quantizeOption) {
+            quantizeOption.initDither();
+            while (fdata.hasRemaining()) {
+                fdata.put((float) quantizeOption.toDouble(intData.get()));
+            }
         }
     }
 

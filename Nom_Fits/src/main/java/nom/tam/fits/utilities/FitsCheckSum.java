@@ -31,31 +31,20 @@ package nom.tam.fits.utilities;
  * #L%
  */
 
-import static nom.tam.fits.header.Checksum.CHECKSUM;
-import static nom.tam.fits.header.Checksum.DATASUM;
+import nom.tam.fits.*;
+import nom.tam.util.FitsIO;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.RandomAccess;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Data;
-import nom.tam.fits.FitsDate;
-import nom.tam.fits.FitsElement;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.util.FitsIO;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.RandomAccess;
+import static nom.tam.fits.header.Checksum.CHECKSUM;
+import static nom.tam.fits.header.Checksum.DATASUM;
 
 /**
  * <p>

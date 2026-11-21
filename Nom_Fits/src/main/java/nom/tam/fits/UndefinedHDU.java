@@ -31,12 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.XTENSION;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.header.Standard;
 
 import java.io.PrintStream;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.header.Standard;
+import static nom.tam.fits.header.Standard.XTENSION;
 
 /**
  * A HDU that holds a type of data we don't recognise. We can still access that data in its raw binary form, and the

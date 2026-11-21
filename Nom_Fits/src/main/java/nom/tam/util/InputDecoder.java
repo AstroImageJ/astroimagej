@@ -31,6 +31,9 @@
 
 package nom.tam.util;
 
+import nom.tam.fits.FitsFactory;
+import nom.tam.util.type.ElementType;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,9 +41,6 @@ import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import nom.tam.fits.FitsFactory;
-import nom.tam.util.type.ElementType;
 
 /**
  * Efficient base class for decoding of binary input into Java arrays (<i>primarily for internal use</i>)

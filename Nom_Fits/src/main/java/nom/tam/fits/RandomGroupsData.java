@@ -31,16 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsEncoder;
+import nom.tam.util.*;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
 
 /**
  * Random Groups data. The use of random groups is discouraged, even by the FITS standard. Some old radio data may be

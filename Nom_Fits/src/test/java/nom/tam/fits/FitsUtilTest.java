@@ -1,10 +1,10 @@
 package nom.tam.fits;
 
-import java.text.ParsePosition;
-
 import nom.tam.util.FitsIO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.text.ParsePosition;
 
 /*-
  * #%L

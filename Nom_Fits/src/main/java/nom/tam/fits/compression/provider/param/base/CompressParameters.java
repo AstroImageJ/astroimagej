@@ -1,16 +1,11 @@
 package nom.tam.fits.compression.provider.param.base;
 
-import static nom.tam.fits.header.Standard.TTYPEn;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
+
+import static nom.tam.fits.header.Standard.TTYPEn;
 
 /*
  * #%L

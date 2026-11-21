@@ -31,34 +31,15 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.compress.CloseIS;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.BufferedDataOutputStream;
-import nom.tam.util.BufferedFile;
-import nom.tam.util.SafeClose;
-import nom.tam.util.TestArrayFuncs;
+import nom.tam.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
 
 /**
  * This class provides runs tests of the BufferedI/O classes: BufferedFile, BufferedDataInputStream and

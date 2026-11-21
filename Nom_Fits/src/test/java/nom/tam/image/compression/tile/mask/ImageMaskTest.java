@@ -31,22 +31,16 @@ package nom.tam.image.compression.tile.mask;
  * #L%
  */
 
-import java.lang.reflect.Constructor;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.Arrays;
-
 import nom.tam.image.tile.operation.buffer.TileBuffer;
 import nom.tam.image.tile.operation.buffer.TileBufferFactory;
 import nom.tam.util.type.ElementType;
 import nom.tam.util.type.PrimitiveTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Constructor;
+import java.nio.*;
+import java.util.Arrays;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class ImageMaskTest {

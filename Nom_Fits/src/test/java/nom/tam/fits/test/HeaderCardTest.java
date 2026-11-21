@@ -31,19 +31,7 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.LongStringsNotEnabledException;
-import nom.tam.fits.LongValueException;
-import nom.tam.fits.TruncatedFileException;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
 import nom.tam.fits.header.hierarch.IHierarchKeyFormatter;
@@ -56,6 +44,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class HeaderCardTest {

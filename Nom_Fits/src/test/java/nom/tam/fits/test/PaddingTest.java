@@ -1,27 +1,17 @@
 package nom.tam.fits.test;
 
-import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
+import nom.tam.fits.*;
+import nom.tam.image.StandardImageTiler;
+import nom.tam.util.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageHDU;
-import nom.tam.image.StandardImageTiler;
-import nom.tam.util.ByteBufferInputStream;
-import nom.tam.util.ByteBufferOutputStream;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
 
 /*
  * #%L

@@ -1,7 +1,14 @@
 package nom.tam.fits.test;
 
-import static nom.tam.fits.header.Checksum.CHECKSUM;
-import static nom.tam.fits.header.Checksum.DATASUM;
+import nom.tam.fits.*;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.*;
+import nom.tam.util.test.ThrowAnyException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -11,27 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.FitsIntegrityException;
-import nom.tam.fits.Header;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsIO;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.test.ThrowAnyException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.Checksum.CHECKSUM;
+import static nom.tam.fits.header.Checksum.DATASUM;
 
 /*
  * #%L

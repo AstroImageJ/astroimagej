@@ -31,9 +31,9 @@
 
 package nom.tam.util.array;
 
-import java.lang.reflect.Array;
-
 import nom.tam.util.ArrayFuncs;
+
+import java.lang.reflect.Array;
 
 /**
  * Multi-dimensional array iterator (<i>primarily for internal use</i>)

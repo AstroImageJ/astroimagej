@@ -31,11 +31,11 @@ package nom.tam.fits.compress;
  * #L%
  */
 
+import nom.tam.fits.FitsException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
-
-import nom.tam.fits.FitsException;
 
 /**
  * (<i>for internal use</i>) BZIP2 (<code>.bz2</code>) input stream decompression with a preference for using an

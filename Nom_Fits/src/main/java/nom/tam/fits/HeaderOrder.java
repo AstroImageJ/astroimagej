@@ -1,19 +1,9 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLOCKED;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.THEAP;
-import static nom.tam.fits.header.Standard.XTENSION;
-
 import java.io.Serializable;
 import java.util.Hashtable;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

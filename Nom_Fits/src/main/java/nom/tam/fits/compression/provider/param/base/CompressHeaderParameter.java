@@ -1,8 +1,5 @@
 package nom.tam.fits.compression.provider.param.base;
 
-import static nom.tam.fits.header.Compression.ZNAMEn;
-import static nom.tam.fits.header.Compression.ZVALn;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
@@ -39,6 +36,9 @@ import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
+
+import static nom.tam.fits.header.Compression.ZNAMEn;
+import static nom.tam.fits.header.Compression.ZVALn;
 
 /**
  * (<i>for internal use</i>) Visibility may be reduced to protected.

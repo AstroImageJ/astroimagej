@@ -31,14 +31,7 @@
 
 package nom.tam.util;
 
-import java.io.Closeable;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
-import java.io.Flushable;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.channels.FileChannel;
 
 /**

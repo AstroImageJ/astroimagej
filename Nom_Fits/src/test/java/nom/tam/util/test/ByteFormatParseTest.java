@@ -31,14 +31,14 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.util.Arrays;
-
 import nom.tam.util.AsciiFuncs;
 import nom.tam.util.ByteFormatter;
 import nom.tam.util.ByteParser;
 import nom.tam.util.FormatException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 
 /**
  * This class tests the ByteFormatter and ByteParser classes.

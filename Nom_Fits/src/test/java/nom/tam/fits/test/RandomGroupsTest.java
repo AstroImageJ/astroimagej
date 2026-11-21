@@ -31,24 +31,17 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.Set;
-
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsUtil;
-import nom.tam.fits.Header;
-import nom.tam.fits.NullDataHDU;
-import nom.tam.fits.RandomGroupsData;
-import nom.tam.fits.RandomGroupsHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsFile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Set;
 
 /**
  * Test random groups formats in FITS data. Write and read random groups data

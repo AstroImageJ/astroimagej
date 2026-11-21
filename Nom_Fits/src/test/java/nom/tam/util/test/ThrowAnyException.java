@@ -31,10 +31,10 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.fits.FitsException;
 import nom.tam.fits.HeaderCardException;
+
+import java.io.IOException;
 
 @SuppressWarnings("javadoc")
 public class ThrowAnyException {

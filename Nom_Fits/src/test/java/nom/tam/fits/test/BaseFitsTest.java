@@ -1,20 +1,17 @@
 package nom.tam.fits.test;
 
-import static nom.tam.fits.header.Standard.NAXISn;
+import nom.tam.fits.*;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.*;
+import nom.tam.util.test.ThrowAnyException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -24,43 +21,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 
-import nom.tam.fits.AsciiTableHDU;
-import nom.tam.fits.BadData;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.Data;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.FitsUtil;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.HeaderCommentsMap;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.NullDataHDU;
-import nom.tam.fits.RandomGroupsData;
-import nom.tam.fits.RandomGroupsHDU;
-import nom.tam.fits.UndefinedData;
-import nom.tam.fits.UndefinedHDU;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.LoggerHelper;
-import nom.tam.util.RandomAccessFileIO;
-import nom.tam.util.SafeClose;
-import nom.tam.util.test.ThrowAnyException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.Standard.NAXISn;
 
 /*
  * #%L
@@ -719,7 +680,8 @@ public class BaseFitsTest {
     @Test
     public void testFitsSettings() throws InterruptedException {
         boolean longstring = FitsFactory.isLongStringsEnabled();
-        final Boolean[] testFitsSettingsVlaue = new Boolean[6];
+        final Boolean[] testFitsSettingsValue = new Boolean[6];
+
         try {
             FitsFactory.setLongStringsEnabled(true);
             new Thread(new Runnable() {
@@ -728,42 +690,44 @@ public class BaseFitsTest {
                 public void run() {
                     try {
                         FitsFactory.useThreadLocalSettings(true);
-                        for (int index = 0; index < testFitsSettingsVlaue.length; index++) {
-                            waitForThread(testFitsSettingsVlaue, 1);
-                            testFitsSettingsVlaue[index++] = FitsFactory.isLongStringsEnabled();
-                            if (testFitsSettingsVlaue[index] != null) {
-                                FitsFactory.setLongStringsEnabled(testFitsSettingsVlaue[index]);
+                        for (int index = 0; index < testFitsSettingsValue.length; index++) {
+                            waitForThread(testFitsSettingsValue, 1);
+                            if (testFitsSettingsValue[index] != null) {
+                                FitsFactory.setLongStringsEnabled(testFitsSettingsValue[index]);
                             }
+                            testFitsSettingsValue[index] = FitsFactory.isLongStringsEnabled();
                         }
                     } catch (InterruptedException e) {
-                        Arrays.fill(testFitsSettingsVlaue, null);
+                        Arrays.fill(testFitsSettingsValue, null);
                     }
                 }
             }).start();
-            testFitsSettingsVlaue[1] = false;
-            waitForThread(testFitsSettingsVlaue, 0);
-            Assertions.assertEquals(Boolean.valueOf(true), testFitsSettingsVlaue[0]);
-            Assertions.assertEquals(Boolean.valueOf(false), testFitsSettingsVlaue[1]);
+
+            testFitsSettingsValue[1] = false;
+            waitForThread(testFitsSettingsValue, 0);
+
+            Assertions.assertEquals(Boolean.valueOf(true), testFitsSettingsValue[0]);
+            Assertions.assertEquals(Boolean.valueOf(false), testFitsSettingsValue[1]);
             Assertions.assertTrue(FitsFactory.isLongStringsEnabled());
-            testFitsSettingsVlaue[3] = true;
-            waitForThread(testFitsSettingsVlaue, 0);
-            Assertions.assertEquals(Boolean.valueOf(false), testFitsSettingsVlaue[2]);
-            Assertions.assertEquals(Boolean.valueOf(true), testFitsSettingsVlaue[3]);
+            testFitsSettingsValue[3] = true;
+            waitForThread(testFitsSettingsValue, 0);
+            Assertions.assertEquals(Boolean.valueOf(false), testFitsSettingsValue[2]);
+            Assertions.assertEquals(Boolean.valueOf(true), testFitsSettingsValue[3]);
             Assertions.assertTrue(FitsFactory.isLongStringsEnabled());
             FitsFactory.setLongStringsEnabled(false);
-            testFitsSettingsVlaue[5] = true;
-            waitForThread(testFitsSettingsVlaue, 0);
-            Assertions.assertEquals(Boolean.valueOf(false), testFitsSettingsVlaue[2]);
-            Assertions.assertEquals(Boolean.valueOf(true), testFitsSettingsVlaue[3]);
+            testFitsSettingsValue[5] = true;
+            waitForThread(testFitsSettingsValue, 0);
+            Assertions.assertEquals(Boolean.valueOf(false), testFitsSettingsValue[2]);
+            Assertions.assertEquals(Boolean.valueOf(true), testFitsSettingsValue[3]);
             Assertions.assertFalse(FitsFactory.isLongStringsEnabled());
         } finally {
             FitsFactory.setLongStringsEnabled(longstring);
         }
     }
 
-    private void waitForThread(final Boolean[] testFitsSettingsVlaue, int index) throws InterruptedException {
+    private void waitForThread(final Boolean[] testFitsSettingsValue, int index) throws InterruptedException {
         int count = 0;
-        while (testFitsSettingsVlaue[index] == null && count < 100) {
+        while (testFitsSettingsValue[index] == null && count < 100) {
             Thread.sleep(10);
             count++;
         }

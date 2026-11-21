@@ -31,31 +31,16 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.TBCOLn;
-import static nom.tam.fits.header.Standard.TDMAXn;
-import static nom.tam.fits.header.Standard.TDMINn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.TLMAXn;
-import static nom.tam.fits.header.Standard.TLMINn;
-import static nom.tam.fits.header.Standard.TNULLn;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.*;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.ByteFormatter;
-import nom.tam.util.ByteParser;
-import nom.tam.util.Cursor;
-import nom.tam.util.FormatException;
+import static nom.tam.fits.header.Standard.*;
 
 /**
  * ASCII table data. ASCII tables are meant for human readability without any special tools. However, they are far less

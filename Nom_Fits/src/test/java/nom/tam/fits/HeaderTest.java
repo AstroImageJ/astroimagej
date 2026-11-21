@@ -1,33 +1,5 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLOCKED;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-import static nom.tam.fits.header.extra.NOAOExt.CRPIX1;
-import static nom.tam.fits.header.extra.NOAOExt.CRPIX2;
-import static nom.tam.fits.header.extra.NOAOExt.CRVAL1;
-import static nom.tam.fits.header.extra.NOAOExt.CRVAL2;
-import static nom.tam.fits.header.extra.NOAOExt.CTYPE1;
-import static nom.tam.fits.header.extra.NOAOExt.CTYPE2;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Arrays;
-
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
@@ -35,19 +7,20 @@ import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.extra.NOAOExt;
 import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
 import nom.tam.fits.header.hierarch.Hierarch;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.ComplexValue;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.SafeClose;
+import nom.tam.util.*;
 import nom.tam.util.test.ThrowAnyException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Arrays;
+
+import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.extra.NOAOExt.*;
 
 /*
  * #%L
@@ -1707,6 +1680,40 @@ public class HeaderTest {
         Header h = new Header();
         h.insertComment("blah");
         Assertions.assertThrows(IllegalArgumentException.class, () -> h.replaceKey(Standard.COMMENT, Standard.BLANKS));
+    }
+
+    @Test
+    public void testGetDetached() throws Exception {
+        Header h = new Header();
+
+        h.addValue("TEST", 1.0, "test value");
+
+        Header detached = h.getDetachedCopy();
+
+        Assertions.assertEquals(1.0, detached.getDoubleValue("TEST"));
+        Assertions.assertNotEquals(h.getCard("TEST"), detached.getCard("TEST"));
+        Assertions.assertNull(detached.getDuplicates());
+        Assertions.assertNull(detached.getDuplicateKeySet());
+    }
+
+    @Test
+    public void testGetDetachedMerge() throws Exception {
+        Header h = new Header();
+
+        h.addValue("TEST", 1.0, "test value");
+
+        Header detached = h.getDetachedCopy();
+
+        Header h2 = new Header();
+        h2.addValue("TEST2", 2, "test value");
+        h2.mergeDistinct(detached);
+
+        Assertions.assertEquals(1.0, h2.getDoubleValue("TEST"));
+        Assertions.assertEquals(2, h2.getIntValue("TEST2"));
+        Assertions.assertNotEquals(h.getCard("TEST"), h2.getCard("TEST"));
+        Assertions.assertNull(h2.getDuplicates());
+        Assertions.assertNull(h2.getDuplicateKeySet());
+
     }
 
 }

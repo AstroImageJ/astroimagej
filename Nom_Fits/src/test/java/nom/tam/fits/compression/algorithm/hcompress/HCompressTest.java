@@ -31,21 +31,10 @@ package nom.tam.fits.compression.algorithm.hcompress;
  * #L%
  */
 
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ByteHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.DoubleHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.FloatHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.IntHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ShortHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.*;
 import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
 import nom.tam.fits.compression.provider.CompressorProvider;
 import nom.tam.fits.compression.provider.param.api.HeaderAccess;
@@ -56,6 +45,9 @@ import nom.tam.util.ArrayFuncs;
 import nom.tam.util.SafeClose;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.RandomAccessFile;
+import java.nio.*;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class HCompressTest {

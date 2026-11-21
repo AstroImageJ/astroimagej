@@ -1,23 +1,6 @@
 package nom.tam.image.compression.hdu;
 
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.Random;
-import java.util.zip.GZIPInputStream;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.header.Compression;
@@ -31,6 +14,18 @@ import nom.tam.util.ColumnTable;
 import nom.tam.util.Cursor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.Random;
+import java.util.zip.GZIPInputStream;
+
+import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
+import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
 
 /*
  * #%L
@@ -70,7 +65,7 @@ public class CompressedTableTest {
 
     public CompressedTableTest() {
         super();
-        Random random = new Random();
+        Random random = new Random(42);
         for (int i1 = 0; i1 < doubles.length; i1++) {
             for (int i2 = 0; i2 < doubles[i1].length; i2++) {
                 for (int i3 = 0; i3 < doubles[i1][i2].length; i3++) {

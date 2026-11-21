@@ -31,17 +31,13 @@ package nom.tam.manual.intergration;
  * #L%
  */
 
-import java.util.Arrays;
-
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
+import nom.tam.fits.*;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsFile;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class VeryBigFileTest {

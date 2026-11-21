@@ -1,18 +1,13 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLOCKED;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.THEAP;
-
-import java.io.ByteArrayOutputStream;
-
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.FitsOutputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

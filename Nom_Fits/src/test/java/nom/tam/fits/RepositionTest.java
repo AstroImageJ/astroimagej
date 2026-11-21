@@ -31,11 +31,11 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.ByteArrayOutputStream;
-
 import nom.tam.util.FitsOutputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class RepositionTest {

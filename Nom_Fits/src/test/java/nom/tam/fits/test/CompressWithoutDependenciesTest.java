@@ -31,14 +31,14 @@ package nom.tam.fits.test;
  * #L%
  */
 
+import nom.tam.fits.compress.CompressionManager;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
-import nom.tam.fits.compress.CompressionManager;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 /**
  * Test reading .Z and .gz compressed files.

@@ -1,13 +1,5 @@
 package nom.tam.image.compression.hdu;
 
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -19,6 +11,14 @@ import nom.tam.image.compression.bintable.BinaryTableTileCompressor;
 import nom.tam.image.compression.bintable.BinaryTableTileDecompressor;
 import nom.tam.image.compression.bintable.BinaryTableTileDescription;
 import nom.tam.util.ColumnTable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
 
 /*
  * #%L

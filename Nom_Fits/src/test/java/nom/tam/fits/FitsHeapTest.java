@@ -31,15 +31,15 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-
 import nom.tam.util.FitsInputStream;
 import nom.tam.util.FitsOutputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 
 @SuppressWarnings("javadoc")
 public class FitsHeapTest {

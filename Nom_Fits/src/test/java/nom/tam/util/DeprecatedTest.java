@@ -31,15 +31,11 @@ package nom.tam.util;
  * #L%
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.IOException;
-
 import nom.tam.fits.Header;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class DeprecatedTest {

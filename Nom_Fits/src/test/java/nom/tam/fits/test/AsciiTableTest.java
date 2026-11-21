@@ -31,40 +31,18 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static nom.tam.fits.header.DataDescription.TDMAXn;
-import static nom.tam.fits.header.DataDescription.TDMINn;
-import static nom.tam.fits.header.DataDescription.TLMAXn;
-import static nom.tam.fits.header.DataDescription.TLMINn;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.lang.reflect.Field;
-
-import nom.tam.fits.AsciiTable;
-import nom.tam.fits.AsciiTableHDU;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.PaddingException;
-import nom.tam.fits.TableHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.header.NonStandard;
 import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.TestArrayFuncs;
+import nom.tam.util.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.lang.reflect.Field;
+
+import static nom.tam.fits.header.DataDescription.*;
 
 /**
  * This class tests the AsciiTableHDU and AsciiTable FITS classes and implicitly the ByteFormatter and ByteParser

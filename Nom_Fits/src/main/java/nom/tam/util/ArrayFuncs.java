@@ -31,13 +31,13 @@ package nom.tam.util;
  * #L%
  */
 
+import nom.tam.util.array.MultiArrayCopier;
+import nom.tam.util.type.ElementType;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import nom.tam.util.array.MultiArrayCopier;
-import nom.tam.util.type.ElementType;
 
 /**
  * (<i>for internal use</i>) Varioys static functions for handling arrays. Generally these routines attempt to complete

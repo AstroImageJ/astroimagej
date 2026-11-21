@@ -31,10 +31,6 @@ package nom.tam.image.compression.bintable;
  * #L%
  */
 
-import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
@@ -44,6 +40,10 @@ import nom.tam.util.ByteBufferInputStream;
 import nom.tam.util.ColumnTable;
 import nom.tam.util.FitsInputStream;
 import nom.tam.util.type.ElementType;
+
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 /**
  * (<i>for internal use</i>) Handles the decompression of binary table 'tiles'.

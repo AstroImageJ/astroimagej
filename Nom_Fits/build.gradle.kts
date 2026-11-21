@@ -4,12 +4,10 @@ plugins {
 }
 
 dependencies {
-    compileOnly("org.apache.maven.wagon:wagon-ssh:3.5.3")
-    compileOnly("org.tinyjee.dim:doxia-include-macro:1.1")
-    compileOnly("org.apache.maven.doxia:doxia-module-markdown:2.1.0")
-    compileOnly("com.puppycrawl.tools:checkstyle:13.9.0")
+    compileOnly("org.apache.maven.doxia:doxia-module-markdown:2.2.0")
+    compileOnly("com.puppycrawl.tools:checkstyle:14.4.0")
 
-    implementation("com.github.spotbugs:spotbugs-annotations:4.10.3")
+    implementation("com.github.spotbugs:spotbugs-annotations:4.10.5")
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
     implementation("org.apache.commons:commons-compress:1.28.0")
 

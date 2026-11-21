@@ -1,20 +1,5 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.TDIMn;
-import static nom.tam.fits.header.Standard.TDISPn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.TNULLn;
-import static nom.tam.fits.header.Standard.TSCALn;
-import static nom.tam.fits.header.Standard.TTYPEn;
-import static nom.tam.fits.header.Standard.TUNITn;
-import static nom.tam.fits.header.Standard.TZEROn;
-import static nom.tam.fits.header.Standard.XTENSION;
-
-import java.io.PrintStream;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
@@ -22,6 +7,10 @@ import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.ColumnTable;
 import nom.tam.util.Cursor;
+
+import java.io.PrintStream;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

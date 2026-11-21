@@ -31,14 +31,14 @@ package nom.tam.manual.intergration;
  * #L%
  */
 
-import java.util.Random;
-
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.ByteFormatter;
 import nom.tam.util.array.MultiArrayCopier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.util.Random;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class UtilTest {

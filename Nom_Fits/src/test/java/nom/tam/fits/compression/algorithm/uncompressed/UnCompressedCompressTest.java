@@ -31,22 +31,12 @@ package nom.tam.fits.compression.algorithm.uncompressed;
  * #L%
  */
 
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.Random;
-
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.ByteNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.DoubleNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.FloatNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.IntNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.LongNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.ShortNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.nio.*;
+import java.util.Random;
 
 @SuppressWarnings("javadoc")
 public class UnCompressedCompressTest {
@@ -54,7 +44,7 @@ public class UnCompressedCompressTest {
     @Test
     public void testNoCompressCompressFloat() throws Exception {
         float[] floats = new float[1000];
-        Random random = new Random();
+        Random random = new Random(42);
         for (int index = 0; index < floats.length; index++) {
             floats[index] = random.nextFloat();
         }
@@ -77,7 +67,7 @@ public class UnCompressedCompressTest {
     @Test
     public void testNoCompressCompressDouble() throws Exception {
         double[] doubles = new double[1000];
-        Random random = new Random();
+        Random random = new Random(42);
         for (int index = 0; index < doubles.length; index++) {
             doubles[index] = random.nextFloat();
         }
@@ -100,7 +90,7 @@ public class UnCompressedCompressTest {
     @Test
     public void testNoCompressCompressInt() throws Exception {
         int[] ints = new int[1000];
-        Random random = new Random();
+        Random random = new Random(42);
         for (int index = 0; index < ints.length; index++) {
             ints[index] = random.nextInt();
         }
@@ -123,7 +113,7 @@ public class UnCompressedCompressTest {
     @Test
     public void testNoCompressCompressByte() throws Exception {
         byte[] bytes = new byte[1000];
-        Random random = new Random();
+        Random random = new Random(42);
         for (int index = 0; index < bytes.length; index++) {
             bytes[index] = (byte) random.nextInt();
         }
@@ -146,7 +136,7 @@ public class UnCompressedCompressTest {
     @Test
     public void testNoCompressCompressShort() throws Exception {
         short[] shorts = new short[1000];
-        Random random = new Random();
+        Random random = new Random(42);
         for (short index = 0; index < shorts.length; index++) {
             shorts[index] = (short) random.nextInt();
         }
@@ -169,7 +159,7 @@ public class UnCompressedCompressTest {
     @Test
     public void testNoCompressCompressLong() throws Exception {
         long[] longs = new long[1000];
-        Random random = new Random();
+        Random random = new Random(42);
         for (int index = 0; index < longs.length; index++) {
             longs[index] = random.nextLong();
         }

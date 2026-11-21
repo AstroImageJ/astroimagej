@@ -1,18 +1,13 @@
 package nom.tam.image.compression.hdu;
 
-import static nom.tam.fits.header.Compression.ZTABLE;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.Cursor;
 import nom.tam.util.type.ElementType;
+
+import static nom.tam.fits.header.Compression.ZTABLE;
 
 /*
  * #%L

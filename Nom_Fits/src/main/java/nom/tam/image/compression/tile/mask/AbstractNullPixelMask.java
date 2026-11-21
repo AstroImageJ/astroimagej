@@ -31,10 +31,10 @@ package nom.tam.image.compression.tile.mask;
  * #L%
  */
 
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.image.tile.operation.buffer.TileBuffer;
+
+import java.nio.ByteBuffer;
 
 /**
  * (<i>for internal use</i>) Base support for blank (<code>null</code>) in compressed images. In regular images specific

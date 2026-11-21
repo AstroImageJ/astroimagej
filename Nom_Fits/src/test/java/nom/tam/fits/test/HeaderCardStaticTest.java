@@ -31,8 +31,6 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import java.math.BigDecimal;
-
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
@@ -41,6 +39,8 @@ import nom.tam.util.ComplexValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class HeaderCardStaticTest {

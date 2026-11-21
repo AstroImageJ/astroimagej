@@ -31,12 +31,12 @@ package nom.tam.util;
  * #L%
  */
 
-import java.io.EOFException;
-import java.io.File;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.EOFException;
+import java.io.File;
 
 @SuppressWarnings("javadoc")
 public class BufferedFileIOTest {

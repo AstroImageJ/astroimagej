@@ -31,16 +31,16 @@ package nom.tam.util;
  * #L%
  */
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-
 import nom.tam.util.type.ElementType;
 import nom.tam.util.type.PrimitiveTypeHandler;
 import nom.tam.util.type.PrimitiveTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class PrimitiveTypeTest {

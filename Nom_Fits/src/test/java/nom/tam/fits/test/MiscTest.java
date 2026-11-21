@@ -31,16 +31,16 @@ package nom.tam.fits.test;
  * #L%
  */
 
+import nom.tam.fits.Fits;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import nom.tam.fits.Fits;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("javadoc")
 public class MiscTest {

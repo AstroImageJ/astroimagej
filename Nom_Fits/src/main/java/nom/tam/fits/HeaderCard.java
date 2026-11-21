@@ -603,7 +603,9 @@ public class HeaderCard implements CursorValue<String>, Cloneable {
     @Override
     protected HeaderCard clone() {
         try {
-            return (HeaderCard) super.clone();
+            HeaderCard clone = (HeaderCard) super.clone();
+            clone.lock = new Object();
+            return clone;
         } catch (CloneNotSupportedException e) {
             return null;
         }

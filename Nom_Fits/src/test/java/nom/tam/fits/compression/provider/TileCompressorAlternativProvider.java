@@ -31,14 +31,14 @@ package nom.tam.fits.compression.provider;
  * #L%
  */
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
-
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.LongGZip2Compressor;
 import nom.tam.fits.compression.provider.api.ICompressorProvider;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 
 @SuppressWarnings("javadoc")
 public class TileCompressorAlternativProvider implements ICompressorProvider {

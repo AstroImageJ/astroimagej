@@ -31,13 +31,13 @@ package nom.tam.fits.header;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.Map;
-
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 @SuppressWarnings("javadoc")
 public class StokesTest {

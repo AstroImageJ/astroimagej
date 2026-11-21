@@ -31,11 +31,11 @@ package nom.tam.util;
  * #L%
  */
 
-import java.io.EOFException;
-import java.io.IOException;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.EOFException;
+import java.io.IOException;
 
 @SuppressWarnings("javadoc")
 public class DefaultMethodsTest {

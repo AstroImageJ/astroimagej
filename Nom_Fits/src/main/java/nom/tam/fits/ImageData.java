@@ -31,25 +31,18 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-import java.nio.Buffer;
-import java.util.Arrays;
-
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.NonStandard;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
 import nom.tam.image.StandardImageTiler;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.ComplexValue;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsEncoder;
-import nom.tam.util.Quantizer;
-import nom.tam.util.RandomAccess;
+import nom.tam.util.*;
 import nom.tam.util.array.MultiArrayIterator;
 import nom.tam.util.type.ElementType;
+
+import java.io.IOException;
+import java.nio.Buffer;
+import java.util.Arrays;
 
 /**
  * <p>

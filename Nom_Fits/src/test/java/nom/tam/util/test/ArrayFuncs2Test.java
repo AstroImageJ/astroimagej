@@ -31,12 +31,12 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.util.Arrays;
-
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.TestArrayFuncs;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class ArrayFuncs2Test {

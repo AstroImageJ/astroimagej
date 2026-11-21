@@ -1,17 +1,13 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLANK;
-import static nom.tam.fits.header.Standard.DATE;
-import static nom.tam.fits.header.Standard.DATE_OBS;
-import static nom.tam.fits.header.Standard.NAXIS;
-
-import java.io.IOException;
-
 import nom.tam.util.FitsFile;
 import nom.tam.util.test.ThrowAnyException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

@@ -31,10 +31,10 @@ package nom.tam.util;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.fits.FitsFactory;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class ArrayDataOutputTest {

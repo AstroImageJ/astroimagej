@@ -31,34 +31,22 @@ package nom.tam.fits.compression.algorithm.gzip;
  * #L%
  */
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.Buffer;
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.Random;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.ByteGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.DoubleGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.FloatGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.IntGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.LongGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.ShortGZipCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.*;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.ByteBufferInputStream;
 import nom.tam.util.ByteBufferOutputStream;
 import nom.tam.util.SafeClose;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.*;
+import java.util.Random;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class GZipCompressTest {
@@ -221,15 +209,15 @@ public class GZipCompressTest {
         } finally {
             SafeClose.close(out);
         }
-        InputStream in = null;
-        try {
-            in = new ByteBufferInputStream(ByteBuffer.wrap(expected));
+
+        try (InputStream in = new ByteBufferInputStream(ByteBuffer.wrap(expected))) {
             Assertions.assertEquals(1, in.read());
-            in.read(array, 1, 9);
+            if (in.read(array, 1, 9) < 0) {
+                throw new IOException("read() failed.");
+            }
             Assertions.assertArrayEquals(expected, array);
             Assertions.assertEquals(-1, in.read());
             Assertions.assertEquals(-1, in.read(array, 1, 9));
-        } finally {
             SafeClose.close(in);
         }
     }
@@ -581,8 +569,7 @@ public class GZipCompressTest {
 
         // Compared as bits, since the random patterns include NaNs.
         for (int i = 0; i < expected.length; i++) {
-            Assertions.assertEquals(Float.floatToRawIntBits(expected[i]), Float.floatToRawIntBits(actual[i]),
-                    "pixel " + i);
+            Assertions.assertEquals(Float.floatToRawIntBits(expected[i]), Float.floatToRawIntBits(actual[i]), "pixel " + i);
         }
     }
 

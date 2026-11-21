@@ -1,14 +1,14 @@
 package nom.tam.util;
 
-import java.io.EOFException;
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.FitsFactory;
 import nom.tam.util.type.ElementType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.EOFException;
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 
 /*-
  * #%L

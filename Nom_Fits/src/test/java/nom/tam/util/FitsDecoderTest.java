@@ -32,6 +32,11 @@ package nom.tam.util;
  * #L%
  */
 
+import nom.tam.fits.FitsFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -39,11 +44,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import nom.tam.fits.FitsFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class FitsDecoderTest {

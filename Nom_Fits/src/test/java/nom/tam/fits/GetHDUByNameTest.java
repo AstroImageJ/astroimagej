@@ -31,18 +31,18 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.EXTVER;
-
-import java.io.File;
-import java.io.FileOutputStream;
-
 import nom.tam.fits.header.Bitpix;
 import nom.tam.util.FitsOutputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.FileOutputStream;
+
+import static nom.tam.fits.header.Standard.EXTNAME;
+import static nom.tam.fits.header.Standard.EXTVER;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class GetHDUByNameTest {

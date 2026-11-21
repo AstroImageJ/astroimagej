@@ -31,13 +31,7 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.HierarchNotEnabledException;
-import nom.tam.fits.LongStringsNotEnabledException;
-import nom.tam.fits.LongValueException;
-import nom.tam.fits.UnclosedQuoteException;
+import nom.tam.fits.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

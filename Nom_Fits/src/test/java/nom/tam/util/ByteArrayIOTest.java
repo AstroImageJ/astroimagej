@@ -31,10 +31,10 @@ package nom.tam.util;
  * #L%
  */
 
-import java.io.EOFException;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.EOFException;
 
 @SuppressWarnings("javadoc")
 public class ByteArrayIOTest {

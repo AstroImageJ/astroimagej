@@ -1,9 +1,9 @@
 package nom.tam.fits.header.hierarch;
 
+import nom.tam.fits.utilities.FitsLineAppender;
+
 import java.util.Locale;
 import java.util.StringTokenizer;
-
-import nom.tam.fits.utilities.FitsLineAppender;
 
 /*
  * #%L

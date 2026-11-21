@@ -31,8 +31,6 @@ package nom.tam.manual.intergration;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -40,6 +38,8 @@ import nom.tam.fits.util.BlackBoxImages;
 import nom.tam.util.SafeClose;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class TestFitsFileWithVeryBigHeaders {

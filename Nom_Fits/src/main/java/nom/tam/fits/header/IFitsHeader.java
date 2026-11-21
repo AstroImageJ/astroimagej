@@ -1,9 +1,9 @@
 package nom.tam.fits.header;
 
-import java.util.NoSuchElementException;
-
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
+
+import java.util.NoSuchElementException;
 
 /*
  * #%L

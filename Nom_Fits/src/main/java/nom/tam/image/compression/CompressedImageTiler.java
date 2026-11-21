@@ -1,5 +1,22 @@
 package nom.tam.image.compression;
 
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.fits.ReadBoundsException;
+import nom.tam.fits.compression.algorithm.api.ICompressOption;
+import nom.tam.fits.compression.algorithm.api.ICompressorControl;
+import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
+import nom.tam.fits.compression.provider.CompressorProvider;
+import nom.tam.fits.compression.provider.param.api.ICompressParameters;
+import nom.tam.fits.header.Compression;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.ImageTiler;
+import nom.tam.image.StandardImageTiler;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.type.ElementType;
+
 import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -38,22 +55,6 @@ import java.util.logging.Logger;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.compression.algorithm.api.ICompressOption;
-import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
-import nom.tam.fits.compression.provider.CompressorProvider;
-import nom.tam.fits.compression.provider.param.api.ICompressParameters;
-import nom.tam.fits.header.Compression;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.ImageTiler;
-import nom.tam.image.StandardImageTiler;
-import nom.tam.image.compression.hdu.CompressedImageHDU;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.type.ElementType;
 
 /**
  * Class to extract individually compressed tiles from a compressed image. This class supports the FITS 3.0 standard and
@@ -411,9 +412,9 @@ public class CompressedImageTiler implements ImageTiler {
     }
 
     @Override
-    public Object getCompleteImage() throws IOException {
+    public Object getCompleteImage() throws ReadBoundsException, IOException {
         try {
-            return compressedImageHDU.asImageHDU().getData().getData();
+            return compressedImageHDU.asImageHDU().getKernel();
         } catch (FitsException fitsException) {
             throw new IOException(fitsException.getMessage(), fitsException);
         }

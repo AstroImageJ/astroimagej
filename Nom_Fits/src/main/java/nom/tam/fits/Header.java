@@ -1,36 +1,5 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLANKS;
-import static nom.tam.fits.header.Standard.COMMENT;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.HISTORY;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import nom.tam.fits.FitsFactory.FitsSettings;
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Checksum;
@@ -38,16 +7,20 @@ import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.ComplexValue;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsIO;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutput;
-import nom.tam.util.HashedList;
+import nom.tam.util.*;
 import nom.tam.util.RandomAccess;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 
 /*
  * #%L
@@ -318,6 +291,44 @@ public class Header implements FitsElement {
     }
 
     /**
+     * Returns a copy of this header that is not attached to a HDU. The cards of the header, including duplicates are
+     * preserved.
+     * 
+     * @return A new header that contains an independent copy of this header's content. The returned header will not be
+     *             associated to any input or HDU, and will not share any mutable references with the original.
+     * 
+     * @see    #mergeDistinct(Header)
+     * 
+     * @since  1.23
+     */
+    @SuppressWarnings("unchecked")
+    public Header getDetachedCopy() {
+        Header detached = new Header();
+
+        detached.minCards = minCards;
+        detached.headerSorter = headerSorter;
+        detached.keyCheck = keyCheck;
+
+        Cursor<String, HeaderCard> iterator = iterator();
+        while (iterator.hasNext()) {
+            detached.addLine(iterator.next().copy());
+        }
+
+        if (duplicates != null) {
+            detached.duplicates = new ArrayList<>(duplicates.size());
+            for (HeaderCard dup : duplicates) {
+                detached.duplicates.add(dup.copy());
+            }
+        }
+
+        if (dupKeys != null) {
+            detached.dupKeys = (HashSet<String>) dupKeys.clone();
+        }
+
+        return detached;
+    }
+
+    /**
      * <p>
      * Reserves header card space for populating at a later time. When written to a stream, the header will be large
      * enough to hold at least the specified number of cards. If the header has fewer physical cards then the remaining
@@ -364,6 +375,7 @@ public class Header implements FitsElement {
      * @since        1.19
      * 
      * @see          #updateLines(Header)
+     * @see          #getDetachedCopy()
      */
     public void mergeDistinct(Header source) {
         seekTail();

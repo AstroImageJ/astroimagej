@@ -31,23 +31,18 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Array;
-
 import nom.tam.fits.Fits;
 import nom.tam.fits.ImageHDU;
 import nom.tam.image.ImageTiler;
 import nom.tam.image.StandardImageTiler;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
+import nom.tam.util.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Array;
 
 /**
  * This class tests the ImageTiler. It first creates a FITS file and then reads it back and allows the user to select

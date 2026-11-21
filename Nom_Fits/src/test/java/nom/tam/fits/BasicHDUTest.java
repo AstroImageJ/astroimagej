@@ -31,15 +31,15 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.PrintStream;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ByteBufferInputStream;
 import nom.tam.util.ByteBufferOutputStream;
 import nom.tam.util.FitsOutputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.PrintStream;
+import java.nio.ByteBuffer;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class BasicHDUTest {

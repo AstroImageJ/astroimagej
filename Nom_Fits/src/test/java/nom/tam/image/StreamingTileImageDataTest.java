@@ -1,20 +1,14 @@
 package nom.tam.image;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Random;
-
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Bitpix;
 import nom.tam.util.ArrayFuncs;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
 
 /*-
  * #%L
@@ -79,7 +73,7 @@ public class StreamingTileImageDataTest {
     public void testWriteStep() throws Exception {
         final int axis1 = 200;
         final int axis2 = 200;
-        final Random random = new Random();
+        final Random random = new Random(42);
         final int[][] testData = new int[axis1][axis2];
         for (int x = 0; x < axis1; x++) {
             for (int y = 0; y < axis2; y++) {
@@ -128,7 +122,7 @@ public class StreamingTileImageDataTest {
     public void testWrite() throws Exception {
         final int axis1 = 200;
         final int axis2 = 200;
-        final Random random = new Random();
+        final Random random = new Random(42);
         final int[][] testData = new int[axis1][axis2];
         for (int x = 0; x < axis1; x++) {
             for (int y = 0; y < axis2; y++) {

@@ -31,19 +31,15 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import java.io.File;
-import java.io.FileOutputStream;
-
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.LongValueException;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsOutputStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.FileOutputStream;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class LongCommentCardTest {

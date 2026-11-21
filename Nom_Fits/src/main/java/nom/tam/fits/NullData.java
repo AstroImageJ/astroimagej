@@ -1,14 +1,12 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.PCOUNT;
-
-import java.nio.Buffer;
-
 import nom.tam.fits.header.Bitpix;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
+
+import java.nio.Buffer;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*-
  * #%L

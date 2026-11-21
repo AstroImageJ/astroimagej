@@ -31,14 +31,6 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.DataOutput;
-import java.io.File;
-import java.io.FileInputStream;
-import java.lang.reflect.Array;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.NoSuchElementException;
-
 import nom.tam.fits.BinaryTable.ColumnDesc;
 import nom.tam.fits.header.NonStandard;
 import nom.tam.fits.header.Standard;
@@ -49,6 +41,14 @@ import nom.tam.util.Quantizer;
 import nom.tam.util.TableException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.DataOutput;
+import java.io.File;
+import java.io.FileInputStream;
+import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.NoSuchElementException;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class BinaryTableNewTest {
@@ -1622,7 +1622,7 @@ public class BinaryTableNewTest {
             fits.close();
         }
 
-        try (Fits fits = new Fits(new FitsInputStream(new FileInputStream(new File(fileName))))) {
+        try (FitsInputStream in = new FitsInputStream(new FileInputStream(new File(fileName))); Fits fits = new Fits(in)) {
             BinaryTableHDU bhdu = (BinaryTableHDU) fits.getHDU(1);
 
             tab = bhdu.getData();

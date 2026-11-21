@@ -31,9 +31,6 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-
 import nom.tam.fits.Header;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.AsciiFuncs;
@@ -41,6 +38,9 @@ import nom.tam.util.TestArrayFuncs;
 import nom.tam.util.type.ElementType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class ArrayFuncsTest {

@@ -31,13 +31,13 @@ package nom.tam.fits.header;
  * #L%
  */
 
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
 
 /**
  * <p>
@@ -195,6 +195,7 @@ public enum Stokes {
         }
 
         private Parameters(int offset, int step, int n) {
+            this.flags = 0;
             this.offset = offset;
             this.step = step;
             this.count = n;

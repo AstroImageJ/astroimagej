@@ -31,9 +31,9 @@ package nom.tam.util.type;
  * #L%
  */
 
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.FitsFactory;
+
+import java.nio.ByteBuffer;
 
 /**
  * A FITS character element. Unlike Java characters, which use unicode, Java has only ASCII character type. For

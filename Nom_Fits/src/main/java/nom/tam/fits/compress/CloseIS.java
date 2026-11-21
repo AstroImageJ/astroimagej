@@ -1,16 +1,11 @@
 package nom.tam.fits.compress;
 
-import static nom.tam.util.LoggerHelper.getLogger;
-
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /*
  * #%L

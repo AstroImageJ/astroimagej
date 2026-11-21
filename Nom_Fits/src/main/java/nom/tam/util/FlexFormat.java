@@ -31,16 +31,16 @@ package nom.tam.util;
  * #L%
  */
 
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.LongValueException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.LongValueException;
 
 /**
  * Formatting number values for use in FITS headers.

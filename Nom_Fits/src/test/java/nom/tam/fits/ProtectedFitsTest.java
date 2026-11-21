@@ -1,15 +1,15 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
+import nom.tam.fits.header.Standard;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.NoSuchElementException;
 
-import nom.tam.fits.header.Standard;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
 
 /*
  * #%L

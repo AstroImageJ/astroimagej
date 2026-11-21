@@ -31,10 +31,6 @@ package nom.tam.image.compression.bintable;
  * #L%
  */
 
-import java.nio.Buffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
@@ -42,6 +38,10 @@ import nom.tam.fits.compression.provider.CompressorProvider;
 import nom.tam.fits.header.Compression;
 import nom.tam.util.ColumnTable;
 import nom.tam.util.type.ElementType;
+
+import java.nio.Buffer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * (<i>for internal use</i>) A table 'tile' representing a set of consecutive table rows that are compressed together as

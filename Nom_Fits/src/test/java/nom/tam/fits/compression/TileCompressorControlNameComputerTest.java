@@ -1,15 +1,12 @@
 package nom.tam.fits.compression;
 
-import static nom.tam.fits.header.Compression.ZCMPTYPE_HCOMPRESS_1;
-import static nom.tam.fits.header.Compression.ZCMPTYPE_PLIO_1;
-import static nom.tam.fits.header.Compression.ZCMPTYPE_RICE_1;
-import static nom.tam.fits.header.Compression.ZQUANTIZ_NO_DITHER;
-
 import nom.tam.fits.compression.provider.CompressorControlNameComputer;
 import nom.tam.fits.header.Compression;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static nom.tam.fits.header.Compression.*;
 
 /*
  * #%L

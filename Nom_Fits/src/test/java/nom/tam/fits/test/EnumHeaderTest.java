@@ -1,43 +1,24 @@
 package nom.tam.fits.test;
 
-import static nom.tam.fits.header.InstrumentDescription.FILTER;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.extra.NOAOExt.WATn_nnn;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.fits.header.*;
+import nom.tam.fits.header.IFitsHeader.HDU;
+import nom.tam.fits.header.IFitsHeader.VALUE;
+import nom.tam.fits.header.extra.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.Arrays;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.header.Checksum;
-import nom.tam.fits.header.Compression;
-import nom.tam.fits.header.DataDescription;
-import nom.tam.fits.header.DateTime;
-import nom.tam.fits.header.FitsKey;
-import nom.tam.fits.header.GenericKey;
-import nom.tam.fits.header.HierarchicalGrouping;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.IFitsHeader.HDU;
-import nom.tam.fits.header.IFitsHeader.VALUE;
-import nom.tam.fits.header.InstrumentDescription;
-import nom.tam.fits.header.NonStandard;
-import nom.tam.fits.header.ObservationDescription;
-import nom.tam.fits.header.ObservationDurationDescription;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.Synonyms;
-import nom.tam.fits.header.WCS;
-import nom.tam.fits.header.extra.CXCExt;
-import nom.tam.fits.header.extra.CXCStclSharedExt;
-import nom.tam.fits.header.extra.MaxImDLExt;
-import nom.tam.fits.header.extra.NOAOExt;
-import nom.tam.fits.header.extra.SBFitsExt;
-import nom.tam.fits.header.extra.STScIExt;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.InstrumentDescription.FILTER;
+import static nom.tam.fits.header.Standard.INSTRUME;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.extra.NOAOExt.WATn_nnn;
 
 /*
  * #%L

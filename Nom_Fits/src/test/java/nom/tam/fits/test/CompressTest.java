@@ -31,32 +31,20 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Constructor;
-import java.net.URL;
-
 import fi.iki.elonen.SimpleWebServer;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
-import nom.tam.fits.compress.BZip2CompressionProvider;
-import nom.tam.fits.compress.BasicCompressProvider;
-import nom.tam.fits.compress.CloseIS;
-import nom.tam.fits.compress.CompressionLibLoaderProtection;
-import nom.tam.fits.compress.CompressionManager;
-import nom.tam.fits.compress.ExternalBZip2CompressionProvider;
-import nom.tam.fits.compress.ZCompressionProvider;
+import nom.tam.fits.compress.*;
 import nom.tam.util.test.ThrowAnyException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.net.URL;
 
 /**
  * Test reading .Z and .gz compressed files.

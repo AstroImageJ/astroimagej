@@ -31,8 +31,6 @@ package nom.tam.util;
  * #L%
  */
 
-import java.util.Random;
-
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
@@ -42,6 +40,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Random;
 
 @SuppressWarnings("javadoc")
 public class ComplexValueTest {
@@ -58,7 +58,7 @@ public class ComplexValueTest {
 
     @Test
     public void testComplex() throws Exception {
-        Random random = new Random();
+        Random random = new Random(42);
         FlexFormat f = new FlexFormat();
         ComplexValue z;
 

@@ -1,7 +1,14 @@
 package nom.tam.image.compression.hdu;
 
-import static nom.tam.fits.header.Compression.ZIMAGE;
-import static nom.tam.fits.header.Standard.BLANK;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.*;
+import nom.tam.fits.compression.algorithm.api.ICompressOption;
+import nom.tam.fits.header.Compression;
+import nom.tam.fits.header.GenericKey;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.compression.CompressedImageTiler;
+import nom.tam.util.*;
 
 import java.io.IOException;
 import java.nio.Buffer;
@@ -11,26 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsUtil;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.compression.algorithm.api.ICompressOption;
-import nom.tam.fits.header.Compression;
-import nom.tam.fits.header.GenericKey;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.compression.CompressedImageTiler;
-import nom.tam.util.ByteBufferInputStream;
-import nom.tam.util.ByteBufferOutputStream;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
+import static nom.tam.fits.header.Compression.ZIMAGE;
+import static nom.tam.fits.header.Standard.BLANK;
 
 /*
  * #%L

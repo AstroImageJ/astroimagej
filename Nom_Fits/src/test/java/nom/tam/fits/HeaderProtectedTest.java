@@ -1,22 +1,17 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.GROUPS;
+import nom.tam.fits.header.*;
+import nom.tam.fits.header.IFitsHeader.HDU;
+import nom.tam.fits.header.IFitsHeader.SOURCE;
+import nom.tam.fits.header.IFitsHeader.VALUE;
+import nom.tam.util.FitsOutputStream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.util.NoSuchElementException;
 
-import nom.tam.fits.header.DateTime;
-import nom.tam.fits.header.FitsKey;
-import nom.tam.fits.header.GenericKey;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.IFitsHeader.HDU;
-import nom.tam.fits.header.IFitsHeader.SOURCE;
-import nom.tam.fits.header.IFitsHeader.VALUE;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.WCS;
-import nom.tam.util.FitsOutputStream;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.Standard.GROUPS;
 
 /*
  * #%L

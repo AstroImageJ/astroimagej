@@ -31,9 +31,6 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -45,6 +42,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 @SuppressWarnings("javadoc")
 public class TileImageCompressionOperationTest {

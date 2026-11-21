@@ -31,13 +31,9 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
+import nom.tam.util.*;
 
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ByteArrayIO;
-import nom.tam.util.FitsDecoder;
-import nom.tam.util.FitsEncoder;
+import java.io.IOException;
 
 /**
  * Heap for storing variable-length entries in binary tables. FITS binary tables store variable length arrays on a heap,

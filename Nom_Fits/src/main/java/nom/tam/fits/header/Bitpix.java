@@ -1,5 +1,11 @@
 package nom.tam.fits.header;
 
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.util.type.ElementType;
+
 import java.util.logging.Logger;
 
 /*
@@ -32,12 +38,6 @@ import java.util.logging.Logger;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.util.type.ElementType;
 
 /**
  * Standard BITPIX values and associated functions. Since the FITS BITPIX keyword has only a handful of legal values, an

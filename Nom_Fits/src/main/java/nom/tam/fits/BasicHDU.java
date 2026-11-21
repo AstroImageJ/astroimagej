@@ -1,34 +1,5 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.AUTHOR;
-import static nom.tam.fits.header.Standard.BLANK;
-import static nom.tam.fits.header.Standard.BSCALE;
-import static nom.tam.fits.header.Standard.BUNIT;
-import static nom.tam.fits.header.Standard.BZERO;
-import static nom.tam.fits.header.Standard.DATAMAX;
-import static nom.tam.fits.header.Standard.DATAMIN;
-import static nom.tam.fits.header.Standard.DATE;
-import static nom.tam.fits.header.Standard.DATE_OBS;
-import static nom.tam.fits.header.Standard.EPOCH;
-import static nom.tam.fits.header.Standard.EQUINOX;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.OBJECT;
-import static nom.tam.fits.header.Standard.OBSERVER;
-import static nom.tam.fits.header.Standard.ORIGIN;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.REFERENC;
-import static nom.tam.fits.header.Standard.TELESCOP;
-import static nom.tam.util.LoggerHelper.getLogger;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Checksum;
 import nom.tam.fits.header.IFitsHeader;
@@ -38,6 +9,15 @@ import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.FitsOutput;
 import nom.tam.util.RandomAccess;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static nom.tam.fits.header.Standard.*;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /*
  * #%L

@@ -1,26 +1,14 @@
 package nom.tam.fits.test;
 
-import static nom.tam.fits.header.Standard.AUTHOR;
-import static nom.tam.fits.header.Standard.COMMENT;
-import static nom.tam.fits.header.Standard.DATAMAX;
-import static nom.tam.fits.header.Standard.DATAMIN;
-import static nom.tam.fits.header.Standard.DATE_OBS;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.ORIGIN;
-import static nom.tam.fits.header.Standard.THEAP;
-import static nom.tam.fits.header.Standard.TZEROn;
+import nom.tam.fits.*;
+import nom.tam.fits.header.Standard;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsDate;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.header.Standard;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

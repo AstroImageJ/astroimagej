@@ -31,16 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.header.Standard;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.nio.ByteBuffer;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class NullDataTest {

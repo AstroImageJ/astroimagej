@@ -31,13 +31,13 @@ package nom.tam.util;
  * #L%
  */
 
+import nom.tam.util.type.ElementType;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import nom.tam.util.type.ElementType;
 
 /**
  * <p>

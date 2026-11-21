@@ -1,17 +1,17 @@
 package nom.tam.fits;
 
-import static nom.tam.util.LoggerHelper.getLogger;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.FitsInputStream;
+import nom.tam.util.RandomAccess;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.RandomAccess;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /*
  * #%L
@@ -231,11 +231,31 @@ public abstract class Data implements FitsElement {
     }
 
     /**
-     * Returns the calculated byte size of the data, regardless of whether the data is currently in memory or not.
+     * Returns the calculated byte size of the regular n-dimensional data element (as stored in the FITS), regardless of
+     * whether the data is currently in memory or not.
      *
      * @return the calculated byte size for the data.
+     * 
+     * @see    #getProjectedReadSize()
      */
     protected abstract long getTrueSize();
+
+    /**
+     * Returns the projected storage footprint of the data (in the FITS), including data stored on the heap, if
+     * appropriate. While it does not account for differences in FITS vs Java storage types (e.g. for booleans or
+     * strings), it gives a ballpark estimate of how much memory will be required to store the data in RAM. For
+     * compressed data, the returned value represents the size of the data in the compressed form -- and the
+     * uncompressed data may be significantly bigger than the returned value.
+     * 
+     * @return the estimated size of the full data, including data on the heap
+     * 
+     * @since  1.24
+     * 
+     * @see    #getTrueSize()
+     */
+    protected long getProjectedReadSize() {
+        return getTrueSize();
+    }
 
     /**
      * <p>
@@ -251,7 +271,8 @@ public abstract class Data implements FitsElement {
      * @param  in            The input from which to load data
      *
      * @throws IOException   if the data could not be loaded from the input.
-     * @throws FitsException if the data is garbled.
+     * @throws FitsException if the data is garbled or the size prescibed in the header exceeds the size set by
+     *                           {@link FitsFactory#setReadBounds(long)}.
      *
      * @see                  #read(ArrayDataInput)
      * @see                  #ensureData()
@@ -272,18 +293,33 @@ public abstract class Data implements FitsElement {
         }
     }
 
+    private void checkReadBounds() throws ReadBoundsException {
+        // Check that the data does not exceed set size limits.
+        long maxSize = FitsFactory.getReadBounds();
+        if (getProjectedReadSize() > maxSize) {
+            throw new ReadBoundsException(
+                    getClass().getSimpleName() + " size (" + getTrueSize() + ") exceeds max. loadable size (" + maxSize
+                            + "). You can try skip() it or increase the read size limit.");
+        }
+    }
+
     /**
      * Makes sure that data that may have been deferred earlier from a random access input is now loaded into memory.
      *
-     * @throws FitsException if the deferred data could not be loaded.
+     * @throws ReadBoundsException if the data is larger then the current read size limit reported by
+     *                                 {@link FitsFactory#getReadBounds()}.
+     * @throws FitsException       if the deferred data could not be loaded. It could be because the data is no longer
+     *                                 (fully) available from the input (file or stream), or because it is corrupted.
+     * 
+     * @see                        #getData()
+     * @see                        #read(ArrayDataInput)
+     * @see                        #isDeferred()
+     * @see                        FitsFactory#setReadBounds(long)
+     * @see                        FitsFactory#getReadBounds()
      *
-     * @see                  #getData()
-     * @see                  #read(ArrayDataInput)
-     * @see                  #isDeferred()
-     *
-     * @since                1.18
+     * @since                      1.18
      */
-    protected void ensureData() throws FitsException {
+    protected void ensureData() throws ReadBoundsException, FitsException {
         if (!isDeferred()) {
             return;
         }
@@ -291,12 +327,15 @@ public abstract class Data implements FitsElement {
         try {
             long pos = input.getFilePointer();
             input.seek(getFileOffset());
-            loadData(input);
-            input.seek(pos);
+            try {
+                checkReadBounds();
+                loadData(input);
+            } finally {
+                input.seek(pos);
+            }
         } catch (IOException e) {
             throw new FitsException("error reading deferred data: " + e, e);
         }
-
     }
 
     /**
@@ -312,14 +351,20 @@ public abstract class Data implements FitsElement {
      * select content from large FITS files.
      * </p>
      *
-     * @throws PaddingException if there is missing padding between the end of the data segment and the enf-of-file.
-     * @throws FitsException    if the data appears to be corrupted.
+     * @throws PaddingException    if there is missing padding between the end of the data segment and the enf-of-file.
+     * @throws ReadBoundsException the size prescribed by the header exceeds {@link FitsFactory#getReadBounds()}. You
+     *                                 may still proceed with the rest of the FITS after calling
+     *                                 {@link ArrayDataInput#skip(long)} on the file or stream with
+     *                                 {@link #getTrueSize()} as the argument.
+     * @throws FitsException       if the data is corrupted (provided it is not one of the other exception sub-types).
      *
-     * @see                     #getData()
-     * @see                     #ensureData()
+     * @see                        #getData()
+     * @see                        #ensureData()
+     * @see                        FitsFactory#setReadBounds(long)
+     * @see                        FitsFactory#getReadBounds()
      */
     @Override
-    public void read(ArrayDataInput in) throws PaddingException, FitsException {
+    public void read(ArrayDataInput in) throws PaddingException, ReadBoundsException, FitsException {
         detach();
 
         if (in == null) {
@@ -345,6 +390,7 @@ public abstract class Data implements FitsElement {
                 throw new FitsException("Unable to skip over data segment:" + e, e);
             }
         } else {
+            checkReadBounds();
             try {
                 loadData(in);
             } catch (IOException e) {

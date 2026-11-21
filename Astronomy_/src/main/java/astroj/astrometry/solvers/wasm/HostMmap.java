@@ -399,11 +399,19 @@ public final class HostMmap {
         private final MethodHandle mprotect = handle("mprotect", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT));
         private final MethodHandle open = handle("open", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_INT), Linker.Option.firstVariadicArg(2));
         private final MethodHandle close = handle("close", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
+        private final MethodHandle getpagesize = handle("getpagesize", FunctionDescriptor.of(ValueLayout.JAVA_INT));
         private final int mapAnon, mapNoReserve;
+        private final int pageSize;
 
         PosixMapper(boolean mac) {
             mapAnon = mac ? 0x1000 : 0x20;
             mapNoReserve = mac ? 0x40 : 0x4000;
+            try {
+                var getpagesize = handle("getpagesize", FunctionDescriptor.of(ValueLayout.JAVA_INT));
+                pageSize = (int) getpagesize.invokeExact();
+            } catch (Throwable t) {
+                throw new IllegalStateException("cannot determine page size", t);
+            }
         }
 
         private MethodHandle handle(String name, FunctionDescriptor d, Linker.Option... o) {
@@ -437,7 +445,7 @@ public final class HostMmap {
                 if (fd < 0) throw new IllegalStateException("open failed: " + file);
                 try {
                     mmap(addr, n, PROT_RW, MAP_PRIVATE | MAP_FIXED, fd, off); // copy-on-write: the engine may write to its mapping
-                    long end = (n + 4095) & ~4095L;                            // whole pages past the end of file read as zeros
+                    long end = (n + pageSize - 1) & -pageSize;   // first page boundary at or after EOF
                     if (end < len) mmap(addr + end, len - end, PROT_RW, MAP_PRIVATE | mapAnon | MAP_FIXED, -1, 0);
                 } finally {
                     int _ = (int) close.invokeExact(fd);

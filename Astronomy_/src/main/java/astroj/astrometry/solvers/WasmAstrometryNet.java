@@ -3,8 +3,8 @@ package astroj.astrometry.solvers;
 import astroj.AstrometrySetup;
 import astroj.FitsJ;
 import astroj.WCS;
-import astroj.astrometry.AnSolveWasi;
 import astroj.astrometry.annotations.AnnotationCatalog;
+import astroj.astrometry.solvers.wasm.AnSolveWasi;
 import ij.IJ;
 
 import java.io.IOException;

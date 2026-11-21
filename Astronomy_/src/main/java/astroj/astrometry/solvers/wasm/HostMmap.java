@@ -1,4 +1,4 @@
-package astroj.astrometry;
+package astroj.astrometry.solvers.wasm;
 
 import ai.tegmentum.wasmtime4j.WasmValue;
 import ai.tegmentum.wasmtime4j.WasmValueType;

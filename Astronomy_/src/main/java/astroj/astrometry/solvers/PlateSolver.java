@@ -41,7 +41,8 @@ public sealed interface PlateSolver extends AutoCloseable permits HttpAstrometry
         ASTROMETRY_NET_WASM("Bundled Astrometry.net", """
                 <html>
                 Select this tab to plate-solve using the astrometry.net version built into AIJ.<br>
-                We recommend using this tab since the solving should run much faster than the web version.
+                We recommend using this tab since the solving should run much faster than the web version.<br>
+                May be slower on the very first run as it compiles what it needs.
                 </html>
                 """),
         ASTROMETRY_NET_HTTP("Astrometry.net Web Api", """

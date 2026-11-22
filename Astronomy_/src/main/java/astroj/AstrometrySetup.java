@@ -134,7 +134,10 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     private boolean fpack = false, compress = false;
     private JSpinner customPollSpinner;
     private boolean syncingAperture = false;
+    private boolean syncingStarCounts = false;
     private String startButtonLabel = "START";
+    private SpinnerNumberModel minNumStarsNumberModel;
+    private JSpinner minNumStarsSpinner;
 
 
     public AstrometrySetup() {
@@ -622,7 +625,22 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
         // Max number of stars
         var r2b = row();
-        if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
+        Astrometry.MIN_STAR_COUNT.set(Math.clamp(Astrometry.MIN_STAR_COUNT.get(), 1, maxNumStars));
+        minNumStarsNumberModel = new SpinnerNumberModel(Astrometry.MIN_STAR_COUNT.get(), 1, null, 1);
+        minNumStarsSpinner = new JSpinner(minNumStarsNumberModel);
+        minNumStarsSpinner.setEditor(new JSpinner.NumberEditor(minNumStarsSpinner, "#"));
+        minNumStarsSpinner.setFont(p12);
+        minNumStarsSpinner.setToolTipText("""
+                <html>
+                At least this many stars must be found for plate solving, or the image is skipped.
+                </html>
+                """);
+        minNumStarsSpinner.addChangeListener(this);
+        minNumStarsSpinner.addMouseWheelListener(this);
+        setWidth(minNumStarsSpinner, 100);
+        r2b.add(titled("Min Num Stars", minNumStarsSpinner));
+
+        maxNumStars = Math.max(maxNumStars, MIN_MAX_STARS);
         maxNumStarsNumberModel = new SpinnerNumberModel(maxNumStars, MIN_MAX_STARS, null, 1);
         maxNumStarsSpinner = new JSpinner(maxNumStarsNumberModel);
         maxNumStarsSpinner.setEditor(new JSpinner.NumberEditor(maxNumStarsSpinner, "#"));
@@ -634,6 +652,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         maxNumStarsSpinner.addMouseWheelListener(this);
         setWidth(maxNumStarsSpinner, 100);
         r2b.add(titled("Max Num Stars", maxNumStarsSpinner));
+
         g.add(r2b);
 
         // Max peak limit
@@ -1082,6 +1101,37 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         }
     }
 
+    /**
+     * Keeps the min and max star spinners consistent ({@code 1 <= min <= max}, {@code max >= MIN_MAX_STARS}).
+     *
+     * @param minChanged true if the min spinner triggered this
+     */
+    private void syncStarCounts(boolean minChanged) {
+        if (syncingStarCounts) return;
+        syncingStarCounts = true;
+        try {
+            int min = Math.max(1, intValue(minNumStarsSpinner));
+            int max = Math.max(MIN_MAX_STARS, intValue(maxNumStarsSpinner));
+            if (min > max) {
+                if (minChanged) {
+                    max = min;
+                } else {
+                    min = max;
+                }
+            }
+            maxNumStars = max;
+            if (intValue(minNumStarsSpinner) != min) minNumStarsSpinner.setValue(min);
+            if (intValue(maxNumStarsSpinner) != max) maxNumStarsSpinner.setValue(max);
+            Astrometry.MIN_STAR_COUNT.set(min);
+        } finally {
+            syncingStarCounts = false;
+        }
+    }
+
+    private int intValue(JSpinner s) {
+        return ((Number) s.getValue()).intValue();
+    }
+
     public void getFields() {
         userKey = keyTF.getText().trim();
         if (useAlternateAstrometryServer) alternateAstrometryUrlBase = alternateAstrometryUrlBaseTF.getText().trim();
@@ -1221,8 +1271,9 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             medianFilterRadius = (Integer) medianFilterRadiusSpinner.getValue();
             if (medianFilterRadius < 2) medianFilterRadius = 2;
         } else if (ev.getSource() == maxNumStarsSpinner) {
-            maxNumStars = (Integer) maxNumStarsSpinner.getValue();
-            if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
+            syncStarCounts(false);
+        } else if (ev.getSource() == minNumStarsSpinner) {
+            syncStarCounts(true);
         } else if (ev.getSource() == distortionOrderSpinner) {
             distortionOrder = (Integer) distortionOrderSpinner.getValue();
             if (distortionOrder < minOrder) distortionOrder = minOrder;
@@ -1292,9 +1343,11 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             if (medianFilterRadius < 2) medianFilterRadius = 2;
             medianFilterRadiusSpinner.setValue(medianFilterRadius);
         } else if (e.getSource() == maxNumStarsSpinner) {
-            maxNumStars = (Integer) maxNumStarsSpinner.getValue() - e.getWheelRotation();
-            if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
-            maxNumStarsSpinner.setValue(maxNumStars);
+            long v = (long) intValue(maxNumStarsSpinner) - e.getWheelRotation();
+            maxNumStarsSpinner.setValue((int) Math.clamp(v, MIN_MAX_STARS, Integer.MAX_VALUE));
+        } else if (e.getSource() == minNumStarsSpinner) {
+            long v = (long) intValue(minNumStarsSpinner) - e.getWheelRotation();
+            minNumStarsSpinner.setValue((int) Math.clamp(v, 1, Integer.MAX_VALUE));
         } else if (e.getSource() == distortionOrderSpinner && distortionOrderSpinner.isEnabled()) {
             distortionOrder = (Integer) distortionOrderSpinner.getValue() - e.getWheelRotation();
             if (distortionOrder < minOrder) distortionOrder = minOrder;

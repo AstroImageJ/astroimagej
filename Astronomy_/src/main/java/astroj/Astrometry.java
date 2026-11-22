@@ -43,6 +43,7 @@ public class Astrometry { //implements KeyListener
     public static final Property<Boolean> REUSE_PREVIOUS_RADEC = new Property<>(true, Astrometry.class);
     public static final Property<Boolean> USE_GPU_ACCELERATION = new Property<>(true, Astrometry.class);
     public static final Property<Boolean> SKIP_IMAGE_UPDATE = new Property<>(false, Astrometry.class);
+    public static final Property<Integer> MIN_STAR_COUNT = new Property<>(10, Astrometry.class);
     final static int[] DIR_X_OFFSET = new int[]{0, 1, 1, 1, 0, -1, -1, -1};
     final static int[] DIR_Y_OFFSET = new int[]{-1, -1, 0, 1, 1, 1, 0, -1};
     final static byte MAXIMUM = GpuMaxima.MAXIMUM;   // marks local maxima (irrespective of noise tolerance); set by the GPU/CPU kernel
@@ -281,6 +282,11 @@ public class Astrometry { //implements KeyListener
 //            if (IJ.escapePressed())return false;
             if (canceled) return CANCELED;
 
+            if (Astrometry.MIN_STAR_COUNT.get() > npoints) {
+                log("Found only " + npoints + " stars for slice " + slice + ". Skipping.");
+                continue;
+            }
+
             String imageLabel = impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice;
 
             double[] xs = new double[npoints];
@@ -303,6 +309,11 @@ public class Astrometry { //implements KeyListener
             }
             xs = Arrays.copyOf(xs, nSources);
             ys = Arrays.copyOf(ys, nSources);
+
+            if (RegionExclusion.EXCLUDE_BORDERS.get() && Astrometry.MIN_STAR_COUNT.get() > nSources) {
+                log("Found only " + nSources + " stars for slice " + slice + " after excluding borders. Skipping.");
+                continue;
+            }
 
             if (canceled) return CANCELED;
 

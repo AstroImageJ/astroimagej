@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import java.security.MessageDigest
+import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -133,9 +134,9 @@ tasks.test {
  */
 val javaRuntimeSystems = mapOf(
     // All are of type JRE as Azul doesn't provide a separate jmods, which breaks some assumptions about the build
-    // when crosscompiling. JDK is required for mac.
-    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
-    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
+    // when crosscompiling.
+    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JRE),
+    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JRE),
     "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX, type = RuntimeType.JRE),
     "armLinux" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = LINUX, type = RuntimeType.JRE),
     "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS, type = RuntimeType.JRE),
@@ -670,6 +671,32 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         }
     }
 
+    // Make sure the app image is actually runnable
+    val testAppImage = tasks.register<Exec>("testAppImage$sysId") {
+        group = "verification"
+        description = "Launches the $sysId app image with -batch and checks that it exits cleanly"
+        dependsOn(appImageDir)
+
+        // The app image is only runnable on a matching machine
+        onlyIf { sysInfo.matchesCurrentSystem() }
+
+        // Fails the task and stops the app if it hasn't exited by itself within 5 seconds
+        timeout.set(Duration.ofSeconds(5))
+
+        val executable = appImageDir.map { dir ->
+            when (sysInfo.os) {
+                LINUX -> dir.file("astroimagej/bin/AstroImageJ")
+                WINDOWS -> dir.file("AstroImageJ/AstroImageJ.exe")
+                MAC -> dir.file("AstroImageJ.app/Contents/MacOS/AstroImageJ")
+            }
+        }
+
+        // Resolved at execution time so the app image is built first
+        doFirst {
+            commandLine(executable.get().asFile.absolutePath, "-batch")
+        }
+    }
+
     val installerTask = tasks.register<JPackageTask>(installerTaskName) {
         if (!crossBuildAppImage.get()) {
             mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
@@ -683,6 +710,7 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
                 mustRunAfter(tasks.named("signFor$sysId"))
             }
         }
+        dependsOn(testAppImage)
 
         appName.set("AstroImageJ")
 

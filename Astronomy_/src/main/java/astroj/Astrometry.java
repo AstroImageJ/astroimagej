@@ -542,7 +542,10 @@ public class Astrometry { //implements KeyListener
 
             ocanvas.removeAstrometryAnnotateRois();
 //            ocanvas.clearRois();
-            if (!SKIP_IMAGE_UPDATE.get()) {
+            // When annotate is enabled, we redraw the image there as well.
+            // Disabled here as with GPU star detection and radec reuse enabled, the solves are so fast the EDT
+            // is flooded and can't update the log
+            if (!annotate && !SKIP_IMAGE_UPDATE.get()) {
                 impOriginal.updateAndDraw();
             }
 

@@ -133,9 +133,9 @@ tasks.test {
  */
 val javaRuntimeSystems = mapOf(
     // All are of type JRE as Azul doesn't provide a separate jmods, which breaks some assumptions about the build
-    // when crosscompiling
-    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JRE),
-    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JRE),
+    // when crosscompiling. JDK is required for mac.
+    "mac" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = MAC, type = RuntimeType.JDK),
+    "armMac" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = MAC, type = RuntimeType.JDK),
     "linux" to JavaRuntimeSystem(ext = "tar.gz", arch = X86_64, os = LINUX, type = RuntimeType.JRE),
     "armLinux" to JavaRuntimeSystem(ext = "tar.gz", arch = ARM_64, os = LINUX, type = RuntimeType.JRE),
     "windows" to JavaRuntimeSystem(ext = "zip", arch = X86_64, os = WINDOWS, type = RuntimeType.JRE),

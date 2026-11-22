@@ -85,8 +85,8 @@ abstract class CreateJavaRuntimeTask
     @TaskAction
     fun buildJavaRuntime() {
         when (runtimeType(runtimeType.get())) {
-            null -> GradleException("Missing runtime type information!")
-            RuntimeType.JMODS -> GradleException("Did not expect to create a runtime with type: jmods!")
+            null -> throw GradleException("Missing runtime type information!")
+            RuntimeType.JMODS -> throw GradleException("Did not expect to create a runtime with type: jmods!")
             RuntimeType.JRE -> unpack(outputDir)
             RuntimeType.JDK -> {
                 // Unpack JDK
@@ -116,12 +116,21 @@ abstract class CreateJavaRuntimeTask
                 val fullArgs = mutableListOf("--output", outputDir.get().asFile.absolutePath)
                 fullArgs.addAll(jlinkArgs.get())
 
+                val jmodsDir = if (bundledJmods.isPresent) {
+                    findJmodsDir(unpackedJmodDir.get().asFile)
+                } else {
+                    findJmodsDirOrNull(unpackedDir.get().asFile)
+                }
+
                 // Specify modules
-                if (!bundledJmods.isPresent) {
+                if (jmodsDir == null) {
+                    // No jmods available, so the target JDK's own tools must be run, which
+                    // only works when the target matches the build machine.
                     // We can't use the modules method to build the jre with Adoptium
                     // since https://adoptium.net/blog/2025/03/eclipse-temurin-jdk24-JEP493-enabled/
                     // So cross compilation is no longer possible, but we're using jpackage anyway...
                     //https://github.com/adoptium/adoptium-support/issues/1271
+                    logger.lifecycle("No jmods found in the runtime, using the runtime's own java and jlink (cannot cross-build)")
 
                     // Find all modules
                     val stdout = ByteArrayOutputStream()
@@ -158,7 +167,7 @@ abstract class CreateJavaRuntimeTask
                     ))
                 } else {
                     fullArgs.addAll(listOf(
-                        "--module-path", findJmodsDir(unpackedJmodDir.get().asFile).absolutePath,
+                        "--module-path", jmodsDir.absolutePath,
                         "--add-modules", "ALL-MODULE-PATH",
                     ))
                 }
@@ -207,9 +216,13 @@ abstract class CreateJavaRuntimeTask
     }
 
     private fun findJmodsDir(root: File): File {
-        return root.walkTopDown()
-            .firstOrNull { it.isDirectory && it.name.contains("jmods") }
+        return findJmodsDirOrNull(root)
             ?: throw GradleException("'jmods' directory not found under ${root.absolutePath}")
+    }
+
+    private fun findJmodsDirOrNull(root: File): File? {
+        return root.walkTopDown()
+            .firstOrNull { it.isDirectory && it.name == "jmods" && File(it, "java.base.jmod").exists() }
     }
 
     private fun findFile(root: File, jlinkName: String): File {

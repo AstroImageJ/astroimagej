@@ -677,6 +677,9 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val testAppImage = tasks.register<Exec>("testAppImage$sysId") {
         group = "verification"
         description = "Launches the $sysId app image with -batch and checks that it exits cleanly"
+        if (!crossBuildAppImage.get()) {
+            mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+        }
         dependsOn(appImageDir)
 
         // The app image is only runnable on a matching machine

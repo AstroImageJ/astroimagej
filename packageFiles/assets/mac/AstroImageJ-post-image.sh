@@ -5,12 +5,7 @@
 # -----------------------------------------------------------
 set -euo pipefail
 
-#todo this is a workaround for https://github.com/openjdk/jdk/pull/24899
-#todo remove override for JpAppImageDir from the task as well
-shopt -s nullglob
-APP_DIR=( "${JpAppImageDir:-}"/*/AstroImageJ.app )
-shopt -u nullglob
-APP_DIR=${APP_DIR[0]:-}
+APP_DIR="${JpAppImageDir:-}"
 
 if [[ -z $APP_DIR ]]; then
   echo "Not found!"

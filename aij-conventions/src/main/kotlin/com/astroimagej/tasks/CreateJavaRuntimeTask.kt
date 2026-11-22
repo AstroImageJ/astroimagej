@@ -41,6 +41,9 @@ abstract class CreateJavaRuntimeTask
     abstract val extension: Property<String>
 
     @get:Input
+    abstract val targetOs: Property<com.astroimagej.meta.jdk.OperatingSystem>
+
+    @get:Input
     @get:Optional
     abstract val jlinkArgs: ListProperty<String>
 
@@ -87,7 +90,30 @@ abstract class CreateJavaRuntimeTask
         when (runtimeType(runtimeType.get())) {
             null -> throw GradleException("Missing runtime type information!")
             RuntimeType.JMODS -> throw GradleException("Did not expect to create a runtime with type: jmods!")
-            RuntimeType.JRE -> unpack(outputDir)
+            RuntimeType.JRE -> {
+                when (targetOs.get()) {
+                    // Fix mac builds, since they reject the normal JRE or fail to launch
+                    com.astroimagej.meta.jdk.OperatingSystem.MAC -> {
+                        unpack(unpackedDir)
+
+                        val javaHome = findJavaHomeForMac(unpackedDir.get().asFile)
+                            ?: throw GradleException("Could not find a Java home (lib/modules) under ${unpackedDir.get().asFile.absolutePath}")
+
+                        fs.sync {
+                            from(javaHome) {
+                                // jpackage (when packaging for mac app sore) rejects a runtime with a bin folder
+                                if (OperatingSystem.current().isMacOsX) {
+                                    exclude("bin/**")
+                                }
+                            }
+                            into(outputDir)
+                        }
+                    }
+                    else -> {
+                        unpack(outputDir)
+                    }
+                }
+            }
             RuntimeType.JDK -> {
                 // Unpack JDK
                 unpack(unpackedDir)
@@ -223,6 +249,15 @@ abstract class CreateJavaRuntimeTask
     private fun findJmodsDirOrNull(root: File): File? {
         return root.walkTopDown()
             .firstOrNull { it.isDirectory && it.name == "jmods" && File(it, "java.base.jmod").exists() }
+    }
+
+    private fun findJavaHomeForMac(root: File): File? {
+        val candidates = root.walkTopDown()
+            .filter { it.isDirectory && File(it, "lib/modules").isFile }
+            .toList()
+
+        return candidates.firstOrNull { it.invariantSeparatorsPath.endsWith("Contents/Home") }
+            ?: candidates.firstOrNull()
     }
 
     private fun findFile(root: File, jlinkName: String): File {

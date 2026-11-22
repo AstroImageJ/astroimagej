@@ -474,6 +474,8 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
         launcher = packagingJdkToolchain
         fromRuntimeInfo(sysInfo)
 
+        targetOs = sysInfo.os
+
         bundledRuntime = bundledRuntimeFile
         //bundledJmods = unpackedJmodDir // Disabled
 

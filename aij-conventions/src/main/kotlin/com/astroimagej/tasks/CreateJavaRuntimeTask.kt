@@ -102,9 +102,7 @@ abstract class CreateJavaRuntimeTask
                         fs.sync {
                             from(javaHome) {
                                 // jpackage (when packaging for mac app sore) rejects a runtime with a bin folder
-                                if (OperatingSystem.current().isMacOsX) {
-                                    exclude("bin/**")
-                                }
+                                exclude("bin/**")
                             }
                             into(outputDir)
                         }

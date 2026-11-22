@@ -677,10 +677,14 @@ javaRuntimeSystemsProperty.get().forEach { (_, sysInfo) ->
     val testAppImage = tasks.register<Exec>("testAppImage$sysId") {
         group = "verification"
         description = "Launches the $sysId app image with -batch and checks that it exits cleanly"
-        if (!crossBuildAppImage.get()) {
-            mustRunAfter(tasks.named("replaceLauncherFor$sysId"))
+        val usingPrebuiltImage = crossBuildAppImage.get() && downloadedAppImage.asFile.exists()
+        if (!usingPrebuiltImage) {
+            dependsOn(createAppImageTaskName)
+            if (!crossBuildAppImage.get()) {
+                // Without cross building, the app image isn't complete until the launcher is replaced
+                dependsOn("replaceLauncherFor$sysId")
+            }
         }
-        dependsOn(appImageDir)
 
         // The app image is only runnable on a matching machine
         onlyIf { sysInfo.matchesCurrentSystem() }

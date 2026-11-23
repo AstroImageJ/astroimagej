@@ -155,10 +155,18 @@ public class IndexManagerPanel extends JPanel {
         removeCustom.addActionListener(_ -> removeSelectedCustom());
         var download = new JButton("Download selected");
         download.addActionListener(_ -> downloadSelected(download));
+        var okButton = new JButton("Ok");
+        okButton.addActionListener(_ -> {
+            if (SwingUtilities.getWindowAncestor(IndexManagerPanel.this) instanceof Window frame) {
+                frame.setVisible(false);
+                frame.dispose();
+            }
+        });
 
         buttons.add(addCustom);
         buttons.add(removeCustom);
         buttons.add(download);
+        buttons.add(okButton);
         fileProgress.setStringPainted(true);
         overallProgress.setStringPainted(true);
         progressPanel.add(fileProgress);

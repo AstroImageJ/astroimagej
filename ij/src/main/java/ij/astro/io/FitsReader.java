@@ -625,7 +625,7 @@ public class FitsReader implements AutoCloseable {
             }
             case LCO_FILE -> {
                 var maskIdx = findBadPixelMask();
-                if (maskIdx == -1 || hduDescriptors.get(maskIdx).isImage()) {
+                if (maskIdx == -1 || !hduDescriptors.get(maskIdx).isImage()) {
                     yield null;
                 }
 

@@ -29,9 +29,9 @@ public final class WasmAstrometryNet implements PlateSolver {
                     readLib("/astroj/wasm/astrometry-engine-hostmmap.wasm"),
                     readLib("/astroj/wasm/kd-cone.wasm"),
                     true, cancelled);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             IJ.error("PlateSolver", "Failed to initialize WasmAstrometryNet");
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         this.maxRetries = maxRetries;
         this.annotate = annotate;

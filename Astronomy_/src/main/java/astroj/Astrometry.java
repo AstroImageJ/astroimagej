@@ -215,7 +215,7 @@ public class Astrometry { //implements KeyListener
         }
         try (var solver = getSolver()) {
             return processStack(solver, rawPath);
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             IJ.showStatus("Solver failed.");
             IJ.log(e.getMessage());
             IJ.showProgress(1);

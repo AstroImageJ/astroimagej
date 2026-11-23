@@ -1,83 +1,30 @@
 package ij;
 
-import java.awt.BasicStroke;
-import java.awt.Canvas;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.EventQueue;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Shape;
-import java.awt.Window;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.ImageObserver;
-import java.awt.image.PixelGrabber;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import ij.astro.AstroImageJ;
 import ij.astro.util.VectorPlotDrawing;
-import ij.gui.Arrow;
-import ij.gui.EllipseRoi;
-import ij.gui.FreehandRoi;
-import ij.gui.GenericDialog;
-import ij.gui.ImageCanvas;
-import ij.gui.ImageRoi;
-import ij.gui.ImageWindow;
-import ij.gui.Line;
-import ij.gui.OvalRoi;
-import ij.gui.Overlay;
-import ij.gui.Plot;
-import ij.gui.PlotVirtualStack;
-import ij.gui.PlotWindow;
-import ij.gui.PointRoi;
-import ij.gui.PolygonRoi;
-import ij.gui.Roi;
-import ij.gui.RoiListener;
-import ij.gui.RotatedRectRoi;
-import ij.gui.ShapeRoi;
-import ij.gui.StackWindow;
-import ij.gui.TextRoi;
-import ij.gui.Toolbar;
+import ij.gui.*;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.Opener;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
-import ij.plugin.AVI_Reader;
-import ij.plugin.Clipboard;
-import ij.plugin.Colors;
-import ij.plugin.ContrastEnhancer;
-import ij.plugin.Duplicator;
-import ij.plugin.FileInfoVirtualStack;
-import ij.plugin.PointToolOptions;
-import ij.plugin.Scaler;
-import ij.plugin.Thresholder;
+import ij.plugin.*;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.Channels;
 import ij.plugin.frame.ContrastAdjuster;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
-import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
-import ij.process.FloatPolygon;
-import ij.process.FloatProcessor;
-import ij.process.ImageConverter;
-import ij.process.ImageProcessor;
-import ij.process.ImageStatistics;
-import ij.process.LUT;
-import ij.process.ShortProcessor;
+import ij.process.*;
 import ij.util.DicomTools;
 import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.image.*;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -899,7 +846,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 			if (currentSlice>stackSize)
 				setCurrentSlice(stackSize);
 			if (currentSlice>=1 && currentSlice<=stackSize && !dimensionsChanged)
-				stack.setPixels(ip.getPixels(),currentSlice);
+				ScopedValue.where(ImageStack.PRESERVE_BPM, stack == newStack).run(() -> stack.setPixels(ip.getPixels(),currentSlice));
 		}
 		img = null;
 		if (dimensionsChanged) roi = null;
@@ -2077,7 +2024,10 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	 * @see #setZ
 	 * @see #setT
 	 */
-	@AstroImageJ(reason = "Add reset if color type is RGB", modified = true)
+	@AstroImageJ(reason = """
+            Add reset if color type is RGB
+            Support BPM
+            """, modified = true)
 	public synchronized void setSlice(int n) {
 		if (getType()==ImagePlus.COLOR_RGB) ip.reset();
 		if (stack==null || (n==currentSlice&&ip!=null)) {
@@ -2091,7 +2041,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 				roi.endPaste();
 			if (isProcessor()) {
 				if (currentSlice==0) currentSlice=1;
-				stack.setPixels(ip.getPixels(),currentSlice);
+				ScopedValue.where(ImageStack.PRESERVE_BPM, true).run(() -> stack.setPixels(ip.getPixels(),currentSlice));
 			}
 			setCurrentSlice(n);
 			Object pixels = null;
@@ -2111,8 +2061,10 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 				pixels = stack.getPixels(currentSlice);
 			if (ip!=null && pixels!=null) {
 				try {
-					ip.setPixels(pixels);
+					var pxf = pixels;
+					ScopedValue.where(ImageStack.PRESERVE_BPM, true).run(() -> stack.setPixels(pxf,currentSlice));
 					ip.setSnapshotPixels(null);
+					ip.setBadPixels(stack.getBadPixels(n));
 				} catch(Exception e) {}
 			} else {
 				ImageProcessor ip2 = stack.getProcessor(n);

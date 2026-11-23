@@ -15,6 +15,8 @@ This class represents an expandable array of images.
 @see ImagePlus
 */
 public class ImageStack {
+	@AstroImageJ(reason = "Fix BPM being lost when changing slice in a stack")
+	public static final ScopedValue<Boolean> PRESERVE_BPM = ScopedValue.newInstance();
 	static final int INITIAL_SIZE = 25;
 	static final String outOfRange = "Stack argument out of range: ";
 	private int bitDepth = 0; //0=unknown
@@ -196,6 +198,15 @@ public class ImageStack {
 		badPixels.remove(n-1);
 		nSlices--;
 	}
+
+	@AstroImageJ(reason = "Support getting a slices BPM")
+	public Collection<PixelPatcher.BpmPixel> getBadPixels(int n) {
+		if (n<1 || n>nSlices)
+			throw new IllegalArgumentException(outOfRange+n);
+		if (badPixels == null || badPixels.isEmpty())
+			return null;
+		return badPixels.get(n-1);
+	}
 	
 	/** Deletes the last slice in the stack. */
 	public void deleteLastSlice() {
@@ -247,7 +258,9 @@ public class ImageStack {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException(outOfRange+n);
 		stack[n-1] = pixels;
-		badPixels.set(n-1, null);
+		if (!PRESERVE_BPM.orElse(false)) {
+			badPixels.set(n-1, null);
+		}
 		if (this.bitDepth==0)
 			setBitDepth(pixels);
 	}

@@ -775,7 +775,10 @@ public class AstroCanvas extends OverlayCanvas {
     private void drawBadPixels(Graphics2D g2) {
         var badPixels = imp.getProcessor().getBadPixels();
         if (badPixels == null || badPixels.isEmpty()) {
-            return;
+            badPixels = imp.getStack().getBadPixels(imp.getCurrentSlice());
+            if (badPixels == null || badPixels.isEmpty()) {
+                return;
+            }
         }
 
         g2.setTransform(invCanvTrans);

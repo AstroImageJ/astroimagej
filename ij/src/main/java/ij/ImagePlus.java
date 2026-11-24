@@ -2062,7 +2062,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 			if (ip!=null && pixels!=null) {
 				try {
 					var pxf = pixels;
-					ScopedValue.where(ImageStack.PRESERVE_BPM, true).run(() -> stack.setPixels(pxf,currentSlice));
+					ScopedValue.where(ImageStack.PRESERVE_BPM, true).run(() -> ip.setPixels(pxf));
 					ip.setSnapshotPixels(null);
 					ip.setBadPixels(stack.getBadPixels(n));
 				} catch(Exception e) {}

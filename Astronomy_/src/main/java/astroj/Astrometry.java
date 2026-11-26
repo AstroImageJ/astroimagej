@@ -230,6 +230,7 @@ public class Astrometry { //implements KeyListener
             }
             impOriginal.updateAndDraw();
             impOriginal.unlock();
+            impOriginal.unlock();
         }
     }
 
@@ -249,6 +250,7 @@ public class Astrometry { //implements KeyListener
         for (slice = startSlice; slice <= endSlice; slice++) {
             if (canceled) return CANCELED;
 
+            impOriginal.unlock();
             if (skipImageUpdate()) {
                 impOriginal.setSliceWithoutUpdate(slice);
             } else {
@@ -258,6 +260,7 @@ public class Astrometry { //implements KeyListener
                     throw new RuntimeException(e);
                 }
             }
+            impOriginal.lockSilently();
 
             if (skipIfHasWCS) {
                 WCS wcs = new WCS(impOriginal);
@@ -375,10 +378,12 @@ public class Astrometry { //implements KeyListener
                 }
             }
 
-            try {
-                SwingUtilities.invokeAndWait(() -> impOriginal.setSlice(slice));
-            } catch (InterruptedException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+            if (impOriginal.getSlice() != slice) {
+                try {
+                    SwingUtilities.invokeAndWait(() -> impOriginal.setSlice(slice));
+                } catch (InterruptedException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
             }
             FitsJ.Header header = FitsJ.getHeader(impOriginal);
             if (header == null) {
@@ -555,7 +560,13 @@ public class Astrometry { //implements KeyListener
             if (canceled) return CANCELED;
             saveActive = true;
 
-            impOriginal.setSlice(slice);
+            if (impOriginal.getSlice() != slice) {
+                try {
+                    SwingUtilities.invokeAndWait(() -> impOriginal.setSlice(slice));
+                } catch (InterruptedException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             FitsJ.putHeader(impOriginal, header);
             if (resaveRaw) FitsJ.putHeader(impRaw, headerRaw);
             saveActive = false;

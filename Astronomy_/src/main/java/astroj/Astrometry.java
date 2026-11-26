@@ -276,7 +276,11 @@ public class Astrometry { //implements KeyListener
 //            ocanvas.removeAnnotateRois();
             ocanvas.removeAstrometryAnnotateRois();
             if (!skipImageUpdate()) {
-                impOriginal.updateAndDraw();
+                try {
+                    SwingUtilities.invokeAndWait(() -> impOriginal.updateAndDraw());
+                } catch (InterruptedException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
 //            IJ.runPlugIn(impOriginal, "Clear_Overlay", "");
@@ -371,7 +375,11 @@ public class Astrometry { //implements KeyListener
                 }
             }
 
-            impOriginal.setSlice(slice);
+            try {
+                SwingUtilities.invokeAndWait(() -> impOriginal.setSlice(slice));
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
             FitsJ.Header header = FitsJ.getHeader(impOriginal);
             if (header == null) {
                 header = FitsJ.Header.build(new String[5]);
@@ -564,7 +572,11 @@ public class Astrometry { //implements KeyListener
             // Disabled here as with GPU star detection and radec reuse enabled, the solves are so fast the EDT
             // is flooded and can't update the log
             if (!annotate && !skipImageUpdate()) {
-                impOriginal.updateAndDraw();
+                try {
+                    SwingUtilities.invokeAndWait(() -> impOriginal.updateAndDraw());
+                } catch (InterruptedException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
 //            IJ.runPlugIn(impOriginal, "Clear_Overlay", "");
@@ -970,7 +982,11 @@ public class Astrometry { //implements KeyListener
                         addAnnotateRoi(impOriginal, true, useCentroid, false, true, xdpoints[i], ydpoints[i], useCentroid ? apertureRadius : annotateRadius, "", sourceColor);
                     }
                     if (!skipImageUpdate()) {
-                        impOriginal.draw();
+                        try {
+                            SwingUtilities.invokeAndWait(() -> impOriginal.draw());
+                        } catch (InterruptedException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             }

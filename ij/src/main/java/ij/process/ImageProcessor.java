@@ -123,6 +123,21 @@ public abstract class ImageProcessor implements Cloneable {
 	protected static Random rnd;
 	@AstroImageJ(reason = "Display bad pixels")
 	protected Collection<PixelPatcher.BpmPixel> badPixels;
+	@AstroImageJ(reason = "Display bad pixels")
+	private static final IndexColorModel BAD_PIXEL_CM = createBadPixelColorModel();
+	// Index -> draw priority when two entries share a coordinate: Uncorrected > Pixel > Source
+	@AstroImageJ(reason = "Display bad pixels")
+	private static final int[] BAD_PIXEL_PRIORITY = {0, 2, 1, 3};
+	@AstroImageJ(reason = "Display bad pixels")
+	private final Object badPixelImageLock = new Object();
+	@AstroImageJ(reason = "Display bad pixels")
+	private BufferedImage badPixelImage;
+	@AstroImageJ(reason = "Display bad pixels")
+	private Collection<PixelPatcher.BpmPixel> badPixelImageSource;
+	@AstroImageJ(reason = "Display bad pixels")
+	private int badPixelImageCount = -1;
+	@AstroImageJ(reason = "Display bad pixels")
+	private boolean badPixelImageDirty = true;
 
 	protected void showProgress(double percentDone) {
 		if (progressBar!=null)
@@ -994,42 +1009,123 @@ public abstract class ImageProcessor implements Cloneable {
 		progressBar = pb;
 	}
 
+	@AstroImageJ(reason = "Display bad pixels")
+	private static IndexColorModel createBadPixelColorModel() {
+		// 0 = transparent, 1 = Pixel, 2 = SourcePixel, 3 = UncorrectedPixel
+		// 50% alpha for all
+		var r = new byte[]{0, (byte) 250, (byte) 200, (byte) 174};
+		var g = new byte[]{0, (byte) 229, (byte) 128, (byte) 22};
+		var b = new byte[]{0, 0, (byte) 128, (byte) 19};
+		var a = new byte[]{0, (byte) 128, (byte) 128, (byte) 128};
+		return new IndexColorModel(8, 4, r, g, b, a);
+	}
+
 	@AstroImageJ(reason = "Mark bad pixels")
 	public void markBadPixel(int x, int y) {
-		// If BPM is present, treat the IP as having been modified
-		if (badPixels == null) {
-			badPixels = new HashSet<>();
-		}
-		if (PixelPatcher.PRESERVE_BPM.get()) {
-			badPixels.add(new PixelPatcher.BpmPixel.Pixel(x, y));
+		synchronized (badPixelImageLock) {
+			// If BPM is present, treat the IP as having been modified
+			if (badPixels == null) {
+				badPixels = new HashSet<>();
+			}
+			if (PixelPatcher.PRESERVE_BPM.get()) {
+				badPixels.add(new PixelPatcher.BpmPixel.Pixel(x, y));
+				badPixelImageDirty = true;
+			}
 		}
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")
 	public void markBadPixelSource(int x, int y) {
-		// If BPM is present, treat the IP as having been modified
-		if (badPixels == null) {
-			badPixels = new HashSet<>();
-		}
-		if (PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get()) {
-			badPixels.add(new PixelPatcher.BpmPixel.SourcePixel(x, y));
+		synchronized (badPixelImageLock) {
+			// If BPM is present, treat the IP as having been modified
+			if (badPixels == null) {
+				badPixels = new HashSet<>();
+			}
+			if (PixelPatcher.PRESERVE_BPM_SOURCE_PIXELS.get()) {
+				badPixels.add(new PixelPatcher.BpmPixel.SourcePixel(x, y));
+				badPixelImageDirty = true;
+			}
 		}
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")
 	public void markUncorrectedBadPixel(int x, int y) {
-		// If BPM is present, treat the IP as having been modified
-		if (badPixels == null) {
-			badPixels = new HashSet<>();
-		}
-		if (PixelPatcher.PRESERVE_BPM.get()) {
-			badPixels.add(new PixelPatcher.BpmPixel.UncorrectedPixel(x, y));
+		synchronized (badPixelImageLock) {
+			// If BPM is present, treat the IP as having been modified
+			if (badPixels == null) {
+				badPixels = new HashSet<>();
+			}
+			if (PixelPatcher.PRESERVE_BPM.get()) {
+				badPixels.add(new PixelPatcher.BpmPixel.UncorrectedPixel(x, y));
+				badPixelImageDirty = true;
+			}
 		}
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")
 	public void setBadPixels(Collection<PixelPatcher.BpmPixel> pixels) {
-		badPixels = pixels;
+		synchronized (badPixelImageLock) {
+			badPixels = pixels;
+			badPixelImageDirty = true;
+		}
+	}
+
+	@AstroImageJ(reason = "Display bad pixels")
+	public void invalidateBadPixelImage() {
+		synchronized (badPixelImageLock) {
+			badPixelImageDirty = true;
+		}
+	}
+
+	@AstroImageJ(reason = "Display bad pixels")
+	public BufferedImage getBadPixelImage(Collection<PixelPatcher.BpmPixel> pixels) {
+		if (pixels == null) {
+			return null;
+		}
+
+		synchronized (badPixelImageLock) {
+			if (pixels.isEmpty()) {
+				return null;
+			}
+
+			if (badPixelImage == null
+					|| badPixelImageDirty
+					|| pixels != badPixelImageSource
+					|| pixels.size() != badPixelImageCount
+					|| badPixelImage.getWidth() != width
+					|| badPixelImage.getHeight() != height) {
+				badPixelImage = buildBadPixelImage(pixels);
+				badPixelImageSource = pixels;
+				badPixelImageCount = pixels.size();
+				badPixelImageDirty = false;
+			}
+			return badPixelImage;
+		}
+	}
+
+	@AstroImageJ(reason = "Display bad pixels")
+	private BufferedImage buildBadPixelImage(Collection<PixelPatcher.BpmPixel> pixels) {
+		var img = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_INDEXED, BAD_PIXEL_CM);
+		var data = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+
+		for (var badPixel : pixels) {
+			int x = badPixel.x();
+			int y = badPixel.y();
+			if (x < 0 || y < 0 || x >= width || y >= height) continue;
+
+			byte index = switch (badPixel) {
+				case PixelPatcher.BpmPixel.Pixel _ -> 1;
+				case PixelPatcher.BpmPixel.SourcePixel _ -> 2;
+				case PixelPatcher.BpmPixel.UncorrectedPixel _ -> 3;
+			};
+
+			int i = y * width + x;
+			if (BAD_PIXEL_PRIORITY[index] > BAD_PIXEL_PRIORITY[data[i]]) {
+				data[i] = index;
+			}
+		}
+
+		return img;
 	}
 
 	@AstroImageJ(reason = "Mark bad pixels")

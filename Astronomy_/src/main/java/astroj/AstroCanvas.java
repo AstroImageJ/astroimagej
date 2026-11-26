@@ -776,7 +776,8 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
     private void drawBadPixels(Graphics2D g2) {
-        var badPixels = imp.getProcessor().getBadPixels();
+        var ip = imp.getProcessor();
+        var badPixels = ip.getBadPixels();
         if (badPixels == null || badPixels.isEmpty()) {
             badPixels = imp.getStack().getBadPixels(imp.getCurrentSlice());
             if (badPixels == null || badPixels.isEmpty()) {
@@ -784,31 +785,26 @@ public class AstroCanvas extends OverlayCanvas {
             }
         }
 
-        final int pixW = Math.max(1, Math.abs(screenX(1) - screenX(0)));
-        final int pixH = Math.max(1, Math.abs(screenY(1) - screenY(0)));
-
-        g2.setTransform(invCanvTrans);
-
-        var comp = g2.getComposite();
-        g2.setComposite(BAD_PIXEL_COMPOSITE);
-
-        for (var badPixel : badPixels) {
-            var x1 = screenX(badPixel.x());
-            var x2 = screenX(badPixel.x() + 1);
-            var y1 = screenY(badPixel.y());
-            var y2 = screenY(badPixel.y() + 1);
-
-            switch (badPixel) {
-                case PixelPatcher.BpmPixel.Pixel _ -> g2.setColor(BPM_PIXEL_COLOR);
-                case PixelPatcher.BpmPixel.SourcePixel _ -> g2.setColor(BPM_SOURCE_COLOR);
-                case PixelPatcher.BpmPixel.UncorrectedPixel _ -> g2.setColor(BPM_UNCORRECTED_COLOR);
-            }
-
-            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), pixW, pixH);
+        var bpmImage = ip.getBadPixelImage(badPixels);
+        if (bpmImage == null) {
+            return;
         }
 
-        g2.setComposite(comp);
+        final int x0 = screenX(0);
+        final int y0 = screenY(0);
+        final double sx = screenX(1) < x0 || screenX(imp.getWidth()) < x0 ? -magnification : magnification;
+        final double sy = screenY(1) < y0 || screenY(imp.getHeight()) < y0 ? -magnification : magnification;
+
+        var oldHints = g2.getRenderingHints();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+
+        g2.setTransform(invCanvTrans);
+        g2.translate(x0, y0);
+        g2.scale(sx, sy);
+        g2.drawImage(bpmImage, 0, 0, null);
+
         g2.setTransform(canvTrans);
+        g2.setRenderingHints(oldHints);
     }
 
     @Override

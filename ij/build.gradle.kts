@@ -16,9 +16,9 @@ dependencies {
     // We provide libwasmtime4j.dylib for intel mac separately in ij/resources/natives as it is not provided by upstream
     api("ai.tegmentum:wasmtime4j:48.0.0-2.0.0")
     api("ai.tegmentum:wasmtime4j-panama:48.0.0-2.0.0")
-    api("io.github.beehive-lab:tornado-runtime:8.1.0-jdk22plus")
-    api("io.github.beehive-lab:tornado-drivers-opencl:8.1.0-jdk22plus")
-    api("io.github.beehive-lab:tornado-drivers-metal:8.1.0-jdk22plus")
+    api("io.github.beehive-lab:tornado-runtime:8.2.0-jdk22plus")
+    api("io.github.beehive-lab:tornado-drivers-opencl:8.2.0-jdk22plus")
+    api("io.github.beehive-lab:tornado-drivers-metal:8.2.0-jdk22plus")
 }
 
 artifacts {

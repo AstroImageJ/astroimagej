@@ -133,7 +133,7 @@ public abstract class ImageProcessor implements Cloneable {
 	@AstroImageJ(reason = "Display bad pixels")
 	private BufferedImage badPixelImage;
 	@AstroImageJ(reason = "Display bad pixels")
-	private Collection<PixelPatcher.BpmPixel> badPixelImageSource;
+	private int badPixelImageSource;
 	@AstroImageJ(reason = "Display bad pixels")
 	private int badPixelImageCount = -1;
 	@AstroImageJ(reason = "Display bad pixels")
@@ -1088,14 +1088,15 @@ public abstract class ImageProcessor implements Cloneable {
 				return null;
 			}
 
+			var identityHashCode = System.identityHashCode(pixels);
 			if (badPixelImage == null
 					|| badPixelImageDirty
-					|| pixels != badPixelImageSource
+					|| identityHashCode != badPixelImageSource
 					|| pixels.size() != badPixelImageCount
 					|| badPixelImage.getWidth() != width
 					|| badPixelImage.getHeight() != height) {
 				badPixelImage = buildBadPixelImage(pixels);
-				badPixelImageSource = pixels;
+				badPixelImageSource = identityHashCode;
 				badPixelImageCount = pixels.size();
 				badPixelImageDirty = false;
 			}

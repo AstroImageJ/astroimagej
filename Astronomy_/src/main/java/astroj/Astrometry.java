@@ -192,7 +192,7 @@ public class Astrometry { //implements KeyListener
         IJ.showStatus("Starting Solver...");
 
         AnnotateRoi warning = null;
-        if (SKIP_IMAGE_UPDATE.get()) {
+        if (skipImageUpdate()) {
             warning = new AnnotateRoi(false, false, true, false,
                     impOriginal.getWidth() / 2f, impOriginal.getHeight() / 2f, 2,
                     "Plate Solving...", Color.GREEN);
@@ -249,7 +249,7 @@ public class Astrometry { //implements KeyListener
         for (slice = startSlice; slice <= endSlice; slice++) {
             if (canceled) return CANCELED;
 
-            if (SKIP_IMAGE_UPDATE.get()) {
+            if (skipImageUpdate()) {
                 impOriginal.setSliceWithoutUpdate(slice);
             } else {
                 try {
@@ -275,7 +275,7 @@ public class Astrometry { //implements KeyListener
 
 //            ocanvas.removeAnnotateRois();
             ocanvas.removeAstrometryAnnotateRois();
-            if (!SKIP_IMAGE_UPDATE.get()) {
+            if (!skipImageUpdate()) {
                 impOriginal.updateAndDraw();
             }
 
@@ -552,7 +552,7 @@ public class Astrometry { //implements KeyListener
             if (resaveRaw) FitsJ.putHeader(impRaw, headerRaw);
             saveActive = false;
 
-            if (!SKIP_IMAGE_UPDATE.get() && impOriginal.getCanvas() instanceof AstroCanvas) {
+            if (!skipImageUpdate() && impOriginal.getCanvas() instanceof AstroCanvas) {
                 ((AstroStackWindow) impOriginal.getWindow()).setAstroProcessor(true);
                 impOriginal.getWindow().repaint();
             }
@@ -563,7 +563,7 @@ public class Astrometry { //implements KeyListener
             // When annotate is enabled, we redraw the image there as well.
             // Disabled here as with GPU star detection and radec reuse enabled, the solves are so fast the EDT
             // is flooded and can't update the log
-            if (!annotate && !SKIP_IMAGE_UPDATE.get()) {
+            if (!annotate && !skipImageUpdate()) {
                 impOriginal.updateAndDraw();
             }
 
@@ -583,7 +583,7 @@ public class Astrometry { //implements KeyListener
                             obj.x() - 0.5, height - (obj.y() - 0.5), getRadius(obj),
                             obj.names().iterator().next(), annotationColor);
                 }
-                if (!SKIP_IMAGE_UPDATE.get()) {
+                if (!skipImageUpdate()) {
                     impOriginal.draw();
                 }
             }
@@ -646,6 +646,13 @@ public class Astrometry { //implements KeyListener
         }
 
         return SUCCESS;
+    }
+
+    private static boolean skipImageUpdate() {
+        return switch (PLATE_SOLVER.get()) {
+            case ASTROMETRY_NET_HTTP -> false;
+            case ASTROMETRY_NET_WASM -> SKIP_IMAGE_UPDATE.get();
+        };
     }
 
     /**
@@ -962,7 +969,7 @@ public class Astrometry { //implements KeyListener
                     for (int i = 0; i < npoints; i++) {
                         addAnnotateRoi(impOriginal, true, useCentroid, false, true, xdpoints[i], ydpoints[i], useCentroid ? apertureRadius : annotateRadius, "", sourceColor);
                     }
-                    if (!SKIP_IMAGE_UPDATE.get()) {
+                    if (!skipImageUpdate()) {
                         impOriginal.draw();
                     }
                 }

@@ -25,7 +25,10 @@ import java.text.DecimalFormat;
 import java.util.Locale;
 
 public class AstroCanvas extends OverlayCanvas {
-
+    private static final Color BPM_PIXEL_COLOR = new Color(250, 229, 0);
+    private static final Color BPM_SOURCE_COLOR = new Color(200, 128, 128);
+    private static final Color BPM_UNCORRECTED_COLOR = new Color(174, 22, 19);
+    private static final AlphaComposite BAD_PIXEL_COMPOSITE = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.50f);
     public static final int ROT_0 = 0;
     public static final int ROT_90 = -90;
     public static final int ROT_180 = -180;
@@ -781,11 +784,13 @@ public class AstroCanvas extends OverlayCanvas {
             }
         }
 
+        final int pixW = Math.max(1, Math.abs(screenX(1) - screenX(0)));
+        final int pixH = Math.max(1, Math.abs(screenY(1) - screenY(0)));
+
         g2.setTransform(invCanvTrans);
 
-        g2.setColor(new Color(250, 229, 0));
         var comp = g2.getComposite();
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.50f));
+        g2.setComposite(BAD_PIXEL_COMPOSITE);
 
         for (var badPixel : badPixels) {
             var x1 = screenX(badPixel.x());
@@ -794,18 +799,12 @@ public class AstroCanvas extends OverlayCanvas {
             var y2 = screenY(badPixel.y() + 1);
 
             switch (badPixel) {
-                case PixelPatcher.BpmPixel.Pixel _ -> {
-                    g2.setColor(new Color(250, 229, 0));
-                }
-                case PixelPatcher.BpmPixel.SourcePixel _ -> {
-                    g2.setColor(new Color(200, 128, 128));
-                }
-                case PixelPatcher.BpmPixel.UncorrectedPixel _ -> {
-                    g2.setColor(new Color(174, 22, 19));
-                }
+                case PixelPatcher.BpmPixel.Pixel _ -> g2.setColor(BPM_PIXEL_COLOR);
+                case PixelPatcher.BpmPixel.SourcePixel _ -> g2.setColor(BPM_SOURCE_COLOR);
+                case PixelPatcher.BpmPixel.UncorrectedPixel _ -> g2.setColor(BPM_UNCORRECTED_COLOR);
             }
 
-            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), Math.max(1, Math.abs(x2 - x1)), Math.max(1, Math.abs(y2 - y1)));
+            g2.fillRect(Math.min(x1, x2), Math.min(y1, y2), pixW, pixH);
         }
 
         g2.setComposite(comp);

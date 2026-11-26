@@ -252,7 +252,11 @@ public class Astrometry { //implements KeyListener
             if (SKIP_IMAGE_UPDATE.get()) {
                 impOriginal.setSliceWithoutUpdate(slice);
             } else {
-                impOriginal.setSlice(slice);
+                try {
+                    SwingUtilities.invokeAndWait(() -> impOriginal.setSlice(slice));
+                } catch (InterruptedException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             if (skipIfHasWCS) {
@@ -670,12 +674,6 @@ public class Astrometry { //implements KeyListener
                 IJ.log("[" + sdf.format(cal.getTime()) + "]      " + message);
             } else {
                 IJ.log(message);
-            }
-            // Wait for log to update, which is needed with bundled solver
-            try {
-                SwingUtilities.invokeAndWait(() -> {});
-            } catch (InterruptedException | InvocationTargetException e) {
-                throw new RuntimeException(e);
             }
         }
     }

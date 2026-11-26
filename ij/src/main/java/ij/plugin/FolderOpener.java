@@ -791,7 +791,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addToSameRow();
 		gd.addStringField("Value 2:", "");
 
-		gd.addMessage("-----------------------------------------");
+		gd.addSeparator();
 		gd.addEnumChoice("Bad Pixel Replacement", PixelPatcher.BPM_MODE.get());
 		gd.addToSameRow();
 		gd.addButton("Configure Patch Type", _ -> PixelPatcherOptionsDialog.showDialog());
@@ -802,7 +802,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		gd.addToSameRow();
 		gd.addCheckbox("Ignore Borders", PixelPatcher.IGNORE_BORDERS.get());
 		gd.addNumericField("Ignore regions larger than", PixelPatcher.REGION_LIMIT.get(), 0, 9, "pixels when patching");
-		gd.addMessage("-----------------------------------------");
+		gd.addSeparator();
 
 		gd.addCheckbox("Sort names numerically", sortFileNames);
 		gd.addCheckbox("Generate WCS Common Region", AUTOMATIC_WCS_SHAPE_GENERATION.get());

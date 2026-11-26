@@ -393,7 +393,7 @@ public class AnSolveWasi implements AutoCloseable {
             var cancelSent = false;
             while (r == null || (r[0] != n && r[1] != ENDED)) { // skip results left over from an earlier, interrupted solve
                 if (es.ready) {
-                    IJ.showStatus("Running job...");
+                    IJ.showStatus("Running job " + n + "...");
                 }
                 r = es.results.poll(CANCEL_POLL_MS, TimeUnit.MILLISECONDS);
                 if ((r == null && !cancelSent && cancelled != null && cancelled.getAsBoolean()) || Thread.currentThread().isInterrupted()) {

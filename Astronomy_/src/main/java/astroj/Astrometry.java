@@ -671,6 +671,12 @@ public class Astrometry { //implements KeyListener
             } else {
                 IJ.log(message);
             }
+            // Wait for log to update, which is needed with bundled solver
+            try {
+                SwingUtilities.invokeAndWait(() -> {});
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

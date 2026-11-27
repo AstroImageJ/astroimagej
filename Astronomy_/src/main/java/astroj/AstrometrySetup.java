@@ -2,6 +2,7 @@
 
 package astroj;
 
+import astroj.astrometry.GpuMaxima;
 import astroj.astrometry.index.AstrometryNetIndexManager;
 import astroj.astrometry.index.gui.IndexManagerPanel;
 import astroj.astrometry.solvers.PlateSolver;
@@ -597,12 +598,11 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         setWidth(medianFilterRadiusSpinner, 100);
         r1.add(titled("Filter Radius (pixels)", medianFilterRadiusSpinner));
 
-        var gpu = new JCheckBox("Use GPU acceleration", Astrometry.USE_GPU_ACCELERATION.get());
-        gpu.setFont(p12);
-        gpu.addActionListener(_ -> Astrometry.USE_GPU_ACCELERATION.set(gpu.isSelected()));
-        r1.add(gpu);
-
         g.add(r1);
+
+        var rGpu = row();
+        rGpu.add(titled("Compute device", buildDeviceChooser()));
+        g.add(rGpu);
 
         // Noise tolerance
         var r2 = row();
@@ -711,6 +711,51 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         addCentroidRows(g);
 
         return g;
+    }
+
+    private JComboBox<DeviceChoice> buildDeviceChooser() {
+        var cpu = new DeviceChoice("CPU (no GPU acceleration)", false, "");
+        var best = GpuMaxima.preferred();
+        var auto = new DeviceChoice("Auto" + (best == null ? "" : " (" + best.name() + ")"), true, "");
+        var combo = new JComboBox<DeviceChoice>();
+        combo.setFont(p12);
+        combo.addItem(cpu);
+
+        var devices = GpuMaxima.devices();
+        if (devices.isEmpty()) {
+            combo.setEnabled(false);
+            combo.setToolTipText("No usable GPU device was found, the CPU is used.");
+            return combo;
+        }
+
+        combo.addItem(auto);
+        DeviceChoice current = auto;
+        var stored = GpuMaxima.GPU_DEVICE.get();
+        for (var d : devices) {
+            var choice = new DeviceChoice(d.label(), true, d.id());
+            combo.addItem(choice);
+            if (d.id().equals(stored)) {
+                current = choice;
+            }
+        }
+
+        combo.setSelectedItem(Astrometry.USE_GPU_ACCELERATION.get() ? current : cpu);
+        combo.setToolTipText("""
+                <html>
+                In many cases, running star detection on a dedicated GPU will likely be faster than on the CPU, \
+                especially with median enabled.
+                </html>
+                """);
+        combo.addActionListener(_ -> {
+            if (combo.getSelectedItem() instanceof DeviceChoice c) {
+                Astrometry.USE_GPU_ACCELERATION.set(c.gpu());
+                if (c.gpu()) {
+                    GpuMaxima.GPU_DEVICE.set(c.id());
+                }
+            }
+        });
+
+        return combo;
     }
 
     private void addCentroidRows(JPanel g) {
@@ -1770,6 +1815,13 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             getFields();
         }
 
+    }
+
+    private record DeviceChoice(String label, boolean gpu, String id) {
+        @Override
+        public String toString() {
+            return label;
+        }
     }
 
 }
